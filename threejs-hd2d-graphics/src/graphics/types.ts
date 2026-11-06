@@ -133,6 +133,14 @@ export interface DecorOptions {
   pebbles?: boolean;
   shrubs?: boolean;
   /**
+   * Stone stairs and cobble retaining walls along the path
+   * (EnvironmentRenderer.buildStonework). Default true. Set false
+   * when the game does not want the path structures rendered —
+   * e.g. while its own placement / collision design does not
+   * account for them yet.
+   */
+  stonework?: boolean;
+  /**
    * Circular areas kept free of ALL scenery (trees, rocks, shrubs,
    * grass tufts, flowers, herb patches, logs, riverbank pebbles) so
    * game-owned natural objects can stand there alone — e.g. the

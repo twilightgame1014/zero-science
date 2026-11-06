@@ -451,3 +451,16 @@ Claude の報告メモ §9 と CLAUDE-TO-MUSE §8 の残件への対応。
 - `menu` アイコンを ui-icons に追加（192 マスター＋48/32）。
   GPT 原画がないため既存セットの色使いで描いた仮アイコン。
   正式版が届けば差し替える。
+
+## 19. decor.stonework（石段・擁壁の表示切り替え）
+
+`GraphicsOptions.decor.stonework?: boolean`（デフォルト true）を追加した。
+`false` にすると、道沿いの石段（川岸から高地へ登る7段）と石積みの
+擁壁3か所（EnvironmentRenderer.buildStonework、シーングループ名
+`Stonework`）を描画しない。
+
+ゲーム側が当たり判定や配置設計に石積みを組み込んでいない間は
+`initializeGraphics` の `decor: { stonework: false }` で消すのが正道で、
+シーン走査でグループを探して隠す必要はない。他の decor フラグ
+（trees / rocks / logs / pebbles / shrubs）と扱いは同じ
+（未指定・true で従来どおり表示）。

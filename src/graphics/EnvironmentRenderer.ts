@@ -204,7 +204,7 @@ export class EnvironmentRenderer {
     this.buildPollen(particleTexture, scale);
     this.buildBackdropMountains();
     this.buildWaterfall(particleTexture);
-    this.buildStonework();
+    if (decor.stonework !== false) this.buildStonework();
     this.buildGrounding();
   }
 
