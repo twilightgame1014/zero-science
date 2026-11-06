@@ -37,7 +37,8 @@ npm run typecheck  # 描画モジュール（TypeScript）の型チェック
 | `threejs-hd2d-graphics/` | Muse から受け取った描画モジュールの原本（デモ・元画像つき）。`src/graphics/` はここからの写し | Muse |
 | `assets/lab-stages*/`・`references/` | 研究室の背景の元データ、HD-2D の参考画像 | Muse |
 
-## 公開
+## 自動テストと公開
 
-`main` ブランチに push すると、GitHub Actions がテスト → ビルド → GitHub Pages への公開を自動で行います。
+- **テスト**：どのブランチに push しても、GitHub Actions の「テスト」が自動で `npm test`・`npm run typecheck`・`npm run build` を実行します。
+- **公開**：自動では公開しません。公開したいときは、GitHub の Actions タブ →「GitHub Pages に公開（手動）」→ Run workflow を押すと、テスト → ビルド → GitHub Pages への公開を行います。
 （初回のみ、リポジトリの Settings → Pages → Source を「GitHub Actions」にしてください）
