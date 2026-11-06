@@ -72,6 +72,10 @@ Three.js製のHD-2Dグラフィックモジュールと、研究室背景アセ�
   撤回されました。代わりに `assets/lab-apparatus/`（リポジトリ直下）の器具
   セット（bbmodel/gltf/透過スプライト、液体・炎は別レイヤー、段階対応表は
   同フォルダ README）を使って「実験台」に装置を並べる構成にしてください。
+- **UIアイコン**：`assets/ui-icons/` に仕上げ済みの8種（lab / craft /
+  encyclopedia / technology / journal / map / base / settings、192マスター
+  ＋48/32実寸版、対応表は同フォルダ README）。現在の絵文字仮アイコンの
+  差し替えに使えます。
 
 ## 補足（ユーザー向けメモ）
 
