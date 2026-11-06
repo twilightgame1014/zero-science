@@ -17,7 +17,7 @@
 | `tools/` | 加工スクリプト（process_icons.py / build_atlas.py / build_previews.py） |
 | `process-log.json` | 加工ログ（シート別フリンジ修正数、アイコン別成分数） |
 
-容量：個別 PNG 一式 約 7.8 MB／atlas.png 11.4 MB／atlas.webp 8.3 MB／atlas-128.png 3.5 MB。
+容量：個別 PNG 一式 約 7.8 MB／atlas.png 約 7.4 MB／atlas.webp 約 5.1 MB／atlas-128.png 約 2.3 MB／atlas.json 約 19 KB。
 
 ## ID 照合
 
