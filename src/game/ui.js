@@ -23,6 +23,11 @@ const svgIc = (id, x, y, sz)=>{ const p = ITEM_ICO && ITEM_ICO.pos[id];
 const isMat = id=>IT[id] && !IT[id].tags.includes("道具") && !IT[id].tags.includes("研究設備");
 const owned = id=>E.has(S,id);
 const stage = ()=>E.stageOf(S);
+/* 地図・2D表示の文明の痕跡は、段階（stage）ではなく、プレイヤーが作った設備（owned）から決める。3D の STRUCT_PLAN と同じ対応 */
+const CIV = ()=>({fire:owned("campfire"), bench:owned("bench"), kiln:owned("kiln"), hut:owned("storehouse"), smelt:owned("furnace")||owned("blastfurnace"),
+  mill:owned("blastfurnace"), rail:owned("steamengine"), power:owned("generator"), factory:owned("eaf"), inst:owned("reactor"),
+  wheel:owned("waterwheel"), rig:owned("rig"), lights:!!S.disc.bulb && owned("generator")});
+const civSig = ()=>Object.values(CIV()).map(v=>v?1:0).join("");
 
 /* ---------- 保存 ---------- */
 function load(){ try{ const t = localStorage.getItem(SAVE_KEY); if(t) return E.deserialize(t); }catch(e){} return E.newState(); }
@@ -34,7 +39,7 @@ document.addEventListener("visibilitychange",()=>{ if(document.hidden){ try{ loc
 function toast(id, kind){
   const box = $("#toasts"); const el = document.createElement("div"); el.className="toast"+(kind?" small":"");
   if(kind==="mission") el.innerHTML=`<div class="i">🦉</div><div><div class="k">目標達成！</div><div class="nm">${id}</div></div>`;
-  else if(kind==="stage") el.innerHTML=`<div class="i">🏙️</div><div><div class="k">文明が進化した！</div><div class="nm">${id}</div><p>フィールドと研究室の見た目が変わったよ。</p></div>`;
+  else if(kind==="stage") el.innerHTML=`<div class="i">🏙️</div><div><div class="k">文明が進化した！</div><div class="nm">${id}</div><p>研究室の見た目が変わったよ。設備を作ると、拠点に建物が増えていくよ。</p></div>`;
   else { const it=IT[id]; el.innerHTML=`<div class="i">${ic(id)}</div><div><div class="k">${it.tags.includes("珍しい発見")?"珍しい発見！":"新発見！"} 図鑑に登録したよ</div><div class="nm">${it.name}</div><p>${it.kid}</p></div>`; el.onclick=()=>{ openItem(id); el.remove(); }; }
   box.prepend(el); const maxN = uiMode()==="touch" ? 2 : 3; while(box.children.length>maxN) box.lastChild.remove();
   setTimeout(()=>el.remove(), kind?4000:6500);
@@ -334,7 +339,7 @@ function drawScene(){
   sceneSig = sig;
   const tall = U.fac && TALL_FAC.includes(U.fac), baseY = 186;
   /* 作業台を作るまでは、地面と平たい石だけ（加工した木の台や棚はまだない） */
-  const bench = owned("bench") || st>=3;
+  const bench = owned("bench");
   box.style.backgroundImage = "none";
   box.innerHTML = `<svg class="scene" id="scene" viewBox="0 0 400 225" role="img" aria-label="実験台：${U.fac?nm(U.fac)+"を使う":"装置はまだ選んでいない"}${tray.length?"・材料 "+tray.map(nm).join("、"):""}">
   <defs><radialGradient id="glowG"><stop offset="0" stop-color="#ffcf5a" stop-opacity=".95"/><stop offset=".6" stop-color="#ff8a2a" stop-opacity=".35"/><stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/></radialGradient>
@@ -464,7 +469,7 @@ function resultNote(res){
 /* ===================== 探検（フィールド） ===================== */
 let fieldSig="";
 function fieldSVG(st){
-  const sea = "var(--sea)";
+  const sea = "var(--sea)", cv = CIV();
   const rail = (d)=>`<path d="${d}" fill="none" stroke="#5b5048" stroke-width="5"/><path d="${d}" fill="none" stroke="#c9b88c" stroke-width="5" stroke-dasharray="1.5 4"/>`;
   const road = (d)=>`<path d="${d}" fill="none" stroke="#6f7a86" stroke-width="7" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="5 5"/>`;
   const trees = (pts)=>pts.map(([x,y,s])=>`<path d="M${x-7*s} ${y} L${x} ${y-18*s} L${x+7*s} ${y}Z" style="fill:var(--tree)"/>`).join("");
@@ -481,57 +486,58 @@ function fieldSVG(st){
   <path d="M296 124 L336 70 L380 124Z" fill="#5f6668"/><path d="M328 124 Q336 108 344 124Z" fill="#1b1b1f"/>
   ${trees([[56,110,1],[70,100,1.2],[86,112,1],[100,104,1.1],[64,128,1],[80,132,1.2],[98,126,1],[46,124,.9],[112,120,.9]])}
   ${[[178,150],[196,160],[210,146],[186,170],[220,166]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2" fill="#f2b632"/>`).join("")}
-  ${S.disc.solarcell?[[192,140],[208,140],[192,150],[208,150]].map(([x,y])=>`<path d="M${x} ${y} l12 0 l-3 7 l-12 0z" fill="#2b4a7a" stroke="#9aa3ad"/>`).join(""):""}
   ${owned("rig")?`<g><rect x="352" y="186" width="18" height="4" fill="#6f7a86"/><path d="M356 186 L361 162 L366 186" fill="none" stroke="#3d4650" stroke-width="2"/><circle cx="361" cy="160" r="2" fill="#e2572a"/></g>`:`<ellipse cx="361" cy="182" rx="10" ry="4" fill="#1f1810" opacity=".5"/>`}
-  ${st>=3?`<path d="M112 176 Q140 140 188 156 M112 176 Q120 200 144 210 M112 176 Q90 140 80 118 M188 156 Q240 120 256 80" fill="none" stroke="#a88a5a" stroke-width="3" stroke-dasharray="5 4"/>`:""}
-  ${st>=4?rail("M112 178 Q150 110 160 66")+rail("M112 178 Q220 150 256 84 Q300 100 336 112"):""}
-  ${st>=5?road("M112 178 Q200 200 312 234")+road("M112 178 Q60 200 0 210"):""}
-  ${st>=4?[[130,150],[170,110],[220,120],[270,160],[300,200]].map(([x,y])=>`<path d="M${x} ${y} V${y-18} M${x-5} ${y-15} H${x+5}" stroke="#5b5048" stroke-width="1.5"/>`).join("")+`<path d="M130 135 Q150 128 170 95 Q195 98 220 105 Q245 132 270 145 Q285 170 300 185" fill="none" stroke="#333" stroke-width=".8"/>`:""}
-  ${st>=4?`<g ${RM?'transform="translate(200,130)"':""}><rect x="-9" y="-6" width="18" height="10" rx="2" fill="#3d4650"/><rect x="-9" y="-12" width="7" height="7" fill="#5b6470"/><circle cx="-5" cy="5" r="2.2" fill="#222"/><circle cx="5" cy="5" r="2.2" fill="#222"/><circle cx="6" cy="-12" r="3.5" fill="#ddd" opacity=".75"/>${RM?"":`<animateMotion dur="10s" repeatCount="indefinite" keyPoints="0;1;0" keyTimes="0;.5;1" calcMode="linear" path="M112 178 Q220 150 256 84 Q300 100 336 112"/>`}</g>`:""}
-  ${st>=4?[[176,96],[204,90]].map(([x,y])=>`<g transform="translate(${x},${y})"><rect x="-8" y="-10" width="16" height="12" fill="#7a3a2a"/><rect x="2" y="-24" width="4" height="16" fill="#5a2a1e"/><circle class="fsmoke" cx="4" cy="-28" r="4" fill="#999" opacity=".6"/></g>`).join(""):""}
-  ${st>=5?`${[[36,210],[64,226],[88,240],[130,232],[150,250]].map(([x,y],i)=>`<g transform="translate(${x},${y})"><rect x="-7" y="${-14-i%3*8}" width="14" height="${14+i%3*8}" fill="${["#8fa3b5","#a9bccb","#7f95a8"][i%3]}"/>${[0,1,2].map(j=>`<rect x="-4" y="${-11-i%3*8+j*5}" width="3" height="2.5" fill="#ffe27a"/><rect x="1" y="${-11-i%3*8+j*5}" width="3" height="2.5" fill="#ffe27a"/>`).join("")}</g>`).join("")}
+  ${cv.hut?`<path d="M112 176 Q140 140 188 156 M112 176 Q120 200 144 210 M112 176 Q90 140 80 118 M188 156 Q240 120 256 80" fill="none" stroke="#a88a5a" stroke-width="3" stroke-dasharray="5 4"/>`:""}
+  ${cv.rail?rail("M112 178 Q150 110 160 66")+rail("M112 178 Q220 150 256 84 Q300 100 336 112"):""}
+  ${cv.factory?road("M112 178 Q200 200 312 234")+road("M112 178 Q60 200 0 210"):""}
+  ${cv.power?[[130,150],[170,110],[220,120],[270,160],[300,200]].map(([x,y])=>`<path d="M${x} ${y} V${y-18} M${x-5} ${y-15} H${x+5}" stroke="#5b5048" stroke-width="1.5"/>`).join("")+`<path d="M130 135 Q150 128 170 95 Q195 98 220 105 Q245 132 270 145 Q285 170 300 185" fill="none" stroke="#333" stroke-width=".8"/>`:""}
+  ${cv.rail?`<g ${RM?'transform="translate(200,130)"':""}><rect x="-9" y="-6" width="18" height="10" rx="2" fill="#3d4650"/><rect x="-9" y="-12" width="7" height="7" fill="#5b6470"/><circle cx="-5" cy="5" r="2.2" fill="#222"/><circle cx="5" cy="5" r="2.2" fill="#222"/><circle cx="6" cy="-12" r="3.5" fill="#ddd" opacity=".75"/>${RM?"":`<animateMotion dur="10s" repeatCount="indefinite" keyPoints="0;1;0" keyTimes="0;.5;1" calcMode="linear" path="M112 178 Q220 150 256 84 Q300 100 336 112"/>`}</g>`:""}
+  ${cv.mill?[[176,96],[204,90]].map(([x,y])=>`<g transform="translate(${x},${y})"><rect x="-8" y="-10" width="16" height="12" fill="#7a3a2a"/><rect x="2" y="-24" width="4" height="16" fill="#5a2a1e"/><circle class="fsmoke" cx="4" cy="-28" r="4" fill="#999" opacity=".6"/></g>`).join(""):""}
+  ${cv.inst?`${[[36,210],[64,226],[88,240],[130,232],[150,250]].map(([x,y],i)=>`<g transform="translate(${x},${y})"><rect x="-7" y="${-14-i%3*8}" width="14" height="${14+i%3*8}" fill="${["#8fa3b5","#a9bccb","#7f95a8"][i%3]}"/>${[0,1,2].map(j=>`<rect x="-4" y="${-11-i%3*8+j*5}" width="3" height="2.5" fill="#ffe27a"/><rect x="1" y="${-11-i%3*8+j*5}" width="3" height="2.5" fill="#ffe27a"/>`).join("")}</g>`).join("")}
     ${[[282,170],[300,160]].map(([x,y])=>`<g transform="translate(${x},${y})"><path d="M0 0 V-22" stroke="#eee" stroke-width="2"/><g transform="translate(0,-22)"><g class="spin"><path d="M0 0 L0 -10 M0 0 L9 5 M0 0 L-9 5" stroke="#fff" stroke-width="2"/></g></g></g>`).join("")}`:""}
   ${owned("waterwheel")?`<g transform="translate(160,140)"><g class="spin"><circle r="9" fill="none" stroke="#7a5636" stroke-width="3"/><path d="M-9 0 H9 M0 -9 V9" stroke="#7a5636" stroke-width="2"/></g></g>`:""}
-  <g transform="translate(112,180) scale(${st>=4?1.6:st>=2?1.3:1.1})">${baseArt(st)}</g>
+  <g transform="translate(112,180) scale(1.3)">${baseArt(cv)}</g>
   </svg>`;
 }
-function baseArt(st){
-  if(st===0) return `<circle cx="0" cy="0" r="10" fill="#c9b88c" opacity=".7"/>`;
-  if(st===1) return `<path d="M-16 6 L-4 -14 L8 6Z" fill="#c8a46a" stroke="#7a5636"/><path class="idle-flame" d="M14 6 Q10 0 14 -6 Q18 0 14 6Z" fill="#ff9a3c"/><circle class="fsmoke" cx="15" cy="-12" r="4" fill="#bbb" opacity=".6"/>`;
-  if(st===2) return [[-18,4],[0,-6],[16,6]].map(([x,y])=>`<rect x="${x-7}" y="${y-6}" width="14" height="10" fill="#b8926d"/><path d="M${x-10} ${y-5} L${x} ${y-15} L${x+10} ${y-5}Z" fill="#b8943f"/>`).join("")+`<path d="M24 -6 Q24 -18 30 -18 Q36 -18 36 -6Z" fill="#b4483b"/><circle class="fsmoke" cx="30" cy="-24" r="4" fill="#bbb" opacity=".6"/>`;
-  if(st===3) return [[-20,4],[-4,-4],[12,6]].map(([x,y])=>`<rect x="${x-8}" y="${y-10}" width="16" height="14" fill="#a54e33"/><path d="M${x-10} ${y-10} L${x} ${y-18} L${x+10} ${y-10}Z" fill="#7a3a2a"/>`).join("")+`<rect x="24" y="-26" width="7" height="30" fill="#7a3a2a"/><circle class="fsmoke" cx="28" cy="-32" r="5" fill="#bbb" opacity=".6"/>`;
-  if(st===4) return `<rect x="-26" y="-14" width="34" height="20" fill="#7a3a2a"/><path d="M-26 -14 l8.5 -6 v6 l8.5 -6 v6 l8.5 -6 v6 l8.5 -6 v6" fill="#5a2a1e"/><rect x="12" y="-36" width="6" height="42" fill="#5a2a1e"/><rect x="22" y="-30" width="6" height="36" fill="#5a2a1e"/>
-    <circle class="fsmoke" cx="15" cy="-42" r="6" fill="#999" opacity=".6"/><circle class="fsmoke" cx="25" cy="-36" r="5" fill="#999" opacity=".6"/>`;
-  return `<rect x="-30" y="-30" width="12" height="36" fill="#8fa3b5"/><rect x="-16" y="-48" width="14" height="54" fill="#a9bccb"/><rect x="0" y="-38" width="12" height="44" fill="#7f95a8"/><rect x="14" y="-24" width="16" height="30" fill="#b9c8d4"/>
-    ${[-44,-36,-28,-20,-12].map(y=>`<rect x="-13" y="${y}" width="3" height="3" fill="#ffe27a"/><rect x="-7" y="${y}" width="3" height="3" fill="#ffe27a"/>`).join("")}${[-30,-22,-14].map(y=>`<rect x="3" y="${y}" width="3" height="3" fill="#ffe27a"/>`).join("")}`;
+/* 拠点の絵：作った設備だけを並べる（何もなければ草地の空き地） */
+function baseArt(cv){
+  const parts = [`<ellipse cx="0" cy="4" rx="26" ry="7" fill="#b9a678" opacity=".55"/>`];
+  if(cv.bench) parts.push(`<rect x="-24" y="-2" width="12" height="3" fill="#8a643f"/><path d="M-22 1 V6 M-14 1 V6" stroke="#6e4e30" stroke-width="1.5"/>`);
+  if(cv.fire) parts.push(`<path d="M-6 6 L-2 2 L2 6Z" fill="#7a5636"/><path class="idle-flame" d="M-2 4 Q-5 -1 -2 -6 Q1 -1 -2 4Z" fill="#ff9a3c"/><circle class="fsmoke" cx="-1" cy="-11" r="3" fill="#bbb" opacity=".6"/>`);
+  if(cv.kiln) parts.push(`<path d="M6 6 Q6 -6 12 -6 Q18 -6 18 6Z" fill="#b4483b"/>`);
+  if(cv.hut) parts.push(`<rect x="-36" y="-8" width="12" height="9" fill="#b8926d"/><path d="M-39 -7 L-30 -16 L-21 -7Z" fill="#b8943f"/>`);
+  if(cv.smelt) parts.push(`<rect x="22" y="-10" width="8" height="16" fill="#7a3a2a"/><circle class="fsmoke" cx="26" cy="-15" r="4" fill="#999" opacity=".6"/>`);
+  if(cv.factory) parts.push(`<rect x="-30" y="-26" width="24" height="14" fill="#7a3a2a"/><path d="M-30 -26 l6 -5 v5 l6 -5 v5 l6 -5 v5 l6 -5 v5" fill="#5a2a1e"/>`);
+  if(cv.inst) parts.push(`<rect x="2" y="-34" width="12" height="26" fill="#a9bccb"/>${[-30,-24,-18].map(y=>`<rect x="5" y="${y}" width="3" height="3" fill="#ffe27a"/>`).join("")}`);
+  return parts.join("");
 }
 function regionArt(r, st){
+  const cv = CIV();
   const sky = `<rect width="320" height="180" fill="url(#rsky)"/>`;
   const ground = c=>`<rect y="128" width="320" height="52" fill="${c}"/>`;
   switch(r.scene){
     case "forest": return sky+`<path d="M0 110 Q80 80 160 104 T320 100 V180 H0Z" style="fill:var(--hill2)"/>`+ground("#6b8f4e")+
       [[20,128,1.6],[60,124,2],[110,130,1.5],[150,122,2.2],[200,128,1.7],[250,124,2],[296,130,1.6],[86,138,1.2],[230,140,1.2]].map(([x,y,s])=>`<rect x="${x-2*s}" y="${y-6*s}" width="${4*s}" height="${10*s}" style="fill:var(--trunk)"/><path d="M${x-12*s} ${y-4*s} L${x} ${y-34*s} L${x+12*s} ${y-4*s}Z" style="fill:var(--tree)"/>`).join("")+
-      (st>=4?`<path d="M0 166 Q160 150 320 168" stroke="#a88a5a" stroke-width="8" fill="none"/>`:"");
+      (cv.rail?`<path d="M0 166 Q160 150 320 168" stroke="#a88a5a" stroke-width="8" fill="none"/>`:"");
     case "grass": return sky+`<path d="M0 112 Q90 90 180 110 T320 104 V180 H0Z" fill="#9cc49a"/>`+ground("#8fb96e")+
       [[30,150],[70,160],[120,146],[180,162],[240,150],[290,160]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="3" fill="#f2b632"/><circle cx="${x+8}" cy="${y+4}" r="2.5" fill="#e889a8"/>`).join("")+
-      (st>=4?`<path d="M0 140 H320" stroke="#5b5048" stroke-width="4"/><path d="M0 140 H320" stroke="#c9b88c" stroke-width="4" stroke-dasharray="1.5 5"/>`:"")+
-      (S.disc.solarcell?[[200,120],[236,120],[272,120]].map(([x,y])=>`<path d="M${x} ${y} l30 0 l-6 14 l-30 0z" fill="#2b4a7a" stroke="#9aa3ad"/>`).join(""):"");
+      (cv.rail?`<path d="M0 140 H320" stroke="#5b5048" stroke-width="4"/><path d="M0 140 H320" stroke="#c9b88c" stroke-width="4" stroke-dasharray="1.5 5"/>`:"")+
+""
     case "river": return sky+`<path d="M0 100 Q80 86 160 98 T320 94 V180 H0Z" fill="#9cc49a"/>`+ground("#c9b88c")+`<path d="M0 118 Q160 104 320 122 V140 Q160 126 0 140Z" style="fill:var(--sea)"/>`+
       `<g class="waves"><path d="M20 128 q10 -4 20 0 M140 120 q10 -4 20 0 M250 128 q10 -4 20 0" stroke="#fff" fill="none" opacity=".7"/></g>`+
       (owned("waterwheel")?`<g transform="translate(270,118)"><g class="spin"><circle r="20" fill="none" stroke="#7a5636" stroke-width="4"/><path d="M-20 0 H20 M0 -20 V20 M-14 -14 L14 14 M14 -14 L-14 14" stroke="#7a5636" stroke-width="3"/></g></g>`:"");
     case "coast": return sky+`<rect y="96" width="320" height="50" style="fill:var(--sea)"/><g class="waves"><path d="M0 120 q20 -6 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="#fff" fill="none" opacity=".7"/></g>`+
-      `<path d="M0 140 Q160 126 320 142 V180 H0Z" fill="#e8d9b0"/>`+(st>=5?`<g transform="translate(270,70)"><path d="M0 0 V40" stroke="#ddd" stroke-width="3"/><g class="spin"><path d="M0 0 L0 -18 M0 0 L15 9 M0 0 L-15 9" stroke="#fff" stroke-width="3"/></g></g>`:st>=4?`<path d="M240 98 h40 l-6 8 h-28z" fill="#3d4650"/><rect x="254" y="86" width="5" height="12" fill="#3d4650"/><circle class="fsmoke" cx="256" cy="80" r="4" fill="#999"/>`:"");
+      `<path d="M0 140 Q160 126 320 142 V180 H0Z" fill="#e8d9b0"/>`+(cv.power?`<g transform="translate(270,70)"><path d="M0 0 V40" stroke="#ddd" stroke-width="3"/><g class="spin"><path d="M0 0 L0 -18 M0 0 L15 9 M0 0 L-15 9" stroke="#fff" stroke-width="3"/></g></g>`:cv.rail?`<path d="M240 98 h40 l-6 8 h-28z" fill="#3d4650"/><rect x="254" y="86" width="5" height="12" fill="#3d4650"/><circle class="fsmoke" cx="256" cy="80" r="4" fill="#999"/>`:"");
     case "mountain": return sky+`<path d="M-10 140 L80 40 L170 140Z" fill="#7f8a8c"/><path d="M110 140 L220 20 L330 140Z" fill="#6f7a7c"/><path d="M200 42 L220 20 L240 42 Q220 50 200 42Z" fill="#fff"/>`+ground("#9a9c98")+
-      (st>=4?`<path d="M0 160 Q160 140 320 158" stroke="#5b5048" stroke-width="4" fill="none"/>`:"");
+      (cv.rail?`<path d="M0 160 Q160 140 320 158" stroke="#5b5048" stroke-width="4" fill="none"/>`:"");
     case "cave": return `<rect width="320" height="180" fill="#2a221c"/><radialGradient id="torch" cx=".5" cy=".55" r=".6"><stop offset="0" stop-color="#ffcf7a" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
       <rect width="320" height="180" fill="url(#torch)"/>${[20,60,110,170,230,280].map((x,i)=>`<path d="M${x} 0 L${x+8} ${20+i%3*10} L${x+16} 0Z" fill="#4a3a2e"/>`).join("")}<rect y="146" width="320" height="34" fill="#3a2e24"/>`+
-      (st>=4?`<path d="M0 30 H320" stroke="#333"/>${[60,160,260].map(x=>`<circle cx="${x}" cy="34" r="4" fill="#ffe27a"/>`).join("")}`:"");
+      (cv.lights?`<path d="M0 30 H320" stroke="#333"/>${[60,160,260].map(x=>`<circle cx="${x}" cy="34" r="4" fill="#ffe27a"/>`).join("")}`:"");
     case "mine": return sky+`<path d="M0 120 Q60 50 140 80 T320 70 V180 H0Z" fill="#8a6a4a"/><path d="M126 132 Q124 104 140 94 Q152 86 164 95 Q178 106 174 132Z" fill="#2a1e16"/><path d="M118 134 Q130 120 126 108 M176 108 Q182 122 184 134" fill="none" stroke="#6a4f37" stroke-width="4" stroke-linecap="round"/>`+ground("#7a5a3e")+
-      (st>=4?`<path d="M0 158 H320" stroke="#5b5048" stroke-width="4"/><path d="M0 158 H320" stroke="#c9b88c" stroke-width="4" stroke-dasharray="1.5 5"/><rect x="200" y="142" width="26" height="12" fill="#5b6470"/><circle cx="206" cy="156" r="3" fill="#333"/><circle cx="220" cy="156" r="3" fill="#333"/>`:"")+
-      (st>=5?`<text x="250" y="150" font-size="26">🚜</text>`:"");
+      (cv.rail?`<path d="M0 158 H320" stroke="#5b5048" stroke-width="4"/><path d="M0 158 H320" stroke="#c9b88c" stroke-width="4" stroke-dasharray="1.5 5"/><rect x="200" y="142" width="26" height="12" fill="#5b6470"/><circle cx="206" cy="156" r="3" fill="#333"/><circle cx="220" cy="156" r="3" fill="#333"/>`:"");
     case "volcano": return `<rect width="320" height="180" fill="#6a3a3a"/><path d="M40 160 L150 30 L260 160Z" fill="#4a2a24"/><path d="M130 50 L150 30 L170 50 Q150 60 130 50Z" fill="#ff7a2a" class="idle-flame"/>
       <g class="fsmoke"><circle cx="150" cy="20" r="12" fill="#999" opacity=".5"/><circle cx="166" cy="10" r="9" fill="#aaa" opacity=".4"/></g><path d="M150 50 Q140 100 120 160" stroke="#ff7a2a" stroke-width="4" fill="none" opacity=".8"/>`+ground("#3a2a24")+
-      (st>=5?`<rect x="250" y="116" width="40" height="28" fill="#cfd6dc"/><rect x="258" y="100" width="8" height="18" fill="#cfd6dc"/><circle class="fsmoke" cx="262" cy="94" r="6" fill="#fff" opacity=".6"/>`:"");
+      (cv.power?`<rect x="250" y="116" width="40" height="28" fill="#cfd6dc"/><rect x="258" y="100" width="8" height="18" fill="#cfd6dc"/><circle class="fsmoke" cx="262" cy="94" r="6" fill="#fff" opacity=".6"/>`:"");
     case "oil": return sky+`<rect y="100" width="320" height="80" style="fill:var(--sea)"/><g class="waves"><path d="M0 130 q20 -6 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="#fff" fill="none" opacity=".6"/></g>
       <g transform="translate(160,60)"><rect x="-40" y="60" width="80" height="10" fill="#6f7a86"/><path d="M-20 60 L0 -10 L20 60 M-14 36 H14 M-8 14 H8" fill="none" stroke="#3d4650" stroke-width="3"/><rect x="-36" y="70" width="6" height="40" fill="#6f7a86"/><rect x="30" y="70" width="6" height="40" fill="#6f7a86"/><circle cx="0" cy="-14" r="3" fill="#e2572a"/></g>`;
   }
@@ -548,7 +554,7 @@ function renderExplore2D(v){
   const st = stage();
   let r = D.regions.find(x=>x.id===U.region) || D.regions[0];
   if(!E.regionOpen(S,r)){ U.region="forest"; r=D.regions[0]; }
-  const sig = "2d|"+st+"|"+r.id+"|"+E.exploreLv(S,r.id)+"|"+W3.state+"|"+owned("waterwheel")+(S.disc.solarcell?1:0);
+  const sig = "2d|"+st+"|"+r.id+"|"+E.exploreLv(S,r.id)+"|"+W3.state+"|"+civSig();
   if(!v.querySelector(".rscene") || sig!==fieldSig){
     fieldSig = sig;
     v.innerHTML = `<div class="rscene" id="rscene">

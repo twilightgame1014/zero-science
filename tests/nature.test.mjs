@@ -170,6 +170,9 @@ ok('最初の目標（木の枝）と2番目（丸い石・火打ち石）を新
   const rows = plan.split('\n').filter(l => /\{id:"st-/.test(l));
   ok('拠点の建物は、プレイヤーが作った設備（owned）だけで出る（段階・研究の完了だけでは出ない）', rows.length >= 10 && rows.every(l => /when:\(\)=>owned\("/.test(l) && !/stage\(\)/.test(l)), rows.filter(l => !/owned\("/.test(l) || /stage\(\)/.test(l)).join('\n'));
   ok('描画モジュールが独自に置く石の階段・石積みの壁（Stonework）を取り除き、decor でも止める', /PREBUILT_SCENERY = \["Stonework"\]/.test(ui) && /stonework:false/.test(ui) && /stripPrebuilt\(W3\.gfx\)/.test(ui));
+  const fn = name => { const i = ui.indexOf('function ' + name + '('); return ui.slice(i, ui.indexOf('\nfunction ', i + 10)); };
+  const byStage = ['fieldSVG', 'baseArt', 'regionArt'].filter(n => /st\s*>=|st\s*===|S\.disc\.solarcell/.test(fn(n)));
+  ok('地図・2D表示の道路・線路・工場・町並み・拠点の絵も、段階や研究ではなく作った設備（CIV）で決める', byStage.length === 0 && /const CIV = \(\)=>/.test(ui), byStage.join(','));
   const ww = rows.find(l => l.includes('st-wheel')), m = ww && ww.match(/at:\{x:([-\d.]+),z:([-\d.]+)\}/), site = N.SITES.find(x => x.id === 'st-wheel');
   ok('水車の場所は nature.js の SITES と一致し、水ぎわ（地面の高さが水位とほぼ同じ）にある', m && site && +m[1] === site.x && +m[2] === site.z
     && Math.abs(T.terrainHeight(site.x, site.z, T.DEFAULT_CONFIG) - T.DEFAULT_CONFIG.world.waterLevel) < 0.15 && T.distanceToRiver(site.x, site.z, T.DEFAULT_CONFIG) < 6.5, ww);
