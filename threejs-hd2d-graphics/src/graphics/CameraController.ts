@@ -3,8 +3,11 @@ import type { GraphicsConfig } from './types';
 import { dampFactor } from './utils';
 
 /**
- * Orthographic HD-2D camera: fixed ~50° pitch, smooth damped follow.
- * It reads target positions; it never writes to game-logic coordinates.
+ * Orthographic HD-2D camera: low ~32° pitch (exploration spec
+ * 2026-11-06), smooth damped follow. It reads target positions; it
+ * never writes to game-logic coordinates. Because the projection is
+ * orthographic, framing is controlled by the frustum (viewSize), not
+ * by the camera distance.
  */
 export class CameraController {
   readonly camera: THREE.OrthographicCamera;
@@ -12,12 +15,18 @@ export class CameraController {
   private target = new THREE.Vector3(0, 0, 0);
   private current = new THREE.Vector3(0, 0, 0);
   private offset = new THREE.Vector3();
+  /** Camera screen-up direction in world space. */
+  private screenUp = new THREE.Vector3();
+  private lookCenter = new THREE.Vector3();
   private viewSize: number;
+  /** viewSize after the portrait boost — the height actually shown. */
+  private effectiveViewSize: number;
   private aspect = 16 / 9;
 
   constructor(cfg: GraphicsConfig['camera']) {
     this.cfg = cfg;
     this.viewSize = cfg.viewSize;
+    this.effectiveViewSize = cfg.viewSize;
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400);
     const pitch = THREE.MathUtils.degToRad(cfg.pitchDegrees);
     const yaw = THREE.MathUtils.degToRad(cfg.yawDegrees);
@@ -27,6 +36,11 @@ export class CameraController {
       Math.sin(pitch),
       Math.cos(yaw) * Math.cos(pitch),
     ).multiplyScalar(dist);
+    this.screenUp.set(
+      -Math.sin(yaw) * Math.sin(pitch),
+      Math.cos(pitch),
+      -Math.cos(yaw) * Math.sin(pitch),
+    );
     this.applyFrustum();
     this.snapToTarget();
   }
@@ -48,8 +62,14 @@ export class CameraController {
   }
 
   private updateCameraTransform(): void {
-    this.camera.position.copy(this.current).add(this.offset);
-    this.camera.lookAt(this.current);
+    // Shift the look centre up along screen-up so the followed player
+    // sits slightly below screen centre (anchorOffset of the visible
+    // height). The shift goes through the real camera transform, so
+    // raycasting / tap conversion stays consistent with what is drawn.
+    const shift = (this.cfg.anchorOffset ?? 0) * this.effectiveViewSize;
+    this.lookCenter.copy(this.current).addScaledVector(this.screenUp, shift);
+    this.camera.position.copy(this.lookCenter).add(this.offset);
+    this.camera.lookAt(this.lookCenter);
     this.camera.updateMatrixWorld();
   }
 
@@ -60,11 +80,16 @@ export class CameraController {
 
   /**
    * On portrait phones a landscape-tuned frustum would show a sliver of
-   * world, so the visible height grows to keep horizontal coverage sane.
+   * world, so the visible height grows to keep some horizontal coverage.
+   * The boost is deliberately gentle (max ~1.32x): the stronger boost
+   * used before shrank the player to ~6% of the frame height, which is
+   * what the exploration spec (2026-11-06) asks to fix — portrait keeps
+   * the character at roughly 8%+ of the frame height.
    */
   private applyFrustum(): void {
-    const boost = this.aspect >= 1 ? 1 : Math.min(Math.pow(1 / this.aspect, 0.62), 1.9);
-    const halfH = (this.viewSize * boost) / 2;
+    const boost = this.aspect >= 1 ? 1 : Math.min(Math.pow(1 / this.aspect, 0.35), 1.32);
+    this.effectiveViewSize = this.viewSize * boost;
+    const halfH = this.effectiveViewSize / 2;
     const halfW = halfH * this.aspect;
     const c = this.camera;
     c.left = -halfW;

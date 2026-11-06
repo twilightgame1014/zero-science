@@ -20,7 +20,10 @@ const TiltShiftGradeShader = {
   uniforms: {
     tDiffuse: { value: null as THREE.Texture | null },
     uFocus: { value: 0.52 },
-    uBlur: { value: 0.0075 },
+    // Softened from 0.0075 for the closer exploration camera
+    // (2026-11-06): resource nodes and paths must stay readable, so
+    // the tilt-shift blur now only kisses the frame edges.
+    uBlur: { value: 0.0052 },
     uWarmth: { value: 0.06 },
     uSaturation: { value: 1.13 },
     uVignette: { value: 0.32 },

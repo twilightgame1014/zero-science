@@ -19,10 +19,13 @@ export const DEFAULT_CONFIG: GraphicsConfig = {
     origin: { x: 0, y: 0, z: 0 },
   },
   camera: {
-    viewSize: 26,
-    pitchDegrees: 50,
+    // Exploration camera (2026-11-06 spec): low HD-2D angle and a much
+    // closer framing than the original map-like view (was 26 / 50°).
+    viewSize: 16,
+    pitchDegrees: 32,
     yawDegrees: 45,
     followDamping: 5.5,
+    anchorOffset: 0.09,
   },
   character: {
     width: 1.7,

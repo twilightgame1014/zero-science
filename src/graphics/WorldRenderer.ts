@@ -40,4 +40,9 @@ export class WorldRenderer {
     this.terrain.update(time);
     this.environment.update(time);
   }
+
+  /** Fade foreground canopies that block the camera->player sight line. */
+  updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+    this.environment.updateOcclusion(cameraPos, playerPos, dt);
+  }
 }

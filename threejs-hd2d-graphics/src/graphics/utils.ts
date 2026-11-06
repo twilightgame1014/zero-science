@@ -176,3 +176,18 @@ export function distanceToPath(x: number, z: number): number {
   }
   return best;
 }
+
+/** Distance from point P to segment A->B (3D). Used by the occlusion
+ *  fade to test whether something blocks the camera->player sight line. */
+export function segmentPointDistance(
+  ax: number, ay: number, az: number,
+  bx: number, by: number, bz: number,
+  px: number, py: number, pz: number,
+): number {
+  const abx = bx - ax, aby = by - ay, abz = bz - az;
+  const len2 = abx * abx + aby * aby + abz * abz;
+  let t = len2 > 0 ? ((px - ax) * abx + (py - ay) * aby + (pz - az) * abz) / len2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  const dx = px - (ax + abx * t), dy = py - (ay + aby * t), dz = pz - (az + abz * t);
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}

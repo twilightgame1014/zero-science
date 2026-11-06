@@ -124,6 +124,11 @@ export interface GraphicsConfig {
     yawDegrees: number;
     /** Higher = snappier follow. Frame-rate independent damping rate. */
     followDamping: number;
+    /** Fraction of the visible height by which the view centre is
+     *  shifted up along the camera's screen-up direction, so the player
+     *  sits slightly below screen centre (feet around 55–62% of the
+     *  frame height). 0 keeps the player dead centre. Default 0.09. */
+    anchorOffset?: number;
   };
   character: {
     width: number;

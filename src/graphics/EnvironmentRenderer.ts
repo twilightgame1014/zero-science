@@ -6,6 +6,7 @@ import {
   isInRiver,
   mulberry32,
   riverCenterX,
+  segmentPointDistance,
   smoothstep,
   terrainHeight,
 } from './utils';
@@ -45,6 +46,48 @@ function makeWindMaterial(
   return { material: base, uniforms, strength };
 }
 
+interface CanopySet {
+  centers: Float32Array;
+  radii: Float32Array;
+  fades: Float32Array;
+  attr: THREE.InstancedBufferAttribute;
+}
+
+/**
+ * Per-instance occlusion fade for instanced canopies. Chains onto the
+ * wind material's shader patch: an instanced `aFade` attribute drives a
+ * screen-door (dithered discard) fade, so the shared material is never
+ * mutated per instance, nothing becomes transparent-sorted, and depth
+ * writing stays on. Used to thin out trees that block the player at the
+ * low exploration camera angle.
+ */
+function addInstanceFade(wind: WindMaterial): void {
+  const prevCompile = wind.material.onBeforeCompile;
+  wind.material.onBeforeCompile = (shader, renderer) => {
+    prevCompile(shader, renderer);
+    shader.vertexShader =
+      'attribute float aFade;\nvarying float vFade;\n' +
+      shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\n  vFade = aFade;',
+      );
+    shader.fragmentShader =
+      'varying float vFade;\n' +
+      shader.fragmentShader.replace(
+        '#include <clipping_planes_fragment>',
+        `#include <clipping_planes_fragment>
+         if (vFade < 0.999) {
+           float fadeHash = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+           if (fadeHash > vFade) discard;
+         }`,
+      );
+  };
+  const prevKey = wind.material.customProgramCacheKey;
+  wind.material.customProgramCacheKey = () => `${prevKey.call(wind.material)}-fade`;
+}
+
+
+
 /**
  * Procedural nature: trees, shrubs, grass, ferns, flowers, rocks,
  * pebbles, fallen logs and drifting pollen. All placement is seeded
@@ -59,6 +102,7 @@ export class EnvironmentRenderer {
   private pollenBase: Float32Array | null = null;
   private fallsUniforms: { uTime: { value: number } } | null = null;
   private mist: THREE.Sprite | null = null;
+  private canopy: CanopySet[] = [];
   private rng: () => number;
 
   constructor(
@@ -103,6 +147,37 @@ export class EnvironmentRenderer {
         );
       }
       pos.needsUpdate = true;
+    }
+  }
+
+  /**
+   * Thin out canopy instances that sit between the camera and the
+   * player (segment test against each canopy sphere), easing back to
+   * fully opaque when the line of sight clears. Rendering only — tree
+   * placement and any passability rules are untouched.
+   */
+  updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+    const FADE_MIN = 0.13;
+    const k = Math.min(1, dt * 7);
+    for (const set of this.canopy) {
+      let dirty = false;
+      const n = set.radii.length;
+      for (let i = 0; i < n; i++) {
+        const r = set.radii[i];
+        if (r <= 0) continue;
+        const d = segmentPointDistance(
+          cameraPos.x, cameraPos.y, cameraPos.z,
+          playerPos.x, playerPos.y, playerPos.z,
+          set.centers[i * 3], set.centers[i * 3 + 1], set.centers[i * 3 + 2],
+        );
+        const goal = d < r + 0.45 ? FADE_MIN : 1;
+        const cur = set.fades[i];
+        if (cur === goal) continue;
+        const next = cur + (goal - cur) * k;
+        set.fades[i] = Math.abs(goal - next) < 0.01 ? goal : next;
+        dirty = true;
+      }
+      if (dirty) set.attr.needsUpdate = true;
     }
   }
 
@@ -175,7 +250,14 @@ export class EnvironmentRenderer {
       0.045,
     );
     this.windMaterials.push(blobWind);
+    addInstanceFade(blobWind);
     const blobs = new THREE.InstancedMesh(blobGeo, blobWind.material, spots.length * 3);
+    const blobCenters = new Float32Array(spots.length * 3 * 3);
+    const blobRadii = new Float32Array(spots.length * 3);
+    const blobFades = new Float32Array(spots.length * 3).fill(1);
+    const blobAttr = new THREE.InstancedBufferAttribute(blobFades, 1);
+    blobGeo.setAttribute('aFade', blobAttr);
+    this.canopy.push({ centers: blobCenters, radii: blobRadii, fades: blobFades, attr: blobAttr });
 
     const coneGeo = new THREE.ConeGeometry(1, 2.4, 8);
     coneGeo.translate(0, 1.2, 0);
@@ -185,7 +267,14 @@ export class EnvironmentRenderer {
       0.05,
     );
     this.windMaterials.push(coneWind);
+    addInstanceFade(coneWind);
     const pines = new THREE.InstancedMesh(coneGeo, coneWind.material, spots.length * 2);
+    const pineCenters = new Float32Array(spots.length * 2 * 3);
+    const pineRadii = new Float32Array(spots.length * 2);
+    const pineFades = new Float32Array(spots.length * 2).fill(1);
+    const pineAttr = new THREE.InstancedBufferAttribute(pineFades, 1);
+    coneGeo.setAttribute('aFade', pineAttr);
+    this.canopy.push({ centers: pineCenters, radii: pineRadii, fades: pineFades, attr: pineAttr });
 
     const cA = new THREE.Color(0x4e8f3e);
     const cB = new THREE.Color(0x77a944);
@@ -203,9 +292,14 @@ export class EnvironmentRenderer {
       tmp.copy(cA).lerp(this.rng() < 0.5 ? cB : cC, this.rng() * 0.8);
       if (pine) {
         for (let k = 0; k < 2; k++) {
-          this.setInstance(pines, pi, s.x, y + 1.3 * size + k * 1.05 * size, s.z,
+          const baseY = y + 1.3 * size + k * 1.05 * size;
+          this.setInstance(pines, pi, s.x, baseY, s.z,
             this.rng() * Math.PI, size * (1.25 - k * 0.34), size * 1.15, size * (1.25 - k * 0.34));
           pines.setColorAt(pi, tmp);
+          pineCenters[pi * 3] = s.x;
+          pineCenters[pi * 3 + 1] = baseY + 1.38 * size;
+          pineCenters[pi * 3 + 2] = s.z;
+          pineRadii[pi] = size * 1.45;
           pi++;
         }
       } else {
@@ -217,6 +311,10 @@ export class EnvironmentRenderer {
           this.setInstance(blobs, bi, s.x + ox, y + oy, s.z + oz,
             this.rng() * Math.PI, r, r * 0.82, r);
           blobs.setColorAt(bi, tmp);
+          blobCenters[bi * 3] = s.x + ox;
+          blobCenters[bi * 3 + 1] = y + oy;
+          blobCenters[bi * 3 + 2] = s.z + oz;
+          blobRadii[bi] = r;
           bi++;
         }
       }
@@ -493,11 +591,15 @@ export class EnvironmentRenderer {
       roughness: 0.85,
       flatShading: true,
     });
+    // Ring pulled closer and peaks raised for the low exploration
+    // camera (2026-11-06): at the old 138–172 distance the 70–165 fog
+    // washed the silhouettes out almost completely, leaving a blank
+    // horizon above the terrain rim.
     for (let i = 0; i < 13; i++) {
       const ang = (i / 13) * Math.PI * 2 + this.rng() * 0.25;
-      const dist = 138 + this.rng() * 34;
-      const hgt = 32 + this.rng() * 28;
-      const rad = 34 + this.rng() * 18;
+      const dist = 112 + this.rng() * 30;
+      const hgt = 40 + this.rng() * 30;
+      const rad = 38 + this.rng() * 20;
       const x = Math.cos(ang) * dist;
       const z = Math.sin(ang) * dist;
       const col = rockA.clone().lerp(rockB, this.rng());

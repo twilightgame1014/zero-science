@@ -352,6 +352,13 @@ export class GraphicsEngine {
       this.cameraRig.update(dt);
       this.lighting.updateShadowTarget(focus.x, focus.z);
 
+      // Occlusion fade: thin out trees / buildings that block the
+      // camera's view of the player at the low exploration angle.
+      const rp = this.character.getRenderedPosition();
+      OCCL_TARGET.set(rp.x, rp.y + 1.0, rp.z);
+      this.world.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
+      this.structures.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
+
       this.world.update(time);
       this.structures.update(time);
       this.resources.update(time);
@@ -367,6 +374,9 @@ export class GraphicsEngine {
     this.raf = 0;
   }
 }
+
+/** Scratch vector for the per-frame occlusion test (no allocation). */
+const OCCL_TARGET = new THREE.Vector3();
 
 /** Convenience factory matching the integration spec's naming. */
 export async function initializeGraphics(
