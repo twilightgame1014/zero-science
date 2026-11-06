@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { GraphicsConfig, QualityTier } from './types';
+import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
 import { AssetManager } from './AssetManager';
 import { TerrainRenderer } from './TerrainRenderer';
 import { EnvironmentRenderer } from './EnvironmentRenderer';
@@ -22,11 +22,12 @@ export class WorldRenderer {
       particle: THREE.Texture;
       gpt?: Record<string, THREE.Texture>;
       detailBrightness?: number;
+      decor?: DecorOptions;
     },
   ) {
     void assets;
     this.terrain = new TerrainRenderer(cfg, textures.terrainDetail, textures.detailBrightness ?? 1);
-    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {});
+    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, textures.decor ?? {});
     this.group.add(this.terrain.group);
     this.group.add(this.environment.group);
   }

@@ -109,3 +109,24 @@ Three.js製のHD-2Dグラフィックモジュールと、研究室背景アセ�
   の実画面で、スポーン空き地の草群落・落ち葉デカール・茂み・枝ノードを
   目視確認。単一ファイルは約3.1MBになる。
 - 未確認: 実機FPS、川岸の砂利デカールの近接確認（次回ラウンドで可）。
+
+### 追補4（2026-11-06）：未解決事項への対応（feature/graphics-claude-open-items）
+
+gpt-forest の上に積んだブランチ。詳細は INTEGRATION.md §16。
+- pauseGraphics/resumeGraphics を本流に取り込み（このブランチには両ツリー
+  とも入っているので、そのまま使える）。
+- GraphicsOptions.decor 実装（提案パッチと同形状）。ゲームが渡している
+  `decor:{trees:false,...}` がそのまま効く。
+- setNaturalObjects / updateNaturalObject を追加（除去セマンティクスは §16）。
+  種類別インスタンス化は未実施で、性能の本丸として残してある。
+- ノード（木・岩・鉱石・やぶ）に遮蔽フェード。highlighted は足元の輪に変更。
+- 新タイプ: water / oil / ore / grass / bush。rock の結晶は ore へ移設し、
+  景観岩の装飾結晶も廃止。natural.variant の basalt / flint に対応。
+- 新構造物: waterwheel / steam-engine / distillation-tower / drilling-rig /
+  bridge（橋の寸法と通行判断の分担は §16）。
+- assets/icons/ に指定名の WebP 96×96 を書き出し（menu のみ原画なし）。
+- 依頼5（水中の色）は水面修正で解決済みとして確認した。
+- バイオーム（依頼3）は配置設計が前提のため未対応。§16 に必要な入力を明記。
+- 検証: Claude の feature/game-walk-and-assets ＋本グラフィックでビルドし、
+  pauseGraphics / setNaturalObjects が成果物に含まれることと実画面を確認。
+  ゲート（typecheck / test 21/21 / build / e2e）全合格。

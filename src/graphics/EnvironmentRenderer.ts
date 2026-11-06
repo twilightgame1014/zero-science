@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import type { GraphicsConfig, QualityTier } from './types';
+import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
 import { AssetManager } from './AssetManager';
 import {
   distanceToPath,
@@ -126,6 +126,7 @@ export class EnvironmentRenderer {
     quality: QualityTier,
     particleTexture: THREE.Texture,
     gpt: Record<string, THREE.Texture> = {},
+    decor: DecorOptions = {},
   ) {
     this.cfg = cfg;
     this.gpt = gpt;
@@ -143,12 +144,16 @@ export class EnvironmentRenderer {
     this.patchTex = am.createGroundPatchTexture();
     this.patchAlpha = am.createPatchAlphaTexture();
 
-    this.buildTrees(scale);
+    // Families the game owns as natural objects can be switched off
+    // (GraphicsOptions.decor) so scenery never doubles as a fake
+    // harvest target. Fine detail (grass, ferns, litter, decals)
+    // always stays renderer-side.
+    if (decor.trees !== false) this.buildTrees(scale);
     this.buildGrass(scale);
-    this.buildGroundCover(scale);
-    this.buildRocks(scale);
-    this.buildRiverbank(scale);
-    this.buildFallenLogs();
+    this.buildGroundCover(scale, decor.shrubs !== false);
+    if (decor.rocks !== false) this.buildRocks(scale);
+    if (decor.pebbles !== false) this.buildRiverbank(scale);
+    if (decor.logs !== false) this.buildFallenLogs();
     this.buildPollen(particleTexture, scale);
     this.buildBackdropMountains();
     this.buildWaterfall(particleTexture);
@@ -685,14 +690,14 @@ export class EnvironmentRenderer {
   }
 
   /* ---------------- shrubs, ferns, leaf litter ---------------- */
-  private buildGroundCover(scale: number): void {
+  private buildGroundCover(scale: number, shrubsOn = true): void {
     // Shrubs (2026-11-06 overhaul): a jittered 3-blob cluster per
     // shrub (dark satellite = inner shade) plus alpha-cutout leaf
     // cards on the surface, instead of one smooth single-colour ball.
     const shrubGeo = new THREE.IcosahedronGeometry(0.55, 1);
     this.jitter(shrubGeo, 0.34);
     const shrubMat = new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.95 });
-    const sCount = Math.round(150 * scale);
+    const sCount = shrubsOn ? Math.round(150 * scale) : 0;
     const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, sCount * 3);
     const cards = new THREE.InstancedMesh(
       new THREE.PlaneGeometry(0.8, 0.66),
@@ -923,7 +928,6 @@ export class EnvironmentRenderer {
       distanceToPath(x, z) > 2.4 &&
       // density follows the rocky highland; sparse elsewhere
       this.rng() < 0.35 + smoothstep(10, 42, x - z * 0.35) * 0.85);
-    const rockTransforms: Array<{ x: number; y: number; z: number; s: number }> = [];
     spots.forEach((s) => {
       const highland = smoothstep(16, 44, s.x - s.z * 0.35);
       const sc = (0.25 + Math.pow(this.rng(), 1.8) * 1.1) * (1 + highland * 2.6);
@@ -952,7 +956,6 @@ export class EnvironmentRenderer {
           tint: new THREE.Color(0x403a33),
         });
       }
-      if (sc > 0.8) rockTransforms.push({ x: s.x, y: y + sc * 0.5, z: s.z, s: sc });
     });
     for (const target of [rocks, mossRocks]) {
       for (let i = target.n; i < count; i++) {
@@ -964,26 +967,10 @@ export class EnvironmentRenderer {
       this.group.add(target.mesh);
     }
 
-    // Exposed mineral crystals on a few large rocks (visual only).
-    const crystalGeo = new THREE.OctahedronGeometry(0.16);
-    const crystalMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff, roughness: 0.25, metalness: 0.1,
-      emissive: 0x222222,
-    });
-    const picks = rockTransforms.slice(0, 26);
-    const crystals = new THREE.InstancedMesh(crystalGeo, crystalMat, Math.max(picks.length * 2, 1));
-    const palette = [0xf3ead8, 0xd98e4a, 0x9fd8d2].map((c) => new THREE.Color(c));
-    let ci = 0;
-    for (const p of picks) {
-      for (let k = 0; k < 2; k++) {
-        this.setInstance(crystals, ci, p.x + (this.rng() - 0.5) * p.s, p.y, p.z + (this.rng() - 0.5) * p.s,
-          this.rng() * Math.PI, 1, 1.6, 1);
-        crystals.setColorAt(ci, palette[Math.floor(this.rng() * palette.length)]);
-        ci++;
-      }
-    }
-    if (crystals.instanceColor) crystals.instanceColor.needsUpdate = true;
-    this.group.add(crystals);
+    // NOTE (2026-11-06): scenery rocks used to carry decorative
+    // mineral crystals. Removed — crystals now belong exclusively to
+    // the game-owned 'ore' node type, so a crystal always means a
+    // harvestable deposit and plain rocks read as plain rocks.
   }
 
   /* ---------------- riverbank pebbles & wet stones ---------------- */

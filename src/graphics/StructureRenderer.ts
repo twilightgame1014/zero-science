@@ -27,6 +27,8 @@ export class StructureRenderer {
   private fadeState = new Map<string, StructureFade>();
   private groundHeightAt: (x: number, z: number) => number;
   private flames: THREE.Object3D[] = [];
+  /** Rotating parts (waterwheel, flywheel): objects named 'Wheel'. */
+  private wheels: THREE.Object3D[] = [];
   /** Procedural architectural textures so structures match the
    *  textured HD-2D look instead of flat colours. */
   private assets = new AssetManager();
@@ -88,6 +90,7 @@ export class StructureRenderer {
     obj.rotation.y = rotationY;
     obj.traverse((o) => {
       if (o.name === 'Flame') this.flames.push(o);
+      if (o.name === 'Wheel') this.wheels.push(o);
     });
     this.instances.set(id, obj);
     this.group.add(obj);
@@ -114,6 +117,7 @@ export class StructureRenderer {
     const obj = this.instances.get(id);
     if (!obj) return;
     this.flames = this.flames.filter((f) => !isDescendant(obj, f));
+    this.wheels = this.wheels.filter((w) => !isDescendant(obj, w));
     this.group.remove(obj);
     disposeObject(obj);
     this.instances.delete(id);
@@ -155,6 +159,9 @@ export class StructureRenderer {
       const s = 0.9 + Math.sin(time * 11 + flame.id) * 0.12 + Math.sin(time * 23 + flame.id * 2) * 0.06;
       flame.scale.set(s, 1.1 + Math.sin(time * 9 + flame.id) * 0.22, s);
     }
+    for (const wheel of this.wheels) {
+      wheel.rotation.z = time * 0.6 + wheel.id;
+    }
   }
 
   dispose(): void {
@@ -174,6 +181,11 @@ export class StructureRenderer {
     this.factories.set('factory', () => this.makeFactory(0xa8a29a, 2));
     this.factories.set('power-plant', () => this.makeFactory(0x8f979e, 3));
     this.factories.set('research-institute', () => this.makeLab(true));
+    this.factories.set('waterwheel', () => this.makeWaterwheel());
+    this.factories.set('steam-engine', () => this.makeSteamEngine());
+    this.factories.set('distillation-tower', () => this.makeDistillationTower());
+    this.factories.set('drilling-rig', () => this.makeDrillingRig());
+    this.factories.set('bridge', () => this.makeBridge());
   }
 
   private mats() {
@@ -201,6 +213,162 @@ export class StructureRenderer {
     m.castShadow = true;
     m.receiveShadow = true;
     return m;
+  }
+
+  /** Waterwheel （水車）: A-frame posts, an axle, and a slowly turning
+   *  wheel with paddles. About 2.1 tall, footprint roughly 1.4 x 1.3. */
+  private makeWaterwheel(): THREE.Group {
+    const g = new THREE.Group();
+    const m = this.mats();
+    for (const sz of [-0.52, 0.52]) {
+      g.add(this.box(m.woodDark, 0.14, 2.0, 0.14, 0, 1.0, sz));
+      g.add(this.box(m.woodDark, 1.2, 0.12, 0.14, 0, 0.06, sz)); // foot beam
+    }
+    const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.3, 8), m.woodDark);
+    axle.rotation.x = Math.PI / 2;
+    axle.position.set(0, 1.05, 0);
+    axle.castShadow = true;
+    g.add(axle);
+    const wheel = new THREE.Group();
+    wheel.name = 'Wheel';
+    wheel.position.set(0, 1.05, 0);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.07, 8, 22), m.wood);
+    rim.castShadow = true;
+    wheel.add(rim);
+    const inner = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.05, 8, 18), m.wood);
+    wheel.add(inner);
+    for (let k = 0; k < 4; k++) {
+      const spoke = this.box(m.wood, 0.08, 1.84, 0.06, 0, 0, 0);
+      spoke.rotation.z = (k * Math.PI) / 4;
+      wheel.add(spoke);
+    }
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      const paddle = this.box(m.wood, 0.36, 0.15, 0.52, Math.cos(a) * 0.95, Math.sin(a) * 0.95, 0);
+      paddle.rotation.z = a + Math.PI / 2;
+      wheel.add(paddle);
+    }
+    g.add(wheel);
+    return g;
+  }
+
+  /** Steam engine （蒸気機関）: brick base, horizontal boiler, chimney
+   *  and a turning flywheel. About 2.3 tall, footprint 2.2 x 1.2. */
+  private makeSteamEngine(): THREE.Group {
+    const g = new THREE.Group();
+    const m = this.mats();
+    g.add(this.box(m.clay, 2.2, 0.5, 1.1, 0, 0.25, 0));
+    const boiler = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.5, 14), m.metal);
+    boiler.rotation.z = Math.PI / 2;
+    boiler.position.set(-0.1, 0.95, 0);
+    boiler.castShadow = true;
+    g.add(boiler);
+    const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.95, 10), m.dark);
+    chimney.position.set(-0.6, 1.85, 0);
+    chimney.castShadow = true;
+    g.add(chimney);
+    g.add(this.box(m.metal, 0.5, 0.08, 0.08, 0.42, 1.1, 0.45)); // piston rod
+    const fly = new THREE.Group();
+    fly.name = 'Wheel';
+    fly.position.set(0.62, 0.95, 0.6);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.05, 8, 20), m.metal);
+    rim.castShadow = true;
+    fly.add(rim);
+    for (let k = 0; k < 3; k++) {
+      const spoke = this.box(m.metal, 0.05, 0.8, 0.05, 0, 0, 0);
+      spoke.rotation.z = (k * Math.PI) / 3;
+      fly.add(spoke);
+    }
+    g.add(fly);
+    g.add(this.box(m.woodDark, 0.16, 0.95, 0.16, 0.62, 0.47, 0.6)); // flywheel post
+    return g;
+  }
+
+  /** Distillation tower （精留塔）: a tall column with bulge rings, a
+   *  condenser pipe and a receiving flask. About 3.1 tall. */
+  private makeDistillationTower(): THREE.Group {
+    const g = new THREE.Group();
+    const m = this.mats();
+    g.add(this.box(m.stone, 1.1, 0.4, 1.1, 0, 0.2, 0));
+    const column = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, 2.4, 14), m.metal);
+    column.position.set(0, 1.6, 0);
+    column.castShadow = true;
+    g.add(column);
+    for (const ry of [1.0, 1.6, 2.2]) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.045, 8, 18), m.dark);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(0, ry, 0);
+      g.add(ring);
+    }
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.3, 14), m.metal);
+    cap.position.set(0, 2.95, 0);
+    g.add(cap);
+    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.75, 8), m.metal);
+    pipe.rotation.z = -0.6;
+    pipe.position.set(0.33, 2.72, 0);
+    g.add(pipe);
+    const condenser = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.1, 10), m.glass);
+    condenser.position.set(0.62, 2.15, 0);
+    g.add(condenser);
+    g.add(this.box(m.woodDark, 0.5, 0.06, 0.5, 0.62, 0.32, 0)); // flask stand
+    const flask = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.42, 10), m.glass);
+    flask.position.set(0.62, 0.56, 0);
+    g.add(flask);
+    return g;
+  }
+
+  /** Drilling derrick （掘削やぐら）: four leaning legs, cross braces,
+   *  a crown block and the drill pipe. About 3.4 tall. */
+  private makeDrillingRig(): THREE.Group {
+    const g = new THREE.Group();
+    const m = this.mats();
+    g.add(this.box(m.wood, 1.7, 0.12, 1.7, 0, 0.06, 0));
+    const lean = Math.atan2(0.7, 3.2);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      const leg = this.box(m.woodDark, 0.09, 3.35, 0.09, sx * 0.35, 1.62, sz * 0.35);
+      leg.rotation.z = -sx * lean;
+      leg.rotation.x = sz * lean;
+      g.add(leg);
+    }
+    for (const by of [1.1, 2.1]) {
+      const w = 1.55 - by * 0.22;
+      g.add(this.box(m.wood, w, 0.07, 0.07, 0, by, 0.78 - by * 0.11));
+      g.add(this.box(m.wood, w, 0.07, 0.07, 0, by, -(0.78 - by * 0.11)));
+    }
+    g.add(this.box(m.woodDark, 0.34, 0.26, 0.34, 0, 3.28, 0)); // crown block
+    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.9, 8), m.dark);
+    pipe.position.set(0, 1.55, 0);
+    g.add(pipe);
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.5, 10), m.metal);
+    drum.rotation.x = Math.PI / 2;
+    drum.position.set(0.55, 0.3, 0.55);
+    g.add(drum);
+    return g;
+  }
+
+  /** Bridge （橋）: arched plank deck with rails. Local +X is the
+   *  span direction (length 3.6), width 1.6; the deck top is about
+   *  0.5 above the origin at the ends and 0.65 at the centre. Whether
+   *  the deck is walkable is the game logic's call — the renderer
+   *  only reports the shape (see INTEGRATION.md §16). */
+  private makeBridge(): THREE.Group {
+    const g = new THREE.Group();
+    const m = this.mats();
+    for (let i = 0; i < 7; i++) {
+      const x = -1.5 + i * 0.5;
+      const y = 0.44 + (1 - (x / 1.8) ** 2) * 0.16;
+      g.add(this.box(m.wood, 0.46, 0.09, 1.6, x, y, 0));
+    }
+    for (const sz of [-0.72, 0.72]) {
+      for (const px of [-1.5, -0.5, 0.5, 1.5]) {
+        g.add(this.box(m.woodDark, 0.09, 0.55, 0.09, px, 0.78, sz));
+      }
+      g.add(this.box(m.wood, 3.6, 0.08, 0.08, 0, 1.06, sz)); // handrail
+    }
+    for (const px of [-1.2, 1.2]) for (const sz of [-0.6, 0.6]) {
+      g.add(this.box(m.woodDark, 0.14, 0.5, 0.14, px, 0.2, sz)); // piles
+    }
+    return g;
   }
 
   private makeMarker(): THREE.Group {
