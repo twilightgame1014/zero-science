@@ -93,6 +93,68 @@ export class AssetManager {
     return tex;
   }
 
+  /* ------------- natural canvas textures (original, procedural) ------------- */
+
+  /** Bark: warm brown with vertical fissures. Carries its own colour —
+   *  use with a white material colour. */
+  createBarkTexture(): THREE.CanvasTexture {
+    return this.canvasTexture(128, (ctx, s) => {
+      const rnd = this.rand(131);
+      ctx.fillStyle = '#77522f';
+      ctx.fillRect(0, 0, s, s);
+      for (let i = 0; i < 46; i++) {
+        const x = rnd() * s;
+        const w = 1.5 + rnd() * 3.5;
+        ctx.fillStyle = rnd() < 0.6 ? 'rgba(52,34,16,0.55)' : 'rgba(146,110,66,0.5)';
+        ctx.fillRect(x, 0, w, s);
+        ctx.fillStyle = 'rgba(52,34,16,0.35)';
+        ctx.fillRect(x + w, rnd() * s * 0.4, 1, s * (0.3 + rnd() * 0.5));
+      }
+      this.speckle(ctx, s, rnd, ['#5d3f22', '#96754a', '#86643c'], 500, 0.25);
+    });
+  }
+
+  /** Foliage: light leafy speckle meant to be multiplied by instance
+   *  colours, so canopies stop reading as flat green plastic. */
+  createFoliageTexture(): THREE.CanvasTexture {
+    return this.canvasTexture(128, (ctx, s) => {
+      const rnd = this.rand(137);
+      ctx.fillStyle = '#b7c9a2';
+      ctx.fillRect(0, 0, s, s);
+      this.speckle(ctx, s, rnd, ['#7fa35c', '#cfe0b4', '#5d8446', '#93b874'], 1500, 0.5);
+      for (let i = 0; i < 26; i++) {
+        ctx.fillStyle = 'rgba(70,104,50,0.35)';
+        ctx.fillRect(rnd() * s, rnd() * s, 3 + rnd() * 5, 2 + rnd() * 3);
+      }
+    });
+  }
+
+  /** Rock surface: near-neutral grey with cracks and grit, multiplied
+   *  by instance colours. */
+  createRockCrackTexture(): THREE.CanvasTexture {
+    return this.canvasTexture(128, (ctx, s) => {
+      const rnd = this.rand(139);
+      ctx.fillStyle = '#d8d8d8';
+      ctx.fillRect(0, 0, s, s);
+      this.speckle(ctx, s, rnd, ['#b9b9b9', '#e8e8e8', '#a8a8a8'], 800, 0.3);
+      ctx.strokeStyle = 'rgba(38,38,44,0.6)';
+      for (let i = 0; i < 7; i++) {
+        ctx.lineWidth = 0.8 + rnd() * 1.2;
+        ctx.beginPath();
+        let x = rnd() * s;
+        let y = rnd() * s;
+        ctx.moveTo(x, y);
+        const segs = 3 + Math.floor(rnd() * 4);
+        for (let k = 0; k < segs; k++) {
+          x += (rnd() - 0.5) * 34;
+          y += (rnd() - 0.5) * 34;
+          ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+    });
+  }
+
   /* ------------- architectural canvas textures (original, procedural) ------------- */
 
   private canvasTexture(size: number, draw: (ctx: CanvasRenderingContext2D, s: number) => void): THREE.CanvasTexture {

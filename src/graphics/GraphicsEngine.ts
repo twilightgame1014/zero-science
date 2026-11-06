@@ -19,7 +19,8 @@ import { CameraController } from './CameraController';
 import { WorldRenderer } from './WorldRenderer';
 import { CharacterRenderer } from './CharacterRenderer';
 import { StructureRenderer } from './StructureRenderer';
-import { ResourceRenderer } from './ResourceRenderer';
+import { ResourceRenderer, RESOURCE_VISUAL_SPECS } from './ResourceRenderer';
+import type { ResourceVisualSpec } from './ResourceRenderer';
 import { EffectsManager } from './EffectsManager';
 import { PostEffects } from './PostEffects';
 import { toScenePosition } from './utils';
@@ -338,6 +339,16 @@ export class GraphicsEngine {
     const hit = this.world.pick(this.pickRaycaster);
     if (!hit) return null;
     return { x: hit.point.x, y: hit.point.y, z: hit.point.z, surface: hit.surface };
+  }
+
+  /**
+   * Public API (2026-11-06): construction data of the resource node
+   * visuals (footprint/trunk radii, height, depleted form) at scale 1,
+   * for the game logic's collision and placement decisions. The same
+   * table is exported from the module index as RESOURCE_VISUAL_SPECS.
+   */
+  getResourceVisualSpecs(): Record<string, ResourceVisualSpec> {
+    return RESOURCE_VISUAL_SPECS;
   }
 
   /**
