@@ -803,8 +803,8 @@ var DATA = (function(){
 
   /* ---------- チュートリアル／目標 ---------- */
   const missions = [
-    {t:"森林で「木の枝」を拾おう",how:"「探検」→ 地図の「森林」→ 光っている木の枝をタップ。",tab:"explore",done:s=>s.disc.twig},
-    {t:"河原で「火打ち石」と「丸い石」を拾おう",how:"「探検」の地図から「河原」へ移動しよう。",tab:"explore",done:s=>s.disc.flint&&s.disc.cobble},
+    {t:"森林で「木の枝」を拾おう",how:"探索フィールドで「森林」へ歩いて行き、光っている「木の枝」の名札をタップ。",tab:"explore",done:s=>s.disc.twig},
+    {t:"河原で「火打ち石」と「丸い石」を拾おう",how:"探索フィールドの下にある地域ボタンで「河原」へ移動しよう。",tab:"explore",done:s=>s.disc.flint&&s.disc.cobble},
     {t:"「石のナイフ」を作ろう",how:"「工作」で石のナイフの「作る」をタップ。",tab:"craft",done:s=>s.disc.knife},
     {t:"つるで糸を作り、「作業台」を組み立てよう",how:"森林でつるを集めて「植物の糸」を作り、「作業台」へ。",tab:"craft",done:s=>s.disc.bench},
     {t:"「火おこし棒」で「たき火」を作ろう",how:"草原の草と、森林の落ち葉もいる。",tab:"craft",done:s=>s.disc.campfire},

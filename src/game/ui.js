@@ -4,7 +4,7 @@ const IT=D.items, OPS=D.ops;
 const SAVE_KEY="zero-kagaku-save";
 const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let S = load();
-const U = {tab:"lab", tray:{}, fac:null, op:null, busy:false, filter:"すべて", target:null, last:null,
+const U = {tab:"explore", opener:null, dockTab:null, missionOpen:false, tray:{}, fac:null, op:null, busy:false, filter:"すべて", target:null, last:null,
            region:"forest", nodes:{}, combo:0, lastGather:0, walking:false};
 const $ = s=>document.querySelector(s);
 const nm = id=>IT[id]?IT[id].name:id;
@@ -40,27 +40,56 @@ function afterChange(news){
 }
 
 /* ---------- 共通 ---------- */
+/* 探索フィールドがホーム。ほかの画面は下部タブから「パネル」として上に重ねて開く。
+   U.tab==="explore" はパネルが閉じている状態を表す。フィールドのDOMと3D描画は保ったまま。 */
+const TABS = {explore:"🗺️ 探索", lab:"🧪 研究室", craft:"🔨 工作", book:"📖 図鑑", map:"🕸️ 技術マップ", log:"📓 記録"};
+const WIDE = matchMedia("(min-width:900px)");
 function renderChrome(){
   const st = stage();
-  $("#stageChip").innerHTML = `🏛️ <b>${D.stages[st].era}</b>`;
+  $("#stageChip").innerHTML = `🏛️ <b>${D.stages[st].era}</b><span class="wideonly">・${D.stages[st].name}</span>`;
   $("#discChip").innerHTML = `📖 <b>${Object.keys(S.disc).filter(k=>IT[k]).length}</b>/${Object.keys(IT).length}`;
   document.querySelectorAll("#nav button").forEach(b=>b.setAttribute("aria-current", b.dataset.tab===U.tab?"page":"false"));
   const i = E.missionIndex(S), m = D.missions[i];
-  $("#mission").innerHTML = `<div class="mission"><div class="owl" aria-hidden="true">🦉</div><div style="flex:1;min-width:0">
-    <div class="lab">ホウ博士の次の目標（${i+1}/${D.missions.length}）</div>
-    <div class="t">${m.t}</div><div class="how">${m.how}</div>
-    ${U.tab!==m.tab?`<div class="go"><button class="btn small sub" data-act="tab" data-tab="${m.tab}">そこへ行く</button></div>`:""}
-  </div></div>`;
+  $("#mission").innerHTML = `<details class="mission" id="missionBox" ${U.missionOpen?"open":""}><summary><span class="owl" aria-hidden="true">🦉</span>
+    <span class="mtx"><span class="lab">目標 ${i+1}/${D.missions.length}</span><span class="t">${m.t}</span></span><span class="more" aria-hidden="true"></span></summary>
+    <div class="how">${m.how}</div><div class="how">🏛️ 次の文明の進化：${D.stages[st].need}</div></details>
+    ${U.tab!==m.tab?`<button class="btn small sub go" data-act="tab" data-tab="${m.tab}">${m.tab==="explore"?"探索に戻る":TABS[m.tab]+"を開く"}</button>`:""}`;
+  layout();
 }
-function setTab(t){ if(U.tab==="explore" && t!=="explore") pause3D(); U.tab=t; renderChrome(); render(); window.scrollTo({top:0,behavior:RM?"auto":"smooth"}); }
-function render(){
-  const v = $("#view");
-  if(U.tab==="lab") renderLab(v);
-  else if(U.tab==="explore") renderExplore(v);
-  else if(U.tab==="craft") v.innerHTML = viewCraft();
-  else if(U.tab==="book") v.innerHTML = viewBook();
-  else if(U.tab==="map") v.innerHTML = viewMap();
-  else if(U.tab==="log") v.innerHTML = viewLog();
+document.addEventListener("toggle", e=>{ if(e.target.id==="missionBox"){ U.missionOpen=e.target.open; layout(); } }, true);
+/* 上部と下部タブの実際の高さを CSS 変数へ（フィールドの高さの計算に使う） */
+function layout(){
+  const r=document.documentElement.style, t=$(".top"), n=$("#nav");
+  if(t) r.setProperty("--toph", t.offsetHeight+"px");
+  if(n) r.setProperty("--navh", n.offsetHeight+"px");
+}
+addEventListener("resize", layout);
+function setTab(t, opener){
+  if(!TABS[t]) t="explore";
+  const was = U.tab;
+  if(t===was){ if(t!=="explore") renderPanel(); return; }
+  U.tab = t;
+  if(was==="explore") U.opener = opener || document.activeElement;
+  renderChrome(); renderPanel(); updateFieldActivity();
+  if(t!=="explore" && was==="explore"){ const h=$("#dockTitle"); if(h) h.focus({preventScroll:true}); }
+  if(t==="explore"){ const o=U.opener; U.opener=null;
+    const back = o && o.isConnected && !o.closest("[inert],[hidden]") && o.offsetParent!==null ? o : $('#nav [data-tab="explore"]');
+    if(back) back.focus({preventScroll:true}); }
+}
+function render(){ renderField(); renderPanel(); }
+function renderField(){ renderExplore($("#view")); }
+function renderPanel(){
+  const dock=$("#dock"), body=$("#dockBody"), open = U.tab!=="explore";
+  dock.hidden = !open; $("#scrim").hidden = !open;
+  document.body.classList.toggle("docked", open);
+  if(!open) return;
+  if(U.dockTab!==U.tab){ body.innerHTML=""; body.scrollTop=0; U.dockTab=U.tab; sceneSig=""; }
+  $("#dockTitle").textContent = TABS[U.tab];
+  if(U.tab==="lab") renderLab(body);
+  else if(U.tab==="craft") body.innerHTML = viewCraft();
+  else if(U.tab==="book") body.innerHTML = viewBook();
+  else if(U.tab==="map") body.innerHTML = viewMap();
+  else if(U.tab==="log") body.innerHTML = viewLog();
 }
 
 /* ===================== 研究室の背景と設備の絵 ===================== */
@@ -159,6 +188,7 @@ function vesselSVG(shape){
     ${extra}${shape==="jar"?`<ellipse cx="0" cy="-50" rx="22" ry="5" style="fill:var(--wood)"/>`: shape==="pot"?`<ellipse cx="0" cy="-42" rx="30" ry="4" fill="rgba(0,0,0,.18)"/>`:""}`;
 }
 function drawScene(){
+  if(!$("#stagebox")) return;
   const st = stage();
   const hideOld = st>=5?["campfire","rack","charkiln","filter","fermenter","kiln","mill"]:st>=4?["rack","charkiln","campfire"]:[];
   const facs = LAB_FAC.filter(f=>owned(f)&&!hideOld.includes(f));
@@ -174,7 +204,7 @@ function drawScene(){
   <defs><radialGradient id="glowG"><stop offset="0" stop-color="#ffcf5a" stop-opacity=".95"/><stop offset=".6" stop-color="#ff8a2a" stop-opacity=".35"/><stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/></radialGradient>
     <radialGradient id="spotG" cx=".5" cy=".6" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".7" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
   ${shape?`<ellipse cx="200" cy="${baseY-40}" rx="78" ry="62" fill="url(#spotG)"/><ellipse cx="200" cy="${baseY+2}" rx="54" ry="7" fill="rgba(0,0,0,.35)"/>`:""}
-  ${!facs.length&&!owned("bench")?`<rect x="70" y="96" width="260" height="30" rx="10" fill="rgba(255,255,255,.85)"/><text x="200" y="116" text-anchor="middle" font-size="13" font-weight="700" fill="#22305a">まだ何もない。探検と工作から始めよう！</text>`:""}
+  ${!facs.length&&!owned("bench")?`<rect x="70" y="96" width="260" height="30" rx="10" fill="rgba(255,255,255,.85)"/><text x="200" y="116" text-anchor="middle" font-size="13" font-weight="700" fill="#22305a">まだ何もない。探索と工作から始めよう！</text>`:""}
   <g id="vessel" transform="translate(200,${baseY})">
     <g class="fx x-glow"><circle cx="0" cy="-26" r="54" fill="url(#glowG)"/></g>
     <g class="fx x-flame" transform="translate(0,8)"><path d="M-16 0 Q-26 -14 -16 -28 Q-12 -14 -6 -16 Q-4 -6 -16 0Z" fill="#ff8a2a"/><path d="M0 0 Q-12 -18 0 -36 Q12 -18 0 0Z" fill="#ffb347"/><path d="M16 0 Q26 -14 16 -28 Q12 -14 6 -16 Q4 -6 16 0Z" fill="#ff8a2a"/></g>
@@ -203,7 +233,7 @@ function blend(cs){ const v=cs.map(c=>{c=(c||"#cccccc").replace("#","");return [
   return "#"+[0,1,2].map(j=>Math.round(v.reduce((a,x)=>a+x[j],0)/v.length).toString(16).padStart(2,"0")).join(""); }
 
 function drawLabCtl(){
-  const box = $("#labctl");
+  const box = $("#labctl"); if(!box) return;
   const facs = Object.keys(IT).filter(id=>IT[id].facility && IT[id].ops.length && owned(id));
   if(U.fac && !owned(U.fac)) U.fac=null;
   if(!U.fac) U.op=null;
@@ -217,7 +247,7 @@ function drawLabCtl(){
   <div class="panel">
     <h3><span class="n">1</span>材料を選ぶ <small style="font-weight:700;color:var(--muted)">（タップで1つずつ入る）</small></h3>
     <div class="tray">${trayIds.length? trayIds.map(id=>`<button class="mat intray" data-act="sub" data-id="${id}" aria-label="${nm(id)}を減らす"><span class="i">${ic(id)}</span>${nm(id)} <span class="q">×${U.tray[id]}</span></button>`).join("") : `<span class="ph">ここに材料が入るよ</span>`}</div>
-    <div class="shelf">${mats.length? mats.map(id=>{ const left=S.inv[id]-(U.tray[id]||0); return `<button class="mat" data-act="add" data-id="${id}" ${left<=0||U.busy?"disabled":""}><span class="i">${ic(id)}</span>${nm(id)} <span class="q">${left}</span></button>`; }).join("") : `<span class="desc">材料がない。「探検」で集めよう。</span>`}</div>
+    <div class="shelf">${mats.length? mats.map(id=>{ const left=S.inv[id]-(U.tray[id]||0); return `<button class="mat" data-act="add" data-id="${id}" ${left<=0||U.busy?"disabled":""}><span class="i">${ic(id)}</span>${nm(id)} <span class="q">${left}</span></button>`; }).join("") : `<span class="desc">材料がない。探索フィールドで集めよう。</span>`}</div>
   </div>
   <div class="panel mt">
     <h3><span class="n">2</span>装置を選ぶ</h3>
@@ -239,7 +269,7 @@ function runLab(){
   const tray = U.tray, fac = U.fac, op = U.op;
   U.last = `<div class="note"><h4>🔬 観察中…</h4><p style="margin:0">よく見ていてね。</p></div>`;
   drawLabCtl();
-  const sb=$("#stagebox"); if(sb && innerWidth<900){ const r=sb.getBoundingClientRect(); if(r.top<60 || r.bottom>innerHeight) window.scrollTo({top:Math.max(0,r.top+scrollY-64),behavior:RM?"auto":"smooth"}); }
+  const sb=$("#stagebox"); if(sb) sb.scrollIntoView({block:"nearest",behavior:RM?"auto":"smooth"});
   animate(plan.proc, ()=>{
     const res = E.runExperiment(S, tray, fac, op, token);
     U.busy=false;
@@ -371,8 +401,7 @@ function renderExplore2D(v){
   const sig = st+"|"+D.regions.map(x=>E.regionOpen(S,x)?1:0).join("")+"|"+owned("rig")+owned("waterwheel")+owned("steamengine")+(S.disc.solarcell?1:0);
   if(!v.querySelector(".field") || v.querySelector(".w3") || sig!==fieldSig){
     fieldSig = sig;
-    v.innerHTML = `<div class="sec">🗺️ フィールド <small>${D.stages[st].era}・${D.stages[st].name}（次の進化：${D.stages[st].need}）</small></div>
-    ${W3.state==="failed"?`<div class="note bad" style="margin:0 0 8px"><h4>3D表示が使えないため、2Dの地図で表示しています</h4><p style="margin:0;font-size:.85rem">${W3.err}</p></div>`:`<div class="row" style="margin-bottom:8px"><button class="btn small sub" data-act="view3d">🌄 3Dフィールドで遊ぶ</button></div>`}
+    v.innerHTML = `${W3.state==="failed"?`<div class="note bad" style="margin:0 0 8px"><h4>3D表示が使えないため、2Dの地図で表示しています</h4><p style="margin:0;font-size:.85rem">${W3.err}</p></div>`:`<div class="row" style="margin-bottom:8px"><button class="btn small sub" data-act="view3d">🌄 3Dフィールドで遊ぶ</button></div>`}
     <div class="field" id="field">${fieldSVG(st)}
       ${D.regions.map(x=>{ const open=E.regionOpen(S,x); return `<button class="pin ${open?"":"lock"} ${x.id===U.region?"here":""}" style="left:${x.x}%;top:${x.y}%" data-act="go" data-id="${x.id}" aria-label="${x.name}${open?"":"（未開放）"}"><span class="pi">${open?x.icon:"🔒"}</span><span class="pn">${x.name}</span></button>`; }).join("")}
       <div class="avatar hero" id="avatar" style="left:${r.x}%;top:${r.y}%;background-image:url(${heroUrl()})" aria-hidden="true"></div>
@@ -381,7 +410,7 @@ function renderExplore2D(v){
   }
   drawRegion();
 }
-function in3D(){ return U.tab==="explore" && S.flags.view!=="2d" && W3.state!=="failed"; }
+function in3D(){ return S.flags.view!=="2d" && W3.state!=="failed"; }
 function drawRegion(){
   const r = D.regions.find(x=>x.id===U.region); const st=stage(); const box=$("#regionBox"); if(!box) return;
   const lv = E.exploreLv(S,r.id), nx = E.nextLv(S,r.id), slots=E.autoSlots(S), base=E.LV[lv]||0;
@@ -449,7 +478,7 @@ function travel(rid){
   const av=$("#avatar"); if(av){ av.style.left=r.x+"%"; av.style.top=r.y+"%"; av.classList.add("walk"); }
   setTimeout(()=>{ U.walking=false; av&&av.classList.remove("walk"); drawRegion(); const rb=$("#regionBox"); if(rb&&innerWidth<900) rb.scrollIntoView({block:"start",behavior:RM?"auto":"smooth"}); }, RM?50:(owned("steamengine")?350:700));
 }
-setInterval(()=>{ if(U.tab!=="explore") return; const r=D.regions.find(x=>x.id===U.region); if(!r) return;
+setInterval(()=>{ if(!$("#rscene")) return; const r=D.regions.find(x=>x.id===U.region); if(!r) return;
   r.res.forEach(x=>{ const n=U.nodes[nodeKey(r.id,x.id)]; if(n && n.left<=0){ const el=$("#n-"+x.id); if(Date.now()>=n.until){ n.left=nodeCap(r.id); n.until=0; if(el) el.outerHTML=nodeHTML(r,x); } else if(el){ el.style.setProperty("--p", Math.max(0,100-(n.until-Date.now())/regrowMs(r.id)*100)); } } });
 }, 400);
 
@@ -510,7 +539,7 @@ function syncStructures(){
 }
 function syncAll3D(){ if(!NODES) buildNodes(); NODES.forEach(n=>syncNode(n,true)); syncStructures(); }
 
-(function(){ const m=document.getElementById("gfxmod"); if(m) m.addEventListener("error", ()=>{ W3.modErr=true; if(W3.state==="loading" && !window.HD2D){ W3.state="failed"; W3.err="3D描画モジュール（Three.js）を読み込めませんでした。通信環境かブラウザの制限が原因かもしれません。"; if(U.tab==="explore") render(); } }); })();
+(function(){ const m=document.getElementById("gfxmod"); if(m) m.addEventListener("error", ()=>{ W3.modErr=true; if(W3.state==="loading" && !window.HD2D){ W3.state="failed"; W3.err="3D描画モジュール（Three.js）を読み込めませんでした。通信環境かブラウザの制限が原因かもしれません。"; renderField(); } }); })();
 function ensure3D(){
   if(W3.state!=="idle") return;
   W3.state="loading";
@@ -518,7 +547,7 @@ function ensure3D(){
   if(window.HD2D) go();
   else if(W3.modErr){ W3.state="failed"; W3.err="3D描画モジュール（Three.js）を読み込めませんでした。通信環境かブラウザの制限が原因かもしれません。"; }
   else { window.addEventListener("hd2d-ready", go, {once:true});
-    setTimeout(()=>{ if(W3.state==="loading" && !window.HD2D){ W3.state="failed"; W3.err="3D描画モジュール（Three.js）を読み込めませんでした。通信環境かブラウザの制限が原因かもしれません。"; if(U.tab==="explore") render(); } }, 15000); }
+    setTimeout(()=>{ if(W3.state==="loading" && !window.HD2D){ W3.state="failed"; W3.err="3D描画モジュール（Three.js）を読み込めませんでした。通信環境かブラウザの制限が原因かもしれません。"; renderField(); } }, 15000); }
 }
 async function start3D(){
   try{
@@ -535,14 +564,28 @@ async function start3D(){
     syncAll3D();
     W3.state = "ready";
     W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false});
-    if(U.tab==="explore") render(); else pause3D();
-  }catch(e){ console.error(e); W3.state="failed"; W3.err="3D表示を開始できませんでした："+((e&&e.message)||e); if(U.tab==="explore") render(); }
+    renderField(); updateFieldActivity();
+  }catch(e){ console.error(e); W3.state="failed"; W3.err="3D表示を開始できませんでした："+((e&&e.message)||e); renderField(); }
+}
+function applySavedPos(){
+  if(!W3.pos) return;
+  W3.pos = (S.pos && isFinite(S.pos.x) && isFinite(S.pos.z)) ? {x:S.pos.x, z:S.pos.z} : {x:D.base.x, z:D.base.z};
+  W3.target=null; W3.autoGather=null;
+  if(W3.gfx) W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false});
+  if(W3.gfx) syncAll3D();
 }
 function pause3D(){ if(W3.raf) cancelAnimationFrame(W3.raf); W3.raf=0; W3.joy=null; W3.keys={};
   try{ if(W3.gfx && typeof W3.gfx.stopLoop==="function") W3.gfx.stopLoop(); }catch(e){} }
 function resume3D(){ if(W3.state!=="ready") return;
   try{ if(typeof W3.gfx.startLoop==="function") W3.gfx.startLoop(); }catch(e){}
   if(!W3.raf){ W3.lastTs=0; W3.raf=requestAnimationFrame(loop3D); } }
+
+function fieldShown(){ return U.tab==="explore" || WIDE.matches; }
+function updateFieldActivity(){
+  if(W3.state!=="ready" || S.flags.view==="2d") return;
+  if(fieldShown() && !document.hidden) resume3D(); else pause3D();
+}
+WIDE.addEventListener("change", ()=>{ updateFieldActivity(); layout(); });
 
 /* ---------- カメラ基準の向き・画面座標 ---------- */
 function camBasis(){
@@ -688,26 +731,34 @@ document.addEventListener("keydown", e=>{ if(U.tab!=="explore" || W3.state!=="re
 document.addEventListener("keyup", e=>{ const k=e.key.length===1?e.key.toLowerCase():e.key; delete W3.keys[k]; });
 window.addEventListener("blur", ()=>{ W3.keys={}; W3.joy=null; });
 
-/* ---------- 探検タブ（3D版） ---------- */
+/* ---------- 探索ホーム（3D版） ---------- */
+function travelChips(){ return D.regions.map(r=>{ const open=E.regionOpen(S,r); return `<button class="chip tchip ${open?"":"lockc"}" data-act="travel" data-id="${r.id}">${open?r.icon:"🔒"} ${r.name}</button>`; }).join(""); }
 function renderExplore3D(v){
-  const st=stage(), loading=W3.state!=="ready";
-  v.innerHTML = `<div class="sec">🗺️ フィールド <small>${D.stages[st].era}・${D.stages[st].name}（次の進化：${D.stages[st].need}）</small></div>
-  <div class="w3" id="w3"><div class="w3slot" id="w3slot"></div>
-    <div class="w3labels" id="w3labels"></div>
-    <div class="w3area" id="w3area"></div>
-    <div class="w3tools"><button class="w3btn" data-act="home" aria-label="拠点へ戻る">🏠</button><button class="w3btn" data-act="hero" aria-label="主人公を変える">👤</button><button class="w3btn" data-act="view2d" aria-label="2Dの地図に切り替える">🗺️</button></div>
-    <div class="combo" id="combo"></div><div class="banner" id="banner"></div>
-    <div class="joy" id="joy" aria-label="移動スティック"><div class="knob"></div></div>
-    <button class="w3act" id="w3act" data-act="g3" hidden></button>
-    ${loading?`<div class="w3loading"><div>🌄 3Dフィールドを準備中…</div><small>初回は少し時間がかかります</small></div>`:""}
-  </div>
-  <p class="desc">地面をタップするとそこへ歩く。資源の名札をタップすると、歩いて行って採取する。スティック・矢印キー・WASDでも動ける（Eキーかスペースで採取）。</p>
-  <div class="travel">${D.regions.map(r=>{ const open=E.regionOpen(S,r); return `<button class="chip tchip ${open?"":"lockc"}" data-act="travel" data-id="${r.id}">${open?r.icon:"🔒"} ${r.name}</button>`; }).join("")}</div>
-  <div id="regionBox"></div>`;
-  W3.labelEls={};
-  if(W3.host) $("#w3slot").appendChild(W3.host);
-  bind3DInput();
-  if(W3.state==="ready"){ syncAll3D(); W3.region=undefined; resume3D(); updateArea3D(); updateAction3D(); }
+  let built = false;
+  if(!v.querySelector(".w3")){
+    built = true;
+    v.innerHTML = `<div class="w3" id="w3"><div class="w3slot" id="w3slot"></div>
+      <div class="w3labels" id="w3labels"></div>
+      <div class="w3area" id="w3area"></div>
+      <div class="w3tools"><button class="w3btn" data-act="home" aria-label="拠点へ戻る">🏠</button><button class="w3btn" data-act="hero" aria-label="主人公を変える">👤</button><button class="w3btn" data-act="view2d" aria-label="2Dの地図に切り替える">🗺️</button></div>
+      <div class="combo" id="combo"></div><div class="banner" id="banner"></div>
+      <div class="joy" id="joy" aria-label="移動スティック"><div class="knob"></div></div>
+      <button class="w3act" id="w3act" data-act="g3" hidden></button>
+      <div class="w3loading"><div>🌄 3Dフィールドを準備中…</div><small>初回は少し時間がかかります</small></div>
+    </div>
+    <div class="travel" id="travel"></div>
+    <p class="desc">地面をタップするとそこへ歩く。資源の名札をタップすると、歩いて行って採取する。スティック・矢印キー・WASDでも動ける（Eキーかスペースで採取）。</p>
+    <div id="regionBox"></div>`;
+    W3.labelEls = {}; W3.synced = false;
+    if(W3.host) $("#w3slot").appendChild(W3.host);
+    bind3DInput();
+  }
+  $("#travel").innerHTML = travelChips();
+  if(W3.state==="ready"){
+    const ld=v.querySelector(".w3loading"); if(ld) ld.remove();
+    if(built || !W3.synced){ syncAll3D(); W3.region=undefined; W3.synced=true; } else syncStructures();
+    updateArea3D(); updateAction3D(); updateFieldActivity();
+  }
   drawRegion();
 }
 
@@ -853,17 +904,20 @@ function viewLog(){
 /* ===================== イベント ===================== */
 document.addEventListener("click", ev=>{
   const b = ev.target.closest("[data-act],[data-tab]"); if(!b){ if(ev.target.id==="modal") closeModal(); return; }
+  if(b.disabled) return;
   const a = b.dataset.act, id = b.dataset.id;
-  if(!a && b.dataset.tab){ setTab(b.dataset.tab); return; }
+  if(!a && b.dataset.tab){ setTab(b.dataset.tab, b); return; }
   switch(a){
-    case "tab": setTab(b.dataset.tab); break;
+    case "tab": setTab(b.dataset.tab, b); break;
+    case "closepanel": setTab("explore"); break;
     case "add": if(U.busy) break; if((U.tray[id]||0) < E.cnt(S,id)){ U.tray[id]=(U.tray[id]||0)+1; U.last=null; } drawLabCtl(); drawScene(); break;
     case "sub": if(U.busy) break; U.tray[id]--; if(U.tray[id]<=0) delete U.tray[id]; drawLabCtl(); drawScene(); break;
     case "fac": if(U.busy) break; U.fac = U.fac===id?null:id; U.op=null; drawLabCtl(); drawScene(); break;
     case "op": if(U.busy) break; U.op = U.op===id?null:id; drawLabCtl(); drawScene(); break;
     case "run": runLab(); break;
     case "hint": { const h=E.suggest(S); U.last=`<div class="note"><h4>🦉 ホウ博士のヒント</h4><p style="margin:0">${h.text}</p></div>`; drawLabCtl(); break; }
-    case "again": { if(U.busy) break; const p=D.procs.find(x=>x.id===b.dataset.proc); U.tab="lab"; U.tray=Object.assign({},p.inp); U.fac=b.dataset.fac; U.op=p.op; renderChrome(); render(); runLab(); break; }
+    case "again": { if(U.busy) break; const p=D.procs.find(x=>x.id===b.dataset.proc); U.tray=Object.assign({},p.inp); U.fac=b.dataset.fac; U.op=p.op; U.last=null;
+      if(U.tab!=="lab") setTab("lab", b); else renderPanel(); runLab(); break; }
     case "go": travel(id); break;
     case "g3": if(W3.near) gather3D(W3.near); break;
     case "w3go": { const n=NODES&&NODES.find(x=>x.key===b.dataset.n); if(n){ if(W3.near===n) gather3D(n); else goTo3D(n.pos.x,n.pos.z,n); } break; }
@@ -871,34 +925,34 @@ document.addEventListener("click", ev=>{
     case "home": if(W3.state==="ready") goTo3D(D.base.x,D.base.z,null); break;
     case "hero": { S.flags.hero = S.flags.hero==="girl"?"boy":"girl"; save(); if(W3.gfx) W3.gfx.setPlayerSpriteSheet(heroUrl()); banner(S.flags.hero==="girl"?"👧 女の子に交代！":"👦 男の子に交代！"); break; }
     case "pickhero": S.flags.hero=id; save(); if(W3.gfx) W3.gfx.setPlayerSpriteSheet(heroUrl()); document.querySelectorAll(".heropick").forEach(x=>x.setAttribute("aria-pressed",x.dataset.id===id)); break;
-    case "view2d": S.flags.view="2d"; pause3D(); save(); fieldSig=""; render(); break;
-    case "view3d": S.flags.view="3d"; save(); fieldSig=""; render(); break;
+    case "view2d": S.flags.view="2d"; pause3D(); save(); fieldSig=""; renderField(); break;
+    case "view3d": S.flags.view="3d"; save(); fieldSig=""; renderField(); break;
     case "gather": doGather(b.dataset.r, id); break;
     case "auto": { const i=S.auto.findIndex(x=>x.r===b.dataset.r&&x.id===id); if(i>=0) S.auto.splice(i,1); else if(S.auto.length<E.autoSlots(S)) S.auto.push({r:b.dataset.r,id}); save(); drawRegion(); break; }
     case "craft": { const r=E.runCraft(S,id,S.seq); if(r.ok){ afterChange(r.news); render(); } break; }
-    case "filter": U.filter=id; render(); break;
+    case "filter": U.filter=id; renderPanel(); break;
     case "item": openItem(id); break;
     case "close": closeModal(); break;
-    case "target": closeModal(); U.target=id; setTab("map"); break;
+    case "target": closeModal(); U.target=id; if(U.tab!=="map") setTab("map", b); else renderPanel(); break;
     case "copy": { const t=$("#exportBox"); t.select(); try{ navigator.clipboard.writeText(t.value); $("#saveMsg").textContent="コピーしたよ"; }catch(e){ $("#saveMsg").textContent="文字を選んでコピーしてね"; } break; }
-    case "import": { try{ const n=E.deserialize($("#importBox").value.trim()); S=n; lastMission=E.missionIndex(S); lastStage=stage(); U.tray={}; U.fac=null; U.op=null; U.nodes={}; fieldSig=""; save(); renderChrome(); render(); $("#saveMsg").textContent="読み込んだよ"; }catch(e){ $("#saveMsg").textContent="読み込めなかった：形式が違うみたい"; } break; }
-    case "reset": if(confirm("本当に最初からやり直す？（発見の記録も消えます）")){ S=E.newState(); lastMission=0; lastStage=0; U.tray={}; U.fac=null; U.op=null; U.last=null; U.nodes={}; U.region="forest"; fieldSig=""; save(); renderChrome(); render(); intro(); } break;
+    case "import": { try{ const n=E.deserialize($("#importBox").value.trim()); S=n; lastMission=E.missionIndex(S); lastStage=stage(); U.tray={}; U.fac=null; U.op=null; U.nodes={}; fieldSig=""; applySavedPos(); save(); renderChrome(); render(); $("#saveMsg").textContent="読み込んだよ"; }catch(e){ $("#saveMsg").textContent="読み込めなかった：形式が違うみたい"; } break; }
+    case "reset": if(confirm("本当に最初からやり直す？（発見の記録も消えます）")){ S=E.newState(); lastMission=0; lastStage=0; U.tray={}; U.fac=null; U.op=null; U.last=null; U.nodes={}; U.region="forest"; fieldSig=""; applySavedPos(); save(); setTab("explore"); renderChrome(); render(); intro(); } break;
   }
 });
-document.addEventListener("change", ev=>{ if(ev.target.dataset.act==="pick"){ U.target=ev.target.value; render(); } });
+document.addEventListener("change", ev=>{ if(ev.target.dataset.act==="pick"){ U.target=ev.target.value; renderPanel(); } });
 document.addEventListener("keydown", ev=>{ if(ev.key==="Escape") closeModal(); });
 function closeModal(){ $("#modal").classList.remove("open"); }
 
 /* 自動採取 */
-setInterval(()=>{ if(document.hidden || !S.auto.length) return; const got=E.autoTick(S); if(got.length){ afterChange(got.flatMap(g=>g.news)); if(U.tab==="lab" && !U.busy) drawLabCtl(); } }, 10000);
+setInterval(()=>{ if(document.hidden || !S.auto.length) return; const got=E.autoTick(S); if(got.length){ afterChange(got.flatMap(g=>g.news)); if(U.tab==="lab" && !U.busy) drawLabCtl(); if(U.tab==="explore") drawRegion(); } }, 10000);
 
 /* はじめに */
 function intro(){
   if(S.flags.intro) return;
   $("#sheet").innerHTML = `<div class="hd"><span class="bigi">🦉</span><div><h2>ようこそ！ 私はホウ博士</h2><div class="yomi">ゼロからの科学へ</div></div></div>
   <div class="kidbox">ここには道具も研究所も何もない。あるのは石と水と木だけ。<br>でも科学の力があれば、ガラスも金属も、電気もプラスチックも作れるんだ。一緒に文明を作り直そう！</div>
-  <ul><li>🗺️ <b>探検</b>：地図の上を移動して、自然の材料を採取する</li><li>🔨 <b>工作</b>：道具や設備を組み立てる</li><li>🧪 <b>研究室</b>：材料・装置・操作を選んで実験する</li><li>📖 <b>図鑑</b>：見つけたものの説明が全部読める</li><li>🏙️ 発見が進むと、フィールドが原始時代から現代の都市へ進化していく</li></ul>
-  <h5>主人公を選んでね（あとで🗺️探検の👤ボタンでも変えられる）</h5>
+  <ul><li>🗺️ <b>探索</b>：ここがホーム。フィールドを歩いて、自然の材料を採取する</li><li>下のボタンで開く：🧪 <b>研究室</b>（材料・装置・操作を選んで実験）、🔨 <b>工作</b>（道具や設備を組み立てる）、📖 <b>図鑑</b>（見つけたものの説明）など</li><li>🏙️ 発見が進むと、フィールドが原始時代から現代の都市へ進化していく</li></ul>
+  <h5>主人公を選んでね（あとで探索画面の👤ボタンでも変えられる）</h5>
   <div class="row">${["boy","girl"].map(h=>`<button class="heropick" data-act="pickhero" data-id="${h}" aria-pressed="${(S.flags.hero||"boy")===h}"><span class="hero big" style="background-image:url(${ASSETS[h]})"></span>${h==="boy"?"男の子":"女の子"}</button>`).join("")}</div>
   <p class="desc">このゲームの化学は本物の化学がもとになっています。でも火や薬品を使う実験は危ないので、現実では大人と一緒に安全な場所でやろうね。</p>
   <div class="row mt"><button class="btn big" data-act="close" id="introGo">始める！</button></div>`;
