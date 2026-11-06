@@ -386,6 +386,25 @@ export class GraphicsEngine {
     this.cameraRig.setViewportInsets(insets.top ?? 0, insets.bottom ?? 0);
   }
 
+  /**
+   * Public pause API for the game side (e.g. while another tab is shown).
+   * Stops the render loop only; all scene state is kept, and no game
+   * state is touched. Safe to call repeatedly.
+   */
+  pauseGraphics(): void {
+    this.stopLoop();
+  }
+
+  /**
+   * Resume after pauseGraphics(). The loop clock restarts cleanly, so
+   * the first frame after resuming does not jump. Safe to call while
+   * already running, and a no-op after disposeGraphics().
+   */
+  resumeGraphics(): void {
+    if (this.disposed) return;
+    this.startLoop();
+  }
+
   disposeGraphics(): void {
     if (this.disposed) return;
     this.disposed = true;

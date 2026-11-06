@@ -34,6 +34,7 @@ Three.js製のHD-2Dグラフィックモジュールと、研究室背景アセ�
 
 - 毎フレーム（または状態変化時）に `setPlayerVisualState` でプレイヤーの座標・向き・移動状態を渡してください。座標の正本はあなたの側です。
 - 資源は `updateResourceVisual`、建築物は `addStructureVisual` / `removeStructureVisual`、演出は `playVisualEffect` を使ってください。存在・残量・設置可否の判定はすべてあなたの側で行い、モジュールには結果だけを渡してください。
+- 描画ループの一時停止・再開には正式API `pauseGraphics()` / `resumeGraphics()` を使ってください（2026-11-06追加）。内部メソッド `stopLoop` / `startLoop` の直接呼び出しは不要になりました。停止・再開は描画だけに効き、状態は保持されます。
 - 主人公は2名分（男の子／女の子）のスプライトシートが同梱されています（透過処理済みの最終版）。どちらが有効かはあなたの側の状態で管理し、初期化時の `playerSpriteUrl` または実行中の `setPlayerSpriteSheet(url)` で表示を切り替えてください。女の子シートは2版あります：既定は `player-spritesheet-girl.png`（元絵の接地影あり）、影なし版は `player-spritesheet-girl-no-shadow.png` です。エンジン側は `shadow-blob.png` で足元影を別途描くため、影なし版を使うと影が二重になりません。
 
 
