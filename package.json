@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node tests/engine.test.mjs && node tests/nature.test.mjs && node tests/sim.mjs",
+    "test": "node tests/engine.test.mjs && node tests/nature.test.mjs && node tests/verify.test.mjs && node tests/sim.mjs",
     "e2e": "npm run build && node tests/e2e/play.mjs",
     "typecheck": "tsc --noEmit",
     "serve": "npx --yes http-server dist -p 8080 -c-1"

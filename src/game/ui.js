@@ -2,6 +2,14 @@
 (function(D,E){
 const IT=D.items, OPS=D.ops;
 const SAVE_KEY="zero-kagaku-save";
+/* 検証モード（全解放）：通常のセーブ（SAVE_KEY）とは別のキーに保存し、通常のセーブには書き込まない。
+   どちらで始めるか：URL の ?verify=1 / ?verify=0 → 最後に選んだモード（MODE_KEY）→ ビルドの既定（dist/verify.html は検証モード） */
+const VERIFY_KEY="zero-kagaku-verify", MODE_KEY="zero-kagaku-mode";
+let VERIFY = (()=>{ try{ const q=new URLSearchParams(location.search).get("verify");
+    if(q==="1"||q==="0"){ localStorage.setItem(MODE_KEY, q==="1"?"verify":"normal"); return q==="1"; }
+    const m=localStorage.getItem(MODE_KEY); if(m) return m==="verify"; }catch(e){} return !!window.VERIFY_DEFAULT; })();
+const curKey = ()=> VERIFY ? VERIFY_KEY : SAVE_KEY;
+let SWITCHING = false;   // モードを切り替えている間は保存しない（古い状態で上書きしないため）
 const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let S = load();
 const U = {tab:"explore", opener:null, dockTab:null, missionOpen:false, tray:{}, fac:null, op:null, busy:false, filter:"すべて", target:null, last:null,
@@ -24,16 +32,26 @@ const isMat = id=>IT[id] && !IT[id].tags.includes("道具") && !IT[id].tags.incl
 const owned = id=>E.has(S,id);
 const stage = ()=>E.stageOf(S);
 /* 地図・2D表示の文明の痕跡は、段階（stage）ではなく、プレイヤーが作った設備（owned）から決める。3D の STRUCT_PLAN と同じ対応 */
-const CIV = ()=>({fire:owned("campfire"), bench:owned("bench"), kiln:owned("kiln"), hut:owned("storehouse"), smelt:owned("furnace")||owned("blastfurnace"),
+const placedSet = ()=> new Set((S.verify && S.verify.placed) || []);
+const CIV = ()=> S.verify ? (p=>({fire:p.has("st-fire"), bench:p.has("st-bench"), kiln:p.has("st-kiln"), hut:p.has("st-hut1"), smelt:p.has("st-smelter"),
+  mill:p.has("st-smelter"), rail:p.has("st-steam"), power:p.has("st-power"), factory:p.has("st-factory"), inst:p.has("st-inst"),
+  wheel:p.has("st-wheel"), rig:p.has("st-rig"), lights:p.has("st-power")}))(placedSet()) : ({fire:owned("campfire"), bench:owned("bench"), kiln:owned("kiln"), hut:owned("storehouse"), smelt:owned("furnace")||owned("blastfurnace"),
   mill:owned("blastfurnace"), rail:owned("steamengine"), power:owned("generator"), factory:owned("eaf"), inst:owned("reactor"),
   wheel:owned("waterwheel"), rig:owned("rig"), lights:!!S.disc.bulb && owned("generator")});
 const civSig = ()=>Object.values(CIV()).map(v=>v?1:0).join("");
 
 /* ---------- 保存 ---------- */
-function load(){ try{ const t = localStorage.getItem(SAVE_KEY); if(t) return E.deserialize(t); }catch(e){} return E.newState(); }
+function readKey(k){ try{ const t = localStorage.getItem(k); if(t) return E.deserialize(t); }catch(e){} return null; }
+function load(){
+  const s = readKey(curKey());
+  if(VERIFY) return s && s.verify ? s : E.makeVerifyState();
+  if(s && s.verify) delete s.verify;      // 念のため：通常のセーブに検証の設定を持ち込まない
+  return s || E.newState();
+}
 let saveTimer=null;
-function save(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ try{ localStorage.setItem(SAVE_KEY,E.serialize(S)); }catch(e){} },250); }
-document.addEventListener("visibilitychange",()=>{ if(document.hidden){ try{ localStorage.setItem(SAVE_KEY,E.serialize(S)); }catch(e){} } });
+function writeNow(){ if(SWITCHING) return; try{ localStorage.setItem(curKey(),E.serialize(S)); }catch(e){} }
+function save(){ clearTimeout(saveTimer); saveTimer=setTimeout(writeNow,250); }
+document.addEventListener("visibilitychange",()=>{ if(document.hidden){ clearTimeout(saveTimer); writeNow(); } });
 
 /* ---------- 通知 ---------- */
 function toast(id, kind){
@@ -59,11 +77,11 @@ function afterChange(news){
 /* 探索フィールドがホーム。ほかの画面は下部タブから「パネル」として上に重ねて開く。
    U.tab==="explore" はパネルが閉じている状態を表す。フィールドのDOMと3D描画は保ったまま。 */
 const TABS = {explore:"🗺️ 探索", lab:"🧪 研究室", craft:"🔨 工作", book:"📖 図鑑", map:"🕸️ 技術マップ", log:"📓 記録",
-  world:"🗺️ 地図・地域", menu:"☰ メニュー", settings:"⚙️ 設定・ヘルプ"};
+  world:"🗺️ 地図・地域", menu:"☰ メニュー", settings:"⚙️ 設定・ヘルプ", verify:"🧪 検証モード"};
 /* パネルの大きさ。PC：右側のパネル（side）か大きなオーバーレイ（wide）。スマホ：下からのシート（sheet）か全高近く（tall） */
 const PC_SIZE = {book:"wide", map:"wide", lab:"wide"};   /* 研究室は材料・操作と実験台を並べる */
-const TOUCH_SIZE = {lab:"tall", craft:"tall", book:"tall", map:"tall", log:"tall"};
-const MENU_TABS = ["menu","book","map","log","settings"];   /* スマホでは「メニュー」の中にある画面 */
+const TOUCH_SIZE = {lab:"tall", craft:"tall", book:"tall", map:"tall", log:"tall", verify:"tall"};
+const MENU_TABS = ["menu","book","map","log","settings","verify"];   /* スマホでは「メニュー」の中にある画面 */
 /* 画面幅だけでなく入力方法（タッチかマウスか）も見て、PC用とスマホ用の配置を切り替える */
 const MQ_COARSE = matchMedia("(pointer:coarse)");
 const uiMode = ()=>{ const a=$("#app"); return a ? a.dataset.ui : "pc"; };
@@ -85,6 +103,7 @@ function iconHTML(name, small){ const box = window.ASSETS && (small ? ASSETS.ico
 function applyIcons(){ document.querySelectorAll("[data-icon]").forEach(el=>{ const sp=el.querySelector(".ico"); if(sp) sp.outerHTML = iconHTML(el.dataset.icon, el.classList.contains("hbtn")); }); }
 function renderChrome(){
   const i = E.missionIndex(S), m = D.missions[i], touch = uiMode()==="touch";
+  const vb=$("#vbadge"); if(vb) vb.hidden = !VERIFY;
   updateLoc();
   document.querySelectorAll("#nav [data-tab],.hud-tr [data-tab]").forEach(b=>{
     const t=b.dataset.tab, on = t===U.tab || (t==="menu" && touch && MENU_TABS.includes(U.tab));
@@ -164,6 +183,7 @@ function renderPanel(){
   else if(U.tab==="book") body.innerHTML = viewBook();
   else if(U.tab==="map") body.innerHTML = viewMap();
   else if(U.tab==="log") body.innerHTML = viewLog();
+  else if(U.tab==="verify") body.innerHTML = viewVerify();
   else if(U.tab==="world"){ body.innerHTML = viewWorld(); drawRegion(); }
   else if(U.tab==="menu") body.innerHTML = viewMenu();
   else if(U.tab==="settings") body.innerHTML = viewSettings();
@@ -174,7 +194,7 @@ function stageSummary(){
     <p class="desc" style="margin-top:0">次の文明の進化：${D.stages[st].need}</p>`;
 }
 function viewMenu(){
-  return stageSummary()+`<div class="bigmenu">${[["book","book","図鑑","見つけたものの説明"],["map","tech","技術","技術と物質のつながり"],["log","log","記録","実験の記録・セーブ"],["settings","settings","設定","主人公・表示・遊び方"]]
+  return stageSummary()+`<div class="bigmenu">${[["book","book","図鑑","見つけたものの説明"],["map","tech","技術","技術と物質のつながり"],["log","log","記録","実験の記録・セーブ"],...(VERIFY?[["verify","settings","検証モード","全解放・素材・移動・アセット"]]:[]),["settings","settings","設定","主人公・表示・遊び方"]]
     .map(([t,i,n,d])=>`<button class="bigitem" data-tab="${t}">${iconHTML(i)}<span>${n}<small>${d}</small></span></button>`).join("")}</div>`;
 }
 function viewSettings(){
@@ -192,6 +212,10 @@ function viewSettings(){
     `<li>左下のスティックで歩く。地面をタップすると、そこへ歩く</li><li>資源の名札をタップすると、歩いて行って採取する</li><li>近くに資源があると、右下のボタンが「採る」に変わる</li><li>地域の移動は右上の「地図」、研究と工作は下のボタンから</li>`:
     `<li><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> か矢印キーで歩く。地面をクリックすると、そこへ歩く</li><li>資源に近づいて <span class="kbd">E</span> かスペースで採取。名札をクリックすると歩いて行って採取する</li><li><span class="kbd">Esc</span> で開いているメニューを閉じる</li><li>地域の移動は右上の「地図」、研究・工作・図鑑などは下のメニューから</li>`}</ul>
   <div class="row mt"><button class="btn small sub" data-act="introagain">🦉 はじめの説明をもう一度見る</button></div>
+  <div class="sec">🧪 検証モード（全解放）</div>
+  ${VERIFY ? `<p class="desc" style="margin-top:0">いまは検証モードです（通常のセーブとは別のデータ）。</p><div class="row"><button class="btn small" data-tab="verify">検証メニューを開く</button><button class="btn small sub" data-act="v-exit">通常のセーブに戻る</button></div>`
+    : `<p class="desc" style="margin-top:0">動作の確認用に、すべての物質・道具・設備・地域・アセットを使える別のデータで遊べます。通常のセーブは書き換えません。</p>
+       <div class="row"><button class="btn small sub" data-act="v-enter" data-id="keep">検証モードを始める</button><button class="btn small sub" data-act="v-enter" data-id="copy">今のセーブを写して始める</button></div>`}
   <p class="desc">セーブは自動でこのブラウザに保存されます。別の端末へ移すときは「記録」から。</p>`;
 }
 function travelChips(){
@@ -414,7 +438,7 @@ function drawLabCtl(){
   <div class="panel">
     <h3><span class="n">1</span>材料を選ぶ <small style="font-weight:700;color:var(--muted)">（タップで1つずつ入る）</small></h3>
     <div class="tray">${trayIds.length? trayIds.map(id=>`<button class="mat intray" data-act="sub" data-id="${id}" aria-label="${nm(id)}を減らす"><span class="i">${ic(id)}</span>${nm(id)} <span class="q">×${U.tray[id]}</span></button>`).join("") : `<span class="ph">ここに材料が入るよ</span>`}</div>
-    <div class="shelf">${mats.length? mats.map(id=>{ const left=S.inv[id]-(U.tray[id]||0); return `<button class="mat" data-act="add" data-id="${id}" ${left<=0||U.busy?"disabled":""}><span class="i">${ic(id)}</span>${nm(id)} <span class="q">${left}</span></button>`; }).join("") : `<span class="desc">材料がない。探索フィールドで集めよう。</span>`}</div>
+    <div class="shelf">${mats.length? mats.map(id=>{ const left=S.inv[id]-(U.tray[id]||0); return `<button class="mat" data-act="add" data-id="${id}" ${(left<=0&&!E.vflag(S,"free"))||U.busy?"disabled":""}><span class="i">${ic(id)}</span>${nm(id)} <span class="q">${left}</span></button>`; }).join("") : `<span class="desc">材料がない。探索フィールドで集めよう。</span>`}</div>
   </div>
   <div class="panel mt">
     <h3><span class="n">2</span>装置を選ぶ</h3>
@@ -462,8 +486,9 @@ function animate(p, done){
     else if(p.temp>=60){ temp.classList.add("on"); temp.textContent = p.temp>=800?"🔥 ものすごく熱い！":p.temp>=300?"🔥 とても熱い！":"♨️ 熱い"; }
     else if(p.op==="electrolyze"){ temp.classList.add("on"); temp.textContent="⚡ 電気を流している"; }
   }
-  setTimeout(()=>{ const outs=Object.keys(p.out).filter(k=>IT[k].store!==false); if(cnt&&outs.length) cnt.setAttribute("fill", IT[outs[0]].color); }, RM?100:1100);
-  setTimeout(()=>{ fx.forEach(f=>sc.classList.remove("f-"+f)); temp&&temp.classList.remove("on"); done&&done(); }, RM?300:1900);
+  const quick = RM || E.vflag(S,"instant");
+  setTimeout(()=>{ const outs=Object.keys(p.out).filter(k=>IT[k].store!==false); if(cnt&&outs.length) cnt.setAttribute("fill", IT[outs[0]].color); }, quick?100:1100);
+  setTimeout(()=>{ fx.forEach(f=>sc.classList.remove("f-"+f)); temp&&temp.classList.remove("on"); done&&done(); }, quick?300:1900);
 }
 function resultNote(res){
   const p=res.proc, isNew = res.news.length>0, showP = owned("balance"), outs = Object.keys(res.produce);
@@ -742,10 +767,16 @@ const STRUCT_PLAN = [
 ];
 function syncStructures(){
   if(!W3.gfx) return;
-  STRUCT_PLAN.forEach(p=>{ const want=p.when(), has=W3.structs.has(p.id);
+  /* 検証モードでは「全部持っている」ので、設備の所持ではなく、検証メニューで置いた物だけを建てる（原野を保つ） */
+  const placed = S.verify ? placedSet() : null;
+  STRUCT_PLAN.forEach(p=>{ const want= placed ? placed.has(p.id) : p.when(), has=W3.structs.has(p.id);
     if(want && !has){ const rot= p.rot!=null ? p.rot : Math.atan2(D.base.x-p.at.x, D.base.z-p.at.z); W3.gfx.addStructureVisual(p.id, p.type, p.at, rot); W3.structs.add(p.id);
       if(W3.state==="ready") W3.gfx.playVisualEffect("levelup", p.at); }
     else if(!want && has){ W3.gfx.removeStructureVisual(p.id); W3.structs.delete(p.id); } });
+  /* 検証メニューで足もとに置いた建物（STRUCT_PLAN にない種類も試せる） */
+  const extra = (S.verify && S.verify.extra) || [], ids = new Set(extra.map(x=>x.id));
+  extra.forEach(x=>{ if(!W3.structs.has(x.id)){ W3.gfx.addStructureVisual(x.id, x.type, {x:x.x, z:x.z}, x.rot||0); W3.structs.add(x.id); } });
+  [...W3.structs].forEach(id=>{ if(id.startsWith("vx:") && !ids.has(id)){ W3.gfx.removeStructureVisual(id); W3.structs.delete(id); } });
 }
 function syncAll3D(){ if(!NODES) buildNodes(); NODES.forEach(n=>syncNode(n,true)); syncNature(true); syncStructures(); }
 
@@ -789,6 +820,7 @@ async function start3D(){
     W3.pos = spawnPos();
     syncAll3D();
     W3.state = "ready";
+    { const g=gfxStatus(); if(g.ok===false) console.warn("木の枝葉カードのテクスチャを "+g.branch+"/"+g.want+" しか読み込めなかった（描画モジュールが旧来の球体の樹冠に戻っている可能性）"); }
     W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false});
     renderField(); updateFieldActivity();
   }catch(e){ console.error(e); W3.state="failed"; W3.err="3D表示を開始できませんでした："+((e&&e.message)||e); renderField(); }
@@ -880,7 +912,7 @@ function tInfo(t){
   return {ok:inf.ok, kind:inf.kind, reason:inf.kind==="empty"?"取り尽くした（少し待つと戻る）":inf.reason, name:k?nm(n.res.id):"何か", icon:k?ic(n.res.id):"❔", verb:"採る",
     yields:{[n.res.id]:inf.n||n.res.n}, left:inf.left, until:inf.until};
 }
-const tWork = t => t.o ? NATURE.KINDS[t.o.kind].work : 450;
+const tWork = t => E.vflag(S,"instant") ? 80 : t.o ? NATURE.KINDS[t.o.kind].work : 450;
 const yieldText = (y, plain) => Object.keys(y).map(id=>(plain?"":S.disc[id]?ic(id):"❔")+nm(id)+"×"+y[id]).join("・");   // plain：読み上げ用（記号なし）
 
 /* ---------- 毎フレームの更新（移動・地域判定・近くの資源） ---------- */
@@ -1309,7 +1341,7 @@ document.addEventListener("click", ev=>{
   switch(a){
     case "tab": setTab(b.dataset.tab, b); break;
     case "closepanel": setTab("explore"); break;
-    case "add": if(U.busy) break; if((U.tray[id]||0) < E.cnt(S,id)){ U.tray[id]=(U.tray[id]||0)+1; U.last=null; } drawLabCtl(); drawScene(); break;
+    case "add": if(U.busy) break; if((U.tray[id]||0) < E.cnt(S,id) || (E.vflag(S,"free") && (U.tray[id]||0) < 99)){ U.tray[id]=(U.tray[id]||0)+1; U.last=null; } drawLabCtl(); drawScene(); break;
     case "sub": if(U.busy) break; U.tray[id]--; if(U.tray[id]<=0) delete U.tray[id]; drawLabCtl(); drawScene(); break;
     case "fac": if(U.busy) break; U.fac = U.fac===id?null:id; U.op=null; drawLabCtl(); drawScene(); break;
     case "op": if(U.busy) break; U.op = U.op===id?null:id; drawLabCtl(); drawScene(); break;
@@ -1338,8 +1370,8 @@ document.addEventListener("click", ev=>{
     case "close": closeModal(); break;
     case "target": closeModal(); U.target=id; if(U.tab!=="map") setTab("map", b); else renderPanel(); break;
     case "copy": { const t=$("#exportBox"); t.select(); try{ navigator.clipboard.writeText(t.value); $("#saveMsg").textContent="コピーしたよ"; }catch(e){ $("#saveMsg").textContent="文字を選んでコピーしてね"; } break; }
-    case "import": { try{ const n=E.deserialize($("#importBox").value.trim()); S=n; lastMission=E.missionIndex(S); lastStage=stage(); U.tray={}; U.fac=null; U.op=null; fieldSig=""; applySavedPos(); save(); renderChrome(); render(); $("#saveMsg").textContent="読み込んだよ"; }catch(e){ $("#saveMsg").textContent="読み込めなかった：形式が違うみたい"; } break; }
-    case "reset": if(confirm("本当に最初からやり直す？（発見の記録も消えます）")){ S=E.newState(); lastMission=0; lastStage=0; U.tray={}; U.fac=null; U.op=null; U.last=null; U.region="forest"; fieldSig=""; applySavedPos(); save(); setTab("explore"); renderChrome(); render(); intro(); } break;
+    case "import": { try{ const n=E.deserialize($("#importBox").value.trim()); S=VERIFY?E.makeVerifyState(n):n; lastMission=E.missionIndex(S); lastStage=stage(); U.tray={}; U.fac=null; U.op=null; fieldSig=""; applySavedPos(); save(); renderChrome(); render(); $("#saveMsg").textContent="読み込んだよ"; }catch(e){ $("#saveMsg").textContent="読み込めなかった：形式が違うみたい"; } break; }
+    case "reset": if(confirm(VERIFY?"検証データを全解放の状態に作り直す？（通常のセーブはそのまま）":"本当に最初からやり直す？（発見の記録も消えます）")){ S=VERIFY?E.makeVerifyState():E.newState(); lastMission=0; lastStage=0; U.tray={}; U.fac=null; U.op=null; U.last=null; U.region="forest"; fieldSig=""; applySavedPos(); save(); setTab("explore"); renderChrome(); render(); intro(); } break;
   }
 });
 document.addEventListener("change", ev=>{ if(ev.target.dataset.act==="pick"){ U.target=ev.target.value; renderPanel(); } });
@@ -1383,5 +1415,164 @@ function intro(){
   openModal($("#introGo")); S.flags.intro=1; save();
 }
 document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); applyIcons(); bindHudInput(); renderChrome(); render(); layout(); intro();
-window.__GAME__ = {get S(){return S;}, E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
+/* ===================== 検証モード（全解放） =====================
+   通常のセーブとは別の状態（S.verify を持つ）で、登録されているものを全部試せるようにする。
+   一覧と件数は、いまのコードの登録内容（data.js・描画モジュールの登録・埋め込んだアセット）から毎回作る。 */
+function switchState(next){
+  haltField(); clearTimeout(saveTimer); clearPreview();
+  S = next; lastMission=E.missionIndex(S); lastStage=stage(); U.tray={}; U.fac=null; U.op=null; U.last=null; U.target=null; fieldSig=""; sceneSig="";
+  if(W3.gfx){ (W3.natShown||new Set()).forEach(id=>W3.gfx.updateResourceVisual(id,null)); W3.natShown=new Set(); W3.visSig={};
+    [...W3.structs].forEach(id=>W3.gfx.removeStructureVisual(id)); W3.structs.clear(); W3.sel=null; W3.near=null; }
+  applySavedPos(); writeNow(); renderChrome(); render();
+}
+function setVerifyMode(on, fresh){        // fresh："new"（全解放で作り直す）・"copy"（通常セーブを写す）・"keep"（前の検証データの続き）
+  clearTimeout(saveTimer); writeNow();       // いまのモードの状態を、いまのキーに保存してから切り替える
+  let next;
+  if(on){ const old = readKey(VERIFY_KEY);
+    next = fresh==="copy" ? E.makeVerifyState(readKey(SAVE_KEY)) : (fresh==="new" || !old || !old.verify) ? E.makeVerifyState() : old; }
+  else { next = readKey(SAVE_KEY) || E.newState(); delete next.verify; }
+  VERIFY = on; try{ localStorage.setItem(MODE_KEY, on?"verify":"normal"); }catch(e){}
+  try{ const u=new URL(location.href); if(u.searchParams.has("verify")){ u.searchParams.delete("verify"); history.replaceState(null,"",u.toString()); } }catch(e){}
+  switchState(next);
+  setTab(on ? "verify" : "explore");
+  banner(on ? "🧪 検証モード（全解放）。通常のセーブはそのまま" : "🏠 通常のセーブに戻った");
+  if(!on && !S.flags.intro) intro();
+}
+function verifyCatalog(){
+  const items=Object.keys(IT), tag=t=>items.filter(k=>IT[k].tags.includes(t)), H=window.HD2D||{};
+  const fac = W3.gfx && W3.gfx.structures && W3.gfx.structures.factories;   // 描画モジュールに登録済みの建物（読むだけ）
+  return {items, store:items.filter(k=>IT[k].store!==false), nostore:items.filter(k=>IT[k].store===false), tools:tag("道具"), facs:tag("研究設備"),
+    resTypes:Object.keys(H.RESOURCE_VISUAL_SPECS||{}), structTypes:(ASSETS.gfxCatalog||{}).structures||[], factories: fac&&fac.keys ? [...fac.keys()] : null,
+    effects:(ASSETS.gfxCatalog||{}).effects||[], icons:Object.keys(ASSETS.icons||{}), icons32:Object.keys(ASSETS.icons32||{}), labApp:Object.keys(ASSETS.labApp||{}),
+    atlas:Object.keys((ASSETS.items||{}).pos||{}), gpt:Object.keys(H.GPT_TEXTURES||{}), branch:Object.keys(H.BRANCH_TEXTURES||{}),
+    hero:["boy","girl"].filter(k=>ASSETS[k]), misc:["grass","rock","particle","shadow"].filter(k=>ASSETS[k])};
+}
+/* 描画の読み込み状態（読むだけ）：枝葉カードのテクスチャが読めないと、描画モジュールは旧来の球体の樹冠に戻るので、ここで分かるようにする */
+function gfxStatus(){
+  const H=window.HD2D||{}, want=Object.keys(H.BRANCH_TEXTURES||{}).length;
+  const res = W3.gfx && W3.gfx.resources, br = res && res.branch ? Object.keys(res.branch).length : null;
+  return {want, branch:br, ok: br===null ? null : br>=want && want>0};
+}
+function verifyGaps(c){
+  const out=[];
+  D.regions.filter(r=>r.future).forEach(r=>out.push(`地域「${r.name}」は準備中（開けない）`));
+  D.eras.filter(e=>!e.techs.length).forEach(e=>out.push(`技術の「${e.name}」は準備中`));
+  const last=D.stages[D.stages.length-1]; out.push(`時代は「${last.era}・${last.name}」まで（${last.need}）`);
+  const planned=new Set(STRUCT_PLAN.map(p=>p.type));
+  const unplanned=c.structTypes.filter(t=>!planned.has(t)); if(unplanned.length) out.push(`建物タイプ ${unplanned.join("・")} は、対応する工作・建設の決まりがまだない（検証の「足もとに置く」で見た目だけ確認できる）`);
+  const used=new Set(Object.values(NATURE.DEPOSIT_SHAPE).map(x=>x.vis).concat(Object.values(NAT_VIS).map(f=>f({scale:1})[0])).concat(["tree","rock"]));
+  const unused=c.resTypes.filter(t=>!used.has(t)); if(unused.length) out.push(`描画の資源タイプ ${unused.join("・")} はゲームでは未使用（プレビューだけ）`);
+  const noIcon=c.items.filter(k=>!c.atlas.includes(k)); if(noIcon.length) out.push(`物質アイコンのない ${noIcon.length} 件（道具・設備）は絵文字で表示`);
+  if(c.nostore.length) out.push(`保管できない物（${c.nostore.map(nm).join("・")}）は在庫に入らない。素材の一覧の「トレイ」から実験で使える`);
+  out.push("橋は通行の決まりがまだないので、置いても川は今までどおり歩いて渡る");
+  return out;
+}
+let vQuery="";
+function vResults(){
+  const q=vQuery.trim().toLowerCase(), list=Object.keys(IT).filter(k=>!q || k.includes(q) || IT[k].name.includes(vQuery.trim()) || (IT[k].yomi||"").includes(vQuery.trim())).slice(0,60);
+  return list.map(k=>`<div class="vit"><span class="i">${ic(k)}</span><span class="n">${IT[k].name}<small style="color:var(--muted)"> ${k}・${IT[k].store===false?"保管できない":"在庫 "+E.cnt(S,k)}</small></span>
+    ${IT[k].store===false?"":`<button class="btn small" data-act="v-add" data-id="${k}">追加</button>`}<button class="btn small sub" data-act="v-tray" data-id="${k}">トレイ</button><button class="btn small sub" data-act="item" data-id="${k}">図鑑</button></div>`).join("") || `<p class="desc">見つからない</p>`;
+}
+function viewVerify(){
+  if(!VERIFY) return `<div class="vsec"><h4>🧪 検証モード</h4><p class="desc">いまは通常のセーブです。</p><div class="vgrid"><button class="btn small" data-act="v-enter" data-id="keep">検証モードを始める</button></div></div>`;
+  const v=S.verify, c=verifyCatalog(), gs=gfxStatus(), placed=placedSet(), pos=W3.pos;
+  const tog=(k,t,d)=>`<label class="vtog"><input type="checkbox" data-act="v-flag" data-id="${k}" ${v[k]?"checked":""}>${t}<small style="font-weight:500;color:var(--muted)">${d}</small></label>`;
+  const rows=[["地域・探索先",D.regions.length],["時代（文明の段階）",D.stages.length],["技術の段階",D.eras.length],["研究（反応）",D.procs.length],["工作・設備・建築のレシピ",D.crafts.length],
+    ["物質・道具・設備（図鑑の項目）",c.items.length],["　うち道具",c.tools.length],["　うち研究設備",c.facs.length],["　うち保管できる／できない",c.store.length+"／"+c.nostore.length],["操作（加熱・ろ過など）",Object.keys(OPS).length],["目標",D.missions.length],
+    ["描画の資源タイプ",c.resTypes.length],["描画の建物タイプ",c.structTypes.length+(c.factories?`（登録 ${c.factories.length}）`:"")],["演出",c.effects.length],
+    ["UIアイコン（48px／32px）",c.icons.length+"／"+c.icons32.length],["物質アイコン",c.atlas.length],["実験器具の絵",c.labApp.length],["自然のテクスチャ・枝葉カード",c.gpt.length+"／"+c.branch.length],["主人公",c.hero.length],
+    ["フィールドの自然物",WORLD?WORLD.objects.length:"（3D未初期化）"]];
+  return `<div class="vsec"><h4>🧪 検証モード：全解放</h4>
+    <p class="desc" style="margin-top:0">通常のセーブとは別のデータです（${v.from==="copy"?"通常セーブの写しから作成":"新しく作成"}）。ここで増やした素材や進行は、通常のセーブには入りません。</p>
+    <div class="vgrid"><button class="btn small" data-act="v-exit">通常のセーブに戻る</button><button class="btn small sub" data-act="v-reset" data-id="new">全解放で作り直す</button><button class="btn small sub" data-act="v-reset" data-id="copy">通常セーブを写して作り直す</button></div></div>
+  <div class="vsec"><h4>条件のバイパス（OFFにすると通常の判定で確かめられる）</h4>
+    ${tog("free","材料を減らさない"," 足りなくても実験・工作できる")}${tog("tools","道具・設備の条件を満たす"," 採取・実験・工作")}${tog("locks","鍵のかかった地域に入れる"," 洞窟・鉱山など")}${tog("instant","待ち時間を短く"," 採取の作業・実験の観察")}</div>
+  <div class="vsec"><h4>素材</h4>
+    <div class="vrow"><input type="search" id="vq" placeholder="名前・よみ・IDで探す" value="${vQuery.replace(/"/g,"&quot;")}" aria-label="素材を探す"><input type="number" id="vn" value="10" min="1" max="999" aria-label="追加する数"></div>
+    <div class="vlist mt" id="vres">${vResults()}</div>
+    <div class="vgrid mt"><button class="btn small" data-act="v-fill">保管できる全素材を99個に補充（${c.store.length}種）</button></div></div>
+  <div class="vsec"><h4>移動</h4><div class="vgrid">${D.regions.map(r=>`<button class="btn small sub" data-act="v-warp" data-id="${r.id}">${E.regionOpen(S,r)?r.icon:"🔒"} ${r.name}</button>`).join("")}<button class="btn small sub" data-act="v-warp" data-id="base">🏠 拠点</button></div></div>
+  <div class="vsec"><h4>時代の切り替え（いま：${D.stages[stage()].era}・${D.stages[stage()].name}）</h4><div class="vgrid">
+    <button class="btn small ${v.stage==null?"":"sub"}" data-act="v-stage" data-id="auto">自動（持っている設備から）</button>${D.stages.map(st=>`<button class="btn small ${v.stage===st.n?"":"sub"}" data-act="v-stage" data-id="${st.n}">${st.n}：${st.name}</button>`).join("")}</div></div>
+  <div class="vsec"><h4>建物・設備の配置（原野には自動で置かない）</h4>
+    <div class="vgrid">${STRUCT_PLAN.map(p=>`<button class="btn small ${placed.has(p.id)?"":"sub"}" data-act="v-place" data-id="${p.id}" aria-pressed="${placed.has(p.id)}">${placed.has(p.id)?"✅":"＋"} ${p.type}</button>`).join("")}</div>
+    <p class="desc">足もとに置く（ゲームの決まりにない種類も見た目を確認できる）：</p>
+    <div class="vgrid">${c.structTypes.map(t=>`<button class="btn small sub" data-act="v-extra" data-id="${t}">${t}</button>`).join("")}</div>
+    <div class="vgrid mt"><button class="btn small sub" data-act="v-clearst">建物を全部撤去（${placed.size+v.extra.length}）</button></div></div>
+  <div class="vsec"><h4>採取済みの資源</h4><p class="desc" style="margin-top:0">変化している自然物・採取地点：${Object.keys(S.nature||{}).length} 件</p><div class="vgrid"><button class="btn small sub" data-act="v-restore">すべて元に戻す</button></div></div>
+  <div class="vsec"><h4>アセット</h4><p class="desc" style="margin-top:0">一覧は別の画面で開きます（探索画面では読み込まない）。3Dの見た目・演出は主人公のそばに置いて確かめられます。</p>
+    <div class="vgrid"><button class="btn small" data-act="v-assets" data-id="ui">アセット一覧とプレビュー</button><button class="btn small sub" data-act="v-prevclear">置いたプレビューを片付ける</button></div></div>
+  <div class="vsec"><h4>描画の状態</h4><p class="desc" style="margin-top:0">${gs.ok===null?"3D表示がまだ始まっていない":gs.ok?`✅ 木の枝葉カードのテクスチャ ${gs.branch}/${gs.want} を読み込み済み（旧来の球体の樹冠にはなっていない）`:`<span class="vwarn">⚠️ 木の枝葉カードのテクスチャを ${gs.branch}/${gs.want} しか読めていない（描画モジュールが旧来の球体の樹冠に戻っている可能性）</span>`}</p></div>
+  <div class="vsec"><h4>登録内容の件数（いまのコードから数えた値）</h4><table class="vtbl">${rows.map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join("")}</table></div>
+  <div class="vsec"><h4>未実装・未対応（全解放でも使えないもの）</h4><ul class="helplist">${verifyGaps(c).map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+}
+/* アセット一覧（別の画面＝案内の枠で開く。開いたときだけ画像を作る） */
+let vAssetTab="ui";
+function assetSheet(){
+  const c=verifyCatalog(), H=window.HD2D||{};
+  const fig=(src,cap)=>`<figure><img src="${src}" alt="" loading="lazy">${cap}</figure>`;
+  const tabs=[["ui","UIアイコン"],["items","物質アイコン"],["lab","実験器具"],["hero","主人公"],["tex","テクスチャ"],["d3","3D・演出"]];
+  let body="";
+  if(vAssetTab==="ui") body=`<div class="vgal">${c.icons.map(k=>fig(ASSETS.icons[k],k+"（48）")).join("")}${c.icons32.map(k=>fig(ASSETS.icons32[k],k+"（32）")).join("")}</div>`;
+  if(vAssetTab==="items") body=`<div class="vgal">${c.items.map(k=>`<figure>${ic(k)}<br>${IT[k].name}</figure>`).join("")}</div>`;
+  if(vAssetTab==="lab") body=`<div class="vgal">${c.labApp.map(k=>fig(ASSETS.labApp[k],k)).join("")}</div>`;
+  if(vAssetTab==="hero") body=`<div class="vgal">${c.hero.map(k=>fig(ASSETS[k],k)).join("")}${c.misc.map(k=>fig(ASSETS[k],k)).join("")}</div>`;
+  if(vAssetTab==="tex") body=`<div class="vgal">${c.gpt.map(k=>fig(H.GPT_TEXTURES[k],k)).join("")}${c.branch.map(k=>fig(H.BRANCH_TEXTURES[k],"枝葉 "+k)).join("")}</div>`;
+  if(vAssetTab==="d3") body=`<p class="desc">主人公のそばに置きます（当たり判定なし・保存されない）。</p>
+    <h5>資源の見た目（${c.resTypes.length}）</h5><div class="vgrid">${c.resTypes.map(t=>`<button class="btn small sub" data-act="v-prev" data-id="res:${t}">${t}</button>`).join("")}</div>
+    <h5>建物（${c.structTypes.length}）</h5><div class="vgrid">${c.structTypes.map(t=>`<button class="btn small sub" data-act="v-prev" data-id="st:${t}">${t}</button>`).join("")}</div>
+    <h5>演出（${c.effects.length}）</h5><div class="vgrid">${c.effects.map(t=>`<button class="btn small sub" data-act="v-prev" data-id="fx:${t}">${t}</button>`).join("")}</div>
+    <div class="vgrid mt"><button class="btn small sub" data-act="v-prevclear">片付ける</button></div>`;
+  $("#sheet").innerHTML = `<button class="close" data-act="close">閉じる</button><h3 style="margin:0 0 8px">🧪 アセット一覧</h3>
+    <div class="vtabs">${tabs.map(([k,n])=>`<button class="btn small ${k===vAssetTab?"":"sub"}" data-act="v-assets" data-id="${k}">${n}</button>`).join("")}</div>${body}`;
+  openModal($("#sheet").querySelector(".close"));
+}
+const PREVIEW = new Map(); let previewN=0;
+function clearPreview(){ if(W3.gfx) PREVIEW.forEach((kind,id)=>{ if(kind==="st") W3.gfx.removeStructureVisual(id); else W3.gfx.updateResourceVisual(id,null); }); PREVIEW.clear(); previewN=0; }
+function previewAt(spec){
+  if(!W3.gfx || !W3.pos){ banner("3D表示が始まってから使えます"); return; }
+  const [kind, type] = spec.split(":"), k=previewN++, a=k*0.9, r=3+((k%4)*0.8);
+  const p={x:W3.pos.x+Math.cos(a)*r, z:W3.pos.z+Math.sin(a)*r};
+  if(kind==="fx"){ W3.gfx.playVisualEffect(type, W3.pos); return; }
+  const id=(kind==="st"?"vps:":"vpr:")+type+":"+k;
+  if(kind==="st") W3.gfx.addStructureVisual(id, type, p, 0); else W3.gfx.updateResourceVisual(id, {position:p, type, scale:1, visible:true});
+  PREVIEW.set(id, kind);
+}
+function verifyAct(act, id, b){
+  if(act==="v-enter"){ setVerifyMode(true, id==="copy"?"copy":"keep"); return true; }
+  if(!VERIFY || !S.verify) return false;
+  const v=S.verify;
+  switch(act){
+    case "v-exit": setVerifyMode(false); return true;
+    case "v-reset": if(confirm(id==="copy"?"通常のセーブを写して、全解放の検証データを作り直す？":"検証データを全解放の状態に作り直す？（通常のセーブはそのまま）")) setVerifyMode(true, id); return true;
+    case "v-flag": v[id] = !!b.checked; save(); return true;
+    case "v-add": { const n=Math.max(1,Math.min(999,parseInt(($("#vn")||{}).value,10)||1)); const it=IT[id]; if(!it) return true;
+      if(it.store===false){ banner("「"+it.name+"」は保管できない（トレイから実験で使える）"); return true; }
+      E.addItem(S,id,n,"verify"); if(it.unique) S.inv[id]=1; save(); banner(it.name+" を "+(it.unique?1:n)+" 個にした／足した"); const r=$("#vres"); if(r) r.innerHTML=vResults(); return true; }
+    case "v-tray": U.tray[id]=(U.tray[id]||0)+1; U.last=null; banner(nm(id)+" を研究室のトレイに入れた"); setTab("lab"); return true;
+    case "v-fill": { const n=E.fillStorable(S,99); save(); banner("保管できる "+n+" 種を補充した"); renderPanel(); return true; }
+    case "v-warp": { if(id==="base"){ setTab("explore"); if(W3.state==="ready"){ W3.pos=WORLD.safeSpawn(S,{x:D.base.x,z:D.base.z}); haltField(); syncAll3D(); } return true; }
+      const r=D.regions.find(x=>x.id===id); if(!r) return true; if(!E.regionOpen(S,r)){ banner("🔒 "+r.name+"：鍵がかかっている（バイパスOFF）"); return true; }
+      setTab("explore"); U.region=r.id;
+      if(W3.state==="ready"){ const q=WORLD.safeSpawn(S,{x:r.w.x, z:r.w.z+REGION_R*0.2}); W3.pos={x:q.x,z:q.z}; haltField(); W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false}); syncAll3D(); }
+      else { fieldSig=""; renderField(); }
+      banner(r.icon+" "+r.name+"へ移動した"); return true; }
+    case "v-stage": v.stage = id==="auto" ? null : +id; lastStage=stage(); fieldSig=""; sceneSig=""; save(); renderChrome(); render(); return true;
+    case "v-place": { const pl=new Set(v.placed); pl.has(id)?pl.delete(id):pl.add(id); v.placed=[...pl]; save(); syncStructures(); fieldSig=""; renderPanel(); return true; }
+    case "v-extra": { if(!W3.pos) return true; v.extra.push({id:"vx:"+Date.now().toString(36)+v.extra.length, type:id, x:+(W3.pos.x+2.2).toFixed(2), z:+(W3.pos.z+1.2).toFixed(2), rot:0}); save(); syncStructures(); renderPanel(); banner(id+" を足もとに置いた"); return true; }
+    case "v-clearst": v.placed=[]; v.extra=[]; save(); syncStructures(); fieldSig=""; renderPanel(); return true;
+    case "v-restore": S.nature={}; save(); if(W3.gfx){ NODES&&NODES.forEach(n=>syncNode(n,true)); syncNature(true); } fieldSig=""; renderPanel(); banner("採取済みの資源をすべて元に戻した"); return true;
+    case "v-assets": vAssetTab=id||"ui"; assetSheet(); return true;
+    case "v-prev": closeModal(); setTab("explore"); previewAt(id); return true;
+    case "v-prevclear": clearPreview(); return true;
+  }
+  return false;
+}
+document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.closest("[data-act^='v-']"); if(!b) return;
+  if(b.tagName==="INPUT") return;           // チェックボックスは change で扱う
+  if(verifyAct(b.dataset.act, b.dataset.id, b)) ev.preventDefault(); });
+document.addEventListener("change", ev=>{ const b=ev.target; if(b && b.dataset && b.dataset.act==="v-flag") verifyAct("v-flag", b.dataset.id, b); });
+document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="vq"){ vQuery=ev.target.value; const r=$("#vres"); if(r) r.innerHTML=vResults(); } });
+
+window.__GAME__ = {get S(){return S;}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);

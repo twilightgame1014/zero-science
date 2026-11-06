@@ -237,7 +237,7 @@ var NATURE = (function(){
       if(K.bonus && E.has(S,K.bonus)) Object.keys(y).forEach((id,i)=>{ if(i===0) y[id]+=1; });
       const out = {name:nameOf(o), icon:iconOf(o), verb:K.verb, yields:y, left:k.left, uses:K.uses, until:k.until, need:K.need, after:K.after};
       if(k.left<=0) return Object.assign(out, {ok:false, kind:"empty", reason: k.until ? "取り尽くした（しばらくすると戻る）" : K.after==="stump" ? "切り株になった" : K.after==="rubble" ? "砕けた" : "もうない"});
-      if(K.need && !K.need.some(t=>E.has(S,t))) return Object.assign(out, {ok:false, kind:"tool", reason:"「"+K.need.map(t=>D.items[t].name).join("」か「")+"」が必要"});
+      if(K.need && !K.need.some(t=>(E.hasTool||E.has)(S,t))) return Object.assign(out, {ok:false, kind:"tool", reason:"「"+K.need.map(t=>D.items[t].name).join("」か「")+"」が必要"});
       return Object.assign(out, {ok:true});
     }
     /* 描画モジュールへ渡す状態（表示専用） */

@@ -434,6 +434,103 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await ctx.close();
 }
 
+/* ---------------- 地域の外（マップ全体）の自然物を採る ---------------- */
+{
+  const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
+  await page.click('#introGo'); await page.waitForTimeout(700);
+  // どの地域の中心からも離れた草むら（第2層）を選び、そばへ移ってから採る
+  const tgt = await page.evaluate(`(()=>{ const G=${G}, R=G.D.regions.filter(r=>r.w);
+    const o=G.WORLD.objects.find(o=>o.kind==='grass' && R.every(r=>Math.hypot(o.x-r.w.x,o.z-r.w.z)>14) && Math.hypot(o.x-G.D.base.x,o.z-G.D.base.z)>16 && G.E.regionOpen(G.S, R[0]));
+    const q=G.WORLD.safeSpawn(G.S,{x:o.x+1.2,z:o.z}); G.W3.pos={x:q.x,z:q.z}; return {id:o.id, x:o.x, z:o.z}; })()`);
+  await page.waitForTimeout(500);
+  const g0 = await page.evaluate(`${G}.S.inv.grass||0`);
+  await page.evaluate(`(()=>{ const G=${G}; G.selectAndGo({o:G.WORLD.byId.get('${tgt.id}')}); })()`); await page.waitForTimeout(1500);
+  await page.evaluate(`${G}.pressAction()`); await page.waitForTimeout(1300);
+  const g1 = await page.evaluate(`({grass:${G}.S.inv.grass||0, st:${G}.S.nature['${tgt.id}'], vis:__FAKE.resources['${tgt.id}'] && __FAKE.resources['${tgt.id}'].natural.state})`);
+  ok('地域の外（マップのどこか）の草むらも、選んで近づいて刈れる。刈り跡になる', g1.grass > g0 && g1.st && g1.vis === 'cut', JSON.stringify({ tgt, g0, g1 }));
+  await page.waitForTimeout(400); await page.reload(); await page.waitForTimeout(800);
+  ok('再読み込みしても、刈った草むらは刈り跡のまま（同じIDの状態がセーブに残る）', await page.evaluate(`(()=>{ const G=${G}, o=G.WORLD.byId.get('${tgt.id}'); return !!o && G.WORLD.visual(G.S,o).state==='cut'; })()`));
+  ok('ページでエラーが起きていない（地域の外の採取）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+
+/* ---------------- 検証モード（全解放・別セーブ） ---------------- */
+{
+  const { page, errors, ctx } = await newPage({ width: 390, height: 844 }, true);
+  // 通常のセーブ（木の枝3本・目標の途中）を先に置いておく
+  const normalSave = JSON.stringify({ v: 2, inv: { twig: 3 }, disc: { twig: { first: 1, made: 1, total: 3, routes: [], best: 0 } }, hist: [], gathered: {}, explore: {}, auto: [], seq: 5, flags: { intro: 1, hero: 'boy' }, nature: {}, created: 1 });
+  // 先に検証モードで開いてから通常のセーブを置き、再読み込み（前のページが閉じるときの保存で上書きされないように）
+  await page.goto(url + '?verify=1'); await page.waitForTimeout(600);
+  await page.evaluate(s => { localStorage.removeItem('zero-kagaku-verify'); localStorage.setItem('zero-kagaku-save', s); }, normalSave);
+  await page.reload(); await page.waitForTimeout(900);
+  const v0 = await page.evaluate(`(()=>{ const G=${G}; const c=G.verifyCatalog(); return {V:G.VERIFY, badge:!document.getElementById('vbadge').hidden, badgeText:document.getElementById('vbadge').textContent,
+    disc:Object.keys(G.S.disc).length, items:Object.keys(G.D.items).length, store:c.store.length, inv:Object.keys(G.S.inv).length, structs:Object.keys(__FAKE.structures).length,
+    normal:localStorage.getItem('zero-kagaku-save'), url:location.search}; })()`);
+  ok('検証モード：「検証モード：全解放」の表示があり、全物質が図鑑に・保管できる全素材が在庫にある（件数はデータから）',
+    v0.V && v0.badge && /検証モード：全解放/.test(v0.badgeText) && v0.disc === v0.items && v0.inv === v0.store, JSON.stringify(v0).slice(0, 300));
+  ok('検証モード：原野には建物を自動で置かない', v0.structs === 0);
+  ok('検証モード：通常のセーブは書き換えない', v0.normal === normalSave);
+  await page.click('#vbadge'); await page.waitForTimeout(400);
+  const tbl = await page.evaluate(`[...document.querySelectorAll('.vtbl tr')].map(r=>r.textContent)`);
+  const wantRows = await page.evaluate(`(()=>{ const D=${G}.D; return {procs:D.procs.length, crafts:D.crafts.length, regions:D.regions.length}; })()`);
+  ok('検証メニュー：件数の表はいまのデータから作られる（研究・工作・地域）', tbl.some(t => t.includes('研究（反応）') && t.endsWith(String(wantRows.procs))) && tbl.some(t => t.includes('工作') && t.endsWith(String(wantRows.crafts))) && tbl.some(t => t.startsWith('地域') && t.endsWith(String(wantRows.regions))), JSON.stringify(tbl.slice(0, 6)));
+  // 鍵のバイパスを切ると洞窟へ行けない（たいまつを捨てて確かめる）→ 戻すと行ける
+  await page.evaluate(`(()=>{ const S=${G}.S; delete S.inv.torch; delete S.inv.candle; })()`);
+  await page.click('input[data-act="v-flag"][data-id="locks"]'); await page.waitForTimeout(150);
+  await page.click('[data-act="v-warp"][data-id="cave"]'); await page.waitForTimeout(300);
+  const refused = await page.evaluate(`({tab:${G}.U.tab, far:Math.hypot(${G}.W3.pos.x-42, ${G}.W3.pos.z+34) > 9, banner:document.getElementById('banner').textContent})`);
+  await page.click('input[data-act="v-flag"][data-id="locks"]'); await page.waitForTimeout(150);
+  await page.click('[data-act="v-warp"][data-id="cave"]'); await page.waitForTimeout(400);
+  const went = await page.evaluate(`({tab:${G}.U.tab, d:Math.hypot(${G}.W3.pos.x-42, ${G}.W3.pos.z+34)})`);
+  ok('検証メニュー：鍵のバイパスを切ると洞窟へは移動できず、入れると移動できる', refused.far && /鍵/.test(refused.banner) && went.tab === 'explore' && went.d < 9, JSON.stringify({ refused, went }));
+  // 素材の検索と追加・保管できない物はトレイへ
+  await page.click('#vbadge'); await page.waitForTimeout(300);
+  await page.fill('#vq', 'flint'); await page.fill('#vn', '5'); await page.waitForTimeout(100);
+  const f0 = await page.evaluate(`${G}.S.inv.flint`);
+  await page.click('#vres [data-act="v-add"][data-id="flint"]'); await page.waitForTimeout(150);
+  ok('検証メニュー：素材を検索して、指定した数を追加できる', (await page.evaluate(`${G}.S.inv.flint`)) === f0 + 5);
+  await page.fill('#vq', 'hydrogen'); await page.waitForTimeout(100);
+  const h = await page.evaluate(`({add:!!document.querySelector('#vres [data-act="v-add"][data-id="hydrogen"]'), tray:!!document.querySelector('#vres [data-act="v-tray"][data-id="hydrogen"]')})`);
+  await page.click('#vres [data-act="v-tray"][data-id="hydrogen"]'); await page.waitForTimeout(400);
+  const t2 = await page.evaluate(`({tab:${G}.U.tab, tray:${G}.U.tray.hydrogen||0, inv:${G}.S.inv.hydrogen||0, shown:/水素/.test(document.querySelector('#dockBody .tray').textContent)})`);
+  ok('検証メニュー：保管できない物（水素）は在庫に入れず、研究室のトレイに入れて使える', !h.add && h.tray && t2.tab === 'lab' && t2.tray === 1 && t2.inv === 0 && t2.shown, JSON.stringify({ h, t2 }));
+  // 建物の配置と撤去・採取済みの復元（スマホの研究室は全高なので、閉じてからバッジを押す）
+  await page.click('#dock .dockx'); await page.waitForTimeout(300);
+  await page.click('#vbadge'); await page.waitForTimeout(300);
+  await page.click('[data-act="v-place"][data-id="st-wheel"]'); await page.waitForTimeout(150);
+  await page.click('[data-act="v-extra"][data-id="bridge"]'); await page.waitForTimeout(150);
+  const st1 = await page.evaluate(`Object.entries(__FAKE.structures).map(([k,v])=>k+':'+v.type)`);
+  await page.click('[data-act="v-clearst"]'); await page.waitForTimeout(150);
+  const st2 = await page.evaluate(`Object.keys(__FAKE.structures).length`);
+  ok('検証メニュー：建物を選んで置き（決まりにない橋も足もとに置ける）、全部撤去できる', st1.includes('st-wheel:waterwheel') && st1.some(x => /:bridge$/.test(x)) && st2 === 0, JSON.stringify(st1));
+  await page.evaluate(`(()=>{ const G=${G}; const o=G.WORLD.objects.find(o=>o.kind==='twig'); G.S.nature[o.id]={u:1,t:Date.now()}; window.__tw=o.id; })()`);
+  await page.evaluate(`${G}.render()`); await page.waitForTimeout(150);       // 検証パネルは開いたまま（全高なのでバッジは隠れている）
+  await page.click('[data-act="v-restore"]'); await page.waitForTimeout(150);
+  ok('検証メニュー：採取済みの資源を元に戻せる', await page.evaluate(`Object.keys(${G}.S.nature).length===0`));
+  // アセット一覧（別の画面）とプレビュー
+  await page.click('#dockBody [data-act="v-assets"][data-id="ui"]'); await page.waitForTimeout(300);
+  const a1 = await page.evaluate(`({open:document.getElementById('modal').classList.contains('open'), imgs:document.querySelectorAll('#sheet .vgal img').length, want:Object.keys(ASSETS.icons).length+Object.keys(ASSETS.icons32).length})`);
+  await page.click('#sheet [data-act="v-assets"][data-id="items"]'); await page.waitForTimeout(200);
+  const a2 = await page.evaluate(`({figs:document.querySelectorAll('#sheet .vgal figure').length, want:Object.keys(${G}.D.items).length})`);
+  await page.click('#sheet [data-act="v-assets"][data-id="d3"]'); await page.waitForTimeout(200);
+  await page.click('#sheet [data-act="v-prev"][data-id="res:tree"]'); await page.waitForTimeout(200);
+  const a3 = await page.evaluate(`Object.keys(__FAKE.resources).filter(k=>k.startsWith('vpr:tree')).length`);
+  ok('アセット一覧：別の画面で開き、UIアイコン・全物質のアイコンを表示し、3Dの見た目を主人公のそばに置ける', a1.open && a1.imgs === a1.want && a2.figs === a2.want && a3 === 1, JSON.stringify({ a1, a2, a3 }));
+  // 通常のセーブに戻る → 混入しない → 再読み込みしても通常 → もう一度入ると前の検証データの続き
+  await page.click('#vbadge'); await page.waitForTimeout(250); await page.click('[data-act="v-exit"]'); await page.waitForTimeout(400);
+  const back = await page.evaluate(`({V:${G}.VERIFY, badge:!document.getElementById('vbadge').hidden, inv:JSON.stringify(${G}.S.inv), verify:!!${G}.S.verify, prev:Object.keys(__FAKE.resources).filter(k=>k.startsWith('vpr:')).length, url:location.search, saved:localStorage.getItem('zero-kagaku-save')})`);
+  ok('通常のセーブに戻ると、検証で増やした素材・設定・プレビューは入っていない', !back.V && !back.badge && back.inv === '{"twig":3}' && !back.verify && back.prev === 0 && !/verify/.test(back.url), JSON.stringify(back).slice(0, 300));
+  ok('通常のセーブの中身も、検証前と同じまま', JSON.parse(back.saved).inv.twig === 3 && !JSON.parse(back.saved).verify && !JSON.parse(back.saved).inv.flint);
+  await page.reload(); await page.waitForTimeout(900);
+  ok('再読み込みしても通常のセーブのまま（最後に選んだモード）', await page.evaluate(`!${G}.VERIFY && ${G}.S.inv.twig===3 && !${G}.S.inv.flint`));
+  await page.click('.hud-tr [data-tab="settings"]'); await page.waitForTimeout(300);
+  await page.click('#dockBody [data-act="v-enter"][data-id="keep"]'); await page.waitForTimeout(500);
+  ok('設定から検証モードに入り直すと、前の検証データ（追加した火打ち石）の続きになる', await page.evaluate(`${G}.VERIFY && ${G}.S.inv.flint===${f0 + 5}`));
+  ok('検証モードの表示も文字選択されない（長押し対策を維持）', await page.evaluate(`getComputedStyle(document.getElementById('vbadge')).userSelect==='none' && getComputedStyle(document.querySelector('#dockBody .vsec')).userSelect==='none' && getComputedStyle(document.getElementById('vq')).userSelect!=='none'`));
+  ok('ページでエラーが起きていない（検証モード）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+
 /* ---------------- PC（1920×1080） ---------------- */
 {
   const { page, errors, ctx } = await newPage({ width: 1920, height: 1080 }, false);

@@ -9,6 +9,12 @@ var ENGINE = (function(D){
   function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, created:Date.now()}; }
   const cnt = (S,id)=> S.inv[id]||0;
   const has = (S,id)=> cnt(S,id)>0;
+  /* 検証モード（S.verify。通常のセーブには存在しない）の条件バイパス。
+     free：材料を減らさない・足りなくても実験と工作ができる／tools：道具・設備の条件を満たしたことにする／
+     locks：鍵のかかった地域に入れる（未実装の地域 r.future は開かない）／instant：待ち時間を短くする（UI が読む）／
+     stage：時代の表示を切り替える（null は通常どおり） */
+  const vflag = (S,k)=> !!(S && S.verify && S.verify[k]);
+  const hasTool = (S,id)=> has(S,id) || vflag(S,"tools");
   const keyOf = obj => Object.keys(obj).filter(k=>obj[k]>0).sort().join("+");
 
   function discover(S,id){
@@ -31,13 +37,13 @@ var ENGINE = (function(D){
 
   /* ---------- 探索 ---------- */
   const LV = [0,15,40,90];               // 探索度のしきい値
-  function regionOpen(S,r){ return !r.future && (!r.unlock || r.unlock.some(t=>has(S,t))); }
+  function regionOpen(S,r){ return !r.future && (!r.unlock || vflag(S,"locks") || r.unlock.some(t=>has(S,t))); }
   function exploreLv(S,rid){ const n=(S.explore&&S.explore[rid])||0; let lv=0; LV.forEach((t,i)=>{ if(n>=t) lv=i; }); return lv; }
   function nextLv(S,rid){ const n=(S.explore&&S.explore[rid])||0; const t=LV.find(t=>t>n); return t===undefined?null:{need:t,now:n}; }
   const RAIL = ["mine","mountain","cave","oilfield","volcano"];
   function gatherInfo(S,r,res){
     if(!regionOpen(S,r)) return {ok:false, reason:"まだ入れない場所"};
-    if(res.need && !res.need.some(t=>has(S,t))) return {ok:false, need:res.need, reason:"「"+res.need.map(t=>IT[t].name).join("」か「")+"」が必要"};
+    if(res.need && !res.need.some(t=>hasTool(S,t))) return {ok:false, need:res.need, reason:"「"+res.need.map(t=>IT[t].name).join("」か「")+"」が必要"};
     let n = res.n;
     if(res.bonus && has(S,res.bonus)) n += 1;
     if(BASKET_RES.includes(res.id) && has(S,"basket")) n += 1;
@@ -139,13 +145,13 @@ var ENGINE = (function(D){
   }
 
   /* ---------- 実験 ---------- */
-  function facilityOps(S, fac){ return has(S,fac) && IT[fac].facility ? IT[fac].ops : []; }
+  function facilityOps(S, fac){ return hasTool(S,fac) && IT[fac].facility ? IT[fac].ops : []; }
 
   function planExperiment(S, tray, fac, op){
     const tk = keyOf(tray);
     if(!tk) return {ok:false, kind:"empty", msg:"材料を入れてね"};
-    for(const id in tray){ if(tray[id]<0 || !Number.isInteger(tray[id])) return {ok:false, kind:"bad", msg:"数がおかしいよ"}; if(tray[id]>cnt(S,id)) return {ok:false, kind:"lack", msg:"「"+IT[id].name+"」が足りないよ"}; }
-    if(!fac || !has(S,fac)) return {ok:false, kind:"nofac", msg:"装置を選んでね"};
+    for(const id in tray){ if(tray[id]<0 || !Number.isInteger(tray[id])) return {ok:false, kind:"bad", msg:"数がおかしいよ"}; if(tray[id]>cnt(S,id) && !vflag(S,"free")) return {ok:false, kind:"lack", msg:"「"+IT[id].name+"」が足りないよ"}; }
+    if(!fac || !hasTool(S,fac)) return {ok:false, kind:"nofac", msg:"装置を選んでね"};
     if(!op || !IT[fac].ops.includes(op)) return {ok:false, kind:"noop", msg:"この装置ではその操作はできないよ"};
     const same = D.procs.filter(p=>keyOf(p.inp)===tk);
     const exact = same.filter(p=>p.op===op);
@@ -162,7 +168,7 @@ var ENGINE = (function(D){
       return {ok:false, kind:"unmodeled", msg:"この組み合わせでは何も起きなかった。（このゲームにまだ登録されていない組み合わせです。材料は減らないよ）"};
     }
     const p = here;
-    const missingTool = p.tools.find(t=>!has(S,t));
+    const missingTool = p.tools.find(t=>!hasTool(S,t));
     if(missingTool) return {ok:false, kind:"tool", msg:"「"+IT[missingTool].name+"」がないとできないよ。"};
     let batches = Infinity; const short=[];
     for(const id in p.inp){ const b = Math.floor((tray[id]||0)/p.inp[id]); if(b<1) short.push(IT[id].name+"を"+p.inp[id]+"個"); batches=Math.min(batches,b); }
@@ -175,8 +181,9 @@ var ENGINE = (function(D){
   }
 
   function commit(S, consume, produce, route){
-    for(const id in consume){ if(cnt(S,id) < consume[id]) return {ok:false, msg:"材料が足りないよ"}; }
-    for(const id in consume){ S.inv[id] = cnt(S,id) - consume[id]; if(S.inv[id]<=0) delete S.inv[id]; }
+    const free = vflag(S,"free");
+    if(!free) for(const id in consume){ if(cnt(S,id) < consume[id]) return {ok:false, msg:"材料が足りないよ"}; }
+    if(!free) for(const id in consume){ S.inv[id] = cnt(S,id) - consume[id]; if(S.inv[id]<=0) delete S.inv[id]; }
     const news=[];
     for(const id in produce){ if(addItem(S,id,produce[id],route)) news.push(id); }
     return {ok:true, news};
@@ -198,9 +205,9 @@ var ENGINE = (function(D){
   function planCraft(S, c){
     const out = IT[c.out];
     if(out.unique && has(S,c.out)) return {ok:false, kind:"own", msg:"もう持っているよ"};
-    if(c.at && !has(S,c.at)) return {ok:false, kind:"at", msg:"「"+IT[c.at].name+"」で作るよ"};
-    const t = c.tools.find(x=>!has(S,x)); if(t) return {ok:false, kind:"tool", msg:"「"+IT[t].name+"」が必要"};
-    const short = Object.keys(c.inp).filter(id=>cnt(S,id)<c.inp[id]);
+    if(c.at && !hasTool(S,c.at)) return {ok:false, kind:"at", msg:"「"+IT[c.at].name+"」で作るよ"};
+    const t = c.tools.find(x=>!hasTool(S,x)); if(t) return {ok:false, kind:"tool", msg:"「"+IT[t].name+"」が必要"};
+    const short = vflag(S,"free") ? [] : Object.keys(c.inp).filter(id=>cnt(S,id)<c.inp[id]);
     if(short.length) return {ok:false, kind:"qty", msg:"材料が足りない："+short.map(id=>IT[id].name).join("、"), short};
     return {ok:true};
   }
@@ -270,6 +277,7 @@ var ENGINE = (function(D){
   }
 
   function stageOf(S){
+    if(S.verify && Number.isInteger(S.verify.stage) && D.stages[S.verify.stage]) return S.verify.stage;
     const d=S.disc; let s=0;
     if(has(S,"campfire")) s=1;
     if(s>=1 && d.pot && has(S,"kiln")) s=2;
@@ -310,6 +318,22 @@ var ENGINE = (function(D){
     return n;
   }
   function serialize(S){ return JSON.stringify(S); }
+
+  /* ---------- 検証モード（全解放）：通常のセーブとは別の状態を作る ----------
+     base を渡すとその写し（通常セーブを引き継ぐとき）。base 自体は変えない。
+     登録されているすべての物質・道具・設備を図鑑に載せ、保管できるものは在庫に入れる（保管できないもの＝store:false は在庫に入れない）。 */
+  const VERIFY_DEFAULTS = {on:true, free:true, tools:true, locks:true, instant:true, stage:null, placed:[], extra:[]};
+  function fillStorable(S, n){
+    let k=0; for(const id in IT){ const it=IT[id]; if(it.store===false) continue; S.inv[id] = it.unique ? 1 : Math.max(cnt(S,id), n||99); k++; } return k;
+  }
+  function makeVerifyState(base){
+    const S = base ? migrate(JSON.parse(JSON.stringify(base))) : newState();
+    S.verify = Object.assign({}, VERIFY_DEFAULTS, {placed:[], extra:[], made:Date.now(), from: base ? "copy" : "new"});
+    for(const id in IT){ discover(S,id); const r=S.disc[id]; if(!r.made){ r.made=1; r.total=Math.max(r.total,1); } if(IT[id].purity) r.best=Math.max(r.best, IT[id].purity); }
+    fillStorable(S, 99);
+    S.flags = Object.assign({hero:"girl"}, S.flags, {intro:1});
+    return S;
+  }
   function deserialize(txt){ const o = JSON.parse(txt); if(!o || typeof o!=="object") throw new Error("形式が違います"); return migrate(o); }
 
   /* ---------- テスト ---------- */
@@ -391,7 +415,7 @@ var ENGINE = (function(D){
     return R;
   }
 
-  return {SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, collect, stockOf, useStock, harvestDeposit, depositInfo, depositRule, depositId, depositPos, REACH, regionOpen, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
+  return {addItem, hasTool, vflag, makeVerifyState, fillStorable, VERIFY_DEFAULTS, SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, collect, stockOf, useStock, harvestDeposit, depositInfo, depositRule, depositId, depositPos, REACH, regionOpen, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
           planCraft, runCraft, producers, usesOf, status, hint, suggest, stageOf, missionIndex, tagProgress, serialize, deserialize, runTests};
 })(typeof DATA!=="undefined"?DATA:require("./data.js"));
 if (typeof module!=="undefined") module.exports = ENGINE;

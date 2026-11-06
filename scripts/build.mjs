@@ -51,6 +51,16 @@ if (fs.existsSync(path.join(root, itemAtlas)) && fs.existsSync(path.join(root, i
   const m = JSON.parse(fs.readFileSync(path.join(root, itemMap), 'utf8'));
   ASSETS.items = { src: dataUrl(itemAtlas, 'image/webp'), cols: m.cols, rows: m.rows, pos: m.items };
 }
+// 検証モードの一覧：描画モジュールに登録されている演出と建物タイプ（ソースから読み取る。固定の数を書かない）
+{
+  const fx = fs.readFileSync(path.join(root, 'src/graphics/EffectsManager.ts'), 'utf8');
+  const fxBody = fx.slice(fx.indexOf('const EFFECT_STYLE'), fx.indexOf('};', fx.indexOf('const EFFECT_STYLE')));
+  const effects = [...fxBody.matchAll(/^\s*([a-z][\w-]*):\s*\{/gm)].map(m => m[1]);
+  const ty = fs.readFileSync(path.join(root, 'src/graphics/types.ts'), 'utf8');
+  const stBody = ty.slice(ty.indexOf('export type StructureType'), ty.indexOf(';', ty.indexOf('export type StructureType')));
+  const structures = [...stBody.matchAll(/'([\w-]+)'/g)].map(m => m[1]);
+  ASSETS.gfxCatalog = { effects, structures };
+}
 const parts = {
   '/*GFX*/': gfxCode,
   '/*ASSETS*/': 'var ASSETS=' + JSON.stringify(ASSETS) + ';',
@@ -71,3 +81,8 @@ fs.writeFileSync(path.join(root, 'dist/index.html'), html);
 const mb = (Buffer.byteLength(html) / 1024 / 1024).toFixed(2);
 console.log(`dist/index.html を作成しました（${mb} MB）`);
 if (Buffer.byteLength(html) > 16 * 1024 * 1024) console.warn('警告：16MBを超えています（claude.ai のアーティファクトには公開できません）');
+// 検証モード（全解放）を最初から有効にした版。中身は同じで、既定のモードだけが違う（?verify=0 や画面の「終了」で通常に戻れる）
+const vhtml = html.replace('<head>', '<head><script>window.VERIFY_DEFAULT=true;</script>');
+if (vhtml === html) throw new Error('テンプレートに <head> がありません');
+fs.writeFileSync(path.join(root, 'dist/verify.html'), vhtml);
+console.log('dist/verify.html（検証モードが最初から有効）を作成しました');
