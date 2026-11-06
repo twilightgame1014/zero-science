@@ -324,6 +324,53 @@ export class AssetManager {
 
   /** Soft irregular blob as a LINEAR alpha map (for ground patches:
    *  leaf litter, gravel banks, worn dirt). Green channel is read. */
+  /** Riverbed: sand with embedded pebbles and faint moss patches.
+   *  Drawn on its own ribbon under the transparent water surface, so
+   *  the shallows show a real bed instead of flat vertex colour
+   *  (2026-11-06 water pass). Tiles in both axes. */
+  createRiverbedTexture(): THREE.CanvasTexture {
+    return this.canvasTexture(256, (ctx, s) => {
+      const rnd = this.rand(7331);
+      ctx.fillStyle = '#bfa87c';
+      ctx.fillRect(0, 0, s, s);
+      this.speckle(ctx, s, rnd, ['#a8905e', '#cdb287', '#9a7f52'], 1600, 0.3);
+      // Moss patches (soft, sparse).
+      for (let i = 0; i < 16; i++) {
+        const x = rnd() * s;
+        const y = rnd() * s;
+        const r = 8 + rnd() * 18;
+        ctx.fillStyle = `rgba(88,118,58,${0.08 + rnd() * 0.09})`;
+        for (let j = 0; j < 5; j++) {
+          ctx.beginPath();
+          ctx.ellipse(x + (rnd() - 0.5) * r, y + (rnd() - 0.5) * r * 0.7,
+            r * (0.4 + rnd() * 0.5), r * (0.3 + rnd() * 0.4), rnd() * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      // Pebbles: shaded ellipses, denser small ones between big ones.
+      const tones = ['#8f8a80', '#7a746a', '#9c9484', '#6e675c', '#a39a86', '#857a68'];
+      for (let i = 0; i < 380; i++) {
+        const x = rnd() * s;
+        const y = rnd() * s;
+        const rx = 2.5 + rnd() * rnd() * 6;
+        const ry = rx * (0.62 + rnd() * 0.25);
+        const rot = rnd() * Math.PI;
+        ctx.fillStyle = 'rgba(60,52,40,0.35)';
+        ctx.beginPath();
+        ctx.ellipse(x + 0.8, y + 1.3, rx, ry, rot, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = tones[(rnd() * tones.length) | 0];
+        ctx.beginPath();
+        ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,250,235,0.20)';
+        ctx.beginPath();
+        ctx.ellipse(x - rx * 0.3, y - ry * 0.35, rx * 0.45, ry * 0.4, rot, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+  }
+
   createPatchAlphaTexture(): THREE.CanvasTexture {
     const canvas = document.createElement('canvas');
     canvas.width = 128;

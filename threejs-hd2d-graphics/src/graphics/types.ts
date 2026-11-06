@@ -201,4 +201,31 @@ export interface GraphicsConfig {
      *  walk frames slowly (2026-11-06). Kept for config compat. */
     idleFps: number;
   };
+  /** River water appearance (2026-11-06 water pass). The water is
+   *  layered: a visible pebble/sand riverbed under a depth-graded
+   *  surface with dot-dash ripples and a broken foam edge. All values
+   *  are tunable through GraphicsOptions.config without code changes. */
+  water: {
+    /** Colour of very shallow water over the visible riverbed. */
+    shallowColor: number;
+    /** Colour of the deepest part of the channel. */
+    deepColor: number;
+    /** Opacity over the shallows / at full depth. */
+    shallowAlpha: number;
+    deepAlpha: number;
+    /** Water depth (world units) at which the full deep colour lands. */
+    deepDepth: number;
+    /** Ripple dash layers: cell width (world units) and flow speed. */
+    rippleScale: number;
+    rippleSpeed: number;
+    rippleScale2: number;
+    rippleSpeed2: number;
+    /** Brightness the ripple dashes add (kept subtle). */
+    rippleStrength: number;
+    /** Water shallower than this grows the broken foam edge. */
+    foamDepth: number;
+    foamStrength: number;
+    /** Sun glint intensity, 0 disables. Low quality scales it down. */
+    glintStrength: number;
+  };
 }

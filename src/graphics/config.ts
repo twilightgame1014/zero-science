@@ -35,6 +35,23 @@ export const DEFAULT_CONFIG: GraphicsConfig = {
     walkFps: 9,
     idleFps: 2,
   },
+  water: {
+    // Calm, desaturated palette matched to the HD-2D world: no bright
+    // cyan, no full-surface white sheen (2026-11-06 water pass).
+    shallowColor: 0x8fd2c6,
+    deepColor: 0x2f7d99,
+    shallowAlpha: 0.16,
+    deepAlpha: 0.9,
+    deepDepth: 1.15,
+    rippleScale: 0.95,
+    rippleSpeed: 0.55,
+    rippleScale2: 0.62,
+    rippleSpeed2: 0.95,
+    rippleStrength: 0.1,
+    foamDepth: 0.17,
+    foamStrength: 0.8,
+    glintStrength: 0.3,
+  },
 };
 
 export function resolveConfig(
@@ -49,5 +66,6 @@ export function resolveConfig(
     },
     camera: { ...DEFAULT_CONFIG.camera, ...(override.camera ?? {}) },
     character: { ...DEFAULT_CONFIG.character, ...(override.character ?? {}) },
+    water: { ...DEFAULT_CONFIG.water, ...(override.water ?? {}) },
   };
 }

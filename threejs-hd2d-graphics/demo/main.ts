@@ -158,6 +158,14 @@ document.getElementById('btn-chara')!.addEventListener('click', async (e) => {
     currentChara === 'boy' ? '主人公を女の子に切替' : '主人公を男の子に切替';
   gfx.playVisualEffect('sparkle', { x: player.x, z: player.z });
 });
+// Water sample viewpoint: stand on the west bank at z=6, where the
+// channel bends — shallows, bed pebbles, foam edge and deep water all
+// fit in one frame (2026-11-06 water pass verification).
+document.getElementById('btn-river')!.addEventListener('click', () => {
+  player.x = 15.4;
+  player.z = 6;
+  player.moving = false;
+});
 document.getElementById('tod')!.addEventListener('input', (e) => {
   const v = Number((e.target as HTMLInputElement).value) / 100;
   gfx.setWorldVisualState({ timeOfDay: v });
