@@ -45,6 +45,12 @@ for (const [name, file] of Object.entries(ICON_FILES)) {
 ASSETS.labApp = {};
 const appDir = path.join(root, 'assets/lab-apparatus/sprites');
 if (fs.existsSync(appDir)) for (const f of fs.readdirSync(appDir)) if (f.endsWith('.png')) ASSETS.labApp[f.replace('.png', '')] = dataUrl('assets/lab-apparatus/sprites/' + f, 'image/png');
+// 物質アイコン（Muse・assets/item-icons が原本。scripts/make-item-atlas.py で作った 64px のアトラスを埋め込む）
+const itemAtlas = 'assets/build/item-icons-64.webp', itemMap = 'assets/build/item-icons-64.json';
+if (fs.existsSync(path.join(root, itemAtlas)) && fs.existsSync(path.join(root, itemMap))) {
+  const m = JSON.parse(fs.readFileSync(path.join(root, itemMap), 'utf8'));
+  ASSETS.items = { src: dataUrl(itemAtlas, 'image/webp'), cols: m.cols, rows: m.rows, pos: m.items };
+}
 const parts = {
   '/*GFX*/': gfxCode,
   '/*ASSETS*/': 'var ASSETS=' + JSON.stringify(ASSETS) + ';',

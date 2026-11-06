@@ -92,6 +92,14 @@ button:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-v
 .ico{display:inline-block;line-height:1.1}
 img.ico{width:32px;height:32px;object-fit:contain;image-rendering:pixelated}
 [data-ui="pc"] .nav img.ico{width:28px;height:28px}
+/* 物質アイコン（アトラスの1マス。大きさは文字の大きさに合わせる） */
+/*  「.need span」などの汎用の span 指定（背景・枠・余白）に上書きされないよう !important を付ける */
+.iic{display:inline-block;width:1.25em;height:1.25em;vertical-align:-.25em;flex:none;
+  margin:0 .08em 0 0 !important;padding:0 !important;border:0 !important;border-radius:0 !important;box-shadow:none !important;
+  background:var(--iat) no-repeat !important;
+  background-size:calc(var(--iat-c) * 100%) calc(var(--iat-r) * 100%) !important;
+  background-position:calc(var(--c) * 100% / (var(--iat-c) - 1)) calc(var(--r) * 100% / (var(--iat-r) - 1)) !important}
+.sheet .bigi .iic,.prod .i .iic,.dx .i .iic,.toast .i .iic{width:1.15em;height:1.15em}
 .hbtn img.ico{width:28px;height:28px}
 .bigitem img.ico{width:44px;height:44px}
 .bigitem .ico.emo{font-size:1.8rem}

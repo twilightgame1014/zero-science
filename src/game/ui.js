@@ -8,7 +8,18 @@ const U = {tab:"explore", opener:null, dockTab:null, missionOpen:false, tray:{},
            region:"forest", nodes:{}, combo:0, lastGather:0, walking:false};
 const $ = s=>document.querySelector(s);
 const nm = id=>IT[id]?IT[id].name:id;
-const ic = id=>IT[id]?IT[id].icon:"❔";
+/* 物質アイコン（Muse の assets/item-icons から作った 64px アトラス。ないもの・道具・設備は絵文字） */
+const ITEM_ICO = (()=>{ const a = window.ASSETS && ASSETS.items; if(!a || !a.src) return null;
+  let url = a.src;
+  try{ const b = atob(a.src.slice(a.src.indexOf(",")+1)), u = new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); url = URL.createObjectURL(new Blob([u],{type:"image/webp"})); }catch(e){}
+  document.documentElement.style.setProperty("--iat", `url("${url}")`);
+  document.documentElement.style.setProperty("--iat-c", a.cols); document.documentElement.style.setProperty("--iat-r", a.rows);
+  return {url, cols:a.cols, rows:a.rows, pos:a.pos||{}}; })();
+const icT = id=>IT[id]?IT[id].icon:"❔";   // 文字だけの場所（バナー・選択肢・SVGの代替）
+const ic = id=>{ const p = ITEM_ICO && ITEM_ICO.pos[id]; return p ? `<span class="iic" style="--c:${p[0]};--r:${p[1]}" aria-hidden="true"></span>` : icT(id); };
+const svgIc = (id, x, y, sz)=>{ const p = ITEM_ICO && ITEM_ICO.pos[id];
+  return p ? `<svg x="${x}" y="${y}" width="${sz}" height="${sz}" viewBox="${p[0]*64} ${p[1]*64} 64 64" aria-hidden="true"><image href="${ITEM_ICO.url}" width="${ITEM_ICO.cols*64}" height="${ITEM_ICO.rows*64}"/></svg>`
+           : `<text text-anchor="middle" x="${x+sz/2}" y="${y+sz*0.78}" font-size="${sz*0.75}">${icT(id)}</text>`; };
 const isMat = id=>IT[id] && !IT[id].tags.includes("道具") && !IT[id].tags.includes("研究設備");
 const owned = id=>E.has(S,id);
 const stage = ()=>E.stageOf(S);
@@ -24,7 +35,7 @@ function toast(id, kind){
   const box = $("#toasts"); const el = document.createElement("div"); el.className="toast"+(kind?" small":"");
   if(kind==="mission") el.innerHTML=`<div class="i">🦉</div><div><div class="k">目標達成！</div><div class="nm">${id}</div></div>`;
   else if(kind==="stage") el.innerHTML=`<div class="i">🏙️</div><div><div class="k">文明が進化した！</div><div class="nm">${id}</div><p>フィールドと研究室の見た目が変わったよ。</p></div>`;
-  else { const it=IT[id]; el.innerHTML=`<div class="i">${it.icon}</div><div><div class="k">${it.tags.includes("珍しい発見")?"珍しい発見！":"新発見！"} 図鑑に登録したよ</div><div class="nm">${it.name}</div><p>${it.kid}</p></div>`; el.onclick=()=>{ openItem(id); el.remove(); }; }
+  else { const it=IT[id]; el.innerHTML=`<div class="i">${ic(id)}</div><div><div class="k">${it.tags.includes("珍しい発見")?"珍しい発見！":"新発見！"} 図鑑に登録したよ</div><div class="nm">${it.name}</div><p>${it.kid}</p></div>`; el.onclick=()=>{ openItem(id); el.remove(); }; }
   box.prepend(el); const maxN = uiMode()==="touch" ? 2 : 3; while(box.children.length>maxN) box.lastChild.remove();
   setTimeout(()=>el.remove(), kind?4000:6500);
 }
@@ -332,7 +343,7 @@ function drawScene(){
   ${facs.map((f,i)=>`<g transform="translate(${36+i*54},96) scale(.36)" opacity=".9"><title>${nm(f)}（持っている設備）</title>${facArt(f)}</g>`).join("")}
   <rect x="0" y="${baseY}" width="400" height="10" fill="${st<3?"#8a643f":"#5b6470"}"/><rect x="0" y="${baseY+10}" width="400" height="30" fill="${st<3?"#6e4e30":"#3d4650"}"/>
   ${benchProps(st)}
-  ${tray.map((k,i)=>`<g transform="translate(${26+i*30},${baseY+28})"><circle r="12" fill="rgba(255,255,255,.9)"/><text text-anchor="middle" y="5" font-size="15">${ic(k)}</text></g>`).join("")}
+  ${tray.map((k,i)=>`<g transform="translate(${26+i*30},${baseY+28})"><circle r="12" fill="rgba(255,255,255,.9)"/>${svgIc(k,-10,-10,20)}</g>`).join("")}
   ${U.fac && CENTER_APP[U.fac] && hasSpr("flask") ? `${CENTER_APP[U.fac](200, baseY+4, tray.length>0)}
     <text x="200" y="${baseY+36}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${nm(U.fac)}</text>`
   : U.fac?`<g transform="translate(${tall?300:200},${baseY+2}) scale(${tall?.85:1.15})">${facArt(U.fac)}</g>
@@ -438,7 +449,7 @@ function resultNote(res){
     <h4>${isNew?"✨ 新しい発見！":"✅ 実験成功！"} <small style="font-weight:700;color:var(--muted)">${OPS[p.op].icon}${OPS[p.op].name} × ${res.batches}回</small></h4>
     <div class="eq">${Object.keys(res.consume).map(k=>ic(k)+nm(k)+"×"+res.consume[k]).join(" ＋ ")} → ${outs.map(k=>ic(k)+nm(k)+"×"+res.produce[k]).join(" ＋ ")}</div>
     <div class="why"><b>何が起きたの？</b><br>${p.why}</div>
-    ${outs.map(k=>{ const it=IT[k]; return `<div class="prod"><span class="i">${it.icon}</span><p><b>${it.name}</b>${res.news.includes(k)?'<span class="tag">NEW</span>':""}${it.f?` <small style="color:var(--muted)">${it.f}</small>`:""}<br>${it.kid}
+    ${outs.map(k=>{ const it=IT[k]; return `<div class="prod"><span class="i">${ic(k)}</span><p><b>${it.name}</b>${res.news.includes(k)?'<span class="tag">NEW</span>':""}${it.f?` <small style="color:var(--muted)">${it.f}</small>`:""}<br>${it.kid}
       ${it.store===false?`<br><span class="gasnote">（気体なので集められず、発生の記録だけが図鑑に残る）</span>`:""}
       ${it.purity?`<br><span class="gasnote">純度：${showP?"約"+(it.purity>=0.999?"99.99":Math.round(it.purity*100))+"%":"？（てんびんがあればわかる）"}</span>`:""}</p></div>`; }).join("")}
     ${owned("notebook")?`<div class="row mt"><button class="btn small sub" data-act="again" data-proc="${p.id}" data-fac="${U.fac}">📓 同じ実験をもう一度</button></div>`:""}
@@ -572,7 +583,7 @@ function nodeHTML(r,x){
 }
 function floatText(el, text, cls){
   const sc=$("#rnodes"); if(!sc||!el) return;
-  const f=document.createElement("span"); f.className="float "+(cls||""); f.textContent=text;
+  const f=document.createElement("span"); f.className="float "+(cls||""); f.innerHTML=text;
   f.style.left=el.style.left; f.style.top=el.style.top; sc.appendChild(f); setTimeout(()=>f.remove(), RM?600:1100);
 }
 function banner(text){ const b=$("#banner"); if(!b) return; b.textContent=text; b.classList.remove("on"); void b.offsetWidth; b.classList.add("on"); }
@@ -822,7 +833,7 @@ function tInfo(t){
     yields:{[n.res.id]:inf.n||n.res.n}, left:inf.left, until:inf.until};
 }
 const tWork = t => t.o ? NATURE.KINDS[t.o.kind].work : 450;
-const yieldText = y => Object.keys(y).map(id=>(S.disc[id]?ic(id)+nm(id):"❔"+nm(id))+"×"+y[id]).join("・");
+const yieldText = (y, plain) => Object.keys(y).map(id=>(plain?"":S.disc[id]?ic(id):"❔")+nm(id)+"×"+y[id]).join("・");   // plain：読み上げ用（記号なし）
 
 /* ---------- 毎フレームの更新（移動・地域判定・近くの資源） ---------- */
 function regionAt(x,z){ let best=null, bd=1e9; D.regions.forEach(r=>{ if(!r.w) return; const d=Math.hypot(x-r.w.x,z-r.w.z); if(d<bd){bd=d;best=r;} }); return bd<=REGION_R+3?best:null; }
@@ -1001,13 +1012,13 @@ function updateLabels3D(){
     const inf=WORLD.info(S,o), K=NATURE.KINDS[o.kind], h = o.kind==="tree" ? 3.2*o.scale : o.kind==="rock" ? 1.4*o.scale : 0.9;
     labelFor("o:"+o.id, "w3pick", {o:o.id}, o.x, groundY(o.x,o.z)+h, o.z,
       `<span>${inf.ok?inf.icon:"🔒"}</span>${inf.name}<small style="font-weight:700;margin-left:4px">${inf.ok?"→ "+yieldText(inf.yields):inf.reason}</small>`,
-      (inf.ok?"":" lock")+(W3.near&&W3.near.o===o?" near":""), inf.name+"："+(inf.ok?K.verb+"と"+yieldText(inf.yields):inf.reason)); });
+      (inf.ok?"":" lock")+(W3.near&&W3.near.o===o?" near":""), inf.name+"："+(inf.ok?K.verb+"と"+yieldText(inf.yields,true):inf.reason)); });
   Object.keys(W3.labelEls).forEach(k=>{ if(k.startsWith("o:") && !want.has(k)){ W3.labelEls[k].remove(); delete W3.labelEls[k]; } });
 }
 function float3D(p, text, cls){
   const box=$("#w3labels"); if(!box) return;
   const s=toScreen(p.x, groundY(p.x,p.z)+1.2, p.z);
-  const f=document.createElement("span"); f.className="float "+(cls||""); f.textContent=text;
+  const f=document.createElement("span"); f.className="float "+(cls||""); f.innerHTML=text;
   f.style.left=s.x+"px"; f.style.top=s.y+"px"; box.appendChild(f); setTimeout(()=>f.remove(), RM?600:1100);
 }
 /* 画面上の点にある採取対象を選ぶ（木は幹から樹冠まで、小さなものは周りも少し広めに当てる） */
@@ -1095,7 +1106,7 @@ function craftCard(c){
   const it = IT[c.out], pl = E.planCraft(S,c), own = it.unique && owned(c.out);
   const reqs = Object.keys(c.inp).map(id=>{ const k=S.disc[id]; const okk=E.cnt(S,id)>=c.inp[id]; return `<span class="${okk?"ok":"ng"}">${k?ic(id)+nm(id):"❔？？？"} ${E.cnt(S,id)}/${c.inp[id]}</span>`; }).join("");
   const tl = c.tools.concat(c.at?[c.at]:[]).map(id=>`<span class="${owned(id)?"ok":"ng"}">${c.at===id?"場所：":"道具："}${S.disc[id]?ic(id)+nm(id):"❔？？？"}</span>`).join("");
-  return `<div class="card"><h3><span class="i">${it.icon}</span>${it.name}${own?' <span class="tag" style="background:var(--meadow);color:var(--meadow-ink)">持っている</span>':""}</h3>
+  return `<div class="card"><h3><span class="i">${ic(c.out)}</span>${it.name}${own?' <span class="tag" style="background:var(--meadow);color:var(--meadow-ink)">持っている</span>':""}</h3>
     <div class="kid">${it.kid}</div><div class="need">${reqs}${tl}</div><div class="how">作り方：${c.how}</div>
     ${own?"":`<div class="row mt"><button class="btn small" data-act="craft" data-id="${c.id}" ${pl.ok?"":"disabled"}>🔨 作る</button>${pl.ok?"":`<span class="desc" style="margin:0">${pl.msg}</span>`}</div>`}</div>`;
 }
@@ -1118,7 +1129,7 @@ function viewBook(){
   <div class="bars"><button class="bar" data-act="filter" data-id="すべて" aria-pressed="${U.filter==="すべて"}">すべて ${got}/${total}<div class="m"><i style="width:${got/total*100}%"></i></div></button>
     ${prog.map(p=>`<button class="bar" data-act="filter" data-id="${p.tag}" aria-pressed="${U.filter===p.tag}">${p.tag} ${p.got}/${p.total}<div class="m"><i style="width:${p.got/p.total*100}%"></i></div></button>`).join("")}</div>
   <p class="desc">点線の❔はヒントが見られるよ。分類は重なることがある（例：銅は「元素」と「金属・合金」の両方）。</p>
-  <div class="dex">${list.map(k=>{ const st=E.status(S,k); return `<button class="dx ${st}" data-act="item" data-id="${k}"><span class="i">${st==="known"?IT[k].icon:"❔"}</span><span class="n">${st==="known"?IT[k].name:"？？？"}</span></button>`; }).join("")}</div>
+  <div class="dex">${list.map(k=>{ const st=E.status(S,k); return `<button class="dx ${st}" data-act="item" data-id="${k}"><span class="i">${st==="known"?ic(k):"❔"}</span><span class="n">${st==="known"?IT[k].name:"？？？"}</span></button>`; }).join("")}</div>
   <div class="sec">🧪 実験操作の図鑑 <small>どんな操作があるのか</small></div>
   <div class="oplist">${Object.keys(OPS).map(o=>{ const fs=Object.keys(IT).filter(f=>IT[f].facility&&IT[f].ops.includes(o)); const can=fs.some(owned);
     return `<div class="opc"><b>${OPS[o].icon} ${OPS[o].name}</b>（${OPS[o].yomi}）${can?"":' <span class="tag" style="background:var(--line);color:var(--muted)">未解放</span>'}<br>${OPS[o].kid}<br><small style="color:var(--muted)">使える装置：${fs.map(f=>S.disc[f]?nm(f):"？？？").join("・")}</small></div>`; }).join("")}</div>`;
@@ -1139,7 +1150,7 @@ function openItem(id){
     const usesL = us.procs.map(p=>Object.keys(p.out)).flat().concat(us.crafts.map(c=>c.out)).filter((v,i,a)=>a.indexOf(v)===i);
     const showP = owned("balance"), why = pr.procs.find(p=>r.routes.includes(p.id));
     sh.innerHTML = `<button class="close" data-act="close">閉じる</button>
-    <div class="hd"><span class="bigi">${it.icon}</span><div><h2>${it.name}</h2><div class="yomi">${it.yomi}・${it.en}</div></div></div>
+    <div class="hd"><span class="bigi">${ic(id)}</span><div><h2>${it.name}</h2><div class="yomi">${it.yomi}・${it.en}</div></div></div>
     <div class="kidbox">${it.kid}</div>
     <h5>📘 くわしく</h5><p style="margin:0;font-size:.9rem">${it.more}</p>
     ${why?`<h5>🔬 何が起きてできたの？</h5><p style="margin:0;font-size:.9rem">${why.why}</p>`:""}

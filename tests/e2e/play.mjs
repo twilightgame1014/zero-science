@@ -126,6 +126,10 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   const dk = await rect(page, '#dock');
   ok('研究室はマップの上に重なる（マップは縮まない）', (await fullCheck(page)).full && dk.t < 60 && Math.round(dk.b) <= Math.round(nav.t) + 1, JSON.stringify(dk));
   ok('研究室は画像を使わず、SVGで描いた実験台と手順を表示する（研究室の画像は埋め込まない）', await page.evaluate(`!!document.querySelector('#stagebox svg#scene') && !document.getElementById('stagebox').style.backgroundImage.includes('url') && !Object.keys(ASSETS).some(k=>/^lab\\d/.test(k)) && Object.keys(ASSETS.labApp||{}).length>=10 && document.querySelectorAll('#labSteps li').length===5`));
+  const iic = await page.evaluate(`(()=>{ const e=document.querySelector('#dock .shelf .mat .iic'); if(!e) return null; const cs=getComputedStyle(e), r=e.getBoundingClientRect(); return {bg:cs.backgroundImage.slice(0,12), w:r.width, h:r.height, n:Object.keys((ASSETS.items||{}).pos||{}).length, emo:document.querySelector('#dock .shelf .mat .i').textContent}; })()`);
+  ok('研究室の材料棚は、物質アイコン（アトラスの画像）で表示される', iic && /url\("(blob|data):/.test(iic.bg) && iic.w >= 14 && iic.h >= 14 && iic.n === 137 && iic.emo === '', JSON.stringify(iic));
+  const needBg = await page.evaluate(`(()=>{ const d=document.createElement('div'); d.className='need'; const p=ASSETS.items.pos.flint; d.innerHTML='<span class="ok"><span class="iic" style="--c:'+p[0]+';--r:'+p[1]+'"></span>火打ち石</span>'; document.getElementById('dockBody').appendChild(d); const cs=getComputedStyle(d.querySelector('.iic')); const r={bg:cs.backgroundImage.slice(0,10), pad:cs.paddingLeft, tool:!!ASSETS.items.pos.axe}; d.remove(); return r; })()`);
+  ok('工作の材料欄（span の汎用スタイルの中）でもアイコンが消えない。道具は絵文字のまま', /url/.test(needBg.bg) && needBg.pad === '0px' && needBg.tool === false, JSON.stringify(needBg));
   ok('パネル表示中は、マップとHUDが操作できない（inert）', await page.evaluate(`document.getElementById('view').inert && document.getElementById('hud').inert`));
   ok('スクロールはメニューの中だけ', await page.evaluate(`getComputedStyle(document.getElementById('dockBody')).overflowY==='auto' && document.scrollingElement.scrollHeight<=innerHeight`));
   await page.click('#dock .dockx'); await page.waitForTimeout(700);
