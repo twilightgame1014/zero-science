@@ -102,6 +102,21 @@ ok('落ち枝は8分たつとまた落ちてくる（時刻を保存している
 S.inv.hammer = 1; const rk2 = rocks[2]; for (let i = 0; i < 3; i++) W.harvest(S, rk2.id, { pos: near(rk2), token: S.seq, now, rng: () => 0.99 });
 ok('岩はハンマーで3回割ると残骸になり、何日たっても元に戻らない', W.visual(S, rk2, now).state === 'rubble' && W.visual(S, rk2, now + 1e10).state === 'rubble' && !W.solid(S, rk2, now));
 
+/* ---------- 描画の寸法との照合（Muse の RESOURCE_VISUAL_SPECS） ---------- */
+{
+  const { build } = await import('esbuild');
+  const path = (await import('node:path')).default, url = await import('node:url');
+  const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
+  const out = await build({ stdin: { contents: "export { RESOURCE_VISUAL_SPECS } from './src/graphics/ResourceRenderer';", resolveDir: root, loader: 'ts' }, bundle: true, format: 'esm', platform: 'node', write: false, logLevel: 'silent' });
+  const SPEC = (await import('data:text/javascript;base64,' + Buffer.from(out.outputFiles[0].text).toString('base64'))).RESOURCE_VISUAL_SPECS;
+  const K = N.KINDS;
+  ok('木の当たり判定は描画の幹の太さ以上で、幹から大きくはみ出さない（樹冠は壁にしない）', K.tree.r >= SPEC.tree.trunkRadius && K.tree.r <= SPEC.tree.trunkRadius + 0.15 && K.tree.r < SPEC.tree.footprintRadius * 0.5, JSON.stringify({ game: K.tree.r, spec: SPEC.tree }));
+  ok('岩の当たり判定は描画の占有半径とほぼ同じ（±15%）', K.rock.r >= SPEC.rock.footprintRadius * 0.85 && K.rock.r <= SPEC.rock.footprintRadius * 1.15, JSON.stringify({ game: K.rock.r, spec: SPEC.rock }));
+  ok('描画に必要な種類（tree・rock・branch・pebble・herb）と採取後の形がそろっている', ['tree', 'rock', 'branch', 'pebble', 'herb'].every(t => SPEC[t]) && SPEC.tree.depletedForm === 'stump' && SPEC.rock.depletedForm === 'rubble' && SPEC.herb.depletedForm === 'cut-patch');
+  const big = W.objects.filter(o => o.kind === 'tree' || o.kind === 'rock').reduce((m, o) => Math.max(m, o.scale), 0);
+  ok('いちばん大きい木・岩でも、外周から手の届く距離で採取でき、外周の立てる場所が見つかる', W.objects.filter(o => (o.kind === 'tree' || o.kind === 'rock') && o.scale >= big - 0.05).every(o => { const ap = W.approachPoint(E.newState(), o, { x: o.x + 5, z: o.z }); return ap && W.reachGap(o, ap) <= E.REACH; }), 'max scale ' + big);
+}
+
 /* ---------- 古いセーブ ---------- */
 const oldTxt = JSON.stringify({ v: 1, inv: { twig: 3 }, disc: { twig: { first: 1, made: 1, total: 3, routes: [], best: 0 } }, pos: { x: rocks[5].x, z: rocks[5].z }, flags: { intro: 1 } });
 const SO = E.deserialize(oldTxt);

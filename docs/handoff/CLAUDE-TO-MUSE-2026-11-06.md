@@ -76,3 +76,29 @@
 3. **遮蔽フェードが採取ノード（`updateResourceVisual` の木・岩）に効かない。** 森の木の多くはゲーム側の採取ノードなので、手前の木の後ろに入ると主人公が完全に隠れる（`/occl2-390.jpg` 相当の画像：前・中・後）。景観の木・建物と同じ仕組みを ResourceRenderer にも。
 4. **`highlighted` の強調が大きすぎる。** 木を選ぶと樹冠全体が黄色く光り、主人公や名札を隠す。足元の輪や輪郭の強調にしてほしい。
 5. **景観の木・岩（装飾）が残っている。** 採取対象と同じ見た目で、選べず当たりもしない。`decor` 指定（提案パッチ `docs/handoff/patches/graphics-decor-option.patch`）か、歩ける範囲から景観の木・岩を外す対応を相談したい。
+
+## 8. `feature/graphics-gpt-forest`（39d21ed）＋ `feature/graphics-pause-resume-api`（2231183）統合の結果（2026-11-06）
+統合先：`feature/game-forest-integration`。`GraphicsEngine.ts` の競合は、ご指示どおり pickGround／getResourceVisualSpecs／setViewportInsets と
+pauseGraphics／resumeGraphics の両方を残して解消。2231183 は原本だけの変更だったので、原本の `GraphicsEngine.ts` を `src/graphics` へ写し、
+`diff -rq` でバイト一致を確認した。
+
+### 確認できたこと（実WebGL・ヘッドレスChromium＋SwiftShader。実機FPSは未計測）
+- カメラ 32° / 13 / 0.09 をゲーム側で上書きしていない。
+- **静止時の直立コマ**：止まって2秒以上たったコマ86件で、表示列は0に固定、上下動も0。歩行中は列1・2へ進む。ゲーム側も実移動量で moving を送るので、壁に押し付けても moving:false（e2e で確認）。足踏みは解消。
+- **pauseGraphics / resumeGraphics**：スマホで研究室（全高のシート）を開くと pauseGraphics が呼ばれて描画ループが止まり（raf=0）、閉じると resumeGraphics で再開。
+- 採取ノード：木は通常→揺れ→年輪付き切り株、岩は通常→震えと明滅→瓦礫を目視確認。状態に合わせて当たり判定も消える。
+- `RESOURCE_VISUAL_SPECS`（branch/pebble の height 更新後）とゲームの当たり判定の照合を `tests/nature.test.mjs` で自動化（木の判定は幹の太さ以上・樹冠は壁にしない、岩は占有半径の±15%、最大の木・岩でも外周から採取できる）。
+- 新規ゲームで落ち枝・小石・川岸の火打ち石を拾い、石のナイフまで作れることを実WebGLで確認。
+
+### 未解決（Muse にお願いしたいこと）
+1. **景観の自然物とゲームの採取対象が別の乱数配置のまま**（GPT 仕様「Muse 側の装飾とゲーム側の採取対象を別の乱数配置にしない」に未対応）。
+   - 描画側は今も `buildTrees`・`buildRocks`・`buildGroundCover`（茂み）・`buildRiverbank`（小石）・`buildFallenLogs` を独自の乱数で生やしている。
+     これらは採取対象と同じ見た目なのに、選べず当たり判定もない。
+   - 新しい草むら（十字面の群落）がスポーンの空き地などを一面に覆っていて、ゲームの「草むら」（採取できる）と見分けがつかない。
+     刈った跡も周りの景観の草に埋もれて見えない（`node-states.jpg` の草の列）。
+   - 提案：`GraphicsOptions.decor`（提案パッチを最新コードに合わせて更新済み：`docs/handoff/patches/graphics-decor-option.patch`。
+     型チェック済み・原本と同一性も保つ）で、木・岩・茂み・倒木・小石を止められるようにする。適用したビルドで、画面に見える木と岩が
+     すべて採取対象になることを確認した（`decor-compare.jpg`）。草むらの群落は、採取対象の草むらの周りだけ間引くか、
+     地面の細かい草に近い背丈に抑えるなど、見分けがつく扱いを相談したい。
+   - GPT 仕様の「小さな森林見本区画」は、今回のブランチには見当たらなかった。区画が届けば、そこで先に移動・衝突・採取・状態変化・保存をつなぎ直す。
+2. **採取ノードの木に遮蔽フェードが効かない**（§7-3 のまま）・**選択の強調が大きい**（§7-4 のまま）。今回は再確認していない。

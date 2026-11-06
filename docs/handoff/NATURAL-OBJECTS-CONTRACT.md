@@ -58,6 +58,8 @@ gfx.updateResourceVisual('tree:-412,388', {
 | 岩 | footprintRadius 1.0 | 0.95 | |
 | 落ち枝 | footprint 0.5×0.8＝0.40 | 0.25（歩行を妨げない・選択の目安） | |
 | 小石 | footprint 0.32×0.75＝0.24 | 0.22（歩行を妨げない） | |
+
+この照合は `tests/nature.test.mjs` が `RESOURCE_VISUAL_SPECS` を読み込んで毎回確認する（2026-11-06〜）。
 表示するのは主人公の周り32マス以内（38マスを超えたら `null` で消す）。
 
 ## 5. 描画側にお願いしたいこと（Muse）
