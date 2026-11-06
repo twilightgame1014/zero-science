@@ -65,12 +65,18 @@ gfx.playVisualEffect('discovery', { x: 12, z: -8 });
 // 'sparkle'|'discovery'|'levelup'|'splash'|'leaves'|'smoke'
 ```
 
-## 5. リサイズ・破棄
+## 5. リサイズ・一時停止・破棄
 
 ```ts
 gfx.resizeGraphics(width, height);  // 通常は ResizeObserver が自動処理
+gfx.pauseGraphics();                // 探検タブを離れる等、画面が隠れるとき
+gfx.resumeGraphics();               // 画面に戻るとき（再開初回フレームは飛ばない）
 gfx.disposeGraphics();              // 画面離脱時
 ```
+
+`pauseGraphics` / `resumeGraphics` は描画ループの停止・再開だけを行い、
+シーンやゲーム状態には一切触れない。どちらも繰り返し呼んで安全で、
+`disposeGraphics()` 後の `resumeGraphics` は何もしない。
 
 ## 6. 座標系の契約（連携時に要すり合わせ）
 
