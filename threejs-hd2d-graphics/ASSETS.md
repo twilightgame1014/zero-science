@@ -8,6 +8,7 @@
 |---|---|---|---|
 | assets/characters/player-spritesheet-boy.png | 主人公（男の子：ゴーグル＋白衣）4方向×4フレーム | PNG 1024×1024 透過 | 行: 下・左・右・上 |
 | assets/characters/player-spritesheet-girl.png | 主人公（女の子：銀髪ロング＋ゴーグル＋白衣）4方向×4フレーム | PNG 1024×1024 透過 | 行: 下・左・右・上 |
+| assets/characters/player-spritesheet-girl-no-shadow.png | 同上・接地影なし版（ブーツ下の元絵の楕円影を除去） | PNG 1024×1024 透過 | 行: 下・左・右・上。エンジン側が `shadow-blob.png` で影を描くため二重影にならない |
 | assets/characters/reference/*.jpg | 上記2点の元画像（白背景） | JPG | ユーザー提供。透過化・サイズ正規化の原典として保管 |
 
 主人公2名のデザインはユーザー提供のイラストが原典です。白背景の除去（透過化）、足位置・サイズの正規化を行い、モジュールのシート規格（4列×4行、足元位置統一）に合わせてあります。
