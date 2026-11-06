@@ -120,7 +120,19 @@ MQ_COARSE.addEventListener("change", ()=>applyUiMode());
 /* 画面の回転では、移動を止める */
 matchMedia("(orientation: portrait)").addEventListener("change", ()=>{ haltField(); applyUiMode(); });
 /* 指で触ったら、PC配置でもスティックを出す（タッチ対応のノートPCなど） */
-document.addEventListener("pointerdown", e=>{ if(e.pointerType==="touch") $("#app").classList.add("touched"); }, true);
+document.addEventListener("pointerdown", e=>{ if(e.pointerType==="touch") $("#app").classList.add("touched"); clearStraySelection(e.target); }, true);
+/* ---------- 文字選択・画像ドラッグ・長押しメニューの抑止（CSS の user-select / touch-callout の補助） ----------
+   編集できる入力欄（読み込み・書き出し欄、選択肢）の中では何もしない。タッチの標準動作（スクロール・クリック）には触れない */
+const EDITABLE = "input,textarea,select,[contenteditable],[contenteditable] *,[role=textbox]";
+const inEditable = t => !!(t && t.closest && t.closest(EDITABLE));
+const elOf = n => n && (n.nodeType===1 ? n : n.parentElement);
+["selectstart","dragstart","contextmenu"].forEach(type=>document.addEventListener(type, e=>{ if(!inEditable(elOf(e.target)) && e.cancelable) e.preventDefault(); }));
+/* 操作を始めたときだけ、ゲームの表示に残った選択範囲を消す（毎フレームは見ない。入力欄の中の選択は消さない） */
+function clearStraySelection(target){
+  if(inEditable(elOf(target)) || inEditable(document.activeElement)) return;
+  const sel = window.getSelection && window.getSelection(); if(!sel || !sel.rangeCount || sel.isCollapsed) return;
+  if(!inEditable(elOf(sel.anchorNode))) sel.removeAllRanges();
+}
 function setTab(t, opener){
   if(!TABS[t]) t="explore";
   const was = U.tab;
@@ -811,10 +823,14 @@ function haltField(){
   W3.keys={}; W3.joy=null; W3.down=null; W3.target=null; W3.path=null; W3.intent=null;
   if(W3.work) cancelWork(null);
   if(W3.joyReset) W3.joyReset();
+  if(W3.actReset) W3.actReset();
   if(W3.walk){ W3.walk.on=false; W3.walk.slow=0; }
   if(W3.moving && W3.gfx && W3.pos){ W3.moving=false; W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving:false}); updateLoc(); }
 }
 document.addEventListener("visibilitychange", ()=>{ if(document.hidden) haltField(); updateFieldActivity(); });
+/* アプリ切り替え・ページの一時退避（bfcache）から戻ったときも、押しっぱなしの状態を残さない */
+addEventListener("pagehide", haltField);
+addEventListener("pageshow", e=>{ if(e.persisted) haltField(); });
 function updateFieldActivity(){
   if(W3.state!=="ready" || S.flags.view==="2d") return;
   if(fieldShown() && !document.hidden) resume3D(); else pause3D();
@@ -1091,17 +1107,23 @@ function bindHudInput(){
   const act=$("#w3act");
   if(act){ let aid=null;
     act.addEventListener("pointerdown", e=>{ if(e.pointerType==="mouse") return; aid=e.pointerId; });
-    act.addEventListener("pointerup", e=>{ if(e.pointerId!==aid) return; aid=null; pressAction(); });
-    act.addEventListener("pointercancel", e=>{ if(e.pointerId===aid) aid=null; }); }
+    act.addEventListener("pointerup", e=>{ if(e.pointerId!==aid) return; aid=null; W3.actTouchAt=performance.now(); pressAction(); });
+    /* 指がボタンの外へ出て離れた・取り消された：押していないことにする（採取はしない。ほかの指には触れない） */
+    const drop = e=>{ if(e.pointerId===aid) aid=null; };
+    act.addEventListener("pointercancel", drop);
+    addEventListener("pointerup", drop); addEventListener("pointercancel", drop);
+    W3.actReset = ()=>{ aid=null; }; }
   if(joy){ let id=null, cx=0, cy=0; const R=42;
     W3.joyReset = ()=>{ if(id!==null){ try{ joy.releasePointerCapture(id); }catch(err){} } id=null; W3.joy=null; knob.style.transform=""; };
     joy.addEventListener("pointerdown", e=>{ if(!fieldInputActive() || id!==null) return; id=e.pointerId; try{ joy.setPointerCapture(id); }catch(err){} const r=joy.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; mv(e); e.preventDefault(); });
     const mv=e=>{ if(e.pointerId!==id) return; if(!fieldInputActive()){ W3.joyReset(); return; } let dx=e.clientX-cx, dy=e.clientY-cy; const l=Math.hypot(dx,dy); if(l>R){dx*=R/l;dy*=R/l;} knob.style.transform=`translate(${dx}px,${dy}px)`; const m=Math.hypot(dx,dy)/R; W3.joy = m<0.18?null:{x:dx/R, y:dy/R}; };
     joy.addEventListener("pointermove", mv);
     const end=e=>{ if(e.pointerId!==id) return; id=null; W3.joy=null; knob.style.transform=""; };
-    joy.addEventListener("pointerup", end); joy.addEventListener("pointercancel", end); joy.addEventListener("lostpointercapture", end); }
+    joy.addEventListener("pointerup", end); joy.addEventListener("pointercancel", end); joy.addEventListener("lostpointercapture", end);
+    /* 捕捉できなかった・外れた場合の保険：同じ指が画面のどこで離れても止める（別の指は id が違うので影響しない） */
+    addEventListener("pointerup", end); addEventListener("pointercancel", end); }
 }
-const TYPING = "input,textarea,select,[contenteditable],[contenteditable] *,[role=textbox]";
+const TYPING = EDITABLE;
 document.addEventListener("keydown", e=>{
   if(!fieldInputActive() || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest(TYPING))) return;
   const k=e.key.length===1?e.key.toLowerCase():e.key;
@@ -1288,7 +1310,8 @@ document.addEventListener("click", ev=>{
     case "again": { if(U.busy) break; const p=D.procs.find(x=>x.id===b.dataset.proc); U.tray=Object.assign({},p.inp); U.fac=b.dataset.fac; U.op=p.op; U.last=null;
       if(U.tab!=="lab") setTab("lab", b); else renderPanel(); runLab(); break; }
     case "go": travel(id); break;
-    case "g3": if(!ev.pointerType || ev.pointerType==="mouse") pressAction(); break;  /* 指・ペンは pointerup で処理済み */
+    case "g3": /* 指・ペンは pointerup で処理済み。古い Safari では click に pointerType がないので、直後の click は時刻で見分ける */
+      if((!ev.pointerType || ev.pointerType==="mouse") && !(W3.actTouchAt && performance.now()-W3.actTouchAt < 800)) pressAction(); break;
     case "w3pick": { if(!fieldInputActive()) break; const o=WORLD&&WORLD.byId.get(b.dataset.o); if(o){ if(W3.near&&W3.near.o===o) pressAction(); else selectAndGo({o}); } break; }
     case "w3go": { if(!fieldInputActive()) break; const n=NODES&&NODES.find(x=>x.key===b.dataset.n); if(n){ if(W3.near&&W3.near.n===n) pressAction(); else selectAndGo({n}); } break; }
     case "travel": { const r=D.regions.find(x=>x.id===id); if(!E.regionOpen(S,r)) break; /* 理由はボタンに表示済み */

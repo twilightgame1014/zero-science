@@ -357,6 +357,83 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await ctx.close();
 }
 
+/* ---------------- 文字選択・長押しメニュー・指の離脱（スマホ縦） ---------------- */
+{
+  const { page, errors, ctx } = await newPage({ width: 390, height: 844 }, true);
+  const cdp = await ctx.newCDPSession(page);
+  const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });
+  const us = sel => page.evaluate(s => { const e = document.querySelector(s); if (!e) return null; const c = getComputedStyle(e); return { us: c.userSelect || c.webkitUserSelect, co: c.webkitTouchCallout || '' }; }, sel);
+  const modalUs = await us('#sheet');
+  await page.click('#introGo'); await page.waitForTimeout(600);
+  const sels = ['#mission', '#hudLoc', '#w3act', '#joy', '#nav button', '.hud-tr button', '#view'];
+  const st = {}; for (const q of sels) st[q] = await us(q);
+  ok('ゲームの表示（目標文・現在地・行動ボタン・スティック・下部タブ・右上ボタン・マップ・案内）は文字選択も長押しメニューも出ない',
+    [modalUs, ...Object.values(st)].every(v => v && v.us === 'none' && (v.co === '' || v.co === 'none')), JSON.stringify({ modalUs, st }));
+  const guard = await page.evaluate(`(()=>{ const fire=(el,t)=>{ const e=new Event(t,{bubbles:true,cancelable:true}); el.dispatchEvent(e); return e.defaultPrevented; };
+    const img=document.querySelector('img'); return {sel:fire(document.getElementById('mission'),'selectstart'), menu:fire(document.getElementById('w3act'),'contextmenu'),
+      drag: img ? fire(img,'dragstart') : null, imgUs: img ? getComputedStyle(img).webkitUserDrag : null}; })()`);
+  ok('選択の開始・長押しメニュー・画像のドラッグは、ゲームの表示の上では起きない', guard.sel && guard.menu && guard.drag === true, JSON.stringify(guard));
+  // ゲームの表示に残った選択範囲は、次に操作を始めたときに消える
+  const cleared = await page.evaluate(`(()=>{ const r=document.createRange(); r.selectNodeContents(document.getElementById('mission')); const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+    const before=!s.isCollapsed; const v=document.getElementById('view'); v.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:90,pointerType:'touch',clientX:200,clientY:300}));
+    v.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,cancelable:true,pointerId:90,pointerType:'touch',clientX:200,clientY:300})); return {before, after:!getSelection().isCollapsed}; })()`);
+  ok('ゲームの表示に残った選択範囲は、次の操作の開始で消える', cleared.before && !cleared.after, JSON.stringify(cleared));
+
+  // 本物のタッチ（CDP）：スティックを押してから、指をスティックの外へ大きく動かし、外で離す
+  const jr = await rect(page, '#joy'), jx = jr.l + jr.w / 2, jy = jr.t + jr.h / 2;
+  await touch('touchStart', [{ x: jx, y: jy, id: 1 }]);
+  for (let i = 1; i <= 15; i++) { await touch('touchMove', [{ x: jx + i * 8, y: jy - i * 14, id: 1 }]); await page.waitForTimeout(100); }
+  const mid = await page.evaluate(`({joy:!!${G}.W3.joy, sel:String(getSelection()).length})`);
+  await touch('touchEnd', []); await page.waitForTimeout(200);
+  const endOut = await page.evaluate(`({joy:!!${G}.W3.joy, knob:document.querySelector('#joy .knob').style.transform, sel:String(getSelection()).length, moving:${G}.W3.moving})`);
+  ok('タッチ：スティックを押したまま外へ指を動かしても動き続け、外で離すと止まってつまみが中央に戻る（文字選択なし）',
+    mid.joy && mid.sel === 0 && !endOut.joy && endOut.knob === '' && endOut.sel === 0, JSON.stringify({ mid, endOut }));
+  // 2本指：左でスティック、右で行動ボタン。右の指をボタンの外で離しても、左の移動は続く
+  const ar = await rect(page, '#w3act');
+  await touch('touchStart', [{ x: jx, y: jy, id: 1 }]); await touch('touchMove', [{ x: jx, y: jy - 40, id: 1 }]);
+  await touch('touchStart', [{ x: jx, y: jy - 40, id: 1 }, { x: ar.l + ar.w / 2, y: ar.t + ar.h / 2, id: 2 }]);
+  await touch('touchMove', [{ x: jx, y: jy - 40, id: 1 }, { x: ar.l - 60, y: ar.t - 80, id: 2 }]);
+  await touch('touchEnd', [{ x: ar.l - 60, y: ar.t - 80, id: 2 }]); await page.waitForTimeout(150);   // CDP の touchEnd は「離す指」を渡す
+  const two = await page.evaluate(`!!${G}.W3.joy`);
+  await touch('touchEnd', []); await page.waitForTimeout(150);
+  ok('タッチ：右の指を離しても左の指の移動は続き、左を離すと止まる', two && !(await page.evaluate(`!!${G}.W3.joy`)));
+  // アプリ切り替え（blur・pagehide）で止まり、次の操作で戻る
+  await touch('touchStart', [{ x: jx, y: jy, id: 1 }]); await touch('touchMove', [{ x: jx + 40, y: jy, id: 1 }]); await page.waitForTimeout(100);
+  const on1 = await page.evaluate(`!!${G}.W3.joy`);
+  await page.evaluate(`dispatchEvent(new Event('blur'))`); await page.waitForTimeout(100);
+  const off1 = await page.evaluate(`({joy:!!${G}.W3.joy, knob:document.querySelector('#joy .knob').style.transform})`);
+  await touch('touchEnd', []); await page.waitForTimeout(100);
+  await touch('touchStart', [{ x: jx, y: jy, id: 3 }]); await touch('touchMove', [{ x: jx, y: jy + 40, id: 3 }]); await page.waitForTimeout(100);
+  const on2 = await page.evaluate(`!!${G}.W3.joy`);
+  await page.evaluate(`dispatchEvent(new PageTransitionEvent('pagehide'))`); await page.waitForTimeout(100);
+  const off2 = await page.evaluate(`!!${G}.W3.joy`);
+  await touch('touchEnd', []); await page.waitForTimeout(100);
+  ok('アプリ切り替え（blur・pagehide）で移動が止まり、次のタッチでまた動かせる', on1 && !off1.joy && off1.knob === '' && on2 && !off2, JSON.stringify({ on1, off1, on2, off2 }));
+
+  // メニュー → 図鑑：タッチでスクロールできる
+  await page.click('#nav [data-tab="menu"]'); await page.waitForTimeout(300);
+  await page.click('#dockBody [data-tab="book"]'); await page.waitForTimeout(500);
+  const scrollEl = await page.evaluate(`(()=>{ const c=[...document.querySelectorAll('#dockBody,.sheet,#dock *')].find(e=>e.scrollHeight>e.clientHeight+20 && /(auto|scroll)/.test(getComputedStyle(e).overflowY)); if(!c) return null; c.id=c.id||'__scr'; const r=c.getBoundingClientRect(); return {id:c.id, x:r.left+r.width/2, y:r.top+r.height*0.7, top:c.scrollTop}; })()`);
+  if (scrollEl) { await touch('touchStart', [{ x: scrollEl.x, y: scrollEl.y, id: 5 }]);
+    for (let i = 1; i <= 10; i++) await touch('touchMove', [{ x: scrollEl.x, y: scrollEl.y - i * 25, id: 5 }]);
+    await touch('touchEnd', [{ x: scrollEl.x, y: scrollEl.y - 250, id: 5 }]); }
+  await page.waitForTimeout(300);
+  const top2 = scrollEl ? await page.evaluate(`document.getElementById('${scrollEl.id}').scrollTop`) : -1;
+  ok('図鑑はタッチの縦スクロールができる（ボタンの上から始めても）', scrollEl && top2 > scrollEl.top + 50, JSON.stringify({ scrollEl, top2 }));
+  // 記録の入力欄：文字の入力・選択（入力欄は例外）
+  await page.click('#dock .dockx'); await page.waitForTimeout(300);
+  await page.click('#nav [data-tab="menu"]'); await page.waitForTimeout(300);
+  await page.click('#dockBody [data-tab="log"]'); await page.waitForTimeout(400);   // セーブの書き出し・読み込み欄は「記録」にある
+  await page.click('#importBox'); await page.keyboard.type('abc123'); await page.keyboard.press('Backspace'); await page.keyboard.press('ArrowLeft');
+  await page.keyboard.insertText('X');
+  const ta = await page.evaluate(`(()=>{ const t=document.getElementById('importBox'); const c=getComputedStyle(t); const e=new Event('selectstart',{bubbles:true,cancelable:true}); t.dispatchEvent(e);
+    t.setSelectionRange(0,3); const v=t.value, ss=t.selectionStart, se=t.selectionEnd; const ex=document.getElementById('exportBox');
+    return {v, ss, se, us:c.userSelect||c.webkitUserSelect, blocked:e.defaultPrevented, exUs: ex ? (getComputedStyle(ex).userSelect||getComputedStyle(ex).webkitUserSelect) : null}; })()`);
+  ok('既存の入力欄（読み込み欄・書き出し欄）は文字の入力・削除・カーソル移動・選択ができる', ta.v === 'abc1X2' && ta.ss === 0 && ta.se === 3 && ta.us === 'text' && !ta.blocked && ta.exUs === 'text', JSON.stringify(ta));
+  ok('ページでエラーが起きていない（文字選択の確認）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+
 /* ---------------- PC（1920×1080） ---------------- */
 {
   const { page, errors, ctx } = await newPage({ width: 1920, height: 1080 }, false);

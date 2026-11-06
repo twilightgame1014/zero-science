@@ -35,6 +35,16 @@ html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
 body{background:#1f2d24;color:var(--ink);font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
   font-weight:500;line-height:1.7;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
 button{font:inherit;color:inherit}
+/* 操作中に文字選択・画像ドラッグ・長押しメニューが出ないようにする（ゲームの文書全体。#app の外のモーダル・通知も含む）。
+   編集できる入力欄（読み込み欄・書き出し欄・選択肢）だけは例外で、入力・選択・貼り付けができる */
+body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+img{-webkit-user-drag:none;user-drag:none}
+input,textarea,select,[contenteditable],[contenteditable] *{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+/* タッチ操作は領域ごと：マップ（.stage）とスティックは none、ボタン類は manipulation（ダブルタップ拡大の待ちをなくす）、
+   パネル・案内・図鑑は縦スクロールを残す。ゲーム全体には none を付けない（スクロールが効かなくなるため） */
+button,summary,a,[role=button],.chip,.node,.w3lab,select{touch-action:manipulation}
+.joy,.joy *{touch-action:none}
+.sheet{touch-action:pan-y;overscroll-behavior:contain}
 button:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 
 /* ===== ゲーム画面：表示領域全体がマップ。HUD・パネル・ナビはその上に重ねる ===== */

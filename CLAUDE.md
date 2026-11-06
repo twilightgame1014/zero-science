@@ -33,6 +33,9 @@
 - 画面（`U.tab`）は `explore`（パネルなし）・`lab`・`craft`・`book`・`map`（技術）・`log`・`world`（地図・地域）・`menu`・`settings`。パネルは同時に1つだけ。
 - 3Dフィールドの DOM と WebGL は一度だけ作り、パネル開閉で作り直さない。描画領域の寸法は `resizeGraphics` へ渡す。一時停止は `pauseGraphics` / `resumeGraphics` があれば使う。
 - パネル・案内（モーダル）の表示中は `fieldInputActive()` が偽になり、マップへの入力をすべて無視する。開くとき・タッチのキャンセル・フォーカス喪失・画面回転では `haltField()` で移動を止める。スティックと行動ボタンは pointerId で区別する。
+- 文字選択・画像ドラッグ・長押しメニューは出さない：`body,body *` に `user-select:none`・`-webkit-touch-callout:none`、`img` に `-webkit-user-drag:none`。編集できる入力欄（`input`・`textarea`・`select`・contenteditable）だけ例外。`selectstart`・`dragstart`・`contextmenu` は入力欄の外だけ止め、残った選択は操作の開始（pointerdown）でだけ消す。
+- `touch-action` は領域ごと：マップ（`.stage`）とスティックは `none`、ボタン類は `manipulation`、パネル・案内は `pan-y`。ゲーム全体に `none` を付けない。touchstart/touchmove を一律に preventDefault しない。
+- 指の後片付け：スティックは pointerId を保持して setPointerCapture。pointerup/pointercancel/lostpointercapture（＋画面のどこで離れても同じ id なら止める保険）・blur・visibilitychange・pagehide・画面切り替えで `haltField()`。行動ボタンは指が外で離れたら押していないことにする。指・ペンの直後の click は時刻で見分けて二重に採取しない。
 - カメラの値は描画モジュールの既定値を使い、ゲーム側から上書きしない。確認用に限り URL の `?camera=俯角,viewSize` で `config.camera` を渡せる。
 
 ## フィールドの自然物（2026-11-06〜）
