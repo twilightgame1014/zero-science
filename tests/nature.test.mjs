@@ -161,5 +161,27 @@ ok('新規ゲーム：拠点の落ち枝・小石と川岸の火打ち石で「�
 ok('新規ゲーム：やぶのつるで糸、続けて「石のおの」を作り、木を伐って丸太を得られる', thread.ok && axe.ok && logN === 1 && G.inv.log >= 1, JSON.stringify(G.inv));
 ok('最初の目標（木の枝）と2番目（丸い石・火打ち石）を新しい採取で達成できる', E.missionIndex(G) >= 2);
 
+
+/* ---------- 開始時の原野（人工物を置かない）と拠点の建物 ---------- */
+{
+  const fs = await import('node:fs');
+  const ui = fs.readFileSync(new URL('../src/game/ui.js', import.meta.url), 'utf8');
+  const plan = ui.slice(ui.indexOf('const STRUCT_PLAN = ['), ui.indexOf('];', ui.indexOf('const STRUCT_PLAN = [')));
+  const rows = plan.split('\n').filter(l => /\{id:"st-/.test(l));
+  ok('拠点の建物は、プレイヤーが作った設備（owned）だけで出る（段階・研究の完了だけでは出ない）', rows.length >= 10 && rows.every(l => /when:\(\)=>owned\("/.test(l) && !/stage\(\)/.test(l)), rows.filter(l => !/owned\("/.test(l) || /stage\(\)/.test(l)).join('\n'));
+  ok('描画モジュールが独自に置く石の階段・石積みの壁（Stonework）を取り除き、decor でも止める', /PREBUILT_SCENERY = \["Stonework"\]/.test(ui) && /stonework:false/.test(ui) && /stripPrebuilt\(W3\.gfx\)/.test(ui));
+  const ww = rows.find(l => l.includes('st-wheel')), m = ww && ww.match(/at:\{x:([-\d.]+),z:([-\d.]+)\}/), site = N.SITES.find(x => x.id === 'st-wheel');
+  ok('水車の場所は nature.js の SITES と一致し、水ぎわ（地面の高さが水位とほぼ同じ）にある', m && site && +m[1] === site.x && +m[2] === site.z
+    && Math.abs(T.terrainHeight(site.x, site.z, T.DEFAULT_CONFIG) - T.DEFAULT_CONFIG.world.waterLevel) < 0.15 && T.distanceToRiver(site.x, site.z, T.DEFAULT_CONFIG) < 6.5, ww);
+  const onSite = W.objects.filter(o => N.SITES.some(p => Math.hypot(o.x - p.x, o.z - p.z) < p.r + o.r));
+  ok('拠点の外の建物の場所に自然物が重ならない', onSite.length === 0, onSite.map(o => o.id).join(','));
+  const fsw = N.FORMER_STONEWORK.map(f => W.objects.filter(o => Math.hypot(o.x - f.at[0], o.z - f.at[1]) < 4).map(o => o.kind));
+  ok('旧「石の階段・壁」の跡には、自然物（茂み・草・小石・不ぞろいな岩）だけがあり、跡全体が壁で埋まっていない',
+    fsw.flat().length >= 4 && fsw.every(k => k.filter(x => x === 'rock' || x === 'tree').length <= 1), JSON.stringify(fsw));
+  const blocked = N.FORMER_STONEWORK.filter(f => !W.findPath(S0, { x: D.base.x + 4, z: D.base.z }, { x: f.at[0], z: f.at[1] }));
+  ok('旧「石の階段・壁」の跡へも拠点から歩いて行ける（階段を外しても進行不能にならない）', blocked.length === 0, JSON.stringify(blocked.map(f => f.at)));
+  const open = D.regions.filter(r => r.w && !r.unlock), noWay = open.filter(r => !W.findPath(S0, { x: D.base.x + 4, z: D.base.z }, { x: r.w.x, z: r.w.z }));
+  ok('開始地点（拠点）から、最初から行けるすべての地域へ経路がある', noWay.length === 0, noWay.map(r => r.id).join(','));
+}
 console.log(`\n${total - fail}/${total} 合格`);
 process.exit(fail ? 1 : 0);

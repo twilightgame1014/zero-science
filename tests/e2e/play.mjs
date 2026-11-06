@@ -53,7 +53,9 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
     return {state:${G}.W3.state, deps:${G}.NODES.every(n=>__FAKE.resources[n.vid]), nat:near.length, natSent:near.filter(o=>__FAKE.resources[o.id]&&__FAKE.resources[o.id].natural&&__FAKE.resources[o.id].natural.id===o.id).length,
       decor:JSON.stringify(__FAKE.opts.decor), girl:__FAKE.sprite===ASSETS.girl}; })()`);
   ok('3Dフィールドが初期化され、採取地点と周りの自然物（ID・状態・当たり判定つき）が描画モジュールに渡る', init.state === 'ready' && init.deps && init.nat > 10 && init.natSent === init.nat, JSON.stringify(init));
-  ok('描画モジュールには、木・岩などを独自の装飾として描かないよう伝える（連携契約）', init.decor === '{"trees":false,"rocks":false,"logs":false,"pebbles":false,"shrubs":false}', init.decor);
+  ok('描画モジュールには、木・岩などを独自の装飾として描かないよう伝える（連携契約）', init.decor === '{"trees":false,"rocks":false,"logs":false,"pebbles":false,"shrubs":false,"stonework":false}', init.decor);
+  const pre = await page.evaluate(`({left: __FAKE.scene ? __FAKE.scene.children.map(c=>c.name) : null, structs: Object.keys(__FAKE.structures)})`);
+  ok('開始時の原野に人工物がない（石の階段・石積みの壁を取り除き、建物は1つもない）', Array.isArray(pre.left) && pre.left.length === 0 && pre.structs.length === 0, JSON.stringify(pre));
   ok('ボタン共通のスタイルが効いている', await page.evaluate(`getComputedStyle(document.querySelector('#nav button')).cursor==='pointer' && getComputedStyle(document.createElement('div')).color!==undefined`) && await page.evaluate(`(()=>{ const b=document.createElement('button'); b.className='btn'; document.body.appendChild(b); const c=getComputedStyle(b).backgroundColor; b.remove(); return c==='rgb(62, 107, 74)'; })()`));
 
   // 見えている自然物（拠点のまわりの小石）を選んで、近づいて採取する。連打しても1回だけ
@@ -329,6 +331,29 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   ok('歩行：移動を再開すると自然に歩行へ戻る', resumed);
   ok('既定ではゲーム側からカメラ設定を渡さない（描画モジュールの既定値を使う）', await page.evaluate(`__FAKE.opts && __FAKE.opts.config === undefined`));
   ok('ページでエラーが起きていない（PC）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+
+/* ---------------- 既存セーブ（旧版で段階に応じて建物が自動で出ていたセーブ） ---------------- */
+{
+  const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
+  await page.click('#introGo'); await page.waitForTimeout(600);
+  // 第3段階相当（たき火・かまど・作業台・簡易炉・土器・ガラス）で、倉庫・蒸留器は持っていないセーブ。旧版では小屋・研究所・石の家が自動で出ていた。
+  // 位置は、旧「石積みの壁」の跡に新しく置いた岩の中心（ロード時に近くの空いた所へ補正されるはず）
+  const prep = await page.evaluate(`(()=>{ const G=${G}, S=G.S, E=G.E; const rock=G.WORLD.objects.find(o=>o.kind==='rock' && Math.hypot(o.x-10.2,o.z-15.1)<4);
+    ['bench','campfire','kiln','furnace','pot','glass','twig'].forEach((id,i)=>{ S.inv[id]=(id==='twig'?7:id==='glass'?3:1); if(!S.disc[id]) S.disc[id]={first:Date.now(),made:1,total:1,routes:[],best:0}; });
+    S.pos={x:rock.x, z:rock.z}; localStorage.setItem('zero-kagaku-save', E.serialize(S)); return {rock:{id:rock.id,x:rock.x,z:rock.z,r:rock.r}, st:E.stageOf(S)}; })()`);
+  await page.reload(); await page.waitForTimeout(900);
+  const after = await page.evaluate(`(()=>{ const G=${G}, S=G.S, p=G.W3.pos; return {structs:Object.keys(__FAKE.structures).sort(), left:__FAKE.scene.children.map(c=>c.name), st:G.E.stageOf(S),
+    inv:{twig:S.inv.twig, glass:S.inv.glass, bench:S.inv.bench}, d:Math.hypot(p.x-(${prep.rock.x}), p.z-(${prep.rock.z}))}; })()`);
+  ok('既存セーブ：段階だけで自動に出ていた小屋・研究所・石の家は出ず、作った設備（作業台・たき火・かまど・簡易炉）は残る',
+    prep.st === 3 && after.structs.join() === 'st-bench,st-fire,st-kiln,st-smelter', JSON.stringify({ prep, after }));
+  ok('既存セーブ：再読込しても石の階段・石積みの壁は出ない', after.left.length === 0, JSON.stringify(after.left));
+  ok('既存セーブ：所持品・段階は初期化されない', after.st === 3 && after.inv.twig === 7 && after.inv.glass === 3 && after.inv.bench === 1, JSON.stringify(after.inv));
+  ok('既存セーブ：新しく置いた岩の上にいたプレイヤーは、岩の外へ補正される', after.d >= prep.rock.r + 0.3, JSON.stringify({ d: after.d, r: prep.rock.r }));
+  await page.evaluate(`(()=>{ const S=${G}.S; S.inv.storehouse=1; S.disc.storehouse=S.disc.storehouse||{first:Date.now(),made:1,total:1,routes:[],best:0}; ${G}.render(); })()`); await page.waitForTimeout(300);
+  ok('倉庫を作ると、拠点に小屋が建つ（作った設備に1対1で対応）', await page.evaluate(`!!__FAKE.structures['st-hut1'] && __FAKE.structures['st-hut1'].type==='hut'`));
+  ok('ページでエラーが起きていない（既存セーブ）', errors.length === 0, errors.join('\n'));
   await ctx.close();
 }
 

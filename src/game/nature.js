@@ -11,7 +11,18 @@ var NATURE = (function(){
   const PLAYER_R = 0.35;          // 主人公の当たり判定の半径
   const WORLD_R = 56;             // 歩ける範囲：-56〜56 の正方形（地形は120×120。端の丘の手前まで）
   const inWorld = (x,z,m)=> Math.abs(x) <= WORLD_R-(m||0) && Math.abs(z) <= WORLD_R-(m||0);
-  const REGION_R = 9;             // 地域の半径（ゲーム側の取り決め）
+  const REGION_R = 9;
+  /* 拠点の外に建てる建物の場所（ui.js の STRUCT_PLAN と一致させる）。ここには自然物を置かない */
+  const SITES = [{id:"st-wheel", x:15.2, z:3.8, r:2.4}];   // 水車は水ぎわ（車輪の半分が川にかかる）。車軸は川を横切る向き（ui.js の rot）
+  /* 描画モジュールが以前置いていた石の階段・石積みの壁（"Stonework"）の跡。開始時は人工物を置かないので、
+     跡地は自然の地面のまま残し、ところどころに低い茂み・草むら・小石・不ぞろいな岩を置いてなじませる。
+     ここに置くものは別の乱数で決めるので、ほかの自然物の位置（＝ID とセーブの状態）は変わらない */
+  const FORMER_STONEWORK = [
+    {at:[-20,30.8], put:[["bush",1.0],["grass",1.1],["pebble",1.0]]},
+    {at:[-6,22.9],  put:[["grass",1.0],["pebble",0.9]]},
+    {at:[10.2,15.1],put:[["rock",0.62],["grass",1.0],["pebble",1.0]]},
+    {at:[22.6,2.7], put:[["pebble",1.0,"flint"],["pebble",0.9],["grass",0.9]]},
+  ];             // 地域の半径（ゲーム側の取り決め）
   const MIN = 60000;
 
   /* 種類ごとの決まり。
@@ -81,12 +92,12 @@ var NATURE = (function(){
       }
       return true;
     }
-    function add(kind, x, z, s, variant){
+    function add(kind, x, z, s, variant, rnd){
       const K = KINDS[kind];
       const id = kind + ":" + Math.round(x*10) + "," + Math.round(z*10);
       if(objs.some(o=>o.id===id)) return null;
       const reg = regionAt(x,z);
-      const o = {id, kind, variant:variant||null, x:+x.toFixed(2), z:+z.toFixed(2), rot:+(rng()*Math.PI*2).toFixed(3), scale:+s.toFixed(2),
+      const o = {id, kind, variant:variant||null, x:+x.toFixed(2), z:+z.toFixed(2), rot:+((rnd||rng)()*Math.PI*2).toFixed(3), scale:+s.toFixed(2),
                  r:+(K.r*s).toFixed(3), block:K.block, region: reg ? reg.id : null};
       objs.push(o); return o;
     }
@@ -123,6 +134,14 @@ var NATURE = (function(){
       (x,z)=>{ const dr=T.distanceToRiver(x,z); return dr<8 && rng()<0.35 ? "flint" : null; });
     scatter("grass", 40, (x,z)=>0.08 + 0.9*g2(x,z,gw,15) + 0.3*g2(x,z,base,14) - 0.6*highland(x,z), ()=>0.9+rng()*0.5);
     scatter("bush", 26, (x,z)=>0.05 + 0.8*g2(x,z,fw,18) - 0.6*highland(x,z), ()=>0.9+rng()*0.4);
+
+    /* 拠点の外の建物の場所にかかる自然物は取り除く（生成のあとで外すので、ほかの自然物の位置と ID は変わらない） */
+    for(let i=objs.length-1;i>=0;i--){ const o=objs[i]; if(SITES.some(p=>near(o.x,o.z,p.x,p.z) < p.r + o.r)) objs.splice(i,1); }
+    /* 旧「石の階段・石積みの壁」の跡：自然物だけでなじませる（置けない所は空き地のまま） */
+    const rng2 = mulberry32(SEED + 7);
+    FORMER_STONEWORK.forEach(f=>f.put.forEach(([kind,sc,variant])=>{
+      for(let k=0;k<24;k++){ const ang=rng2()*Math.PI*2, d=0.6+rng2()*2.9, x=f.at[0]+Math.cos(ang)*d, z=f.at[1]+Math.sin(ang)*d, s=sc*(0.85+rng2()*0.3);
+        if(fits(kind,x,z,s) && !SITES.some(p=>near(x,z,p.x,p.z) < p.r + KINDS[kind].r*s)){ add(kind,x,z,s,variant||null,rng2); break; } } }));
 
     const byId = new Map(objs.map(o=>[o.id,o]));
     /* 地域の採取地点のうち、木・岩・鉱石の姿のものは固定の障害物（見た目の幹・占有範囲に合わせる） */
@@ -314,6 +333,6 @@ var NATURE = (function(){
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
             free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids};
   }
-  return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE};
+  return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, SITES, FORMER_STONEWORK};
 })();
 if (typeof module!=="undefined") module.exports = NATURE;

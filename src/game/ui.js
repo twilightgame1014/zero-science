@@ -333,15 +333,20 @@ function drawScene(){
   if(sig===sceneSig || U.busy) return;
   sceneSig = sig;
   const tall = U.fac && TALL_FAC.includes(U.fac), baseY = 186;
+  /* 作業台を作るまでは、地面と平たい石だけ（加工した木の台や棚はまだない） */
+  const bench = owned("bench") || st>=3;
   box.style.backgroundImage = "none";
   box.innerHTML = `<svg class="scene" id="scene" viewBox="0 0 400 225" role="img" aria-label="実験台：${U.fac?nm(U.fac)+"を使う":"装置はまだ選んでいない"}${tray.length?"・材料 "+tray.map(nm).join("、"):""}">
   <defs><radialGradient id="glowG"><stop offset="0" stop-color="#ffcf5a" stop-opacity=".95"/><stop offset=".6" stop-color="#ff8a2a" stop-opacity=".35"/><stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/></radialGradient>
     <radialGradient id="spotG" cx=".5" cy=".6" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".7" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe3f2"/><stop offset="1" stop-color="#eef8f1"/></linearGradient></defs>
   <g opacity=".85">${labBackground(st)}</g>
-  <rect x="0" y="96" width="400" height="5" fill="${st<3?"#8a643f":"#7d8792"}"/>
-  ${facs.map((f,i)=>`<g transform="translate(${36+i*54},96) scale(.36)" opacity=".9"><title>${nm(f)}（持っている設備）</title>${facArt(f)}</g>`).join("")}
-  <rect x="0" y="${baseY}" width="400" height="10" fill="${st<3?"#8a643f":"#5b6470"}"/><rect x="0" y="${baseY+10}" width="400" height="30" fill="${st<3?"#6e4e30":"#3d4650"}"/>
+  ${bench?`<rect x="0" y="96" width="400" height="5" fill="${st<3?"#8a643f":"#7d8792"}"/>`:""}
+  ${facs.map((f,i)=>`<g transform="translate(${36+i*54},${bench?96:170}) scale(.36)" opacity=".9"><title>${nm(f)}（持っている設備）</title>${facArt(f)}</g>`).join("")}
+  ${bench ? `<rect x="0" y="${baseY}" width="400" height="10" fill="${st<3?"#8a643f":"#5b6470"}"/><rect x="0" y="${baseY+10}" width="400" height="30" fill="${st<3?"#6e4e30":"#3d4650"}"/>`
+    : `<rect x="0" y="${baseY}" width="400" height="40" fill="#7a6248"/><path d="M0 ${baseY} Q60 ${baseY-3} 120 ${baseY} T260 ${baseY+1} T400 ${baseY}" fill="none" stroke="#5f4b37" stroke-width="2"/>
+       <path d="M120 ${baseY+2} Q130 ${baseY-9} 168 ${baseY-8} Q230 ${baseY-10} 262 ${baseY-4} Q276 ${baseY+1} 272 ${baseY+4} Z" fill="#8f8a7e" stroke="#6c675d" stroke-width="2"/>
+       ${[[30,baseY+14,5],[78,baseY+24,4],[318,baseY+18,6],[360,baseY+28,4]].map(([x,y,r])=>`<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r*0.6}" fill="#8f8a7e"/>`).join("")}`}
   ${benchProps(st)}
   ${tray.map((k,i)=>`<g transform="translate(${26+i*30},${baseY+28})"><circle r="12" fill="rgba(255,255,255,.9)"/>${svgIc(k,-10,-10,20)}</g>`).join("")}
   ${U.fac && CENTER_APP[U.fac] && hasSpr("flask") ? `${CENTER_APP[U.fac](200, baseY+4, tray.length>0)}
@@ -521,7 +526,7 @@ function regionArt(r, st){
     case "cave": return `<rect width="320" height="180" fill="#2a221c"/><radialGradient id="torch" cx=".5" cy=".55" r=".6"><stop offset="0" stop-color="#ffcf7a" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
       <rect width="320" height="180" fill="url(#torch)"/>${[20,60,110,170,230,280].map((x,i)=>`<path d="M${x} 0 L${x+8} ${20+i%3*10} L${x+16} 0Z" fill="#4a3a2e"/>`).join("")}<rect y="146" width="320" height="34" fill="#3a2e24"/>`+
       (st>=4?`<path d="M0 30 H320" stroke="#333"/>${[60,160,260].map(x=>`<circle cx="${x}" cy="34" r="4" fill="#ffe27a"/>`).join("")}`:"");
-    case "mine": return sky+`<path d="M0 120 Q60 50 140 80 T320 70 V180 H0Z" fill="#8a6a4a"/><path d="M130 130 V96 Q150 80 170 96 V130Z" fill="#2a1e16"/><path d="M128 132 V94 H172 V132" fill="none" stroke="#7a5636" stroke-width="5"/>`+ground("#7a5a3e")+
+    case "mine": return sky+`<path d="M0 120 Q60 50 140 80 T320 70 V180 H0Z" fill="#8a6a4a"/><path d="M126 132 Q124 104 140 94 Q152 86 164 95 Q178 106 174 132Z" fill="#2a1e16"/><path d="M118 134 Q130 120 126 108 M176 108 Q182 122 184 134" fill="none" stroke="#6a4f37" stroke-width="4" stroke-linecap="round"/>`+ground("#7a5a3e")+
       (st>=4?`<path d="M0 158 H320" stroke="#5b5048" stroke-width="4"/><path d="M0 158 H320" stroke="#c9b88c" stroke-width="4" stroke-dasharray="1.5 5"/><rect x="200" y="142" width="26" height="12" fill="#5b6470"/><circle cx="206" cy="156" r="3" fill="#333"/><circle cx="220" cy="156" r="3" fill="#333"/>`:"")+
       (st>=5?`<text x="250" y="150" font-size="26">🚜</text>`:"");
     case "volcano": return `<rect width="320" height="180" fill="#6a3a3a"/><path d="M40 160 L150 30 L260 160Z" fill="#4a2a24"/><path d="M130 50 L150 30 L170 50 Q150 60 130 50Z" fill="#ff7a2a" class="idle-flame"/>
@@ -686,23 +691,29 @@ function syncNature(force){
   });
 }
 /* 文明の段階に合わせて拠点の建物が増えていく（フィールドの進化） */
+/* 拠点の建物：プレイヤーが工作で作った設備（E.has＝所持）に1対1で対応させる。
+   段階（stage）や研究の完了だけでは建物を出さない（開始時の原野に人工物を置かない）。
+   セーブには建物を保存せず、毎回ここから決める（旧版で段階によって自動で出ていた小屋・石の家なども、読み込み時に消える）。 */
 const STRUCT_PLAN = [
-  {id:"st-bench",   type:"workbench",  at:{x:-17,z:23}, when:()=>owned("bench")},
+  {id:"st-bench",   type:"workbench",  at:{x:-17,z:23},   when:()=>owned("bench")},
   {id:"st-fire",    type:"campfire",   at:{x:-21.5,z:25.5}, when:()=>owned("campfire")},
   {id:"st-kiln",    type:"kiln",       at:{x:-25.5,z:19.5}, when:()=>owned("kiln")},
-  {id:"st-hut1",    type:"hut",        at:{x:-27,z:12}, when:()=>stage()>=2},
-  {id:"st-hut2",    type:"hut",        at:{x:-12.5,z:27.5}, when:()=>stage()>=2 && owned("storehouse")},
+  {id:"st-hut1",    type:"hut",        at:{x:-27,z:12},   when:()=>owned("storehouse")},
   {id:"st-smelter", type:"smelter",    at:{x:-13.5,z:15}, when:()=>owned("furnace")||owned("blastfurnace")},
-  {id:"st-lab",     type:"laboratory", at:{x:-21,z:9}, when:()=>stage()>=3},
-  {id:"st-stone",   type:"stone-house",at:{x:-31,z:21}, when:()=>stage()>=3},
-  {id:"st-factory", type:"factory",    at:{x:-10,z:30}, when:()=>stage()>=4},
-  {id:"st-power",   type:"power-plant",at:{x:-7,z:13}, when:()=>owned("generator")},
-  {id:"st-inst",    type:"research-institute", at:{x:-30,z:31}, when:()=>stage()>=5},
+  {id:"st-lab",     type:"laboratory", at:{x:-21,z:9},    when:()=>owned("still")},
+  {id:"st-steam",   type:"steam-engine", at:{x:-31,z:21}, when:()=>owned("steamengine")},
+  {id:"st-tower",   type:"distillation-tower", at:{x:-27,z:28}, when:()=>owned("refinery")},
+  {id:"st-factory", type:"factory",    at:{x:-10,z:30},   when:()=>owned("eaf")},
+  {id:"st-power",   type:"power-plant",at:{x:-7,z:13},    when:()=>owned("generator")},
+  {id:"st-inst",    type:"research-institute", at:{x:-30,z:31}, when:()=>owned("reactor")},
+  /* 拠点の外：水車は川岸（nature.js の SITES で自然物を置かない）、掘削やぐらは油田の原油のそば */
+  {id:"st-wheel",   type:"waterwheel", at:{x:15.2,z:3.8}, rot:2.17, when:()=>owned("waterwheel")},
+  {id:"st-rig",     type:"drilling-rig", at:{x:3.2,z:48}, when:()=>owned("rig")},
 ];
 function syncStructures(){
   if(!W3.gfx) return;
   STRUCT_PLAN.forEach(p=>{ const want=p.when(), has=W3.structs.has(p.id);
-    if(want && !has){ const rot=Math.atan2(D.base.x-p.at.x, D.base.z-p.at.z); W3.gfx.addStructureVisual(p.id, p.type, p.at, rot); W3.structs.add(p.id);
+    if(want && !has){ const rot= p.rot!=null ? p.rot : Math.atan2(D.base.x-p.at.x, D.base.z-p.at.z); W3.gfx.addStructureVisual(p.id, p.type, p.at, rot); W3.structs.add(p.id);
       if(W3.state==="ready") W3.gfx.playVisualEffect("levelup", p.at); }
     else if(!want && has){ W3.gfx.removeStructureVisual(p.id); W3.structs.delete(p.id); } });
 }
@@ -726,6 +737,18 @@ function cameraPreview(){
     const [p,v]=q.split(",").map(Number);
     return (p>=20 && p<=60 && v>=10 && v<=40) ? {pitchDegrees:p, viewSize:v} : null; }catch(e){ return null; }
 }
+/* 開始時の景観は手つかずの自然にする。描画モジュールが独自に置く人工物（石の階段・石積みの壁＝"Stonework"）は、
+   ゲームの進行と関係なく置かれ、当たり判定もないので、開始時から表示しない。
+   描画モジュールが decor.stonework:false に対応したら、ここは何もしない（見つからないので）。
+   建物はゲームの STRUCT_PLAN（プレイヤーが作った設備）だけから置く。 */
+const PREBUILT_SCENERY = ["Stonework"];
+function stripPrebuilt(gfx){
+  const sc = gfx && typeof gfx.getScene==="function" ? gfx.getScene() : null; if(!sc || !sc.getObjectByName) return 0;
+  let n=0;
+  PREBUILT_SCENERY.forEach(name=>{ let o; while((o = sc.getObjectByName(name))){ o.parent && o.parent.remove(o);
+    o.traverse && o.traverse(c=>{ if(c.geometry) c.geometry.dispose(); const m=c.material; (Array.isArray(m)?m:m?[m]:[]).forEach(mm=>{ if(mm.map) mm.map.dispose(); mm.dispose(); }); }); n++; } });
+  W3.stripped = n; return n;
+}
 async function start3D(){
   try{
     W3.host = document.createElement("div"); W3.host.className="w3canvas";
@@ -738,10 +761,11 @@ async function start3D(){
       quality: MOBILE ? "low" : "high", postEffects: !MOBILE,
       /* 連携契約（docs/handoff/NATURAL-OBJECTS-CONTRACT.md）：木・岩・倒木・小石はゲーム側の自然物として渡すので、
          描画モジュール独自の装飾としては描かない。未対応の版では無視される */
-      decor: {trees:false, rocks:false, logs:false, pebbles:false, shrubs:false},
+      decor: {trees:false, rocks:false, logs:false, pebbles:false, shrubs:false, stonework:false},
       viewportInsets: hudInsets(),
       onContextLost: ()=>{ W3.lost=true; }, onContextRestored: ()=>{ W3.lost=false; } });
     W3.gfx.setWorldVisualState({timeOfDay:0.44, weather:"clear", ambientParticles:true});
+    stripPrebuilt(W3.gfx);
     W3.pos = spawnPos();
     syncAll3D();
     W3.state = "ready";
