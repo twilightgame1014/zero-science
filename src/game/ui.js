@@ -25,7 +25,7 @@ function toast(id, kind){
   if(kind==="mission") el.innerHTML=`<div class="i">🦉</div><div><div class="k">目標達成！</div><div class="nm">${id}</div></div>`;
   else if(kind==="stage") el.innerHTML=`<div class="i">🏙️</div><div><div class="k">文明が進化した！</div><div class="nm">${id}</div><p>フィールドと研究室の見た目が変わったよ。</p></div>`;
   else { const it=IT[id]; el.innerHTML=`<div class="i">${it.icon}</div><div><div class="k">${it.tags.includes("珍しい発見")?"珍しい発見！":"新発見！"} 図鑑に登録したよ</div><div class="nm">${it.name}</div><p>${it.kid}</p></div>`; el.onclick=()=>{ openItem(id); el.remove(); }; }
-  box.prepend(el); while(box.children.length>3) box.lastChild.remove();
+  box.prepend(el); const maxN = uiMode()==="touch" ? 2 : 3; while(box.children.length>maxN) box.lastChild.remove();
   setTimeout(()=>el.remove(), kind?4000:6500);
 }
 let lastMission = E.missionIndex(S), lastStage = stage();
@@ -57,6 +57,7 @@ function detectUi(){
 }
 function applyUiMode(){
   const app=$("#app"), m=detectUi();
+  document.documentElement.dataset.ui=m;
   if(app.dataset.ui!==m){ app.dataset.ui=m; haltField(); renderChrome(); if(U.tab!=="explore") renderPanel(); updateAction3D(); updateFieldActivity(); }
   layout();
 }
@@ -1091,6 +1092,6 @@ function intro(){
   if(!S.flags.hero) S.flags.hero="boy";
   openModal($("#introGo")); S.flags.intro=1; save();
 }
-document.getElementById("app").dataset.ui = detectUi(); bindHudInput(); renderChrome(); render(); layout(); intro();
+document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); bindHudInput(); renderChrome(); render(); layout(); intro();
 window.__GAME__ = {get S(){return S;}, E, D, U, W3, get NODES(){return NODES;}, screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);
