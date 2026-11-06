@@ -1,0 +1,4 @@
+node_modules/
+dist-demo/
+*.zip
+.DS_Store
