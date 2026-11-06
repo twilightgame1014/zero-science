@@ -10,9 +10,9 @@
   const R={x:Math.cos(yaw),y:0,z:-Math.sin(yaw)}, F={x:-Math.cos(pitch)*Math.sin(yaw),y:-Math.sin(pitch),z:-Math.cos(pitch)*Math.cos(yaw)};
   const UP={x:R.y*F.z-R.z*F.y, y:R.z*F.x-R.x*F.z, z:R.x*F.y-R.y*F.x};
   const dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
-  window.__FAKE={calls:[], resources:{}, structures:{}, effects:[], player:null, sprite:null, loop:true};
+  window.__FAKE={calls:[], resources:{}, structures:{}, effects:[], player:null, sprite:null, loop:true, inits:0, starts:0, stops:0};
   window.HD2D={ THREE:{Vector3,Vector2,Raycaster}, terrainHeight:U.terrainHeight, DEFAULT_CONFIG:cfgDefault, resolveConfig:()=>JSON.parse(JSON.stringify(cfgDefault)),
-    initializeGraphics: async (el,opts)=>{ const FK=window.__FAKE; FK.opts=opts; FK.sprite=opts.playerSpriteUrl;
+    initializeGraphics: async (el,opts)=>{ const FK=window.__FAKE; FK.inits++; FK.opts=opts; FK.sprite=opts.playerSpriteUrl;
       const c=document.createElement("canvas"); c.style.cssText="width:100%;height:100%;background:linear-gradient(#9cc,#6a6)"; el.appendChild(c);
       const cam={ target:{x:-20,y:0.6,z:20}, getWorldDirection(v){ v.set(F.x,F.y,F.z); return v; },
         __half(){ const r=el.getBoundingClientRect(); const hh=13; return {hw:hh*(r.width/r.height||1), hh}; },
@@ -25,6 +25,6 @@
         updateResourceVisual(id,s){ if(s===null) delete FK.resources[id]; else FK.resources[id]=JSON.parse(JSON.stringify(s)); },
         addStructureVisual(id,type,pos,rot){ FK.structures[id]={type,pos,rot}; }, removeStructureVisual(id){ delete FK.structures[id]; },
         playVisualEffect(t,p){ FK.effects.push(t); }, async setPlayerSpriteSheet(u){ FK.sprite=u; },
-        resizeGraphics(){}, disposeGraphics(){}, stopLoop(){ FK.loop=false; }, startLoop(){ FK.loop=true; } };
+        resizeGraphics(){}, disposeGraphics(){}, stopLoop(){ FK.loop=false; FK.stops++; }, startLoop(){ FK.loop=true; FK.starts++; } };
     } };
 })();

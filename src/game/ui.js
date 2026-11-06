@@ -70,6 +70,7 @@ function setTab(t, opener){
   if(t===was){ if(t!=="explore") renderPanel(); return; }
   U.tab = t;
   if(was==="explore") U.opener = opener || document.activeElement;
+  if(t!=="explore") haltField();
   renderChrome(); renderPanel(); updateFieldActivity();
   if(t!=="explore" && was==="explore"){ const h=$("#dockTitle"); if(h) h.focus({preventScroll:true}); }
   if(t==="explore"){ const o=U.opener; U.opener=null;
@@ -80,7 +81,7 @@ function render(){ renderField(); renderPanel(); }
 function renderField(){ renderExplore($("#view")); }
 function renderPanel(){
   const dock=$("#dock"), body=$("#dockBody"), open = U.tab!=="explore";
-  dock.hidden = !open; $("#scrim").hidden = !open;
+  dock.hidden = !open; $("#scrim").hidden = !open; $("#view").inert = open;
   document.body.classList.toggle("docked", open);
   if(!open) return;
   if(U.dockTab!==U.tab){ body.innerHTML=""; body.scrollTop=0; U.dockTab=U.tab; sceneSig=""; }
@@ -574,13 +575,23 @@ function applySavedPos(){
   if(W3.gfx) W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false});
   if(W3.gfx) syncAll3D();
 }
-function pause3D(){ if(W3.raf) cancelAnimationFrame(W3.raf); W3.raf=0; W3.joy=null; W3.keys={};
+function pause3D(){ if(W3.raf) cancelAnimationFrame(W3.raf); W3.raf=0; haltField();
   try{ if(W3.gfx && typeof W3.gfx.stopLoop==="function") W3.gfx.stopLoop(); }catch(e){} }
-function resume3D(){ if(W3.state!=="ready") return;
+function resume3D(){ if(W3.state!=="ready" || W3.raf) return;
   try{ if(typeof W3.gfx.startLoop==="function") W3.gfx.startLoop(); }catch(e){}
-  if(!W3.raf){ W3.lastTs=0; W3.raf=requestAnimationFrame(loop3D); } }
+  W3.lastTs=0; W3.raf=requestAnimationFrame(loop3D); }
 
 function fieldShown(){ return U.tab==="explore" || WIDE.matches; }
+const modalOpen = ()=> $("#modal").classList.contains("open");
+/* フィールドが入力を受け付けるのは、パネルも案内（モーダル）も開いていないときだけ */
+function fieldInputActive(){ return U.tab==="explore" && !modalOpen() && W3.state==="ready" && S.flags.view!=="2d" && !document.hidden; }
+/* 押しっぱなしのキー・スティック・タップ中の指・移動予約をすべて解除する（閉じた瞬間に勝手に歩かないように） */
+function haltField(){
+  W3.keys={}; W3.joy=null; W3.down=null; W3.target=null; W3.autoGather=null;
+  if(W3.joyReset) W3.joyReset();
+  if(W3.moving && W3.gfx && W3.pos){ W3.moving=false; W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving:false}); }
+}
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden) haltField(); updateFieldActivity(); });
 function updateFieldActivity(){
   if(W3.state!=="ready" || S.flags.view==="2d") return;
   if(fieldShown() && !document.hidden) resume3D(); else pause3D();
@@ -619,6 +630,8 @@ function loop3D(ts){
   if(W3.state!=="ready" || W3.lost) return;
   const dt = W3.lastTs ? Math.min(0.05,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
   let ix=0, iy=0;
+  const active = fieldInputActive();
+  if(!active && (W3.target || W3.joy || Object.keys(W3.keys).length)) haltField();
   const k=W3.keys; if(k.ArrowLeft||k.a) ix-=1; if(k.ArrowRight||k.d) ix+=1; if(k.ArrowUp||k.w) iy-=1; if(k.ArrowDown||k.s) iy+=1;
   if(W3.joy){ ix=W3.joy.x; iy=W3.joy.y; }
   const B = camBasis(); let mx=0, mz=0;
@@ -708,9 +721,9 @@ function goTo3D(x,z,node){ W3.target={x,z}; W3.autoGather=node||null; }
 /* ---------- 入力：タップで移動・ジョイスティック・キーボード ---------- */
 function bind3DInput(){
   const w=$("#w3"); if(!w || w._bound) return; w._bound=true;
-  let down=null;
-  w.addEventListener("pointerdown", e=>{ if(e.target.closest(".joy,.w3lab,button")) return; down={x:e.clientX,y:e.clientY,t:Date.now()}; });
-  w.addEventListener("pointerup", e=>{ if(!down || W3.state!=="ready") return; const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y); const quick=Date.now()-down.t<450; down=null;
+  w.addEventListener("pointerdown", e=>{ if(!fieldInputActive() || e.target.closest(".joy,.w3lab,button")) return; W3.down={x:e.clientX,y:e.clientY,t:Date.now(),id:e.pointerId}; });
+  w.addEventListener("pointercancel", ()=>{ W3.down=null; });
+  w.addEventListener("pointerup", e=>{ const down=W3.down; if(!down || down.id!==e.pointerId || !fieldInputActive()) return; const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y); const quick=Date.now()-down.t<450; W3.down=null;
     if(moved>10||!quick) return;
     const hit=screenToGround(e.clientX,e.clientY); if(!hit) return;
     let best=null, bd=2.2; NODES.forEach(n=>{ const d=Math.hypot(n.pos.x-hit.x,n.pos.z-hit.z); if(d<bd){bd=d;best=n;} });
@@ -718,18 +731,23 @@ function bind3DInput(){
     W3.gfx.playVisualEffect("sparkle", best?best.pos:hit); });
   const joy=$("#joy"), knob=joy&&joy.querySelector(".knob");
   if(joy){ let id=null, cx=0, cy=0; const R=42;
-    joy.addEventListener("pointerdown", e=>{ id=e.pointerId; joy.setPointerCapture(id); const r=joy.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; mv(e); e.preventDefault(); });
-    const mv=e=>{ if(e.pointerId!==id) return; let dx=e.clientX-cx, dy=e.clientY-cy; const l=Math.hypot(dx,dy); if(l>R){dx*=R/l;dy*=R/l;} knob.style.transform=`translate(${dx}px,${dy}px)`; const m=Math.hypot(dx,dy)/R; W3.joy = m<0.18?null:{x:dx/R, y:dy/R}; };
+    W3.joyReset = ()=>{ if(id!==null){ try{ joy.releasePointerCapture(id); }catch(err){} } id=null; W3.joy=null; knob.style.transform=""; };
+    joy.addEventListener("pointerdown", e=>{ if(!fieldInputActive()) return; id=e.pointerId; joy.setPointerCapture(id); const r=joy.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; mv(e); e.preventDefault(); });
+    const mv=e=>{ if(e.pointerId!==id) return; if(!fieldInputActive()){ W3.joyReset(); return; } let dx=e.clientX-cx, dy=e.clientY-cy; const l=Math.hypot(dx,dy); if(l>R){dx*=R/l;dy*=R/l;} knob.style.transform=`translate(${dx}px,${dy}px)`; const m=Math.hypot(dx,dy)/R; W3.joy = m<0.18?null:{x:dx/R, y:dy/R}; };
     joy.addEventListener("pointermove", mv);
     const end=e=>{ if(e.pointerId!==id) return; id=null; W3.joy=null; knob.style.transform=""; };
     joy.addEventListener("pointerup", end); joy.addEventListener("pointercancel", end); }
 }
-document.addEventListener("keydown", e=>{ if(U.tab!=="explore" || W3.state!=="ready" || e.target.closest("input,textarea,select")) return;
+const TYPING = "input,textarea,select,[contenteditable],[contenteditable] *,[role=textbox]";
+document.addEventListener("keydown", e=>{
+  if(!fieldInputActive() || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest(TYPING))) return;
   const k=e.key.length===1?e.key.toLowerCase():e.key;
   if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","w","a","s","d"].includes(k)){ W3.keys[k]=true; e.preventDefault(); }
-  if((k===" "||k==="e") && W3.near){ e.preventDefault(); gather3D(W3.near); } });
+  /* ボタンにフォーカスがあるときのスペースは、そのボタンを押す操作なので採取しない */
+  if(k===" " && e.target.closest && e.target.closest("button,a,summary,[role=button]")) return;
+  if((k===" "||k==="e") && W3.near && !e.repeat){ e.preventDefault(); gather3D(W3.near); } });
 document.addEventListener("keyup", e=>{ const k=e.key.length===1?e.key.toLowerCase():e.key; delete W3.keys[k]; });
-window.addEventListener("blur", ()=>{ W3.keys={}; W3.joy=null; });
+window.addEventListener("blur", haltField);
 
 /* ---------- 探索ホーム（3D版） ---------- */
 function travelChips(){ return D.regions.map(r=>{ const open=E.regionOpen(S,r); return `<button class="chip tchip ${open?"":"lockc"}" data-act="travel" data-id="${r.id}">${open?r.icon:"🔒"} ${r.name}</button>`; }).join(""); }
@@ -830,7 +848,7 @@ function openItem(id){
     <h5>🔗 これを使うとできるもの</h5><ul>${usesL.length?usesL.map(k=>`<li>${S.disc[k]?ic(k)+" "+nm(k):"❔ ？？？"}</li>`).join(""):"<li>今のところなし</li>"}</ul>
     <div class="row mt"><button class="btn small sub" data-act="target" data-id="${id}">🕸️ 技術マップで見る</button></div>`;
   }
-  $("#modal").classList.add("open"); sh.scrollTop=0; sh.querySelector(".close").focus();
+  sh.scrollTop=0; openModal(sh.querySelector(".close"));
 }
 
 /* ===================== 技術マップ ===================== */
@@ -919,8 +937,8 @@ document.addEventListener("click", ev=>{
     case "again": { if(U.busy) break; const p=D.procs.find(x=>x.id===b.dataset.proc); U.tray=Object.assign({},p.inp); U.fac=b.dataset.fac; U.op=p.op; U.last=null;
       if(U.tab!=="lab") setTab("lab", b); else renderPanel(); runLab(); break; }
     case "go": travel(id); break;
-    case "g3": if(W3.near) gather3D(W3.near); break;
-    case "w3go": { const n=NODES&&NODES.find(x=>x.key===b.dataset.n); if(n){ if(W3.near===n) gather3D(n); else goTo3D(n.pos.x,n.pos.z,n); } break; }
+    case "g3": if(W3.near && fieldInputActive()) gather3D(W3.near); break;
+    case "w3go": { if(!fieldInputActive()) break; const n=NODES&&NODES.find(x=>x.key===b.dataset.n); if(n){ if(W3.near===n) gather3D(n); else goTo3D(n.pos.x,n.pos.z,n); } break; }
     case "travel": { const r=D.regions.find(x=>x.id===id); if(!E.regionOpen(S,r)){ banner("🔒 "+r.name+"：入るには「"+r.unlock.map(nm).join("」か「")+"」が必要"); break; } if(W3.state==="ready"){ goTo3D(r.w.x,r.w.z+REGION_R*0.2,null); $("#w3").scrollIntoView({block:"nearest",behavior:RM?"auto":"smooth"}); } break; }
     case "home": if(W3.state==="ready") goTo3D(D.base.x,D.base.z,null); break;
     case "hero": { S.flags.hero = S.flags.hero==="girl"?"boy":"girl"; save(); if(W3.gfx) W3.gfx.setPlayerSpriteSheet(heroUrl()); banner(S.flags.hero==="girl"?"👧 女の子に交代！":"👦 男の子に交代！"); break; }
@@ -940,8 +958,25 @@ document.addEventListener("click", ev=>{
   }
 });
 document.addEventListener("change", ev=>{ if(ev.target.dataset.act==="pick"){ U.target=ev.target.value; renderPanel(); } });
-document.addEventListener("keydown", ev=>{ if(ev.key==="Escape") closeModal(); });
-function closeModal(){ $("#modal").classList.remove("open"); }
+document.addEventListener("keydown", ev=>{
+  if(ev.key!=="Escape") return;
+  if(modalOpen()){ ev.preventDefault(); closeModal(); }
+  else if(U.tab!=="explore"){ ev.preventDefault(); setTab("explore"); }
+});
+let modalOpener = null;
+function openModal(focusEl){
+  if(!modalOpen()) modalOpener = document.activeElement;
+  haltField();
+  $("#modal").classList.add("open"); $("#app").inert = true;
+  const f = focusEl || $("#sheet").querySelector("button"); if(f) f.focus({preventScroll:true});
+}
+function closeModal(){
+  if(!modalOpen()) return;
+  $("#modal").classList.remove("open"); $("#app").inert = false;
+  const o = modalOpener; modalOpener = null;
+  if(o && o.isConnected && !o.closest("[inert],[hidden]")) o.focus({preventScroll:true});
+  else if(U.tab!=="explore"){ const h=$("#dockTitle"); if(h) h.focus({preventScroll:true}); }
+}
 
 /* 自動採取 */
 setInterval(()=>{ if(document.hidden || !S.auto.length) return; const got=E.autoTick(S); if(got.length){ afterChange(got.flatMap(g=>g.news)); if(U.tab==="lab" && !U.busy) drawLabCtl(); if(U.tab==="explore") drawRegion(); } }, 10000);
@@ -957,7 +992,7 @@ function intro(){
   <p class="desc">このゲームの化学は本物の化学がもとになっています。でも火や薬品を使う実験は危ないので、現実では大人と一緒に安全な場所でやろうね。</p>
   <div class="row mt"><button class="btn big" data-act="close" id="introGo">始める！</button></div>`;
   if(!S.flags.hero) S.flags.hero="boy";
-  $("#modal").classList.add("open"); S.flags.intro=1; save();
+  openModal($("#introGo")); S.flags.intro=1; save();
 }
 renderChrome(); render(); intro();
 window.__GAME__ = {get S(){return S;}, E, D, U, W3, get NODES(){return NODES;}, render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
