@@ -80,6 +80,22 @@ button:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-v
 [data-ui="pc"] [data-only="touch"],[data-ui="touch"] [data-only="pc"]{display:none !important}
 .chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 10px;font-size:.78rem;font-weight:700;background:var(--card);color:var(--ink);border:1.5px solid var(--line);white-space:nowrap}
 .chip b{font-weight:900}
+/* ボタン（共通） */
+.btn{border:none;border-radius:12px;padding:9px 14px;min-height:44px;font-weight:900;cursor:pointer;background:var(--meadow);color:var(--meadow-ink);box-shadow:0 3px 0 rgba(0,0,0,.18)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.sub{background:var(--card);color:var(--ink);border:1.5px solid var(--line);box-shadow:var(--shadow)}
+.btn.small{padding:6px 10px;min-height:36px;font-size:.82rem;border-radius:10px}
+.btn.big{font-size:1.1rem;padding:13px 18px;flex:1}
+/* アイコン：通常・選択中・無効・フォーカスを区別する */
+.ico{display:inline-block;line-height:1.1}
+img.ico{width:28px;height:28px;object-fit:contain}
+[data-ui="pc"] .nav img.ico{width:24px;height:24px}
+.hbtn img.ico{width:26px;height:26px}
+.nav button:hover:not(:disabled),.hbtn:hover:not(:disabled){filter:brightness(1.06)}
+.nav button:disabled,.hbtn:disabled{opacity:.45;filter:grayscale(1);cursor:default}
+.nav button[aria-current="page"] img.ico,.hbtn[aria-expanded="true"] img.ico{transform:translateY(-1px) scale(1.08)}
+.nav button:focus-visible,.hbtn:focus-visible{outline:3px solid #f2b632;outline-offset:2px}
 .kbd{display:inline-block;min-width:1.5em;padding:0 5px;border-radius:6px;border:1.5px solid currentColor;font-size:.75em;font-weight:900;line-height:1.5;text-align:center;opacity:.85}
 
 /* 研究室 */
@@ -180,7 +196,6 @@ button:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-v
 [data-ui="touch"] .dock[data-size="tall"]{top:calc(var(--sat) + 8px);max-height:none}
 [data-ui="pc"] .dock{top:calc(var(--sat) + 12px);bottom:calc(var(--navh,72px) + 8px);right:calc(var(--sar) + 12px);width:min(560px,44vw);border-radius:20px}
 [data-ui="pc"] .dock[data-size="wide"]{left:calc(var(--sal) + 24px);right:calc(var(--sar) + 24px);width:auto}
-@media (min-width:1100px){ [data-ui="pc"] .dock[data-size="wide"] .labgrid{grid-template-columns:1.1fr .9fr} }
 /* メニュー（スマホ）の大きな項目 */
 .bigmenu{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);margin:10px 0}
 .bigitem{min-height:72px;border:1.5px solid var(--line);background:var(--card);border-radius:16px;display:flex;align-items:center;gap:10px;padding:10px 12px;font:inherit;font-weight:900;font-size:1rem;cursor:pointer;text-align:left}
@@ -320,7 +335,16 @@ textarea{width:100%;min-height:90px;font:inherit;font-size:.75rem;border:1.5px s
 
 
 /* 研究室の背景イラスト */
-.stagebox{aspect-ratio:16/9;background-size:cover;background-position:center;background-color:#2b2a26}
+.stagebox{aspect-ratio:16/9;background:#e9dcc3}
+.benchcol{display:flex;flex-direction:column;gap:6px}
+.steps{display:flex;gap:4px;list-style:none;margin:0;padding:0;counter-reset:st;flex-wrap:wrap}
+.steps li{counter-increment:st;font-size:.74rem;font-weight:900;border-radius:999px;padding:2px 9px;background:var(--soft);border:1.5px solid var(--line);color:var(--muted)}
+.steps li::before{content:counter(st) " "}
+.steps li.done{border-color:var(--meadow);color:var(--meadow)}
+.steps li.now{background:var(--meadow);border-color:var(--meadow);color:var(--meadow-ink)}
+.runbar{position:sticky;bottom:-16px;z-index:2;display:flex;gap:8px;align-items:center;margin:10px -12px -12px;padding:10px 12px;background:var(--card);border-top:1.5px solid var(--line);border-radius:0 0 18px 18px}
+[data-ui="pc"] .dock[data-size="wide"] .labgrid{grid-template-columns:1.05fr .95fr;align-items:start}
+[data-ui="pc"] .dock[data-size="wide"] .labgrid .benchcol{position:sticky;top:8px}
 /* 3Dフィールド（ステージ全体） */
 .w3{position:absolute;inset:0;background:#3b5a3a}
 .w3slot,.w3canvas{position:absolute;inset:0}
@@ -432,9 +456,9 @@ textarea{width:100%;min-height:90px;font:inherit;font-size:.75rem;border:1.5px s
   <div class="hud" id="hud">
     <div class="hud-tl"><div class="loc" id="hudLoc" role="status"></div><div id="mission" class="missionwrap"></div></div>
     <div class="hud-tr">
-      <button class="hbtn" data-tab="world" title="地図：地域を選んで移動する" aria-expanded="false"><span>🗺️</span>地図</button>
-      <button class="hbtn" data-act="home" data-only="pc" title="拠点へ戻る"><span>🏠</span>拠点</button>
-      <button class="hbtn" data-tab="settings" title="設定・ヘルプ" aria-expanded="false"><span>⚙️</span>設定</button>
+      <button class="hbtn" data-tab="world" data-icon="map" title="地図：地域を選んで移動する" aria-expanded="false"><span class="ico">🗺️</span>地図</button>
+      <button class="hbtn" data-act="home" data-icon="home" data-only="pc" title="拠点へ戻る"><span class="ico">🏠</span>拠点</button>
+      <button class="hbtn" data-tab="settings" data-icon="settings" title="設定・ヘルプ" aria-expanded="false"><span class="ico">⚙️</span>設定</button>
     </div>
     <div class="combo" id="combo"></div><div class="banner" id="banner" role="status"></div>
     <div class="joy" id="joy" aria-label="移動スティック"><div class="knob"></div></div>
@@ -446,12 +470,12 @@ textarea{width:100%;min-height:90px;font:inherit;font-size:.75rem;border:1.5px s
     <div class="dockbody" id="dockBody"></div>
   </section>
   <nav class="nav" id="nav" aria-label="メニュー">
-    <button data-tab="lab" title="研究室：材料・装置・操作を選んで実験"><span>🧪</span>研究室</button>
-    <button data-tab="craft" title="工作：道具や設備を作る"><span>🔨</span>工作</button>
-    <button data-tab="book" data-only="pc" title="図鑑：見つけたものの説明"><span>📖</span>図鑑</button>
-    <button data-tab="map" data-only="pc" title="技術マップ：技術と物質のつながり"><span>🕸️</span>技術</button>
-    <button data-tab="log" data-only="pc" title="記録：実験の記録とセーブデータ"><span>📓</span>記録</button>
-    <button data-tab="menu" data-only="touch" title="メニュー：図鑑・技術・記録・設定"><span>☰</span>メニュー</button>
+    <button data-tab="lab" data-icon="lab" title="研究室：材料・装置・操作を選んで実験"><span class="ico">🧪</span>研究室</button>
+    <button data-tab="craft" data-icon="craft" title="工作：道具や設備を作る"><span class="ico">🔨</span>工作</button>
+    <button data-tab="book" data-icon="book" data-only="pc" title="図鑑：見つけたものの説明"><span class="ico">📖</span>図鑑</button>
+    <button data-tab="map" data-icon="tech" data-only="pc" title="技術マップ：技術と物質のつながり"><span class="ico">🕸️</span>技術</button>
+    <button data-tab="log" data-icon="log" data-only="pc" title="記録：実験の記録とセーブデータ"><span class="ico">📓</span>記録</button>
+    <button data-tab="menu" data-icon="menu" data-only="touch" title="メニュー：図鑑・技術・記録・設定"><span class="ico">☰</span>メニュー</button>
   </nav>
 </div>
 <div class="modal" id="modal" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>

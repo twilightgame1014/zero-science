@@ -12,7 +12,7 @@
 - `npm run typecheck` … `src/graphics` の型チェック
 
 ## 設計のルール（厳守）
-1. **データとロジックと画面を分ける。** 科学データは `src/game/data.js`、判定は `src/game/engine.js`、表示と入力は `src/game/ui.js`。実験の判定を UI の中に書かない。
+1. **データとロジックと画面を分ける。** 科学データは `src/game/data.js`、判定は `src/game/engine.js`、フィールドの自然物（生成・当たり判定・経路・採取）は `src/game/nature.js`、表示と入力は `src/game/ui.js`。実験や採取の判定を UI の中に書かない。
 2. **描画モジュール `src/graphics/` は改変しない。** 担当は Muse（グラフィック側）。必要な機能はメモにまとめてユーザー経由で Muse に依頼する。
    - モジュールは描画専用。座標・採取状態・建物・進行の正本はゲーム側。結果だけを `setPlayerVisualState` / `updateResourceVisual` / `addStructureVisual` / `playVisualEffect` で渡す。
    - API の正本は `src/graphics/types.ts`、連携仕様は `docs/handoff/INTEGRATION.md`。
@@ -35,21 +35,29 @@
 - パネル・案内（モーダル）の表示中は `fieldInputActive()` が偽になり、マップへの入力をすべて無視する。開くとき・タッチのキャンセル・フォーカス喪失・画面回転では `haltField()` で移動を止める。スティックと行動ボタンは pointerId で区別する。
 - カメラの値は描画モジュールの既定値を使い、ゲーム側から上書きしない。確認用に限り URL の `?camera=俯角,viewSize` で `config.camera` を渡せる。
 
+## フィールドの自然物（2026-11-06〜）
+- 木・岩・小石・落ち枝・草むら・やぶは `nature.js` が正本。描画モジュールと同じ地形関数と固定の種から生成し、ID は「種類:x,z」。契約は `docs/handoff/NATURAL-OBJECTS-CONTRACT.md`。
+- 当たり判定は地面上の円（木は幹、岩は占有範囲）。移動はすべて `WORLD.move`（細かく分けてすり抜けない・外周に沿って滑る）、クリック移動は `WORLD.findPath`（A*）。
+- 採取は「選ぶ → 近づく（外周へ）→ 条件確認 → 短い作業 → 一度だけ確定」。距離と二重実行（`S.seq` のトークン）はロジック側で確認する。
+- 変化した自然物・地域の採取地点の状態は `S.nature` に保存（スキーマ v2）。自動採取も同じ残量を使う。
+- 研究室は画像を使わず、SVG の実験台（`drawScene`）。研究室の画像はビルドに埋め込まない。
+- アイコンは `assets/icons/<名前>.webp|png|svg` があれば使い、なければ絵文字（必ず文字ラベルと組み合わせる）。
+
 ## 主なデータの場所
 - 地域と3D上の位置：`data.js` の `regions`（`w` がワールド座標、`res[].p` が地域内の配置）
 - 拠点の建物（段階で増える）：`ui.js` の `STRUCT_PLAN`
 - 資源の見た目タイプ：`ui.js` の `RES_VIS`（`water` / `oil` は Muse に追加依頼中の独自タイプ）
-- 研究室の背景：段階0〜2→`lab1`、3→`lab2`、4→`lab3`、5→`lab4`
+- 研究室の背景：`ui.js` の `labBackground`（SVG）。`assets/lab/` の画像は原本として残すだけで、ビルドには使わない
 
 ## Muse への依頼事項（未解決）
-1. 一時停止API（`pauseGraphics` / `resumeGraphics`）。今は内部の `stopLoop` / `startLoop` を直接呼んでいる
+1. 一時停止API（`pauseGraphics` / `resumeGraphics`）を `src/graphics` へ反映（原本にだけある）。ゲームはあれば使い、なければ内部の `stopLoop` / `startLoop`
 2. 資源タイプ `water`（水源）・`oil`（原油）・`ore`（鉱石）の見た目
 3. 洞窟・鉱山・火山・海岸・油田のバイオーム
 4. 川を渡る橋（今は水の中を歩いて渡れる）
 5. 水位（0.32）より低い土地が水中色で塗られているのが意図どおりか
 6. 建物タイプ：水車・蒸気機関・精留塔・掘削やぐら
-7. 川の水面メッシュの面が下向きで、上からは描かれない（`docs/handoff/CLAUDE-TO-MUSE-2026-11-06.md`）
-8. 画面の点から地表を求める公開API `pickGround`（同メモ）
+7. （対応済み：川の水面・`pickGround`・`setViewportInsets` は `feature/graphics-world-polish` で追加され、このブランチに統合）
+8. 描画側の装飾を止める `GraphicsOptions.decor`・自然物の専用タイプと採取後の見た目・まとめて描くAPI（`docs/handoff/NATURAL-OBJECTS-CONTRACT.md`）
 9. 低視点カメラ：縦画面での人物の大きさ・足元の位置・遮蔽フェード・地図の端の空白（同メモ）
 
 ## 今後の拡張候補

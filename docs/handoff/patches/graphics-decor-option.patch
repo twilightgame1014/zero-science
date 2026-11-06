@@ -1,0 +1,236 @@
+diff --git a/src/graphics/EnvironmentRenderer.ts b/src/graphics/EnvironmentRenderer.ts
+index 921dfab..29b8b6d 100644
+--- a/src/graphics/EnvironmentRenderer.ts
++++ b/src/graphics/EnvironmentRenderer.ts
+@@ -1,5 +1,5 @@
+ import * as THREE from 'three';
+-import type { GraphicsConfig, QualityTier } from './types';
++import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
+ import { AssetManager } from './AssetManager';
+ import {
+   distanceToPath,
+@@ -111,17 +111,19 @@ export class EnvironmentRenderer {
+     cfg: GraphicsConfig,
+     quality: QualityTier,
+     particleTexture: THREE.Texture,
++    decor: DecorOptions = {},
+   ) {
+     this.cfg = cfg;
+     this.rng = mulberry32(cfg.world.seed);
+     const scale = quality === 'high' ? 1 : 0.5;
+ 
+-    this.buildTrees(scale);
++    // Families the game owns as natural objects can be switched off (decor).
++    if (decor.trees !== false) this.buildTrees(scale);
+     this.buildGrass(scale);
+-    this.buildGroundCover(scale);
+-    this.buildRocks(scale);
+-    this.buildRiverbank(scale);
+-    this.buildFallenLogs();
++    this.buildGroundCover(scale, decor.shrubs !== false);
++    if (decor.rocks !== false) this.buildRocks(scale);
++    if (decor.pebbles !== false) this.buildRiverbank(scale);
++    if (decor.logs !== false) this.buildFallenLogs();
+     this.buildPollen(particleTexture, scale);
+     this.buildBackdropMountains();
+     this.buildWaterfall(particleTexture);
+@@ -420,10 +422,10 @@ export class EnvironmentRenderer {
+   }
+ 
+   /* ---------------- shrubs, ferns, leaf litter ---------------- */
+-  private buildGroundCover(scale: number): void {
++  private buildGroundCover(scale: number, shrubsOn = true): void {
+     const shrubGeo = new THREE.IcosahedronGeometry(0.55, 1);
+     const shrubMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 });
+-    const sCount = Math.round(150 * scale);
++    const sCount = shrubsOn ? Math.round(150 * scale) : 0;
+     const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, sCount);
+     const cA = new THREE.Color(0x477f36);
+     const cB = new THREE.Color(0x6da34c);
+diff --git a/src/graphics/GraphicsEngine.ts b/src/graphics/GraphicsEngine.ts
+index d527c3d..7cd5b39 100644
+--- a/src/graphics/GraphicsEngine.ts
++++ b/src/graphics/GraphicsEngine.ts
+@@ -204,7 +204,7 @@ export class GraphicsEngine {
+     const world = new WorldRenderer(cfg, quality, assets, {
+       terrainDetail,
+       particle: particleTexture,
+-    });
++    }, options.decor);
+     const groundAt = (x: number, z: number) => world.getGroundHeight(x, z);
+     const character = new CharacterRenderer(
+       spriteTexture,
+diff --git a/src/graphics/WorldRenderer.ts b/src/graphics/WorldRenderer.ts
+index 9d60fd9..e7d2894 100644
+--- a/src/graphics/WorldRenderer.ts
++++ b/src/graphics/WorldRenderer.ts
+@@ -1,5 +1,5 @@
+ import * as THREE from 'three';
+-import type { GraphicsConfig, QualityTier } from './types';
++import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
+ import { AssetManager } from './AssetManager';
+ import { TerrainRenderer } from './TerrainRenderer';
+ import { EnvironmentRenderer } from './EnvironmentRenderer';
+@@ -18,10 +18,11 @@ export class WorldRenderer {
+     quality: QualityTier,
+     assets: AssetManager,
+     textures: { terrainDetail: THREE.Texture; particle: THREE.Texture },
++    decor?: DecorOptions,
+   ) {
+     void assets;
+     this.terrain = new TerrainRenderer(cfg, textures.terrainDetail);
+-    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle);
++    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, decor);
+     this.group.add(this.terrain.group);
+     this.group.add(this.environment.group);
+   }
+diff --git a/src/graphics/types.ts b/src/graphics/types.ts
+index 9996562..c96617f 100644
+--- a/src/graphics/types.ts
++++ b/src/graphics/types.ts
+@@ -94,6 +94,18 @@ export interface GroundPick {
+   surface: 'terrain' | 'water';
+ }
+ 
++/** Which built-in decoration families the renderer scatters on its own.
++ *  Families the game manages as gatherable natural objects (handed over
++ *  with updateResourceVisual) should be turned off here so the same tree
++ *  or rock is never drawn twice. All default to true. */
++export interface DecorOptions {
++  trees?: boolean;
++  rocks?: boolean;
++  logs?: boolean;
++  pebbles?: boolean;
++  shrubs?: boolean;
++}
++
+ export interface GraphicsOptions {
+   /** Rendering quality. 'auto' picks from device hints. Default 'auto'. */
+   quality?: QualityTier | 'auto';
+@@ -114,6 +126,8 @@ export interface GraphicsOptions {
+   /** HUD safe-area insets (CSS px) known at startup. Can be updated
+    *  at runtime with setViewportInsets(). */
+   viewportInsets?: ViewportInsets;
++  /** Built-in decoration families to draw (see DecorOptions). */
++  decor?: DecorOptions;
+   /** Called when the WebGL context is lost / restored. */
+   onContextLost?: () => void;
+   onContextRestored?: () => void;
+diff --git a/threejs-hd2d-graphics/src/graphics/EnvironmentRenderer.ts b/threejs-hd2d-graphics/src/graphics/EnvironmentRenderer.ts
+index 921dfab..29b8b6d 100644
+--- a/threejs-hd2d-graphics/src/graphics/EnvironmentRenderer.ts
++++ b/threejs-hd2d-graphics/src/graphics/EnvironmentRenderer.ts
+@@ -1,5 +1,5 @@
+ import * as THREE from 'three';
+-import type { GraphicsConfig, QualityTier } from './types';
++import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
+ import { AssetManager } from './AssetManager';
+ import {
+   distanceToPath,
+@@ -111,17 +111,19 @@ export class EnvironmentRenderer {
+     cfg: GraphicsConfig,
+     quality: QualityTier,
+     particleTexture: THREE.Texture,
++    decor: DecorOptions = {},
+   ) {
+     this.cfg = cfg;
+     this.rng = mulberry32(cfg.world.seed);
+     const scale = quality === 'high' ? 1 : 0.5;
+ 
+-    this.buildTrees(scale);
++    // Families the game owns as natural objects can be switched off (decor).
++    if (decor.trees !== false) this.buildTrees(scale);
+     this.buildGrass(scale);
+-    this.buildGroundCover(scale);
+-    this.buildRocks(scale);
+-    this.buildRiverbank(scale);
+-    this.buildFallenLogs();
++    this.buildGroundCover(scale, decor.shrubs !== false);
++    if (decor.rocks !== false) this.buildRocks(scale);
++    if (decor.pebbles !== false) this.buildRiverbank(scale);
++    if (decor.logs !== false) this.buildFallenLogs();
+     this.buildPollen(particleTexture, scale);
+     this.buildBackdropMountains();
+     this.buildWaterfall(particleTexture);
+@@ -420,10 +422,10 @@ export class EnvironmentRenderer {
+   }
+ 
+   /* ---------------- shrubs, ferns, leaf litter ---------------- */
+-  private buildGroundCover(scale: number): void {
++  private buildGroundCover(scale: number, shrubsOn = true): void {
+     const shrubGeo = new THREE.IcosahedronGeometry(0.55, 1);
+     const shrubMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 });
+-    const sCount = Math.round(150 * scale);
++    const sCount = shrubsOn ? Math.round(150 * scale) : 0;
+     const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, sCount);
+     const cA = new THREE.Color(0x477f36);
+     const cB = new THREE.Color(0x6da34c);
+diff --git a/threejs-hd2d-graphics/src/graphics/GraphicsEngine.ts b/threejs-hd2d-graphics/src/graphics/GraphicsEngine.ts
+index d527c3d..7cd5b39 100644
+--- a/threejs-hd2d-graphics/src/graphics/GraphicsEngine.ts
++++ b/threejs-hd2d-graphics/src/graphics/GraphicsEngine.ts
+@@ -204,7 +204,7 @@ export class GraphicsEngine {
+     const world = new WorldRenderer(cfg, quality, assets, {
+       terrainDetail,
+       particle: particleTexture,
+-    });
++    }, options.decor);
+     const groundAt = (x: number, z: number) => world.getGroundHeight(x, z);
+     const character = new CharacterRenderer(
+       spriteTexture,
+diff --git a/threejs-hd2d-graphics/src/graphics/WorldRenderer.ts b/threejs-hd2d-graphics/src/graphics/WorldRenderer.ts
+index 9d60fd9..e7d2894 100644
+--- a/threejs-hd2d-graphics/src/graphics/WorldRenderer.ts
++++ b/threejs-hd2d-graphics/src/graphics/WorldRenderer.ts
+@@ -1,5 +1,5 @@
+ import * as THREE from 'three';
+-import type { GraphicsConfig, QualityTier } from './types';
++import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
+ import { AssetManager } from './AssetManager';
+ import { TerrainRenderer } from './TerrainRenderer';
+ import { EnvironmentRenderer } from './EnvironmentRenderer';
+@@ -18,10 +18,11 @@ export class WorldRenderer {
+     quality: QualityTier,
+     assets: AssetManager,
+     textures: { terrainDetail: THREE.Texture; particle: THREE.Texture },
++    decor?: DecorOptions,
+   ) {
+     void assets;
+     this.terrain = new TerrainRenderer(cfg, textures.terrainDetail);
+-    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle);
++    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, decor);
+     this.group.add(this.terrain.group);
+     this.group.add(this.environment.group);
+   }
+diff --git a/threejs-hd2d-graphics/src/graphics/types.ts b/threejs-hd2d-graphics/src/graphics/types.ts
+index 9996562..c96617f 100644
+--- a/threejs-hd2d-graphics/src/graphics/types.ts
++++ b/threejs-hd2d-graphics/src/graphics/types.ts
+@@ -94,6 +94,18 @@ export interface GroundPick {
+   surface: 'terrain' | 'water';
+ }
+ 
++/** Which built-in decoration families the renderer scatters on its own.
++ *  Families the game manages as gatherable natural objects (handed over
++ *  with updateResourceVisual) should be turned off here so the same tree
++ *  or rock is never drawn twice. All default to true. */
++export interface DecorOptions {
++  trees?: boolean;
++  rocks?: boolean;
++  logs?: boolean;
++  pebbles?: boolean;
++  shrubs?: boolean;
++}
++
+ export interface GraphicsOptions {
+   /** Rendering quality. 'auto' picks from device hints. Default 'auto'. */
+   quality?: QualityTier | 'auto';
+@@ -114,6 +126,8 @@ export interface GraphicsOptions {
+   /** HUD safe-area insets (CSS px) known at startup. Can be updated
+    *  at runtime with setViewportInsets(). */
+   viewportInsets?: ViewportInsets;
++  /** Built-in decoration families to draw (see DecorOptions). */
++  decor?: DecorOptions;
+   /** Called when the WebGL context is lost / restored. */
+   onContextLost?: () => void;
+   onContextRestored?: () => void;

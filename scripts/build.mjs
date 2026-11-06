@@ -26,16 +26,20 @@ const dataUrl = (p, mime) => `data:${mime};base64,${fs.readFileSync(path.join(ro
 const ASSETS = {
   boy: dataUrl('assets/characters/boy.webp', 'image/webp'),
   girl: dataUrl('assets/characters/girl.webp', 'image/webp'),
-  lab1: dataUrl('assets/lab/lab1.webp', 'image/webp'),
-  lab2: dataUrl('assets/lab/lab2.webp', 'image/webp'),
-  lab3: dataUrl('assets/lab/lab3.webp', 'image/webp'),
-  lab4: dataUrl('assets/lab/lab4.webp', 'image/webp'),
   grass: dataUrl('assets/textures/grass-detail.png', 'image/png'),
   rock: dataUrl('assets/textures/rock-detail.png', 'image/png'),
   particle: dataUrl('assets/textures/particle-dot.png', 'image/png'),
   shadow: dataUrl('assets/textures/shadow-blob.png', 'image/png'),
 };
 
+// オリジナルアイコン（Muse が透過・切り出し・サイズ調整したもの）。あるものだけ埋め込み、なければ絵文字で表示する
+ASSETS.icons = {};
+for (const name of ['lab', 'craft', 'book', 'tech', 'log', 'map', 'home', 'settings', 'menu']) {
+  for (const [ext, mime] of [['webp', 'image/webp'], ['png', 'image/png'], ['svg', 'image/svg+xml']]) {
+    const f = `assets/icons/${name}.${ext}`;
+    if (fs.existsSync(path.join(root, f))) { ASSETS.icons[name] = dataUrl(f, mime); break; }
+  }
+}
 const parts = {
   '/*GFX*/': gfxCode,
   '/*ASSETS*/': 'var ASSETS=' + JSON.stringify(ASSETS) + ';',

@@ -45,7 +45,7 @@ function afterChange(news){
 const TABS = {explore:"🗺️ 探索", lab:"🧪 研究室", craft:"🔨 工作", book:"📖 図鑑", map:"🕸️ 技術マップ", log:"📓 記録",
   world:"🗺️ 地図・地域", menu:"☰ メニュー", settings:"⚙️ 設定・ヘルプ"};
 /* パネルの大きさ。PC：右側のパネル（side）か大きなオーバーレイ（wide）。スマホ：下からのシート（sheet）か全高近く（tall） */
-const PC_SIZE = {book:"wide", map:"wide"};
+const PC_SIZE = {book:"wide", map:"wide", lab:"wide"};   /* 研究室は材料・操作と実験台を並べる */
 const TOUCH_SIZE = {lab:"tall", craft:"tall", book:"tall", map:"tall", log:"tall"};
 const MENU_TABS = ["menu","book","map","log","settings"];   /* スマホでは「メニュー」の中にある画面 */
 /* 画面幅だけでなく入力方法（タッチかマウスか）も見て、PC用とスマホ用の配置を切り替える */
@@ -61,6 +61,11 @@ function applyUiMode(){
   if(app.dataset.ui!==m){ app.dataset.ui=m; haltField(); renderChrome(); if(U.tab!=="explore") renderPanel(); updateAction3D(); updateFieldActivity(); }
   layout();
 }
+/* オリジナルアイコン（assets/icons/<名前>.webp|png）があれば使う。なければ絵文字。必ず文字ラベルと組み合わせる */
+const ICON_EMOJI = {lab:"🧪", craft:"🔨", book:"📖", tech:"🕸️", log:"📓", map:"🗺️", home:"🏠", settings:"⚙️", menu:"☰"};
+function iconHTML(name){ const src = window.ASSETS && ASSETS.icons && ASSETS.icons[name];
+  return src ? `<img class="ico" src="${src}" alt="" aria-hidden="true">` : `<span class="ico emo" aria-hidden="true">${ICON_EMOJI[name]||""}</span>`; }
+function applyIcons(){ document.querySelectorAll("[data-icon]").forEach(el=>{ const sp=el.querySelector(".ico"); if(sp) sp.outerHTML = iconHTML(el.dataset.icon); }); }
 function renderChrome(){
   const i = E.missionIndex(S), m = D.missions[i], touch = uiMode()==="touch";
   updateLoc();
@@ -230,7 +235,7 @@ function labBackground(st){
 /* ===================== 研究室 ===================== */
 let sceneSig="";
 function renderLab(v){
-  if(!v.querySelector(".labgrid")){ v.innerHTML = `<div class="labgrid"><div class="stagebox" id="stagebox"></div><div id="labctl"></div></div>`; sceneSig=""; }
+  if(!v.querySelector(".labgrid")){ v.innerHTML = `<div class="labgrid"><div class="benchcol"><ol class="steps" id="labSteps" aria-label="実験の手順"></ol><div class="stagebox" id="stagebox"></div></div><div id="labctl"></div></div>`; sceneSig=""; }
   drawScene(); drawLabCtl();
 }
 function vesselFor(fac, op, proc){
@@ -267,25 +272,49 @@ function vesselSVG(shape){
       <g class="fx x-sink"><circle cx="-8" cy="-4" r="2.4" fill="#6e5a44"/><circle cx="4" cy="-4" r="2.4" fill="#6e5a44"/><circle cx="12" cy="-4" r="2" fill="#6e5a44"/></g></g>
     ${extra}${shape==="jar"?`<ellipse cx="0" cy="-50" rx="22" ry="5" style="fill:var(--wood)"/>`: shape==="pot"?`<ellipse cx="0" cy="-42" rx="30" ry="4" fill="rgba(0,0,0,.18)"/>`:""}`;
 }
+/* 実験台：AI画像ではなく SVG で描く。中央に選んだ装置と容器、棚に解放済みの設備、台の端に解放済みの器具 */
+const TALL_FAC = ["furnace","blastfurnace","refinery","reactor","still","kiln","charkiln","steamengine","generator","electrolyzer","eaf"];
+function benchProps(st){
+  // 解放済みのものだけを飾る（操作できる設備としては表示しない）
+  const out=[];
+  if(owned("bench")) out.push(`<g transform="translate(58,186)" aria-hidden="true"><ellipse cx="0" cy="0" rx="20" ry="6" fill="#7b7d79"/><path d="M-18 -2 Q-16 -16 0 -17 Q16 -16 18 -2Z" fill="#9a9c98"/><rect x="6" y="-30" width="4" height="20" rx="2" transform="rotate(30 8 -20)" fill="#6e6f6b"/><title>石のすりばち</title></g>`);
+  if(S.disc.pot) out.push(`<g transform="translate(100,186)" aria-hidden="true"><path d="M-14 0 Q-20 -14 -10 -24 L10 -24 Q20 -14 14 0Z" fill="#b4483b"/><ellipse cx="0" cy="-24" rx="10" ry="3" fill="#8a3a2e"/></g>`);
+  if(S.disc.glass || S.disc.bottle){
+    out.push(`<g transform="translate(316,186)" aria-hidden="true" opacity=".9"><path d="M-12 0 L-12 -26 L12 -26 L12 0Z" fill="rgba(200,235,245,.7)" stroke="#8fb9c6" stroke-width="1.5"/><path d="M-12 -10 L12 -10 L12 0 L-12 0Z" fill="rgba(120,190,220,.6)"/><path d="M-12 -26 L-15 -29" stroke="#8fb9c6" stroke-width="1.5"/></g>`);
+    out.push(`<g transform="translate(352,186)" aria-hidden="true" opacity=".9"><path d="M-4 -34 L4 -34 L4 -22 L14 -4 Q16 0 12 0 L-12 0 Q-16 0 -14 -4 L-4 -22Z" fill="rgba(200,235,245,.7)" stroke="#8fb9c6" stroke-width="1.5"/><path d="M-11 -6 L11 -6 L12 -2 L-12 -2Z" fill="rgba(170,220,140,.75)"/></g>`);
+    out.push(`<g transform="translate(140,186)" aria-hidden="true"><rect x="-16" y="-6" width="32" height="6" fill="#8a643f"/>${[-10,0,10].map(x=>`<rect x="${x-3}" y="-30" width="6" height="26" rx="3" fill="rgba(210,240,250,.8)" stroke="#8fb9c6"/>`).join("")}</g>`);
+  }
+  return out.join("");
+}
 function drawScene(){
-  if(!$("#stagebox")) return;
+  const box=$("#stagebox"); if(!box) return;
   const st = stage();
-  const hideOld = st>=5?["campfire","rack","charkiln","filter","fermenter","kiln","mill"]:st>=4?["rack","charkiln","campfire"]:[];
-  const facs = LAB_FAC.filter(f=>owned(f)&&!hideOld.includes(f));
+  const facs = LAB_FAC.filter(f=>owned(f) && f!==U.fac).slice(0,7);
   const plan = U.fac ? E.planExperiment(S,U.tray,U.fac,U.op) : null;
   const shape = vesselFor(U.fac, U.op, plan&&plan.ok?plan.proc:null);
-  const sig = st+"|"+facs.join(",")+"|"+owned("bench")+"|"+shape+"|"+(S.disc.bulb?1:0)+(S.disc.solarcell?1:0);
+  const tray = Object.keys(U.tray).filter(k=>U.tray[k]>0);
+  const step = !tray.length ? 1 : !U.fac ? 2 : !U.op ? 3 : 4;
+  const steps=$("#labSteps"); if(steps) steps.innerHTML = ["材料を選ぶ","装置を選ぶ","操作を選ぶ","実験する","結果を見る"].map((t,i)=>`<li class="${i+1<step?"done":i+1===step?"now":""}">${t}</li>`).join("");
+  const sig = [st, facs.join(","), owned("bench"), shape, U.fac, U.op, tray.map(k=>k+U.tray[k]).join(","), S.disc.pot?1:0, (S.disc.glass||S.disc.bottle)?1:0, S.disc.bulb?1:0, S.disc.solarcell?1:0].join("|");
   if(sig===sceneSig || U.busy) return;
   sceneSig = sig;
-  const baseY = 214;
-  const labImg = ASSETS["lab"+(st<=2?1:st-1)];
-  const box=$("#stagebox"); box.style.backgroundImage=`url(${labImg})`;
-  box.innerHTML = `<svg class="scene" id="scene" viewBox="0 0 400 225" role="img" aria-label="研究の場所：${D.stages[st].name}">
+  const tall = U.fac && TALL_FAC.includes(U.fac), baseY = 186;
+  box.style.backgroundImage = "none";
+  box.innerHTML = `<svg class="scene" id="scene" viewBox="0 0 400 225" role="img" aria-label="実験台：${U.fac?nm(U.fac)+"を使う":"装置はまだ選んでいない"}${tray.length?"・材料 "+tray.map(nm).join("、"):""}">
   <defs><radialGradient id="glowG"><stop offset="0" stop-color="#ffcf5a" stop-opacity=".95"/><stop offset=".6" stop-color="#ff8a2a" stop-opacity=".35"/><stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/></radialGradient>
-    <radialGradient id="spotG" cx=".5" cy=".6" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".7" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
-  ${shape?`<ellipse cx="200" cy="${baseY-40}" rx="78" ry="62" fill="url(#spotG)"/><ellipse cx="200" cy="${baseY+2}" rx="54" ry="7" fill="rgba(0,0,0,.35)"/>`:""}
-  ${!facs.length&&!owned("bench")?`<rect x="70" y="96" width="260" height="30" rx="10" fill="rgba(255,255,255,.85)"/><text x="200" y="116" text-anchor="middle" font-size="13" font-weight="700" fill="#22305a">まだ何もない。探索と工作から始めよう！</text>`:""}
-  <g id="vessel" transform="translate(200,${baseY})">
+    <radialGradient id="spotG" cx=".5" cy=".6" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".7" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe3f2"/><stop offset="1" stop-color="#eef8f1"/></linearGradient></defs>
+  <g opacity=".85">${labBackground(st)}</g>
+  <rect x="0" y="96" width="400" height="5" fill="${st<3?"#8a643f":"#7d8792"}"/>
+  ${facs.map((f,i)=>`<g transform="translate(${36+i*54},96) scale(.36)" opacity=".9"><title>${nm(f)}（持っている設備）</title>${facArt(f)}</g>`).join("")}
+  <rect x="0" y="${baseY}" width="400" height="10" fill="${st<3?"#8a643f":"#5b6470"}"/><rect x="0" y="${baseY+10}" width="400" height="30" fill="${st<3?"#6e4e30":"#3d4650"}"/>
+  ${benchProps(st)}
+  ${tray.map((k,i)=>`<g transform="translate(${26+i*30},${baseY+28})"><circle r="12" fill="rgba(255,255,255,.9)"/><text text-anchor="middle" y="5" font-size="15">${ic(k)}</text></g>`).join("")}
+  ${U.fac?`<g transform="translate(${tall?300:200},${baseY+2}) scale(${tall?.85:1.15})">${facArt(U.fac)}</g>
+    <text x="${tall?300:200}" y="${baseY+36}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${nm(U.fac)}</text>`
+    : `<rect x="110" y="128" width="180" height="26" rx="10" fill="rgba(255,255,255,.88)"/><text x="200" y="146" text-anchor="middle" font-size="12" font-weight="700" fill="#22305a">${owned("bench")||LAB_FAC.some(owned)?"② 装置を選ぶと、ここに置かれる":"まだ装置がない。工作で作ろう"}</text>`}
+  ${shape?`<ellipse cx="${tall?170:200}" cy="${baseY-40}" rx="70" ry="56" fill="url(#spotG)"/>`:""}
+  <g id="vessel" transform="translate(${tall?170:200},${baseY-(U.fac==="campfire"?12:0)})">
     <g class="fx x-glow"><circle cx="0" cy="-26" r="54" fill="url(#glowG)"/></g>
     <g class="fx x-flame" transform="translate(0,8)"><path d="M-16 0 Q-26 -14 -16 -28 Q-12 -14 -6 -16 Q-4 -6 -16 0Z" fill="#ff8a2a"/><path d="M0 0 Q-12 -18 0 -36 Q12 -18 0 0Z" fill="#ffb347"/><path d="M16 0 Q26 -14 16 -28 Q12 -14 6 -16 Q4 -6 16 0Z" fill="#ff8a2a"/></g>
     ${shape?vesselSVG(shape):""}
@@ -336,7 +365,7 @@ function drawLabCtl(){
     <h3 class="mt"><span class="n">3</span>操作を選ぶ</h3>
     <div class="opts">${U.fac? IT[U.fac].ops.map(o=>`<button class="opt" data-act="op" data-id="${o}" aria-pressed="${U.op===o}">${OPS[o].icon} ${OPS[o].name}</button>`).join("") : `<span class="desc">先に装置を選んでね。</span>`}</div>
     <p class="desc">${op?`<b>${op.name}（${op.yomi}）</b>：${op.kid}`:""}</p>
-    <div class="row mt"><button class="btn big" data-act="run" ${canRun?"":"disabled"}>🧪 実験スタート</button><button class="btn sub" data-act="hint">💡 ヒント</button></div>
+    <div class="runbar"><button class="btn big" data-act="run" ${canRun?"":"disabled"}>🧪 実験スタート</button><button class="btn sub" data-act="hint">💡 ヒント</button></div>
   </div>
   <div id="labResult" aria-live="polite">${U.last||""}</div>`;
 }
@@ -344,23 +373,24 @@ function runLab(){
   if(U.busy) return;
   const token = S.seq;
   const plan = E.planExperiment(S, U.tray, U.fac, U.op);
-  if(!plan.ok){ U.last = `<div class="note bad"><h4>🦉 うーん…</h4><p style="margin:0">${plan.msg}</p></div>`; animate(null); drawLabCtl(); return; }
-  U.busy = true; $("#toasts").innerHTML="";
-  const tray = U.tray, fac = U.fac, op = U.op;
+  if(!plan.ok){ U.last = `<div class="note bad"><h4>🦉 うーん…</h4><p style="margin:0">${plan.msg}</p></div>`; animate(null); drawLabCtl(); showResult(); return; }
+  /* 結果を先に確定する（二重実行はトークンで防ぐ）。成功していないのに成功の演出は出さない */
+  const tray = U.tray, fac = U.fac;
+  const res = E.runExperiment(S, tray, fac, U.op, token);
+  if(!res.ok){ U.last=`<div class="note bad"><h4>🦉 あれ？</h4><p style="margin:0">${res.msg}</p></div>`; animate(null); drawLabCtl(); showResult(); return; }
+  U.busy = true; U.tray = {}; $("#toasts").innerHTML="";
   U.last = `<div class="note"><h4>🔬 観察中…</h4><p style="margin:0">よく見ていてね。</p></div>`;
   drawLabCtl();
   const sb=$("#stagebox"); if(sb) sb.scrollIntoView({block:"nearest",behavior:RM?"auto":"smooth"});
-  animate(plan.proc, ()=>{
-    const res = E.runExperiment(S, tray, fac, op, token);
-    U.busy=false;
-    if(!res.ok){ U.last=`<div class="note bad"><h4>🦉 あれ？</h4><p style="margin:0">${res.msg}</p></div>`; drawLabCtl(); return; }
-    U.tray = {}; U.last = resultNote(res);
+  animate(res.proc, ()=>{
+    U.busy=false; U.last = resultNote(res);
     afterChange(res.news);
     sceneSig=""; drawScene(); drawLabCtl();
     const sc=$("#scene"); if(sc && res.news.length){ sc.classList.add("f-sparkle"); setTimeout(()=>sc&&sc.classList.remove("f-sparkle"),1400); }
-    const r=$("#labResult"); if(r) r.scrollIntoView({block:"nearest",behavior:RM?"auto":"smooth"});
+    showResult();
   });
 }
+function showResult(){ const r=$("#labResult"); if(r) r.scrollIntoView({block:"nearest",behavior:RM?"auto":"smooth"}); }
 function animate(p, done){
   const sc = $("#scene"), cnt = sc && sc.querySelector("#cnt"), temp=$("#temp");
   if(!sc){ done&&done(); return; }
@@ -670,7 +700,7 @@ async function start3D(){
       quality: MOBILE ? "low" : "high", postEffects: !MOBILE,
       /* 連携契約（docs/handoff/NATURAL-OBJECTS-CONTRACT.md）：木・岩・倒木・小石はゲーム側の自然物として渡すので、
          描画モジュール独自の装飾としては描かない。未対応の版では無視される */
-      decor: {trees:false, rocks:false, logs:false, pebbles:false},
+      decor: {trees:false, rocks:false, logs:false, pebbles:false, shrubs:false},
       viewportInsets: hudInsets(),
       onContextLost: ()=>{ W3.lost=true; }, onContextRestored: ()=>{ W3.lost=false; } });
     W3.gfx.setWorldVisualState({timeOfDay:0.44, weather:"clear", ambientParticles:true});
@@ -778,10 +808,12 @@ function loop3D(ts){
   if(!active && (W3.path || W3.joy || W3.work || Object.keys(W3.keys).length)) haltField();
   const k=W3.keys; if(k.ArrowLeft||k.a) ix-=1; if(k.ArrowRight||k.d) ix+=1; if(k.ArrowUp||k.w) iy-=1; if(k.ArrowDown||k.s) iy+=1;
   if(W3.joy){ ix=W3.joy.x; iy=W3.joy.y; }
+  /* 採取の作業中（1秒弱）はその場にとどまる。スティックを倒したまま採取ボタンを押しても、作業が終われば歩き出す */
+  if(W3.work){ ix=0; iy=0; }
   const B = camBasis(); let mx=0, mz=0;
   if(ix||iy){ W3.path=null; W3.target=null; W3.intent=null; const l=Math.hypot(ix,iy); if(l>1){ix/=l; iy/=l;}
     mx = B.r.x*ix - B.f.x*iy; mz = B.r.z*ix - B.f.z*iy; }
-  else if(W3.path && W3.path.length){ const wp=W3.path[0], dx=wp.x-W3.pos.x, dz=wp.z-W3.pos.z, d=Math.hypot(dx,dz);
+  else if(W3.path && W3.path.length && !W3.work){ const wp=W3.path[0], dx=wp.x-W3.pos.x, dz=wp.z-W3.pos.z, d=Math.hypot(dx,dz);
     if(d<0.2){ W3.path.shift(); if(!W3.path.length) arrive(); }
     else { mx=dx/d; mz=dz/d; } }
   const len=Math.hypot(mx,mz); let moving = len>0.01;
@@ -1234,6 +1266,6 @@ function intro(){
   if(!S.flags.hero) S.flags.hero="boy";
   openModal($("#introGo")); S.flags.intro=1; save();
 }
-document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); bindHudInput(); renderChrome(); render(); layout(); intro();
+document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); applyIcons(); bindHudInput(); renderChrome(); render(); layout(); intro();
 window.__GAME__ = {get S(){return S;}, E, D, U, W3, get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);
