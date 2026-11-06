@@ -19,11 +19,13 @@ import {
 export class TerrainRenderer {
   readonly group = new THREE.Group();
   private cfg: GraphicsConfig;
+  private detailBrightness: number;
   private waterUniforms: { uTime: { value: number } } | null = null;
   private terrainMesh: THREE.Mesh;
   private waterMesh: THREE.Mesh;
 
-  constructor(cfg: GraphicsConfig, detailTexture: THREE.Texture) {
+  constructor(cfg: GraphicsConfig, detailTexture: THREE.Texture, detailBrightness = 1) {
+    this.detailBrightness = detailBrightness;
     this.cfg = cfg;
     this.terrainMesh = this.buildTerrain(detailTexture);
     this.waterMesh = this.buildWater();
@@ -138,8 +140,10 @@ export class TerrainRenderer {
     geo.computeVertexNormals();
 
     detailTexture.repeat.set(46, 46);
+    const b = this.detailBrightness;
     const mat = new THREE.MeshStandardMaterial({
       map: detailTexture,
+      color: new THREE.Color(b, b, b),
       vertexColors: true,
       roughness: 0.96,
       metalness: 0,

@@ -17,11 +17,16 @@ export class WorldRenderer {
     cfg: GraphicsConfig,
     quality: QualityTier,
     assets: AssetManager,
-    textures: { terrainDetail: THREE.Texture; particle: THREE.Texture },
+    textures: {
+      terrainDetail: THREE.Texture;
+      particle: THREE.Texture;
+      gpt?: Record<string, THREE.Texture>;
+      detailBrightness?: number;
+    },
   ) {
     void assets;
-    this.terrain = new TerrainRenderer(cfg, textures.terrainDetail);
-    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle);
+    this.terrain = new TerrainRenderer(cfg, textures.terrainDetail, textures.detailBrightness ?? 1);
+    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {});
     this.group.add(this.terrain.group);
     this.group.add(this.environment.group);
   }

@@ -322,6 +322,32 @@ export class AssetManager {
     return tex;
   }
 
+  /** Soft irregular blob as a LINEAR alpha map (for ground patches:
+   *  leaf litter, gravel banks, worn dirt). Green channel is read. */
+  createPatchAlphaTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, 128, 128);
+    const rnd = this.rand(173);
+    for (let i = 0; i < 9; i++) {
+      const cx = 34 + rnd() * 60;
+      const cy = 34 + rnd() * 60;
+      const r = 22 + rnd() * 30;
+      const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
+      grad.addColorStop(0, 'rgba(255,255,255,0.85)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 4;
+    this.disposables.push(tex);
+    return tex;
+  }
+
   /* ------------- architectural canvas textures (original, procedural) ------------- */
 
   private canvasTexture(size: number, draw: (ctx: CanvasRenderingContext2D, s: number) => void): THREE.CanvasTexture {
