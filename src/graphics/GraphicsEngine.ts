@@ -289,10 +289,16 @@ export class GraphicsEngine {
     }
   }
 
+  /** Positions of all live resource/natural nodes, used to thin the
+   *  scenery ground cover around them (see EnvironmentRenderer). */
+  private nodePoints = new Map<string, { x: number; z: number; r: number }>();
+  private thinningDirty = false;
+
   /** Create/update/remove a logic-owned resource node's visual. */
   updateResourceVisual(id: string, state: ResourceVisualState | null): void {
-    if (state === null) {
+    if (state === null || state.visible === false) {
       this.resources.setResource(id, null);
+      if (this.nodePoints.delete(id)) this.thinningDirty = true;
       return;
     }
     const p = toScenePosition(state.position, this.cfg);
@@ -300,6 +306,22 @@ export class GraphicsEngine {
       ...state,
       position: { x: p.x, z: p.z, y: state.position.y },
     });
+    // A clearing of look-alike scenery around every node; widest for
+    // the kinds scenery imitates (grass / herb / flowers / bush), so
+    // the harvestable patch — and its cut-patch after harvesting —
+    // stays readable. Depleted nodes keep their clearing.
+    const spec = RESOURCE_VISUAL_SPECS[state.type];
+    const base = spec?.footprintRadius ?? 0.5;
+    const r =
+      state.type === 'grass' || state.type === 'herb' ||
+      state.type === 'flowers' || state.type === 'bush'
+        ? base + 0.85
+        : base + 0.3;
+    const prev = this.nodePoints.get(id);
+    if (!prev || prev.x !== p.x || prev.z !== p.z || prev.r !== r) {
+      this.nodePoints.set(id, { x: p.x, z: p.z, r });
+      this.thinningDirty = true;
+    }
   }
 
   /**
@@ -318,7 +340,7 @@ export class GraphicsEngine {
     }
     for (const id of [...this.naturalIds]) {
       if (!seen.has(id)) {
-        this.resources.setResource(id, null);
+        this.updateResourceVisual(id, null);
         this.naturalIds.delete(id);
       }
     }
@@ -489,6 +511,13 @@ export class GraphicsEngine {
       this.world.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
       this.structures.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
       this.resources.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
+
+      // Ground-cover thinning follows the live node set, applied at
+      // most once per frame and only when the set actually changed.
+      if (this.thinningDirty) {
+        this.thinningDirty = false;
+        this.world.thinGroundCover([...this.nodePoints.values()]);
+      }
 
       this.world.update(time);
       this.structures.update(time);

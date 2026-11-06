@@ -27,6 +27,9 @@ const gfx: GraphicsEngine = await initializeGraphics(container, {
   grassDetailUrl,
   particleTextureUrl: particleUrl,
   shadowTextureUrl: shadowUrl,
+  // Sample plot (see PLOT_NODES below): a 12 m square kept free of
+  // scenery so game-owned natural objects stand there alone.
+  decor: { clearings: [{ x: -38, z: 30, r: 9 }] },
   onContextLost: () => {
     status.textContent = 'WebGLコンテキストが失われました（復旧を試みます）';
   },
@@ -34,6 +37,10 @@ const gfx: GraphicsEngine = await initializeGraphics(container, {
     status.textContent = 'WebGLコンテキストが復旧しました';
   },
 });
+
+// Verification hook: lets headless screenshot scripts inspect the
+// scene graph (draw items, instancing) — demo only, not the module.
+(window as unknown as { gfx: GraphicsEngine }).gfx = gfx;
 
 // Demo-only village set dressing on the plateau (not part of the
 // module; in production these arrive via addStructureVisual instead).
@@ -75,6 +82,29 @@ gfx.updateResourceVisual('demo-clay-1', {
   position: { x: 6, z: 30 },
   type: 'clay',
 });
+
+/* -------- sample plot （見本区画） --------
+ * A 12 m × 12 m plot centred on (-38, 30), kept scenery-free via
+ * decor.clearings above and populated ONLY through setNaturalObjects
+ * with nature.js-format ids ("kind:x,z" in 0.1-unit coordinates).
+ * This is the reference layout for re-wiring movement / collision /
+ * harvest / save checks against known objects (INTEGRATION §18). */
+gfx.setNaturalObjects([
+  { id: 'tree:-425,260', position: { x: -42.5, z: 26 }, type: 'tree', scale: 1.15 },
+  { id: 'tree:-340,255', position: { x: -34, z: 25.5 }, type: 'tree', scale: 0.95 },
+  { id: 'rock:-435,340', position: { x: -43.5, z: 34 }, type: 'rock' },
+  { id: 'ore:-330,335', position: { x: -33, z: 33.5 }, type: 'ore' },
+  { id: 'bush:-385,350', position: { x: -38.5, z: 35 }, type: 'bush' },
+  { id: 'grass:-405,300', position: { x: -40.5, z: 30 }, type: 'grass' },
+  { id: 'grass:-360,290', position: { x: -36, z: 29 }, type: 'grass' },
+  { id: 'grass:-395,325', position: { x: -39.5, z: 32.5 }, type: 'grass', depleted: true },
+  { id: 'herb:-380,265', position: { x: -38, z: 26.5 }, type: 'herb', highlighted: true },
+  { id: 'flowers:-365,320', position: { x: -36.5, z: 32 }, type: 'flowers' },
+  { id: 'branch:-410,330', position: { x: -41, z: 33 }, type: 'branch' },
+  { id: 'pebble:-345,305', position: { x: -34.5, z: 30.5 }, type: 'pebble', natural: { kind: 'pebble', variant: 'flint' } },
+  { id: 'water:-430,295', position: { x: -43, z: 29.5 }, type: 'water' },
+  { id: 'oil:-335,270', position: { x: -33.5, z: 27 }, type: 'oil' },
+]);
 gfx.addStructureVisual('demo-campfire-0', 'campfire', { x: -14.8, z: 18.6 });
 
 let last = performance.now();
@@ -164,6 +194,11 @@ document.getElementById('btn-chara')!.addEventListener('click', async (e) => {
 document.getElementById('btn-river')!.addEventListener('click', () => {
   player.x = 15.4;
   player.z = 6;
+  player.moving = false;
+});
+document.getElementById('btn-plot')!.addEventListener('click', () => {
+  player.x = -38;
+  player.z = 31.5;
   player.moving = false;
 });
 document.getElementById('tod')!.addEventListener('input', (e) => {
