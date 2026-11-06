@@ -22,6 +22,10 @@ export class CameraController {
   /** viewSize after the portrait boost — the height actually shown. */
   private effectiveViewSize: number;
   private aspect = 16 / 9;
+  /** HUD safe-area insets in CSS px (see setViewportInsets). */
+  private insetTop = 0;
+  private insetBottom = 0;
+  private heightPx = 0;
 
   constructor(cfg: GraphicsConfig['camera']) {
     this.cfg = cfg;
@@ -66,7 +70,13 @@ export class CameraController {
     // sits slightly below screen centre (anchorOffset of the visible
     // height). The shift goes through the real camera transform, so
     // raycasting / tap conversion stays consistent with what is drawn.
-    const shift = (this.cfg.anchorOffset ?? 0) * this.effectiveViewSize;
+    // A bottom HUD inset (tab bar, virtual stick) lifts the usable
+    // centre of the frame, so the anchor shift shrinks accordingly;
+    // a top inset does the opposite. Fractions are of the canvas height.
+    const insetShift = this.heightPx > 0
+      ? (this.insetBottom - this.insetTop) / (2 * this.heightPx)
+      : 0;
+    const shift = ((this.cfg.anchorOffset ?? 0) - insetShift) * this.effectiveViewSize;
     this.lookCenter.copy(this.current).addScaledVector(this.screenUp, shift);
     this.camera.position.copy(this.lookCenter).add(this.offset);
     this.camera.lookAt(this.lookCenter);
@@ -75,7 +85,20 @@ export class CameraController {
 
   resize(width: number, height: number): void {
     this.aspect = width / Math.max(height, 1);
+    this.heightPx = height;
     this.applyFrustum();
+  }
+
+  /**
+   * Tell the camera which parts of the canvas are covered by HUD
+   * (CSS px, top/bottom only — left/right are accepted by the public
+   * API for symmetry but do not affect the vertical anchor). The
+   * followed player is kept inside the remaining safe area. Purely a
+   * framing concern; nothing here moves game coordinates.
+   */
+  setViewportInsets(top: number, bottom: number): void {
+    this.insetTop = Math.max(0, top);
+    this.insetBottom = Math.max(0, bottom);
   }
 
   /**

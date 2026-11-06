@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { GraphicsConfig, QualityTier } from './types';
 import { AssetManager } from './AssetManager';
 import {
+  distanceToPath,
   distanceToRiver,
   isInRiver,
   mulberry32,
@@ -61,9 +62,10 @@ interface CanopySet {
  * writing stays on. Used to thin out trees that block the player at the
  * low exploration camera angle.
  */
-function addInstanceFade(wind: WindMaterial): void {
-  const prevCompile = wind.material.onBeforeCompile;
-  wind.material.onBeforeCompile = (shader, renderer) => {
+function addInstanceFade(target: WindMaterial | THREE.Material): void {
+  const mat = (target as WindMaterial).material ?? (target as THREE.Material);
+  const prevCompile = mat.onBeforeCompile;
+  mat.onBeforeCompile = (shader, renderer) => {
     prevCompile(shader, renderer);
     shader.vertexShader =
       'attribute float aFade;\nvarying float vFade;\n' +
@@ -82,8 +84,8 @@ function addInstanceFade(wind: WindMaterial): void {
          }`,
       );
   };
-  const prevKey = wind.material.customProgramCacheKey;
-  wind.material.customProgramCacheKey = () => `${prevKey.call(wind.material)}-fade`;
+  const prevKey = mat.customProgramCacheKey;
+  mat.customProgramCacheKey = () => `${prevKey.call(mat)}-fade`;
 }
 
 
@@ -226,15 +228,35 @@ export class EnvironmentRenderer {
 
   /* ---------------- trees ---------------- */
   private buildTrees(scale: number): void {
+    // Grove structure (2026-11-06): trees cluster around seeded grove
+    // centres and leave a few clearings, instead of an even scatter —
+    // the forest reads as stands, edges and glades. Decorative only.
+    const groves: Array<{ x: number; z: number }> = [];
+    for (let i = 0; i < 7; i++) {
+      groves.push({ x: -52 + this.rng() * 62, z: -40 + this.rng() * 84 });
+    }
+    const clearings: Array<{ x: number; z: number; r: number }> = [];
+    for (let i = 0; i < 3; i++) {
+      clearings.push({ x: -46 + this.rng() * 52, z: -34 + this.rng() * 72, r: 4.5 + this.rng() * 2 });
+    }
     const forest = (x: number, z: number) =>
       !isInRiver(x, z, 6.5) &&
       Math.hypot(x - this.cfg.world.plateauCenter.x, z - this.cfg.world.plateauCenter.z) >
         this.cfg.world.plateauRadius + 2 &&
+      distanceToPath(x, z) > 2.1 &&
       x - z * 0.35 < 34; // keep the rocky NE sparse
-    const spots = this.scatter(Math.round(120 * scale), (x, z) => {
+    const spots = this.scatter(Math.round(132 * scale), (x, z) => {
       if (!forest(x, z)) return false;
+      for (const c of clearings) {
+        if (Math.hypot(x - c.x, z - c.z) < c.r) return false;
+      }
+      let groveBoost = 0.55;
+      for (const g of groves) {
+        const d = Math.hypot(x - g.x, z - g.z);
+        if (d < 11) groveBoost = Math.max(groveBoost, 1.6 - d * 0.08);
+      }
       const density =
-        0.35 + smoothstep(10, -30, x + z * 0.2) * 0.75 + (this.rng() - 0.5) * 0.3;
+        (0.35 + smoothstep(10, -30, x + z * 0.2) * 0.75 + (this.rng() - 0.5) * 0.3) * groveBoost;
       return this.rng() < density;
     });
 
@@ -285,10 +307,14 @@ export class EnvironmentRenderer {
 
     spots.forEach((s, i) => {
       const y = this.groundY(s.x, s.z);
-      const size = 0.75 + this.rng() * 0.9;
-      const pine = s.z < -14 || this.rng() < 0.22;
+      // Wider size spread: many young trees, a few landmarks.
+      const size = 0.65 + Math.pow(this.rng(), 1.35) * 1.45;
+      // Three silhouettes: round broadleaf, two-tier pine, slim poplar.
+      const roll = this.rng();
+      const pine = s.z < -14 || roll < 0.22;
+      const slim = !pine && roll >= 0.62 && roll < 0.8;
       this.setInstance(trunks, i, s.x, y - 0.1, s.z, this.rng() * Math.PI,
-        size, size * (pine ? 1.5 : 1.1), size);
+        size, size * (pine ? 1.5 : slim ? 2.1 : 1.1), size);
       tmp.copy(cA).lerp(this.rng() < 0.5 ? cB : cC, this.rng() * 0.8);
       if (pine) {
         for (let k = 0; k < 2; k++) {
@@ -302,6 +328,17 @@ export class EnvironmentRenderer {
           pineRadii[pi] = size * 1.45;
           pi++;
         }
+      } else if (slim) {
+        const oy = 3.35 * size;
+        const r = 0.8 * size;
+        this.setInstance(blobs, bi, s.x, y + oy, s.z,
+          this.rng() * Math.PI, r, r * 2.1, r);
+        blobs.setColorAt(bi, tmp);
+        blobCenters[bi * 3] = s.x;
+        blobCenters[bi * 3 + 1] = y + oy;
+        blobCenters[bi * 3 + 2] = s.z;
+        blobRadii[bi] = r * 1.35;
+        bi++;
       } else {
         for (let k = 0; k < 3; k++) {
           const ox = (this.rng() - 0.5) * 1.1 * size;
@@ -350,6 +387,7 @@ export class EnvironmentRenderer {
     const spots = this.scatter(count, (x, z) =>
       !isInRiver(x, z, 4.4) &&
       this.groundY(x, z) > 0.42 &&
+      distanceToPath(x, z) > 1.35 &&
       x - z * 0.35 < 40);
     spots.forEach((s, i) => {
       const sc = 0.7 + this.rng() * 0.9;
@@ -390,7 +428,7 @@ export class EnvironmentRenderer {
     const cA = new THREE.Color(0x477f36);
     const cB = new THREE.Color(0x6da34c);
     const tmp = new THREE.Color();
-    const spots = this.scatter(sCount, (x, z) => !isInRiver(x, z, 5.6));
+    const spots = this.scatter(sCount, (x, z) => !isInRiver(x, z, 5.6) && distanceToPath(x, z) > 1.8);
     spots.forEach((s, i) => {
       const sc = 0.6 + this.rng() * 1.1;
       this.setInstance(shrubs, i, s.x, this.groundY(s.x, s.z) + 0.3 * sc, s.z,
@@ -441,30 +479,68 @@ export class EnvironmentRenderer {
 
   /* ---------------- rocks & cliffs ---------------- */
   private buildRocks(scale: number): void {
-    const rockGeo = new THREE.IcosahedronGeometry(1, 1);
+    // Chunkier, irregular rocks (2026-11-06): low-segment geometry
+    // with position-hashed vertex jitter (same input position -> same
+    // offset, so shared vertices never crack apart), sunk and
+    // squashed into the ground, darker granite colours, clustered
+    // towards the highland instead of evenly scattered pale domes.
+    const rockGeo = new THREE.IcosahedronGeometry(1, 0);
+    {
+      const posAttr = rockGeo.attributes.position as THREE.BufferAttribute;
+      const v = new THREE.Vector3();
+      for (let i = 0; i < posAttr.count; i++) {
+        v.fromBufferAttribute(posAttr, i);
+        const h = Math.sin(v.x * 12.9898 + v.y * 78.233 + v.z * 37.719) * 43758.5453;
+        v.multiplyScalar(0.84 + (h - Math.floor(h)) * 0.3);
+        posAttr.setXYZ(i, v.x, v.y, v.z);
+      }
+      rockGeo.computeVertexNormals();
+    }
     const rockMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.98, flatShading: true });
+    addInstanceFade(rockMat);
     const count = Math.round(170 * scale);
     const rocks = new THREE.InstancedMesh(rockGeo, rockMat, count);
-    const cA = new THREE.Color(0x8f8f93);
-    const cB = new THREE.Color(0xb9b4a8);
+    const rockCenters = new Float32Array(count * 3);
+    const rockRadii = new Float32Array(count);
+    const rockFades = new Float32Array(count).fill(1);
+    const rockAttr = new THREE.InstancedBufferAttribute(rockFades, 1);
+    rockGeo.setAttribute('aFade', rockAttr);
+    this.canopy.push({ centers: rockCenters, radii: rockRadii, fades: rockFades, attr: rockAttr });
+    const cA = new THREE.Color(0x76767c);
+    const cB = new THREE.Color(0x9c968a);
     const cMoss = new THREE.Color(0x6f8f56);
     const tmp = new THREE.Color();
-    const spots = this.scatter(count, (x, z) => !isInRiver(x, z, 4.8));
+    const pc = this.cfg.world.plateauCenter;
+    const spots = this.scatter(count, (x, z) =>
+      !isInRiver(x, z, 4.8) &&
+      Math.hypot(x - pc.x, z - pc.z) > this.cfg.world.plateauRadius + 3.5 &&
+      distanceToPath(x, z) > 2.4 &&
+      // density follows the rocky highland; sparse elsewhere
+      this.rng() < 0.35 + smoothstep(10, 42, x - z * 0.35) * 0.85);
     const rockTransforms: Array<{ x: number; y: number; z: number; s: number }> = [];
     spots.forEach((s, i) => {
       const highland = smoothstep(16, 44, s.x - s.z * 0.35);
-      const sc = (0.3 + Math.pow(this.rng(), 1.6) * 1.5) * (1 + highland * 2.3);
-      const y = this.groundY(s.x, s.z) + sc * 0.18;
+      const sc = (0.25 + Math.pow(this.rng(), 1.8) * 1.1) * (1 + highland * 2.6);
+      const y = this.groundY(s.x, s.z) + sc * 0.02;
       this.dummy.position.set(s.x, y, s.z);
       this.dummy.rotation.set(this.rng() * 0.6, this.rng() * Math.PI, this.rng() * 0.6);
-      this.dummy.scale.set(sc * (0.8 + this.rng() * 0.5), sc * (0.55 + this.rng() * 0.5), sc * (0.8 + this.rng() * 0.5));
+      this.dummy.scale.set(sc * (0.8 + this.rng() * 0.5), sc * (0.5 + this.rng() * 0.3), sc * (0.8 + this.rng() * 0.5));
       this.dummy.updateMatrix();
       rocks.setMatrixAt(i, this.dummy.matrix);
       tmp.copy(cA).lerp(cB, this.rng());
-      if (this.rng() < 0.3) tmp.lerp(cMoss, 0.45); // mossy rocks
+      if (this.rng() < 0.22) tmp.lerp(cMoss, 0.45); // mossy rocks
       rocks.setColorAt(i, tmp);
+      rockCenters[i * 3] = s.x;
+      rockCenters[i * 3 + 1] = y + sc * 0.35;
+      rockCenters[i * 3 + 2] = s.z;
+      rockRadii[i] = sc * 1.05;
       if (sc > 0.8) rockTransforms.push({ x: s.x, y: y + sc * 0.5, z: s.z, s: sc });
     });
+    // If scatter ran dry, hide the unfilled tail instead of leaving
+    // identity-matrix rocks at the origin.
+    for (let i = spots.length; i < count; i++) {
+      this.setInstance(rocks, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+    }
     if (rocks.instanceColor) rocks.instanceColor.needsUpdate = true;
     rocks.castShadow = true;
     rocks.receiveShadow = true;
@@ -519,10 +595,16 @@ export class EnvironmentRenderer {
   private buildFallenLogs(): void {
     const logMat = new THREE.MeshStandardMaterial({ color: 0x6e4a2c, roughness: 1 });
     const endMat = new THREE.MeshStandardMaterial({ color: 0xa97f52, roughness: 1 });
+    const pc = this.cfg.world.plateauCenter;
     for (let i = 0; i < 7; i++) {
       const x = -34 + this.rng() * 44;
       const z = -30 + this.rng() * 62;
       if (isInRiver(x, z, 6)) continue;
+      // Never drop a log across the path or through the base area —
+      // it would read as a blocked route (placement is decorative,
+      // but the picture must not lie about where one can walk).
+      if (distanceToPath(x, z) < 2.6) continue;
+      if (Math.hypot(x - pc.x, z - pc.z) < this.cfg.world.plateauRadius + 2.5) continue;
       const len = 2.4 + this.rng() * 2.4;
       const log = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.27, len, 8), logMat);
       log.rotation.z = Math.PI / 2;
@@ -542,6 +624,10 @@ export class EnvironmentRenderer {
     for (let i = 0; i < 60; i++) {
       const x = (this.rng() * 2 - 1) * 52;
       const z = (this.rng() * 2 - 1) * 52;
+      if (distanceToPath(x, z) < 1.6) {
+        this.setInstance(branches, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+        continue;
+      }
       this.dummy.position.set(x, this.groundY(x, z) + 0.06, z);
       this.dummy.rotation.set(Math.PI / 2, 0, this.rng() * Math.PI);
       const sc = 0.7 + this.rng() * 0.9;

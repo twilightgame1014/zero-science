@@ -3,11 +3,13 @@ import type {
   EffectType,
   GraphicsConfig,
   GraphicsOptions,
+  GroundPick,
   PlayerVisualState,
   QualityTier,
   ResourceVisualState,
   StructureType,
   Vec3Like,
+  ViewportInsets,
   WorldVisualState,
 } from './types';
 import { resolveConfig } from './config';
@@ -85,6 +87,12 @@ export class GraphicsEngine {
     this.structures = parts.structures;
     this.resources = parts.resources;
     this.effects = parts.effects;
+    if (options.viewportInsets) {
+      this.cameraRig.setViewportInsets(
+        options.viewportInsets.top ?? 0,
+        options.viewportInsets.bottom ?? 0,
+      );
+    }
 
     this.onContextLostBound = (e: Event) => {
       e.preventDefault();
@@ -307,6 +315,40 @@ export class GraphicsEngine {
 
   getCamera(): THREE.Camera {
     return this.cameraRig.camera;
+  }
+
+  private pickRaycaster = new THREE.Raycaster();
+
+  /**
+   * Public API (2026-11-06): return the visible ground point under a
+   * canvas point, in scene coordinates. canvasX/canvasY are CSS pixels
+   * relative to the canvas's top-left. The result distinguishes the
+   * river surface ('water') from terrain, matching what is actually
+   * drawn. Display geometry only — whether the player may walk or
+   * gather there stays with the game logic. Returns null when the ray
+   * meets neither terrain nor water (e.g. pointing at the sky).
+   */
+  pickGround(canvasX: number, canvasY: number): GroundPick | null {
+    const el = this.renderer.domElement;
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+    if (!w || !h || this.disposed) return null;
+    const ndc = new THREE.Vector2((canvasX / w) * 2 - 1, -((canvasY / h) * 2 - 1));
+    this.pickRaycaster.setFromCamera(ndc, this.cameraRig.camera);
+    const hit = this.world.pick(this.pickRaycaster);
+    if (!hit) return null;
+    return { x: hit.point.x, y: hit.point.y, z: hit.point.z, surface: hit.surface };
+  }
+
+  /**
+   * Public API (2026-11-06): update the HUD safe-area insets (CSS px)
+   * so the camera keeps the player inside the unobstructed part of the
+   * canvas when menus or a tab bar overlay it. Opening/closing a menu
+   * does not change zoom or the followed position — only the vertical
+   * anchor inside the frame.
+   */
+  setViewportInsets(insets: ViewportInsets): void {
+    this.cameraRig.setViewportInsets(insets.top ?? 0, insets.bottom ?? 0);
   }
 
   disposeGraphics(): void {

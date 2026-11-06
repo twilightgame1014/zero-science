@@ -20,11 +20,47 @@ export class TerrainRenderer {
   readonly group = new THREE.Group();
   private cfg: GraphicsConfig;
   private waterUniforms: { uTime: { value: number } } | null = null;
+  private terrainMesh: THREE.Mesh;
+  private waterMesh: THREE.Mesh;
 
   constructor(cfg: GraphicsConfig, detailTexture: THREE.Texture) {
     this.cfg = cfg;
-    this.group.add(this.buildTerrain(detailTexture));
-    this.group.add(this.buildWater());
+    this.terrainMesh = this.buildTerrain(detailTexture);
+    this.waterMesh = this.buildWater();
+    this.group.add(this.terrainMesh);
+    this.group.add(this.waterMesh);
+    this.group.add(this.buildOuterGround());
+  }
+
+  /**
+   * Raycast against the visible ground: the river surface where the
+   * ray meets water, the terrain elsewhere. Backs the public
+   * pickGround API — display geometry only, no passability meaning.
+   */
+  pick(raycaster: THREE.Raycaster): { point: THREE.Vector3; surface: 'terrain' | 'water' } | null {
+    const hits = raycaster.intersectObjects([this.waterMesh, this.terrainMesh], false);
+    if (hits.length === 0) return null;
+    const hit = hits[0];
+    return {
+      point: hit.point,
+      surface: hit.object === this.waterMesh ? 'water' : 'terrain',
+    };
+  }
+
+  /**
+   * A wide, plain ground disc far below the lowest terrain point, so
+   * the low camera never sees void past the world rim: the disc reads
+   * as distant land dissolving into fog. It is not raycast (pick()
+   * ignores it) and carries no height information.
+   */
+  private buildOuterGround(): THREE.Mesh {
+    const geo = new THREE.CircleGeometry(340, 48);
+    geo.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x55763d, roughness: 1 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.y = -1.78;
+    mesh.name = 'OuterGround';
+    return mesh;
   }
 
   getHeightAt(x: number, z: number): number {
@@ -52,6 +88,7 @@ export class TerrainRenderer {
     const cRock = new THREE.Color(0x8d8d90);
     const cRockDark = new THREE.Color(0x66666c);
     const cPath = new THREE.Color(0xa3804f);
+    const cEarth = new THREE.Color(0x7c6a42);
     const cUnderwater = new THREE.Color(0x77683f);
     const tmp = new THREE.Color();
 
@@ -65,6 +102,10 @@ export class TerrainRenderer {
       const dRiver = distanceToRiver(x, z);
       // Base grass with dry/forest variation.
       tmp.copy(cGrass).lerp(cGrassDry, clamp(n * 1.15 - 0.12, 0, 1));
+      // Fine mottling: worn earth showing through the grass in small
+      // patches, so the ground does not read as one flat colour.
+      const mottle = fbm(x * 0.5 + 7, z * 0.5 + 3, 2);
+      tmp.lerp(cEarth, smoothstep(0.56, 0.82, mottle) * 0.38);
       const forestMask = smoothstep(-2, -26, x + z * 0.25);
       tmp.lerp(cForestFloor, forestMask * 0.55);
       // Sandy / wet banks near the river, clay patches on the south bank.
@@ -124,7 +165,11 @@ export class TerrainRenderer {
       uvs.push(0, i / steps * 30, 1, i / steps * 30);
       if (i < steps) {
         const a = i * 2;
-        indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+        // Winding fixed 2026-11-06: the previous order produced
+        // downward-facing normals (normal.y = -1), so the FrontSide
+        // water surface was culled from above and the river never
+        // rendered. This order faces up.
+        indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
       }
     }
     const geo = new THREE.BufferGeometry();
@@ -161,17 +206,20 @@ export class TerrainRenderer {
         varying vec2 vUv;
         varying vec3 vWorld;
         float wave(vec2 p) {
-          return sin(p.x * 6.0 + p.y * 3.0) * 0.5
-               + sin(p.x * -11.0 + p.y * 7.0 + 1.7) * 0.3
-               + sin(p.y * 15.0 - uTime * 0.6) * 0.2;
+          // Frequencies lowered 2026-11-06: at the low exploration
+          // camera the old 6/11/15 terms aliased into a plaid moire
+          // at grazing angles now that the surface actually renders.
+          return sin(p.x * 4.2 + p.y * 2.1) * 0.5
+               + sin(p.x * -7.0 + p.y * 4.6 + 1.7) * 0.3
+               + sin(p.y * 9.0 - uTime * 0.6) * 0.2;
         }
         void main() {
           // Flow runs along +v (downstream), so scroll patterns in v.
-          vec2 flowUv = vec2(vUv.x * 3.0, vUv.y * 2.0 - uTime * 0.55);
-          float w1 = wave(flowUv * 2.4);
-          float w2 = wave(flowUv * 5.1 + 3.1);
+          vec2 flowUv = vec2(vUv.x * 2.2, vUv.y * 1.6 - uTime * 0.5);
+          float w1 = wave(flowUv * 1.7);
+          float w2 = wave(flowUv * 3.3 + 3.1);
           float ripple = (w1 + w2) * 0.5 + 0.5;
-          vec3 col = mix(uDeep, uShallow, ripple * 0.65);
+          vec3 col = mix(uDeep, uShallow, ripple * 0.5);
           // Soft sky sheen across the middle of the stream.
           float sheen = smoothstep(0.25, 0.5, vUv.x) * smoothstep(0.75, 0.5, vUv.x);
           col = mix(col, uSky, sheen * 0.28 + ripple * 0.08);

@@ -21,7 +21,9 @@ export const DEFAULT_CONFIG: GraphicsConfig = {
   camera: {
     // Exploration camera (2026-11-06 spec): low HD-2D angle and a much
     // closer framing than the original map-like view (was 26 / 50°).
-    viewSize: 16,
+    // viewSize 13 puts the visible character height at ~10% of the
+    // landscape frame (sprite content is 78.1% of the 1.7-unit quad).
+    viewSize: 13,
     pitchDegrees: 32,
     yawDegrees: 45,
     followDamping: 5.5,

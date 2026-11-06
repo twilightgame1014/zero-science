@@ -45,4 +45,9 @@ export class WorldRenderer {
   updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
     this.environment.updateOcclusion(cameraPos, playerPos, dt);
   }
+
+  /** Raycast helper behind GraphicsEngine.pickGround(). */
+  pick(raycaster: THREE.Raycaster): { point: THREE.Vector3; surface: 'terrain' | 'water' } | null {
+    return this.terrain.pick(raycaster);
+  }
 }

@@ -77,6 +77,23 @@ export type EffectType =
 
 export type QualityTier = 'high' | 'low';
 
+/** HUD safe-area insets in CSS pixels, relative to the canvas. */
+export interface ViewportInsets {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+}
+
+/** Result of pickGround(): the visible surface under a canvas point. */
+export interface GroundPick {
+  x: number;
+  y: number;
+  z: number;
+  /** 'water' when the ray meets the river surface before terrain. */
+  surface: 'terrain' | 'water';
+}
+
 export interface GraphicsOptions {
   /** Rendering quality. 'auto' picks from device hints. Default 'auto'. */
   quality?: QualityTier | 'auto';
@@ -94,6 +111,9 @@ export interface GraphicsOptions {
   shadowTextureUrl?: string;
   /** Overrides for world/camera tuning. See config.ts for defaults. */
   config?: Partial<GraphicsConfig>;
+  /** HUD safe-area insets (CSS px) known at startup. Can be updated
+   *  at runtime with setViewportInsets(). */
+  viewportInsets?: ViewportInsets;
   /** Called when the WebGL context is lost / restored. */
   onContextLost?: () => void;
   onContextRestored?: () => void;
