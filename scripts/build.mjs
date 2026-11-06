@@ -32,14 +32,19 @@ const ASSETS = {
   shadow: dataUrl('assets/textures/shadow-blob.png', 'image/png'),
 };
 
-// オリジナルアイコン（Muse が透過・切り出し・サイズ調整したもの）。あるものだけ埋め込み、なければ絵文字で表示する
-ASSETS.icons = {};
-for (const name of ['lab', 'craft', 'book', 'tech', 'log', 'map', 'home', 'settings', 'menu']) {
-  for (const [ext, mime] of [['webp', 'image/webp'], ['png', 'image/png'], ['svg', 'image/svg+xml']]) {
-    const f = `assets/icons/${name}.${ext}`;
-    if (fs.existsSync(path.join(root, f))) { ASSETS.icons[name] = dataUrl(f, mime); break; }
+// UIアイコン（Muse 仕上げ・assets/ui-icons。タブは 48px 版、詰める場所は 32px 版）
+const ICON_FILES = { lab: 'lab', craft: 'craft', book: 'encyclopedia', tech: 'technology', log: 'journal', map: 'map', home: 'base', settings: 'settings' };
+ASSETS.icons = {}; ASSETS.icons32 = {};
+for (const [name, file] of Object.entries(ICON_FILES)) {
+  for (const [box, dir] of [[ASSETS.icons, '48'], [ASSETS.icons32, '32']]) {
+    const f = `assets/ui-icons/${dir}/${file}.png`;
+    if (fs.existsSync(path.join(root, f))) box[name] = dataUrl(f, 'image/png');
   }
 }
+// 実験台の器具（Muse・assets/lab-apparatus/sprites。装置と液体・炎は別レイヤー、256×256・底面中心が (128,234)）
+ASSETS.labApp = {};
+const appDir = path.join(root, 'assets/lab-apparatus/sprites');
+if (fs.existsSync(appDir)) for (const f of fs.readdirSync(appDir)) if (f.endsWith('.png')) ASSETS.labApp[f.replace('.png', '')] = dataUrl('assets/lab-apparatus/sprites/' + f, 'image/png');
 const parts = {
   '/*GFX*/': gfxCode,
   '/*ASSETS*/': 'var ASSETS=' + JSON.stringify(ASSETS) + ';',

@@ -61,11 +61,12 @@ function applyUiMode(){
   if(app.dataset.ui!==m){ app.dataset.ui=m; haltField(); renderChrome(); if(U.tab!=="explore") renderPanel(); updateAction3D(); updateFieldActivity(); }
   layout();
 }
-/* オリジナルアイコン（assets/icons/<名前>.webp|png）があれば使う。なければ絵文字。必ず文字ラベルと組み合わせる */
+/* UIアイコン（Muse 仕上げの assets/ui-icons）。タブ・メニューは 48px 版、右上の小さなボタンは 32px 版。
+   画像がない名前（メニュー）は絵文字。どれも必ず文字ラベルと組み合わせる */
 const ICON_EMOJI = {lab:"🧪", craft:"🔨", book:"📖", tech:"🕸️", log:"📓", map:"🗺️", home:"🏠", settings:"⚙️", menu:"☰"};
-function iconHTML(name){ const src = window.ASSETS && ASSETS.icons && ASSETS.icons[name];
+function iconHTML(name, small){ const box = window.ASSETS && (small ? ASSETS.icons32 : ASSETS.icons), src = box && box[name];
   return src ? `<img class="ico" src="${src}" alt="" aria-hidden="true">` : `<span class="ico emo" aria-hidden="true">${ICON_EMOJI[name]||""}</span>`; }
-function applyIcons(){ document.querySelectorAll("[data-icon]").forEach(el=>{ const sp=el.querySelector(".ico"); if(sp) sp.outerHTML = iconHTML(el.dataset.icon); }); }
+function applyIcons(){ document.querySelectorAll("[data-icon]").forEach(el=>{ const sp=el.querySelector(".ico"); if(sp) sp.outerHTML = iconHTML(el.dataset.icon, el.classList.contains("hbtn")); }); }
 function renderChrome(){
   const i = E.missionIndex(S), m = D.missions[i], touch = uiMode()==="touch";
   updateLoc();
@@ -89,9 +90,13 @@ function layout(){
   if(typeof W3!=="undefined" && W3.gfx && typeof W3.gfx.setViewportInsets==="function"){ try{ W3.gfx.setViewportInsets(hudInsets()); }catch(e){} }
 }
 function hudInsets(){
-  const app=$("#app"), tl=$(".hud-tl"), n=$("#nav"); if(!app||!tl||!n) return {top:0,bottom:0};
-  const a=app.getBoundingClientRect();
-  return {top: Math.round(tl.getBoundingClientRect().bottom - a.top), bottom: Math.round(a.bottom - n.getBoundingClientRect().top)};
+  const app=$("#app"), tl=$(".hud-tl"), n=$("#nav"); if(!app||!tl||!n) return {top:0,bottom:0,left:0,right:0};
+  const a=app.getBoundingClientRect(), cs=getComputedStyle(app);
+  let bottomTop = n.getBoundingClientRect().top;
+  if(app.dataset.ui==="touch") ["#joy","#w3act"].forEach(sel=>{ const e=$(sel); if(e && !e.hidden && e.offsetParent!==null){ const r=e.getBoundingClientRect(); if(r.height>0) bottomTop=Math.min(bottomTop, r.top); } });
+  const px = v=>parseFloat(v)||0;
+  return {top: Math.round(tl.getBoundingClientRect().bottom - a.top), bottom: Math.round(a.bottom - bottomTop),
+          left: Math.round(px(cs.getPropertyValue("--sal"))), right: Math.round(px(cs.getPropertyValue("--sar")))};
 }
 addEventListener("resize", ()=>applyUiMode());
 if(window.visualViewport) visualViewport.addEventListener("resize", layout);
@@ -141,8 +146,8 @@ function stageSummary(){
     <p class="desc" style="margin-top:0">次の文明の進化：${D.stages[st].need}</p>`;
 }
 function viewMenu(){
-  return stageSummary()+`<div class="bigmenu">${[["book","📖","図鑑","見つけたものの説明"],["map","🕸️","技術","技術と物質のつながり"],["log","📓","記録","実験の記録・セーブ"],["settings","⚙️","設定","主人公・表示・遊び方"]]
-    .map(([t,i,n,d])=>`<button class="bigitem" data-tab="${t}"><span aria-hidden="true">${i}</span><span>${n}<small>${d}</small></span></button>`).join("")}</div>`;
+  return stageSummary()+`<div class="bigmenu">${[["book","book","図鑑","見つけたものの説明"],["map","tech","技術","技術と物質のつながり"],["log","log","記録","実験の記録・セーブ"],["settings","settings","設定","主人公・表示・遊び方"]]
+    .map(([t,i,n,d])=>`<button class="bigitem" data-tab="${t}">${iconHTML(i)}<span>${n}<small>${d}</small></span></button>`).join("")}</div>`;
 }
 function viewSettings(){
   const touch = uiMode()==="touch", failed = W3.state==="failed";
@@ -274,24 +279,42 @@ function vesselSVG(shape){
 }
 /* 実験台：AI画像ではなく SVG で描く。中央に選んだ装置と容器、棚に解放済みの設備、台の端に解放済みの器具 */
 const TALL_FAC = ["furnace","blastfurnace","refinery","reactor","still","kiln","charkiln","steamengine","generator","electrolyzer","eaf"];
+/* 器具スプライト（Muse）。256×256・底面中心が (128,234)。w は表示の幅（SVG の単位） */
+function spr(name, cx, base, w, cls){ const src = window.ASSETS && ASSETS.labApp && ASSETS.labApp[name];
+  return src ? `<image href="${src}" x="${(cx-w/2).toFixed(1)}" y="${(base-w*234/256).toFixed(1)}" width="${w}" height="${w}" class="${cls||""}" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"/>` : ""; }
+const hasSpr = name => !!(window.ASSETS && ASSETS.labApp && ASSETS.labApp[name]);
+/* 選んだ装置を中央に置く。器具スプライトがある装置はスプライト、ないものは今までの絵。
+   炎のレイヤーは演出（x-flame）として、加熱の実験中だけ見える。液体は材料が入っているときだけ */
+const CENTER_APP = {
+  campfire:  (cx,b,liq)=> spr("brazier",cx,b,118)+spr("brazier_coals",cx,b,118)+spr("brazier_flame",cx,b,118,"fx x-flame"),
+  still:     (cx,b,liq)=> spr("heater",cx,b,96)+spr("heater_flame",cx,b,96,"fx x-flame")+spr("flask",cx,b-32,104)+(liq?spr("flask_liquid",cx,b-32,104):""),
+  reactor:   (cx,b,liq)=> spr("flask",cx,b,120)+(liq?spr("flask_liquid",cx,b,120):""),
+  fermenter: (cx,b,liq)=> spr("jar",cx,b,112)+(liq?spr("jar_contents",cx,b,112):"")+spr("jar_lid",cx,b,112),
+  mill:      (cx,b,liq)=> spr("mortar",cx,b,112),
+  rack:      (cx,b,liq)=> spr("testtubes",cx,b,120)+spr("testtubes_glass",cx,b,120)+(liq?spr("testtubes_liquid",cx,b,120):""),
+};
+/* 装置自体が容器になっているもの（別の容器の絵を重ねない） */
+const SELF_VESSEL = ["still","reactor","fermenter","mill","rack"];
+/* 台の端の飾り：解放済みの器具だけ（操作できる設備としては表示しない） */
 function benchProps(st){
-  // 解放済みのものだけを飾る（操作できる設備としては表示しない）
-  const out=[];
-  if(owned("bench")) out.push(`<g transform="translate(58,186)" aria-hidden="true"><ellipse cx="0" cy="0" rx="20" ry="6" fill="#7b7d79"/><path d="M-18 -2 Q-16 -16 0 -17 Q16 -16 18 -2Z" fill="#9a9c98"/><rect x="6" y="-30" width="4" height="20" rx="2" transform="rotate(30 8 -20)" fill="#6e6f6b"/><title>石のすりばち</title></g>`);
-  if(S.disc.pot) out.push(`<g transform="translate(100,186)" aria-hidden="true"><path d="M-14 0 Q-20 -14 -10 -24 L10 -24 Q20 -14 14 0Z" fill="#b4483b"/><ellipse cx="0" cy="-24" rx="10" ry="3" fill="#8a3a2e"/></g>`);
-  if(S.disc.glass || S.disc.bottle){
-    out.push(`<g transform="translate(316,186)" aria-hidden="true" opacity=".9"><path d="M-12 0 L-12 -26 L12 -26 L12 0Z" fill="rgba(200,235,245,.7)" stroke="#8fb9c6" stroke-width="1.5"/><path d="M-12 -10 L12 -10 L12 0 L-12 0Z" fill="rgba(120,190,220,.6)"/><path d="M-12 -26 L-15 -29" stroke="#8fb9c6" stroke-width="1.5"/></g>`);
-    out.push(`<g transform="translate(352,186)" aria-hidden="true" opacity=".9"><path d="M-4 -34 L4 -34 L4 -22 L14 -4 Q16 0 12 0 L-12 0 Q-16 0 -14 -4 L-4 -22Z" fill="rgba(200,235,245,.7)" stroke="#8fb9c6" stroke-width="1.5"/><path d="M-11 -6 L11 -6 L12 -2 L-12 -2Z" fill="rgba(170,220,140,.75)"/></g>`);
-    out.push(`<g transform="translate(140,186)" aria-hidden="true"><rect x="-16" y="-6" width="32" height="6" fill="#8a643f"/>${[-10,0,10].map(x=>`<rect x="${x-3}" y="-30" width="6" height="26" rx="3" fill="rgba(210,240,250,.8)" stroke="#8fb9c6"/>`).join("")}</g>`);
-  }
-  return out.join("");
+  const out=[], glass = S.disc.glass || S.disc.bottle, modern = st>=4 || owned("generator");
+  const left=[], right=[];
+  if(owned("bench") && U.fac!=="mill") left.push(["mortar",62]);
+  if(S.disc.pot && U.fac!=="fermenter") left.push(["jar",62]);
+  if(glass){ if(U.fac!=="reactor" && U.fac!=="still") right.push(["flask",66]); right.push(["beaker",60]); if(U.fac!=="rack") right.push(["testtubes_set",66]); if(U.fac!=="still") right.push(["heater",54]); }
+  if(modern) right.push(["heater_modern",64]);
+  left.slice(0,2).forEach(([n,w],i)=>out.push(spr(n,40+i*58,186,w)));
+  right.slice(0,4).reverse().forEach(([n,w],i)=>{ const name = n==="testtubes_set" ? null : n;
+    if(n==="testtubes_set") out.push(spr("testtubes",372-i*50,186,w)+spr("testtubes_glass",372-i*50,186,w));
+    else out.push(spr(name,372-i*50,186,w)); });
+  return `<g aria-hidden="true">${out.join("")}</g>`;
 }
 function drawScene(){
   const box=$("#stagebox"); if(!box) return;
   const st = stage();
   const facs = LAB_FAC.filter(f=>owned(f) && f!==U.fac).slice(0,7);
   const plan = U.fac ? E.planExperiment(S,U.tray,U.fac,U.op) : null;
-  const shape = vesselFor(U.fac, U.op, plan&&plan.ok?plan.proc:null);
+  const shape = (U.fac && SELF_VESSEL.includes(U.fac) && CENTER_APP[U.fac] && hasSpr("flask")) ? null : vesselFor(U.fac, U.op, plan&&plan.ok?plan.proc:null);
   const tray = Object.keys(U.tray).filter(k=>U.tray[k]>0);
   const step = !tray.length ? 1 : !U.fac ? 2 : !U.op ? 3 : 4;
   const steps=$("#labSteps"); if(steps) steps.innerHTML = ["材料を選ぶ","装置を選ぶ","操作を選ぶ","実験する","結果を見る"].map((t,i)=>`<li class="${i+1<step?"done":i+1===step?"now":""}">${t}</li>`).join("");
@@ -310,11 +333,13 @@ function drawScene(){
   <rect x="0" y="${baseY}" width="400" height="10" fill="${st<3?"#8a643f":"#5b6470"}"/><rect x="0" y="${baseY+10}" width="400" height="30" fill="${st<3?"#6e4e30":"#3d4650"}"/>
   ${benchProps(st)}
   ${tray.map((k,i)=>`<g transform="translate(${26+i*30},${baseY+28})"><circle r="12" fill="rgba(255,255,255,.9)"/><text text-anchor="middle" y="5" font-size="15">${ic(k)}</text></g>`).join("")}
-  ${U.fac?`<g transform="translate(${tall?300:200},${baseY+2}) scale(${tall?.85:1.15})">${facArt(U.fac)}</g>
+  ${U.fac && CENTER_APP[U.fac] && hasSpr("flask") ? `${CENTER_APP[U.fac](200, baseY+4, tray.length>0)}
+    <text x="200" y="${baseY+36}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${nm(U.fac)}</text>`
+  : U.fac?`<g transform="translate(${tall?300:200},${baseY+2}) scale(${tall?.85:1.15})">${facArt(U.fac)}</g>
     <text x="${tall?300:200}" y="${baseY+36}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${nm(U.fac)}</text>`
     : `<rect x="110" y="128" width="180" height="26" rx="10" fill="rgba(255,255,255,.88)"/><text x="200" y="146" text-anchor="middle" font-size="12" font-weight="700" fill="#22305a">${owned("bench")||LAB_FAC.some(owned)?"② 装置を選ぶと、ここに置かれる":"まだ装置がない。工作で作ろう"}</text>`}
   ${shape?`<ellipse cx="${tall?170:200}" cy="${baseY-40}" rx="70" ry="56" fill="url(#spotG)"/>`:""}
-  <g id="vessel" transform="translate(${tall?170:200},${baseY-(U.fac==="campfire"?12:0)})">
+  <g id="vessel" transform="translate(${tall?170:200},${baseY-(U.fac==="campfire"?(hasSpr("brazier")?30:12):0)})">
     <g class="fx x-glow"><circle cx="0" cy="-26" r="54" fill="url(#glowG)"/></g>
     <g class="fx x-flame" transform="translate(0,8)"><path d="M-16 0 Q-26 -14 -16 -28 Q-12 -14 -6 -16 Q-4 -6 -16 0Z" fill="#ff8a2a"/><path d="M0 0 Q-12 -18 0 -36 Q12 -18 0 0Z" fill="#ffb347"/><path d="M16 0 Q26 -14 16 -28 Q12 -14 6 -16 Q4 -6 16 0Z" fill="#ff8a2a"/></g>
     ${shape?vesselSVG(shape):""}
@@ -522,7 +547,7 @@ function updateLoc(){
   const el=$("#hudLoc"); if(!el) return;
   const r = in3D() ? W3.region : D.regions.find(x=>x.id===U.region);
   el.innerHTML = r ? `${r.icon} <b>${r.name}</b><small>探索Lv${E.exploreLv(S,r.id)}</small>`
-    : in3D() && W3.state!=="ready" ? `🌄 <b>準備中</b>` : `🧭 <b>移動中</b><small>地域の外</small>`;
+    : in3D() && W3.state!=="ready" ? `🌄 <b>準備中</b>` : in3D() && W3.moving ? `🧭 <b>移動中</b><small>地域の外</small>` : `🧭 <b>地域の外</b><small>野原</small>`;
 }
 function drawRegion(){
   const r = (in3D() && W3.region) || D.regions.find(x=>x.id===U.region); const box=$("#regionBox"); if(!box || !r) return;
@@ -595,7 +620,7 @@ const W3 = { state:"idle", err:"", gfx:null, host:null, cfg:null, pos:null, dir:
   structs:new Set(), visSig:{}, lastSave:0, blockAt:-1e9, tick:0, labelEls:{} };
 const WORLD_R = 56,  /* 地形は120×120の正方形。端の丘の手前で止める */ REGION_R = 9, NEAR_R = 2.6;
 const MOBILE = matchMedia("(pointer:coarse)").matches || innerWidth < 900;
-const RES_VIS = {twig:"tree",log:"tree",resin:"tree",wax:"tree",bark:"tree",seed:"tree",
+const RES_VIS = {twig:"branch",cobble:"pebble",flint:"pebble",log:"tree",resin:"tree",wax:"tree",bark:"tree",seed:"tree",
   leaves:"herb",vine:"herb",grass:"herb",seaweed:"herb",grape:"flowers",clay:"clay",ochre:"clay",sand:"clay",
   rain:"water",river:"water",spring:"water",seawater:"water",crude:"oil"};
 const PLANT = ["tree","herb","flowers"];
@@ -613,11 +638,12 @@ function buildNodes(){
 }
 function nodeVisual(n){
   const inf = depInfo(n.r.id, n.res.id);
-  return {position:n.pos, type:n.type, rotationY:n.rot, scale:n.scale, depleted: inf.left<=0, highlighted: W3.near===n || W3.sel===n, visible:true};
+  const t={n}; return {position:n.pos, type:n.type, rotationY:n.rot, scale:n.scale, depleted: inf.left<=0, highlighted: tSame(W3.near,t) || tSame(W3.sel,t), visible:true,
+    phase: W3.work && tSame(W3.work.t,t) ? "reacting" : "idle"};
 }
 function syncNode(n, force){
   if(!W3.gfx) return;
-  const v = nodeVisual(n), sig = v.depleted+"|"+v.highlighted;
+  const v = nodeVisual(n), sig = v.depleted+"|"+v.highlighted+"|"+v.phase;
   if(!force && W3.visSig[n.vid]===sig) return;
   W3.visSig[n.vid]=sig; W3.gfx.updateResourceVisual(n.vid, v);
 }
@@ -627,13 +653,14 @@ function world(){
   if(!WORLD && window.TERRAIN && window.NATURE) WORLD = NATURE.create(D, E, {terrainHeight:TERRAIN.terrainHeight, distanceToRiver:TERRAIN.distanceToRiver, cfg:TERRAIN.DEFAULT_CONFIG});
   return WORLD;
 }
-/* 既存の資源タイプで表示する（Muse に専用タイプを依頼中：twig・pebble・grass・bush と切り株・残骸・刈り跡） */
-const NAT_VIS = {tree:o=>["tree",o.scale], rock:o=>["rock",o.scale], pebble:o=>["rock",0.3*o.scale], twig:o=>["clay",0.3*o.scale], grass:o=>["herb",o.scale], bush:o=>["herb",1.6*o.scale]};
+/* 描画モジュールの資源タイプ（INTEGRATION.md §13）。落ち枝は branch、小石は pebble。
+   寸法は getResourceVisualSpecs と照合した（当たり判定の正本は nature.js） */
+const NAT_VIS = {tree:o=>["tree",o.scale], rock:o=>["rock",o.scale], pebble:o=>["pebble",0.75*o.scale], twig:o=>["branch",0.8*o.scale], grass:o=>["herb",o.scale], bush:o=>["herb",1.6*o.scale]};
 const NAT_SHOW_R = 32, NAT_HIDE_R = 38;
 function natVisual(o){
   const v = WORLD.visual(S,o), [type,scale] = NAT_VIS[o.kind](o);
   return {position:v.position, type, rotationY:o.rot, scale, depleted: v.state!=="intact", visible: v.state!=="gone",
-    highlighted: (W3.sel&&W3.sel.o===o) || (W3.near&&W3.near.o===o),
+    highlighted: (W3.sel&&W3.sel.o===o) || (W3.near&&W3.near.o===o), phase: W3.work && W3.work.t.o===o ? "reacting" : "idle",
     natural:{id:o.id, kind:o.kind, variant:o.variant, state:v.state, collider:v.collider, left:v.left, uses:v.uses}};
 }
 function syncNature(force){
@@ -642,7 +669,7 @@ function syncNature(force){
   WORLD.objects.forEach(o=>{
     const d = Math.hypot(o.x-W3.pos.x, o.z-W3.pos.z);
     if(d > NAT_HIDE_R || (d > NAT_SHOW_R && !shown.has(o.id))){ if(shown.has(o.id)){ W3.gfx.updateResourceVisual(o.id, null); shown.delete(o.id); delete W3.visSig[o.id]; } return; }
-    const v = natVisual(o), sig = v.natural.state+"|"+v.highlighted;
+    const v = natVisual(o), sig = v.natural.state+"|"+v.highlighted+"|"+v.phase;
     if(!force && shown.has(o.id) && W3.visSig[o.id]===sig) return;
     W3.visSig[o.id]=sig; shown.add(o.id); W3.gfx.updateResourceVisual(o.id, v);
   });
@@ -743,7 +770,8 @@ function haltField(){
   W3.keys={}; W3.joy=null; W3.down=null; W3.target=null; W3.path=null; W3.intent=null;
   if(W3.work) cancelWork(null);
   if(W3.joyReset) W3.joyReset();
-  if(W3.moving && W3.gfx && W3.pos){ W3.moving=false; W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving:false}); }
+  if(W3.walk){ W3.walk.on=false; W3.walk.slow=0; }
+  if(W3.moving && W3.gfx && W3.pos){ W3.moving=false; W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving:false}); updateLoc(); }
 }
 document.addEventListener("visibilitychange", ()=>{ if(document.hidden) haltField(); updateFieldActivity(); });
 function updateFieldActivity(){
@@ -816,24 +844,25 @@ function loop3D(ts){
   else if(W3.path && W3.path.length && !W3.work){ const wp=W3.path[0], dx=wp.x-W3.pos.x, dz=wp.z-W3.pos.z, d=Math.hypot(dx,dz);
     if(d<0.2){ W3.path.shift(); if(!W3.path.length) arrive(); }
     else { mx=dx/d; mz=dz/d; } }
-  const len=Math.hypot(mx,mz); let moving = len>0.01;
-  if(moving && dt>0){
+  const len=Math.hypot(mx,mz); let got=0;
+  if(len>0.01 && dt>0){
     const sp = 7*(owned("steamengine")?1.6:1)*Math.min(1,len), step = sp*dt;
     const before = {x:W3.pos.x, z:W3.pos.z};
     const res = WORLD.move(S, W3.pos, mx/len*step, mz/len*step);
-    if(res.locked){ moving=false; W3.path=null; W3.target=null; W3.intent=null;
+    if(res.locked){ W3.path=null; W3.target=null; W3.intent=null;
       if(ts-W3.blockAt>2500){ W3.blockAt=ts; banner("🔒 "+res.locked.name+"：入るには「"+res.locked.unlock.map(nm).join("」か「")+"」が必要"); } }
     W3.pos.x=res.x; W3.pos.z=res.z;
-    const got = Math.hypot(res.x-before.x, res.z-before.z);
+    got = Math.hypot(res.x-before.x, res.z-before.z);
     /* クリック移動で進めなくなったら、経路を引き直す。それでも進めなければ止める */
     if(W3.path){ W3.stuck = got < step*0.2 ? (W3.stuck||0)+dt : 0;
       if(W3.stuck>0.5){ W3.stuck=0; const goal=W3.path[W3.path.length-1]; const p=(W3.repath=(W3.repath||0)+1)<=2 ? WORLD.findPath(S,W3.pos,goal) : null;
         if(p) W3.path=p; else { W3.path=null; W3.target=null; W3.intent=null; W3.repath=0; banner("🚫 ここから先へは進めない"); } } }
     if(got>0.001){ const sx = (res.x-before.x)*B.r.x + (res.z-before.z)*B.r.z, sy = -((res.x-before.x)*B.f.x + (res.z-before.z)*B.f.z);
       W3.dir = Math.abs(sx)>Math.abs(sy) ? (sx>0?"right":"left") : (sy>0?"down":"up"); }
-    else moving = !!W3.path;
   }
-  W3.moving = moving;
+  /* 歩行状態：入力や移動予約の有無ではなく、衝突処理のあとに実際に進んだ量と経過時間で決める。
+     ワープ・ロード時の補正・初期配置は W3.pos を直接書くので、ここでは数えない（歩行にならない） */
+  const moving = updateWalk(dt, got, (ix||iy) || !!(W3.path && W3.path.length));
   W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving, action: W3.work ? "gather" : undefined});
   tickWork(ts);
   // 地域の判定
@@ -846,6 +875,19 @@ function loop3D(ts){
   if(++W3.tick%20===0){ NODES.forEach(n=>syncNode(n)); syncNature(); updateAction3D(); }
   updateLabels3D();
   if(ts-W3.lastSave>2000 && (!S.pos || Math.abs(S.pos.x-W3.pos.x)>0.01 || Math.abs(S.pos.z-W3.pos.z)>0.01)){ W3.lastSave=ts; S.pos={x:+W3.pos.x.toFixed(2), z:+W3.pos.z.toFixed(2)}; save(); }
+}
+/* 歩き始め：毎秒0.9マス以上。止まる：毎秒0.35マス未満が0.12秒続く（小さな揺れでちらつかない）。
+   入力も移動予約もなければ、その場で止まる。止まっても向き（W3.dir）は変えない */
+const WALK_START = 0.9, WALK_STOP = 0.35, WALK_STOP_HOLD = 0.12;
+function updateWalk(dt, got, intent){
+  const w = W3.walk || (W3.walk = {on:false, slow:0});
+  const speed = dt>0 ? got/dt : 0;
+  if(!intent){ w.on=false; w.slow=0; }
+  else if(!w.on){ if(speed >= WALK_START){ w.on=true; w.slow=0; } }
+  else if(speed < WALK_STOP){ w.slow += dt; if(w.slow >= WALK_STOP_HOLD){ w.on=false; w.slow=0; } }
+  else w.slow = 0;
+  if(W3.moving !== w.on){ W3.moving = w.on; updateLoc(); }
+  return w.on;
 }
 function findNear(){
   const p=W3.pos, R=E.REACH;
@@ -881,9 +923,10 @@ function startWork(t){
   if(!inf.ok){ banner((inf.kind==="tool"?"🔒 ":"")+inf.name+"："+inf.reason); return; }
   W3.sel=t; W3.path=null; W3.target=null; W3.intent=null;
   W3.work={t, start:performance.now(), dur:RM?150:tWork(t), token:S.seq, pos:{x:W3.pos.x, z:W3.pos.z}};
-  updateAction3D();
+  syncWorkVisual(t); updateAction3D();
 }
-function cancelWork(msg){ if(!W3.work) return; W3.work=null; const b=$("#w3act"); if(b) b.style.removeProperty("--p"); if(msg) banner(msg); updateAction3D(); }
+function syncWorkVisual(t){ if(!t) return; if(t.n) syncNode(t.n); else syncNature(); }
+function cancelWork(msg){ if(!W3.work) return; const t=W3.work.t; W3.work=null; syncWorkVisual(t); const b=$("#w3act"); if(b) b.style.removeProperty("--p"); if(msg) banner(msg); updateAction3D(); }
 function tickWork(ts){
   const w=W3.work; if(!w) return;
   if(Math.hypot(W3.pos.x-w.pos.x, W3.pos.z-w.pos.z) > 0.05){ cancelWork("採取を中断した（何も減っていない）"); return; }
@@ -892,6 +935,7 @@ function tickWork(ts){
 }
 function finishWork(){
   const w=W3.work; W3.work=null; const b=$("#w3act"); if(b) b.style.removeProperty("--p");
+  syncWorkVisual(w.t);
   const t=w.t, now=Date.now(); U.combo=(now-U.lastGather<2500)?U.combo+1:1; U.lastGather=now;
   const out = t.o ? WORLD.harvest(S, t.o.id, {pos:W3.pos, token:w.token, combo:U.combo})
                   : E.harvestDeposit(S, t.n.r.id, t.n.res.id, {pos:W3.pos, token:w.token, combo:U.combo});

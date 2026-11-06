@@ -20,7 +20,7 @@
         __ray(ndc,ray){ const t=this.target,h=this.__half(); const ox=t.x+R.x*ndc.x*h.hw+UP.x*ndc.y*h.hh-F.x*60, oy=t.y+R.y*ndc.x*h.hw+UP.y*ndc.y*h.hh-F.y*60, oz=t.z+R.z*ndc.x*h.hw+UP.z*ndc.y*h.hh-F.z*60; ray.origin.set(ox,oy,oz); ray.direction.set(F.x,F.y,F.z); } };
       return {
         getCamera:()=>cam,
-        setPlayerVisualState(s){ FK.player=JSON.parse(JSON.stringify(s)); cam.target={x:s.position.x,y:U.terrainHeight(s.position.x,s.position.z,cfgDefault),z:s.position.z}; },
+        setPlayerVisualState(s){ FK.player=JSON.parse(JSON.stringify(s)); (FK.track=FK.track||[]).push({t:performance.now(), m:!!s.moving, x:s.position.x, z:s.position.z, d:s.direction}); if(FK.track.length>3000) FK.track.splice(0,1000); cam.target={x:s.position.x,y:U.terrainHeight(s.position.x,s.position.z,cfgDefault),z:s.position.z}; },
         setWorldVisualState(s){ FK.world=s; }, setCameraTarget(){},
         updateResourceVisual(id,s){ if(s===null) delete FK.resources[id]; else FK.resources[id]=JSON.parse(JSON.stringify(s)); },
         addStructureVisual(id,type,pos,rot){ FK.structures[id]={type,pos,rot}; }, removeStructureVisual(id){ delete FK.structures[id]; },

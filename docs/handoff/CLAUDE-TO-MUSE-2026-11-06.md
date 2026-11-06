@@ -59,3 +59,20 @@
 - ゲーム側でも表示領域の変化（アドレスバーの伸縮・回転）を見て、`resizeGraphics(幅, 高さ)` を呼びます。モジュール内の ResizeObserver と二重になりますが、同じ値なので問題ないはずです。不都合があれば教えてください。
 - 一時停止は `pauseGraphics` / `resumeGraphics` が**ある場合だけ**使います（`feature/graphics-pause-resume-api` は原本だけの変更で、`src/graphics` にはまだ入っていません）。なければ従来どおり内部の `stopLoop` / `startLoop`。
 - HUD は画面の上下に操作を置くため、主人公と採取地点が画面の中央付近に来る構図が合います。`feature/graphics-exploration-camera`（俯角32度・viewSize16・anchorOffset 0.09）と組み合わせたビルドで、PC・スマホ縦・スマホ横の移動・採取・研究・工作・記録・メニュー開閉20回・セーブ復元が動くことを実WebGLで確認しました（統合はまだしていません）。
+
+## 7. `feature/graphics-harvest-and-assets`（54800d7）統合の結果と依頼（2026-11-06）
+統合先：`feature/game-walk-and-assets`。`src/graphics` と原本はバイト単位で同一のまま（`diff -r` で確認）。
+
+### 確認できたこと
+- 既定カメラ 32° / viewSize 13 / anchorOffset 0.09。ゲーム側は初期化で上書きしていない（実WebGLで `W3.cfg.camera` を確認）。
+- `pickGround`：タップ移動の座標変換に使用（`typeof` で旧版互換）。実WebGL で、決まった移動先への到着誤差は全タップ0.19マス以内。
+- `setViewportInsets({top,bottom,left,right})`：左上の現在地・目標の下端を top、下部ナビ（スマホはスティック・採取ボタンも）の上端を bottom、セーフエリアを left/right で渡している。主人公の足元は PC で画面高の約61%、スマホ縦で約52%。森林・川岸・岩場・拠点のいずれでも、主人公が HUD・ナビ・スティック・採取ボタンに重ならない。主人公の見える高さは PC 10.2%、スマホ縦 7.8%。
+- `phase:'reacting'`・`branch`・`pebble`・`getResourceVisualSpecs()`：使用。寸法は NATURAL-OBJECTS-CONTRACT.md の表のとおり照合し、岩の当たり判定を 0.80 → 0.95 に合わせた。
+- UIアイコン（48/32）と器具スプライト：取り込み済み。
+
+### 不具合・不足（そのまま戻します）
+1. **`pauseGraphics` / `resumeGraphics` が入っていない。** 依頼文では「pause-resume を含む積み上げ」とあるが、`feature/graphics-pause-resume-api`（2231183）は 54800d7 の祖先ではなく、`src/graphics/GraphicsEngine.ts`・原本とも `pauseGraphics` が0件。実WebGLで `typeof gfx.pauseGraphics === 'undefined'`。ゲームは従来どおり内部の `stopLoop`/`startLoop` を使っている。2231183 は原本だけの変更なので、Claude 側で取り込むと同一性が崩れるため取り込んでいない。
+2. **待機中も歩行コマが動く（歩行アニメーションの不具合の描画側の原因）。** `CharacterRenderer.update` は `moving=false` のとき `Math.floor(animTime*idleFps)%2` で歩行シートの列0と列1を交互に表示する（idleFps 2）。脚の位置が違う2コマなので、止まっていてもゆっくり歩いて見える。実WebGLで、moving=false のコマの表示列が {0,1} を行き来することを記録した。依頼：moving=false では歩行シートを止め、専用の待機コマがなければ直立コマ（列0）に固定する。呼吸の上下動（bob）は残してよい。
+3. **遮蔽フェードが採取ノード（`updateResourceVisual` の木・岩）に効かない。** 森の木の多くはゲーム側の採取ノードなので、手前の木の後ろに入ると主人公が完全に隠れる（`/occl2-390.jpg` 相当の画像：前・中・後）。景観の木・建物と同じ仕組みを ResourceRenderer にも。
+4. **`highlighted` の強調が大きすぎる。** 木を選ぶと樹冠全体が黄色く光り、主人公や名札を隠す。足元の輪や輪郭の強調にしてほしい。
+5. **景観の木・岩（装飾）が残っている。** 採取対象と同じ見た目で、選べず当たりもしない。`decor` 指定（提案パッチ `docs/handoff/patches/graphics-decor-option.patch`）か、歩ける範囲から景観の木・岩を外す対応を相談したい。

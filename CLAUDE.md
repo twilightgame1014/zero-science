@@ -41,7 +41,9 @@
 - 採取は「選ぶ → 近づく（外周へ）→ 条件確認 → 短い作業 → 一度だけ確定」。距離と二重実行（`S.seq` のトークン）はロジック側で確認する。
 - 変化した自然物・地域の採取地点の状態は `S.nature` に保存（スキーマ v2）。自動採取も同じ残量を使う。
 - 研究室は画像を使わず、SVG の実験台（`drawScene`）。研究室の画像はビルドに埋め込まない。
-- アイコンは `assets/icons/<名前>.webp|png|svg` があれば使い、なければ絵文字（必ず文字ラベルと組み合わせる）。
+- アイコンは Muse の `assets/ui-icons`（タブ・メニューは 48px 版、右上のボタンは 32px 版、`image-rendering: pixelated`）。ない名前は絵文字。必ず文字ラベルと組み合わせる。
+- 実験台の器具は Muse の `assets/lab-apparatus/sprites`（装置と液体・炎は別レイヤー。炎は加熱の演出中だけ、液体は材料が入っているときだけ）。解放済みの器具だけ置く。
+- 歩行状態（描画へ渡す moving）は、衝突処理のあとに実際に進んだ量と経過時間で決める（`updateWalk`：毎秒0.9マスで歩き始め、毎秒0.35マス未満が0.12秒続くと止まる。入力も移動予約もなければすぐ止まる）。入力や移動予約の有無だけで歩かせない。ワープ・ロード時の補正は歩行にしない。
 
 ## 主なデータの場所
 - 地域と3D上の位置：`data.js` の `regions`（`w` がワールド座標、`res[].p` が地域内の配置）
@@ -50,7 +52,7 @@
 - 研究室の背景：`ui.js` の `labBackground`（SVG）。`assets/lab/` の画像は原本として残すだけで、ビルドには使わない
 
 ## Muse への依頼事項（未解決）
-1. 一時停止API（`pauseGraphics` / `resumeGraphics`）を `src/graphics` へ反映（原本にだけある）。ゲームはあれば使い、なければ内部の `stopLoop` / `startLoop`
+1. 一時停止API（`pauseGraphics` / `resumeGraphics`）：`feature/graphics-harvest-and-assets` に入っていない（2026-11-06 確認）。ゲームはあれば使い、なければ内部の `stopLoop` / `startLoop`
 2. 資源タイプ `water`（水源）・`oil`（原油）・`ore`（鉱石）の見た目
 3. 洞窟・鉱山・火山・海岸・油田のバイオーム
 4. 川を渡る橋（今は水の中を歩いて渡れる）
@@ -58,7 +60,7 @@
 6. 建物タイプ：水車・蒸気機関・精留塔・掘削やぐら
 7. （対応済み：川の水面・`pickGround`・`setViewportInsets` は `feature/graphics-world-polish` で追加され、このブランチに統合）
 8. 描画側の装飾を止める `GraphicsOptions.decor`・自然物の専用タイプと採取後の見た目・まとめて描くAPI（`docs/handoff/NATURAL-OBJECTS-CONTRACT.md`）
-9. 低視点カメラ：縦画面での人物の大きさ・足元の位置・遮蔽フェード・地図の端の空白（同メモ）
+9. 待機中に歩行コマが動く（moving=false では直立コマに固定してほしい）・採取ノードの木に遮蔽フェードが効かない・選択の強調が大きい（`docs/handoff/CLAUDE-TO-MUSE-2026-11-06.md` §7）
 
 ## 今後の拡張候補
 - 第5段階（集積回路・医薬品・ナノ材料）

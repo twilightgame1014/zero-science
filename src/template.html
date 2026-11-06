@@ -74,7 +74,8 @@ button:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-v
 [data-ui="touch"] .nav{left:0;right:0;bottom:0;padding:4px calc(var(--sar) + 8px) calc(var(--sab) + 4px) calc(var(--sal) + 8px);gap:4px;border-radius:16px 16px 0 0}
 [data-ui="touch"] .nav button{flex:1;min-height:52px;flex-direction:column;font-size:.74rem;gap:0}
 [data-ui="touch"] .nav button span{font-size:1.35rem}
-[data-ui="pc"] .nav{left:50%;bottom:calc(var(--sab) + 12px);transform:translateX(-50%);padding:5px;gap:4px;border-radius:18px}
+[data-ui="pc"] .nav{left:50%;bottom:calc(var(--sab) + 12px);transform:translateX(-50%);width:max-content;max-width:calc(100% - 24px);padding:5px;gap:4px;border-radius:18px}
+.nav button,.hbtn{white-space:nowrap}
 [data-ui="pc"] .nav button{min-height:44px;padding:0 14px;gap:6px;font-size:.9rem}
 [data-ui="pc"] .nav button span{font-size:1.1rem}
 [data-ui="pc"] [data-only="touch"],[data-ui="touch"] [data-only="pc"]{display:none !important}
@@ -89,9 +90,11 @@ button:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-v
 .btn.big{font-size:1.1rem;padding:13px 18px;flex:1}
 /* アイコン：通常・選択中・無効・フォーカスを区別する */
 .ico{display:inline-block;line-height:1.1}
-img.ico{width:28px;height:28px;object-fit:contain}
-[data-ui="pc"] .nav img.ico{width:24px;height:24px}
-.hbtn img.ico{width:26px;height:26px}
+img.ico{width:32px;height:32px;object-fit:contain;image-rendering:pixelated}
+[data-ui="pc"] .nav img.ico{width:28px;height:28px}
+.hbtn img.ico{width:28px;height:28px}
+.bigitem img.ico{width:44px;height:44px}
+.bigitem .ico.emo{font-size:1.8rem}
 .nav button:hover:not(:disabled),.hbtn:hover:not(:disabled){filter:brightness(1.06)}
 .nav button:disabled,.hbtn:disabled{opacity:.45;filter:grayscale(1);cursor:default}
 .nav button[aria-current="page"] img.ico,.hbtn[aria-expanded="true"] img.ico{transform:translateY(-1px) scale(1.08)}

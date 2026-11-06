@@ -20,7 +20,7 @@ var NATURE = (function(){
      regrow：取り尽くしてから元に戻るまで（null は戻らない）。work：採取にかかる時間（ミリ秒）。 */
   const KINDS = {
     tree:   {name:"木",       icon:"🌳", r:0.34, block:true,  uses:2, need:["axe","ironaxe"], bonus:"ironaxe", yields:{log:1}, after:"stump",  regrow:30*MIN, work:900, verb:"切る"},
-    rock:   {name:"岩",       icon:"🪨", r:0.80, block:true,  uses:3, need:["hammer","pickaxe","ironpick"], bonus:"ironpick", yields:{cobble:1}, after:"rubble", regrow:null, work:900, verb:"割る"},
+    rock:   {name:"岩",       icon:"🪨", r:0.95, block:true,  uses:3, need:["hammer","pickaxe","ironpick"], bonus:"ironpick", yields:{cobble:1}, after:"rubble", regrow:null, work:900, verb:"割る"},
     pebble: {name:"小石",     icon:"🪨", r:0.22, block:false, uses:1, need:null, yields:{cobble:1}, after:"gone", regrow:null, work:350, verb:"拾う"},
     twig:   {name:"落ち枝",   icon:"🪵", r:0.25, block:false, uses:1, need:null, yields:{twig:2}, after:"gone", regrow:8*MIN, work:350, verb:"拾う"},
     grass:  {name:"草むら",   icon:"🌾", r:0.45, block:false, uses:1, need:null, yields:{grass:2}, after:"cut", regrow:3*MIN, work:500, verb:"刈る"},
@@ -113,7 +113,7 @@ var NATURE = (function(){
 
     const byId = new Map(objs.map(o=>[o.id,o]));
     /* 木の姿をしている地域の採取地点（枝の多い木・やにの出る木など）は、幹に当たり判定を持つ固定の障害物 */
-    const TREE_DEPOSITS = ["twig","log","resin","wax","bark","seed"];
+    const TREE_DEPOSITS = ["log","resin","wax","bark","seed"];   // 枝（twig）の採取地点は落ち枝の見た目なので壁にしない
     const statics = [];
     D.regions.forEach(r=>{ if(r.w) r.res.forEach(res=>{ if(!TREE_DEPOSITS.includes(res.id)) return; const p=E.depositPos(r,res);
       statics.push({id:E.depositId(r.id,res.id), kind:"deposit", x:p.x, z:p.z, r:0.38, block:true, static:true}); }); });

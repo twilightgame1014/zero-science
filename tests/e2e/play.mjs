@@ -83,10 +83,10 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   ok('主人公の選択（女の子）がスプライトに反映される', init.girl);
   const nav = await rect(page, '#nav'), joy = await rect(page, '#joy'), act = await rect(page, '#w3act');
   const navBtns = await page.evaluate(`[...document.querySelectorAll('#nav button')].filter(b=>getComputedStyle(b).display!=='none').map(b=>({t:b.textContent.trim(), h:b.getBoundingClientRect().height}))`);
-  ok('スマホの下部ナビは「研究室・工作・メニュー」の3つで、高さ48px以上', navBtns.map(b => b.t).join() === '🧪研究室,🔨工作,☰メニュー' && navBtns.every(b => b.h >= 48), JSON.stringify(navBtns));
+  ok('スマホの下部ナビは「研究室・工作・メニュー」の3つで、高さ48px以上', navBtns.map(b => b.t).join() === '研究室,工作,☰メニュー' && navBtns.every(b => b.h >= 48), JSON.stringify(navBtns));
   ok('スティックは左下・採取ボタンは右下にあり、どちらも下部ナビの上で重ならない', joy.shown && act.shown && joy.b <= nav.t && act.b <= nav.t && !overlap(joy, act) && joy.l < 195 && act.r > 195 && act.w >= 48 && act.h >= 48, JSON.stringify({ joy, act, nav }));
   const tr = await page.evaluate(`[...document.querySelectorAll('.hud-tr button')].filter(b=>getComputedStyle(b).display!=='none').map(b=>({t:b.textContent.trim(), w:b.getBoundingClientRect().width, h:b.getBoundingClientRect().height}))`);
-  ok('右上は「地図・設定」の2つで、文字付き・48px以上', tr.map(b => b.t).join() === '🗺️地図,⚙️設定' && tr.every(b => b.w >= 48 && b.h >= 48), JSON.stringify(tr));
+  ok('右上は「地図・設定」の2つで、文字付き・48px以上', tr.map(b => b.t).join() === '地図,設定' && tr.every(b => b.w >= 48 && b.h >= 48), JSON.stringify(tr));
   ok('HUDの空いた所はマップへの入力を妨げない', await page.evaluate(`!!document.elementFromPoint(innerWidth*0.5, innerHeight*0.5).closest('#view')`));
   await page.evaluate(`(()=>{ ${G}.W3.pos={x:-20,z:20}; ${G}.W3.sel=null; })()`); await page.waitForTimeout(300);
   ok('近くに資源がないとき、右下のボタンは「調べる」', await page.evaluate(`document.getElementById('w3act').dataset.mode==='look' && /調べる/.test(document.getElementById('w3act').textContent)`));
@@ -109,6 +109,12 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   const stillJoy = await page.evaluate(`!!${G}.W3.joy`);
   ok('スティックで歩きながら、別の指で採取ボタンを押せる', moving && stillJoy && (await page.evaluate(`${G}.S.inv.twig||0`)) > t0, JSON.stringify({ moving, stillJoy }));
   await ptr(page, '#joy', 'pointercancel', 11); await page.waitForTimeout(50);
+  await page.waitForTimeout(150); await page.evaluate(`window.__t0=performance.now()`); await page.waitForTimeout(250);
+  ok('歩行（スティック）：タッチがキャンセルされると歩行も止まる', (await page.evaluate(`__FAKE.track.filter(r=>r.t>=window.__t0)`)).every(r => !r.m));
+  await ptr(page, '#joy', 'pointerdown', 21); await ptr(page, '#joy', 'pointermove', 21, 30, 0); await page.waitForTimeout(400);
+  const jOn = await page.evaluate(`__FAKE.track.slice(-4).every(r=>r.m)`);
+  await ptr(page, '#joy', 'pointerup', 21); await page.waitForTimeout(150); await page.evaluate(`window.__t0=performance.now()`); await page.waitForTimeout(250);
+  ok('歩行（スティック）：倒している間は歩き、離すと止まる', jOn && (await page.evaluate(`__FAKE.track.filter(r=>r.t>=window.__t0)`)).every(r => !r.m));
   ok('タッチがキャンセルされると、スティックの移動が止まる', await page.evaluate(`!${G}.W3.joy && document.querySelector('#joy .knob').style.transform===''`));
 
   // パネルを開くと入力が止まる
@@ -119,7 +125,7 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   ok('スマホで全高の研究室を開くと描画ループが止まる', await page.evaluate(`__FAKE.loop === false`));
   const dk = await rect(page, '#dock');
   ok('研究室はマップの上に重なる（マップは縮まない）', (await fullCheck(page)).full && dk.t < 60 && Math.round(dk.b) <= Math.round(nav.t) + 1, JSON.stringify(dk));
-  ok('研究室は画像を使わず、SVGで描いた実験台と手順を表示する（研究室の画像は埋め込まない）', await page.evaluate(`!!document.querySelector('#stagebox svg#scene') && !document.getElementById('stagebox').style.backgroundImage.includes('url') && !Object.keys(ASSETS).some(k=>/^lab/.test(k)) && document.querySelectorAll('#labSteps li').length===5`));
+  ok('研究室は画像を使わず、SVGで描いた実験台と手順を表示する（研究室の画像は埋め込まない）', await page.evaluate(`!!document.querySelector('#stagebox svg#scene') && !document.getElementById('stagebox').style.backgroundImage.includes('url') && !Object.keys(ASSETS).some(k=>/^lab\\d/.test(k)) && Object.keys(ASSETS.labApp||{}).length>=10 && document.querySelectorAll('#labSteps li').length===5`));
   ok('パネル表示中は、マップとHUDが操作できない（inert）', await page.evaluate(`document.getElementById('view').inert && document.getElementById('hud').inert`));
   ok('スクロールはメニューの中だけ', await page.evaluate(`getComputedStyle(document.getElementById('dockBody')).overflowY==='auto' && document.scrollingElement.scrollHeight<=innerHeight`));
   await page.click('#dock .dockx'); await page.waitForTimeout(700);
@@ -194,6 +200,7 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   ok('未開放の地域（洞窟）へは移動先にできず、無理に向かっても入れない', lockGo === false && await page.evaluate(`Math.hypot(${G}.W3.pos.x-42, ${G}.W3.pos.z+34) >= 9`));
   await page.waitForTimeout(2200); await page.reload(); await page.waitForTimeout(600);
   const rl = await page.evaluate(`({pos:!!${G}.S.pos, hero:${G}.S.flags.hero, tab:${G}.U.tab, dock:document.getElementById('dock').hidden, at:${G}.W3.pos && Math.hypot(${G}.W3.pos.x-${G}.S.pos.x, ${G}.W3.pos.z-${G}.S.pos.z)})`);
+  ok('再読込直後（ロード時の位置補正を含む）は歩かない', await page.evaluate(`(__FAKE.track||[]).every(r=>!r.m)`));
   ok('再読込後も探索から始まり、プレイヤー座標と主人公が復元される', rl.pos && rl.hero === 'girl' && rl.tab === 'explore' && rl.dock && rl.at < 0.05, JSON.stringify(rl));
   const keep = await page.evaluate(`({st:${G}.S.nature['${peb}'], left:${G}.WORLD.stock(${G}.S, ${G}.WORLD.byId.get('${peb}')).left})`);
   ok('再読込後も、拾った小石はなくなったまま（採取状態がセーブに残る）', keep.st && keep.left === 0, JSON.stringify(keep));
@@ -224,12 +231,12 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   const fc = await fullCheck(page);
   ok('PC：表示領域の端から端までマップで、ページがスクロールしない', fc.full && fc.noScroll && fc.ui === 'pc', JSON.stringify(fc));
   const navT = await page.evaluate(`[...document.querySelectorAll('#nav button')].filter(b=>getComputedStyle(b).display!=='none').map(b=>b.textContent.trim()+(b.title?'*':''))`);
-  ok('PCの下部中央ドックは 研究室／工作／図鑑／技術／記録（ツールチップ付き）', navT.join() === '🧪研究室*,🔨工作*,📖図鑑*,🕸️技術*,📓記録*', JSON.stringify(navT));
+  ok('PCの下部中央ドックは 研究室／工作／図鑑／技術／記録（ツールチップ付き）', navT.join() === '研究室*,工作*,図鑑*,技術*,記録*' && await page.evaluate(`[...document.querySelectorAll('#nav button')].filter(b=>getComputedStyle(b).display!=='none').every(b=>b.querySelector('img.ico'))`), JSON.stringify(navT));
   const dockR = await rect(page, '#nav');
   ok('ドックは画面下部の中央にある', Math.abs((dockR.l + dockR.r) / 2 - 683) < 4 && dockR.b <= 768 && dockR.b > 700, JSON.stringify(dockR));
   ok('PCでは仮想スティックを表示しない', !(await rect(page, '#joy')).shown);
   const tr = await page.evaluate(`[...document.querySelectorAll('.hud-tr button')].filter(b=>getComputedStyle(b).display!=='none').map(b=>b.textContent.trim())`);
-  ok('PCの右上は 地図・拠点・設定', tr.join() === '🗺️地図,🏠拠点,⚙️設定', JSON.stringify(tr));
+  ok('PCの右上は 地図・拠点・設定', tr.join() === '地図,拠点,設定' && await page.evaluate(`[...document.querySelectorAll('.hud-tr button')].filter(b=>getComputedStyle(b).display!=='none').every(b=>b.querySelector('img.ico'))`), JSON.stringify(tr));
   ok('採取対象が近くにないときは、採取の表示を出さない', !(await rect(page, '#w3act')).shown);
   await page.evaluate(`(()=>{ const n=${G}.NODES.find(n=>n.key==='forest:twig'); ${G}.W3.pos={x:n.pos.x+1, z:n.pos.z+1}; })()`); await page.waitForTimeout(400);
   const near = await page.evaluate(`({txt:document.getElementById('w3act').textContent, kbd:!!document.querySelector('#w3act .kbd')})`);
@@ -261,6 +268,61 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   ok('マップのクリックで移動先が決まる', await page.evaluate(`!!${G}.W3.target`));
   await page.click('.hud-tr [data-tab="settings"]'); await page.waitForTimeout(150);
   ok('設定にタイトル・説明・主人公・表示・遊び方がまとまっている', await page.evaluate(`(()=>{ const t=document.getElementById('dockBody').textContent; return /ゼロからの科学/.test(t) && /主人公/.test(t) && /遊び方/.test(t) && !!document.querySelector('#dockBody [data-act="view2d"]'); })()`));
+  /* ---------- 歩行状態（描画へ渡す moving）：実際に進んだときだけ歩く ---------- */
+  await page.click('#dock .dockx').catch(()=>{}); await page.evaluate(`(()=>{ ${G}.W3.pos={x:-20,z:20}; ${G}.W3.sel=null; })()`); await page.waitForTimeout(400);
+  const since = () => page.evaluate(`window.__t0=performance.now()`);
+  const track = () => page.evaluate(`__FAKE.track.filter(r=>r.t>=window.__t0)`);
+  const keyToward = (vx, vz) => page.evaluate(`(()=>{ const T=HD2D.THREE, cam=${G}.W3.gfx.getCamera(), v=new T.Vector3(); cam.getWorldDirection(v); let fx=v.x,fz=v.z; const l=Math.hypot(fx,fz); fx/=l; fz/=l;
+    const c={ArrowRight:{x:-fz,z:fx},ArrowLeft:{x:fz,z:-fx},ArrowUp:{x:fx,z:fz},ArrowDown:{x:-fx,z:-fz}}; let b=null,bd=-9; for(const k in c){ const d=c[k].x*${vx}+c[k].z*${vz}; if(d>bd){bd=d;b=k;} } return b; })()`);
+  await since(); await page.waitForTimeout(400);
+  ok('歩行：入力がないときは歩かない', (await track()).every(r => !r.m));
+  await page.keyboard.down('ArrowDown'); await page.waitForTimeout(500);
+  const walkOn = (await track()).slice(-5).every(r => r.m);
+  const dir0 = await page.evaluate(`__FAKE.player.direction`);
+  await page.keyboard.up('ArrowDown'); await since(); await page.waitForTimeout(300);
+  const afterUp = await track();
+  ok('歩行（キー）：押している間は歩き、離すとすぐ止まる・向きは保つ', walkOn && afterUp.slice(2).every(r => !r.m) && afterUp.slice(-1)[0].d === dir0, JSON.stringify({ walkOn, n: afterUp.length, first: afterUp.slice(0, 3) }));
+  ok('左上の表示：止まっているときは「移動中」と出さない', !(await page.evaluate(`document.getElementById('hudLoc').textContent`)).includes('移動中'));
+  await since(); await page.evaluate(`${G}.goTo3D(${G}.W3.pos.x+4, ${G}.W3.pos.z-3, null)`); await page.waitForTimeout(250);
+  const midClick = (await track()).slice(-3).every(r => r.m);
+  await page.waitForFunction(`!${G}.W3.path`, null, { timeout: 15000 }); await since(); await page.waitForTimeout(300);
+  ok('歩行（クリック移動）：移動中は歩き、到着すると止まる', midClick && (await track()).every(r => !r.m) && !(await page.evaluate(`${G}.W3.target`)));
+  // 角に押し付けて進めない：歩かない（キー・クリック移動の両方）
+  await page.evaluate(`${G}.W3.pos={x:56,z:56}`); await page.waitForTimeout(200);
+  const kc = await keyToward(1, 1); await since(); await page.keyboard.down(kc); await page.waitForTimeout(700); await page.keyboard.up(kc);
+  const corner = await track();
+  ok('歩行：壁（世界の角）に向かって入力しても、進めなければ歩かない', corner.length > 10 && corner.every(r => !r.m) && corner.every(r => Math.hypot(r.x - 56, r.z - 56) < 0.01), JSON.stringify(corner.filter(r => r.m).slice(0, 3)));
+  await page.evaluate(`${G}.W3.pos={x:54.5,z:54.5}`); await page.waitForTimeout(200);
+  await since(); await page.keyboard.down(kc); await page.waitForTimeout(900); await page.keyboard.up(kc);
+  const hit = await track(); const atWall = hit.findIndex(r => Math.hypot(r.x - 56, r.z - 56) < 0.01);
+  const lastWalk = hit.reduce((a, r, i) => r.m ? i : a, -1);
+  ok('歩行：歩いて壁に着いたら、押し続けていても0.15秒以内に止まる', atWall > 0 && hit[atWall - 1].m && lastWalk >= 0 && hit[lastWalk].t - hit[atWall].t <= 150 && hit.slice(-5).every(r => !r.m), JSON.stringify({ atWall, lastWalk, dt: lastWalk >= 0 && atWall >= 0 ? hit[lastWalk].t - hit[atWall].t : null }));
+  await since(); await page.evaluate(`(()=>{ ${G}.W3.path=[{x:59,z:59}]; })()`); await page.waitForTimeout(700);
+  ok('歩行（移動予約）：予約があっても進めなければ歩かない', (await track()).every(r => !r.m));
+  await page.evaluate(`(()=>{ ${G}.W3.path=null; ${G}.W3.target=null; })()`);
+  // 木の幹にかすめるように当たって外周を滑っているときは歩き続ける（キーの実際の向きの線上に幹を置く）
+  const kv = await page.evaluate(`(()=>{ const T=HD2D.THREE, cam=${G}.W3.gfx.getCamera(), v=new T.Vector3(); cam.getWorldDirection(v); let fx=v.x,fz=v.z; const l=Math.hypot(fx,fz); return {x:-fz/l, z:fx/l}; })()`); // ArrowRight の向き
+  const tz = await page.evaluate(`(()=>{ const W=${G}.WORLD, k=${JSON.stringify(kv)}, px=-k.z, pz=k.x;
+    const ok=(x,z)=>W.free(${G}.S,x,z) && !W.objects.concat(W.statics).some(o=>W.solid(${G}.S,o) && o!==t0 && Math.hypot(o.x-x,o.z-z)<o.r+1.2);
+    let t0=null; for(const t of W.objects.filter(o=>o.kind==='tree')){ t0=t; let good=true; for(let s=-3; s<=3; s+=0.25){ const x=t.x+k.x*s+px*0.25, z=t.z+k.z*s+pz*0.25; if(Math.abs(s)>t.r+0.5 && !ok(x,z)){ good=false; break; } } if(good) break; t0=null; }
+    ${G}.W3.pos={x:t0.x-k.x*3+px*0.25, z:t0.z-k.z*3+pz*0.25}; return {x:t0.x, z:t0.z}; })()`);
+  await page.waitForTimeout(150);
+  await since(); await page.keyboard.down('ArrowRight'); await page.waitForTimeout(800);
+  const tUp = await page.evaluate(`performance.now()`); await page.keyboard.up('ArrowRight');
+  const slide = (await track()).filter(r => r.t < tUp - 20);
+  const moving = slide.filter((r, i) => i > 0 && Math.hypot(r.x - slide[i - 1].x, r.z - slide[i - 1].z) > 0.02);
+  const proj = r => (r.x - tz.x) * kv.x + (r.z - tz.z) * kv.z;
+  const touched = slide.some(r => Math.abs(proj(r)) < 0.4);
+  ok('歩行：木の幹に沿って滑って実際に進んでいるときは歩き続ける', touched && moving.length > 10 && moving.every(r => r.m) && proj(slide.slice(-1)[0]) > 0.5,
+    JSON.stringify({ tz, last: proj(slide.slice(-1)[0]).toFixed(2), frames: slide.map(r => (r.m ? 'W' : '.') + proj(r).toFixed(2)).join(' ') }));
+  // メニューを閉じた後・ワープ・ロード時の補正で歩かない
+  await page.keyboard.down('ArrowLeft'); await page.waitForTimeout(250); await page.click('nav [data-tab="craft"]'); await page.waitForTimeout(150);
+  await since(); await page.click('#dock .dockx'); await page.keyboard.up('ArrowLeft'); await page.waitForTimeout(400);
+  ok('歩行：メニューを閉じた後に勝手に歩かない', (await track()).every(r => !r.m));
+  await since(); await page.evaluate(`${G}.W3.pos={x:-20,z:20}`); await page.waitForTimeout(400);
+  ok('歩行：ワープ（位置の書き換え）では歩かない', (await track()).every(r => !r.m));
+  await page.keyboard.down('ArrowRight'); await page.waitForTimeout(400); const resumed = (await track()).slice(-4).every(r => r.m); await page.keyboard.up('ArrowRight');
+  ok('歩行：移動を再開すると自然に歩行へ戻る', resumed);
   ok('既定ではゲーム側からカメラ設定を渡さない（描画モジュールの既定値を使う）', await page.evaluate(`__FAKE.opts && __FAKE.opts.config === undefined`));
   ok('ページでエラーが起きていない（PC）', errors.length === 0, errors.join('\n'));
   await ctx.close();
@@ -271,6 +333,9 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   const { page, errors, ctx } = await newPage({ width: 1920, height: 1080 }, false);
   await page.click('#introGo'); await page.waitForTimeout(400);
   const fc = await fullCheck(page);
+  await page.setViewportSize({ width: 960, height: 600 }); await page.waitForTimeout(300);
+  ok('狭いPC画面（960×600）でも下部ドックの文字が折り返さない', await page.evaluate(`[...document.querySelectorAll('#nav button')].filter(b=>getComputedStyle(b).display!=='none').every(b=>b.getBoundingClientRect().height<=50) && document.getElementById('nav').getBoundingClientRect().width<=960`));
+  await page.setViewportSize({ width: 1920, height: 1080 }); await page.waitForTimeout(300);
   ok('1920×1080：画面いっぱいのマップで、PC配置になる', fc.full && fc.noScroll && fc.ui === 'pc', JSON.stringify(fc));
   ok('ページでエラーが起きていない（1920×1080）', errors.length === 0, errors.join('\n'));
   await ctx.close();
