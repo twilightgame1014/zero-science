@@ -42,48 +42,75 @@ function afterChange(news){
 /* ---------- 共通 ---------- */
 /* 探索フィールドがホーム。ほかの画面は下部タブから「パネル」として上に重ねて開く。
    U.tab==="explore" はパネルが閉じている状態を表す。フィールドのDOMと3D描画は保ったまま。 */
-const TABS = {explore:"🗺️ 探索", lab:"🧪 研究室", craft:"🔨 工作", book:"📖 図鑑", map:"🕸️ 技術マップ", log:"📓 記録"};
-const WIDE = matchMedia("(min-width:900px)");
-function renderChrome(){
-  const st = stage();
-  $("#stageChip").innerHTML = `🏛️ <b>${D.stages[st].era}</b><span class="wideonly">・${D.stages[st].name}</span>`;
-  $("#discChip").innerHTML = `📖 <b>${Object.keys(S.disc).filter(k=>IT[k]).length}</b>/${Object.keys(IT).length}`;
-  document.querySelectorAll("#nav button").forEach(b=>b.setAttribute("aria-current", b.dataset.tab===U.tab?"page":"false"));
-  const i = E.missionIndex(S), m = D.missions[i];
-  $("#mission").innerHTML = `<details class="mission" id="missionBox" ${U.missionOpen?"open":""}><summary><span class="owl" aria-hidden="true">🦉</span>
-    <span class="mtx"><span class="lab">目標 ${i+1}/${D.missions.length}</span><span class="t">${m.t}</span></span><span class="more" aria-hidden="true"></span></summary>
-    <div class="how">${m.how}</div><div class="how">🏛️ 次の文明の進化：${D.stages[st].need}</div></details>
-    ${U.tab!==m.tab?`<button class="btn small sub go" data-act="tab" data-tab="${m.tab}">${m.tab==="explore"?"探索に戻る":TABS[m.tab]+"を開く"}</button>`:""}`;
+const TABS = {explore:"🗺️ 探索", lab:"🧪 研究室", craft:"🔨 工作", book:"📖 図鑑", map:"🕸️ 技術マップ", log:"📓 記録",
+  world:"🗺️ 地図・地域", menu:"☰ メニュー", settings:"⚙️ 設定・ヘルプ"};
+/* パネルの大きさ。PC：右側のパネル（side）か大きなオーバーレイ（wide）。スマホ：下からのシート（sheet）か全高近く（tall） */
+const PC_SIZE = {book:"wide", map:"wide"};
+const TOUCH_SIZE = {lab:"tall", craft:"tall", book:"tall", map:"tall", log:"tall"};
+const MENU_TABS = ["menu","book","map","log","settings"];   /* スマホでは「メニュー」の中にある画面 */
+/* 画面幅だけでなく入力方法（タッチかマウスか）も見て、PC用とスマホ用の配置を切り替える */
+const MQ_COARSE = matchMedia("(pointer:coarse)");
+const uiMode = ()=>{ const a=$("#app"); return a ? a.dataset.ui : "pc"; };
+function detectUi(){
+  const short = Math.min(innerWidth, innerHeight);
+  return (MQ_COARSE.matches && short < 820) || innerWidth < 600 ? "touch" : "pc";
+}
+function applyUiMode(){
+  const app=$("#app"), m=detectUi();
+  if(app.dataset.ui!==m){ app.dataset.ui=m; haltField(); renderChrome(); if(U.tab!=="explore") renderPanel(); updateAction3D(); updateFieldActivity(); }
   layout();
 }
-document.addEventListener("toggle", e=>{ if(e.target.id==="missionBox"){ U.missionOpen=e.target.open; layout(); } }, true);
-/* 上部と下部タブの実際の高さを CSS 変数へ（フィールドの高さの計算に使う） */
-function layout(){
-  const r=document.documentElement.style, t=$(".top"), n=$("#nav");
-  if(t) r.setProperty("--toph", t.offsetHeight+"px");
-  if(n) r.setProperty("--navh", n.offsetHeight+"px");
+function renderChrome(){
+  const i = E.missionIndex(S), m = D.missions[i], touch = uiMode()==="touch";
+  updateLoc();
+  document.querySelectorAll("#nav [data-tab],.hud-tr [data-tab]").forEach(b=>{
+    const t=b.dataset.tab, on = t===U.tab || (t==="menu" && touch && MENU_TABS.includes(U.tab));
+    if(b.closest("#nav")) b.setAttribute("aria-current", on?"page":"false");
+    b.setAttribute("aria-expanded", on?"true":"false"); });
+  $("#mission").innerHTML = `<details class="mission" id="missionBox" ${U.missionOpen?"open":""}><summary title="目標の詳細を開く・閉じる"><span class="owl" aria-hidden="true">🦉</span>
+    <span class="mtx"><span class="lab">目標 ${i+1}/${D.missions.length}</span><span class="t">${m.t}</span></span><span class="more" aria-hidden="true"></span></summary>
+    <div class="how">${m.how}</div>
+    ${m.tab!=="explore" && U.tab!==m.tab?`<button class="btn small sub go" data-act="tab" data-tab="${m.tab}">${TABS[m.tab]}を開く</button>`:""}</details>`;
+  layout();
 }
-addEventListener("resize", layout);
+document.addEventListener("toggle", e=>{ if(e.target.id==="missionBox"){ U.missionOpen=e.target.open; } }, true);
+/* 下部ナビが実際に占める高さを CSS 変数へ（スティック・採取ボタン・パネルをその上に置く） */
+function layout(){
+  const app=$("#app"), n=$("#nav"); if(!app || !n) return;
+  const a=app.getBoundingClientRect(), r=n.getBoundingClientRect();
+  app.style.setProperty("--navh", Math.max(0, Math.round(a.bottom - r.top))+"px");
+}
+addEventListener("resize", ()=>applyUiMode());
+if(window.visualViewport) visualViewport.addEventListener("resize", layout);
+MQ_COARSE.addEventListener("change", ()=>applyUiMode());
+/* 画面の回転では、移動を止める */
+matchMedia("(orientation: portrait)").addEventListener("change", ()=>{ haltField(); applyUiMode(); });
+/* 指で触ったら、PC配置でもスティックを出す（タッチ対応のノートPCなど） */
+document.addEventListener("pointerdown", e=>{ if(e.pointerType==="touch") $("#app").classList.add("touched"); }, true);
 function setTab(t, opener){
   if(!TABS[t]) t="explore";
   const was = U.tab;
-  if(t===was){ if(t!=="explore") renderPanel(); return; }
+  if(t===was){
+    /* 開いている画面のボタンをもう一度押したら閉じる */
+    if(t!=="explore" && opener && opener.dataset && opener.dataset.tab===t && !opener.dataset.act) t="explore";
+    else { if(t!=="explore") renderPanel(); return; }
+  }
   U.tab = t;
   if(was==="explore") U.opener = opener || document.activeElement;
   if(t!=="explore") haltField();
   renderChrome(); renderPanel(); updateFieldActivity();
   if(t!=="explore" && was==="explore"){ const h=$("#dockTitle"); if(h) h.focus({preventScroll:true}); }
   if(t==="explore"){ const o=U.opener; U.opener=null;
-    const back = o && o.isConnected && !o.closest("[inert],[hidden]") && o.offsetParent!==null ? o : $('#nav [data-tab="explore"]');
-    if(back) back.focus({preventScroll:true}); }
+    const back = o && o.isConnected && !o.closest("[inert],[hidden]") && o.offsetParent!==null ? o : null;
+    if(back) back.focus({preventScroll:true}); else if(document.activeElement && $("#dock").contains(document.activeElement)) document.activeElement.blur(); }
 }
 function render(){ renderField(); renderPanel(); }
 function renderField(){ renderExplore($("#view")); }
 function renderPanel(){
   const dock=$("#dock"), body=$("#dockBody"), open = U.tab!=="explore";
-  dock.hidden = !open; $("#scrim").hidden = !open; $("#view").inert = open;
-  document.body.classList.toggle("docked", open);
+  dock.hidden = !open; $("#scrim").hidden = !open; $("#view").inert = open; $("#hud").inert = open; $("#app").classList.toggle("docked", open);
   if(!open) return;
+  dock.dataset.size = uiMode()==="pc" ? (PC_SIZE[U.tab]||"side") : (TOUCH_SIZE[U.tab]||"sheet");
   if(U.dockTab!==U.tab){ body.innerHTML=""; body.scrollTop=0; U.dockTab=U.tab; sceneSig=""; }
   $("#dockTitle").textContent = TABS[U.tab];
   if(U.tab==="lab") renderLab(body);
@@ -91,6 +118,50 @@ function renderPanel(){
   else if(U.tab==="book") body.innerHTML = viewBook();
   else if(U.tab==="map") body.innerHTML = viewMap();
   else if(U.tab==="log") body.innerHTML = viewLog();
+  else if(U.tab==="world"){ body.innerHTML = viewWorld(); drawRegion(); }
+  else if(U.tab==="menu") body.innerHTML = viewMenu();
+  else if(U.tab==="settings") body.innerHTML = viewSettings();
+}
+function stageSummary(){
+  const st=stage(), got=Object.keys(S.disc).filter(k=>IT[k]).length;
+  return `<div class="summary"><span class="chip">🏛️ <b>${D.stages[st].era}</b>・${D.stages[st].name}</span><span class="chip">📖 図鑑 <b>${got}</b>/${Object.keys(IT).length}</span></div>
+    <p class="desc" style="margin-top:0">次の文明の進化：${D.stages[st].need}</p>`;
+}
+function viewMenu(){
+  return stageSummary()+`<div class="bigmenu">${[["book","📖","図鑑","見つけたものの説明"],["map","🕸️","技術","技術と物質のつながり"],["log","📓","記録","実験の記録・セーブ"],["settings","⚙️","設定","主人公・表示・遊び方"]]
+    .map(([t,i,n,d])=>`<button class="bigitem" data-tab="${t}"><span aria-hidden="true">${i}</span><span>${n}<small>${d}</small></span></button>`).join("")}</div>`;
+}
+function viewSettings(){
+  const touch = uiMode()==="touch", failed = W3.state==="failed";
+  return `<div class="sec" style="font-size:1.15rem">ゼロからの科学 〜石と水と木から〜</div>
+  <p class="desc" style="margin-top:0">石・水・木といった自然の資源だけから、実験と工作を積み重ねて、文明を作り直していくゲーム。</p>
+  ${stageSummary()}
+  <div class="sec">👤 主人公</div>
+  <div class="row">${["boy","girl"].map(h=>`<button class="heropick" data-act="pickhero" data-id="${h}" aria-pressed="${(S.flags.hero||"boy")===h}"><span class="hero big" style="background-image:url(${ASSETS[h]})"></span>${h==="boy"?"男の子":"女の子"}</button>`).join("")}</div>
+  <div class="sec">🖥️ フィールドの表示</div>
+  ${failed?`<p class="desc">3D表示が使えないため、2Dで表示しています。${W3.err||""}</p>`:
+    `<div class="row"><button class="opt" data-act="view3d" aria-pressed="${S.flags.view!=="2d"}">🌄 3D</button><button class="opt" data-act="view2d" aria-pressed="${S.flags.view==="2d"}">🗺️ 2D（軽い）</button></div>`}
+  <div class="sec">🎮 遊び方</div>
+  <ul class="helplist">${touch?
+    `<li>左下のスティックで歩く。地面をタップすると、そこへ歩く</li><li>資源の名札をタップすると、歩いて行って採取する</li><li>近くに資源があると、右下のボタンが「採る」に変わる</li><li>地域の移動は右上の「地図」、研究と工作は下のボタンから</li>`:
+    `<li><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> か矢印キーで歩く。地面をクリックすると、そこへ歩く</li><li>資源に近づいて <span class="kbd">E</span> かスペースで採取。名札をクリックすると歩いて行って採取する</li><li><span class="kbd">Esc</span> で開いているメニューを閉じる</li><li>地域の移動は右上の「地図」、研究・工作・図鑑などは下のメニューから</li>`}</ul>
+  <div class="row mt"><button class="btn small sub" data-act="introagain">🦉 はじめの説明をもう一度見る</button></div>
+  <p class="desc">セーブは自動でこのブラウザに保存されます。別の端末へ移すときは「記録」から。</p>`;
+}
+function travelChips(){
+  return D.regions.map(r=>{ const open=E.regionOpen(S,r), here=in3D()? W3.region===r : U.region===r.id;
+    return `<button class="chip tchip ${open?"":"lockc"} ${here?"here":""}" data-act="travel" data-id="${r.id}" ${open?"":`aria-describedby="why-${r.id}"`}>${open?r.icon:"🔒"} ${r.name}${here?"（今ここ）":""}${open?"":`<small id="why-${r.id}" style="font-weight:500">：${r.unlock?"「"+r.unlock.map(nm).join("」か「")+"」が必要":"まだ行けない"}</small>`}</button>`; }).join("");
+}
+function viewWorld(){
+  const st=stage(), r=D.regions.find(x=>x.id===U.region)||D.regions[0];
+  if(in3D()) return `<div class="sec">地域を選んで移動 <small>選ぶと、その地域まで歩いて行く</small></div>
+    <div class="row"><button class="btn small sub" data-act="home">🏠 拠点へ戻る</button></div>
+    <div class="travel">${travelChips()}</div><div id="regionBox"></div>`;
+  return `<div class="sec">地域を選んで移動 <small>地図のピンを選ぶと、その地域へ移動する</small></div>
+    <div class="field" id="field">${fieldSVG(st)}
+      ${D.regions.map(x=>{ const open=E.regionOpen(S,x); return `<button class="pin ${open?"":"lock"} ${x.id===U.region?"here":""}" style="left:${x.x}%;top:${x.y}%" data-act="go" data-id="${x.id}" aria-label="${x.name}${open?"":"（未開放）"}"><span class="pi">${open?x.icon:"🔒"}</span><span class="pn">${x.name}</span></button>`; }).join("")}
+      <div class="avatar hero" id="avatar" style="left:${r.x}%;top:${r.y}%;background-image:url(${heroUrl()})" aria-hidden="true"></div>
+    </div><div id="regionBox"></div>`;
 }
 
 /* ===================== 研究室の背景と設備の絵 ===================== */
@@ -395,37 +466,36 @@ function renderExplore(v){
   if(S.flags.view!=="2d"){ ensure3D(); if(W3.state!=="failed"){ renderExplore3D(v); return; } }
   renderExplore2D(v);
 }
+/* 2D表示（3Dが使えないとき・軽い表示を選んだとき）：今いる地域の場面を画面全体に出す */
 function renderExplore2D(v){
   const st = stage();
   let r = D.regions.find(x=>x.id===U.region) || D.regions[0];
   if(!E.regionOpen(S,r)){ U.region="forest"; r=D.regions[0]; }
-  const sig = st+"|"+D.regions.map(x=>E.regionOpen(S,x)?1:0).join("")+"|"+owned("rig")+owned("waterwheel")+owned("steamengine")+(S.disc.solarcell?1:0);
-  if(!v.querySelector(".field") || v.querySelector(".w3") || sig!==fieldSig){
+  const sig = "2d|"+st+"|"+r.id+"|"+E.exploreLv(S,r.id)+"|"+W3.state+"|"+owned("waterwheel")+(S.disc.solarcell?1:0);
+  if(!v.querySelector(".rscene") || sig!==fieldSig){
     fieldSig = sig;
-    v.innerHTML = `${W3.state==="failed"?`<div class="note bad" style="margin:0 0 8px"><h4>3D表示が使えないため、2Dの地図で表示しています</h4><p style="margin:0;font-size:.85rem">${W3.err}</p></div>`:`<div class="row" style="margin-bottom:8px"><button class="btn small sub" data-act="view3d">🌄 3Dフィールドで遊ぶ</button></div>`}
-    <div class="field" id="field">${fieldSVG(st)}
-      ${D.regions.map(x=>{ const open=E.regionOpen(S,x); return `<button class="pin ${open?"":"lock"} ${x.id===U.region?"here":""}" style="left:${x.x}%;top:${x.y}%" data-act="go" data-id="${x.id}" aria-label="${x.name}${open?"":"（未開放）"}"><span class="pi">${open?x.icon:"🔒"}</span><span class="pn">${x.name}</span></button>`; }).join("")}
-      <div class="avatar hero" id="avatar" style="left:${r.x}%;top:${r.y}%;background-image:url(${heroUrl()})" aria-hidden="true"></div>
-    </div>
-    <div id="regionBox"></div>`;
+    v.innerHTML = `<div class="rscene" id="rscene">
+      <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="rsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky1)"/><stop offset="1" style="stop-color:var(--sky2)"/></linearGradient></defs>${regionArt(r,st)}</svg>
+      <div class="rnodes" id="rnodes">${r.res.map(x=>nodeHTML(r,x)).join("")}</div></div>
+      <div class="note2d">${W3.state==="failed"?"3D表示が使えないため、2Dで表示中。":""}光っている資源をタップして採取。地域の移動は右上の「地図」から。</div>`;
   }
-  drawRegion();
+  updateLoc(); updateAction3D();
 }
 function in3D(){ return S.flags.view!=="2d" && W3.state!=="failed"; }
+function updateLoc(){
+  const el=$("#hudLoc"); if(!el) return;
+  const r = in3D() ? W3.region : D.regions.find(x=>x.id===U.region);
+  el.innerHTML = r ? `${r.icon} <b>${r.name}</b><small>探索Lv${E.exploreLv(S,r.id)}</small>`
+    : in3D() && W3.state!=="ready" ? `🌄 <b>準備中</b>` : `🧭 <b>移動中</b><small>地域の外</small>`;
+}
 function drawRegion(){
-  const r = D.regions.find(x=>x.id===U.region); const st=stage(); const box=$("#regionBox"); if(!box) return;
+  const r = (in3D() && W3.region) || D.regions.find(x=>x.id===U.region); const box=$("#regionBox"); if(!box || !r) return;
   const lv = E.exploreLv(S,r.id), nx = E.nextLv(S,r.id), slots=E.autoSlots(S), base=E.LV[lv]||0;
   const lvText = ["珍しい発見が出やすくなった","採取量＋1・珍しい発見を1つ見つけた","珍しい発見がさらに出やすくなった"];
   box.innerHTML = `<div class="regioncard">
     <div class="rhead"><span class="ri">${r.icon}</span><div style="flex:1;min-width:0"><h3>${r.name}${in3D()&&W3.region!==r?' <small style="font-weight:700;color:var(--muted);font-size:.75rem">（最後にいた地域）</small>':""}</h3><div class="kid">${r.kid}</div></div>
       <div class="lv"><b>探索Lv${lv}</b><div class="m"><i style="width:${nx?Math.min(100,(nx.now-base)/(nx.need-base)*100):100}%"></i></div><small>${nx?nx.now+"/"+nx.need:"最大"}</small></div></div>
     <p class="desc" style="margin:0 0 6px">${lv?"⭐ "+lvText.slice(0,lv).join("／"):"たくさん採取すると探索Lvが上がり、ごほうびがあるよ。"}</p>
-    ${in3D()?"":`<div class="rscene" id="rscene">
-      <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="rsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky1)"/><stop offset="1" style="stop-color:var(--sky2)"/></linearGradient></defs>${regionArt(r,st)}</svg>
-      ${r.res.map(x=>nodeHTML(r,x)).join("")}
-      <div class="combo" id="combo"></div><div class="banner" id="banner"></div>
-    </div>
-    <p class="desc">光っている資源をタップして採取。たまに「会心」で2倍、続けてタップすると「コンボ」でおまけが付く。取り尽くしても、少し待てばまた生えてくる。</p>`}
     <div class="reslist">${r.res.map(x=>{ const g=E.gatherInfo(S,r,x), k=S.disc[x.id], au=S.auto.some(a=>a.r===r.id&&a.id===x.id);
       return `<div class="res"><span class="i">${k?ic(x.id):"❔"}</span><span class="nm">${k?nm(x.id):"何かありそう…"} ${k?`<small>${IT[x.id].kid}</small>`:""}${!g.ok?`<small style="color:var(--clay)">🔒 ${g.reason}</small>`:`<small>1回で${g.n}個・所持${E.cnt(S,x.id)}個</small>`}</span>
       ${k&&slots&&g.ok?`<button class="auto" data-act="auto" data-r="${r.id}" data-id="${x.id}" aria-pressed="${au}">🧺 自動</button>`:""}</div>`; }).join("")}
@@ -440,13 +510,14 @@ function nodeHTML(r,x){
     <span class="ni">${g.ok?(k?ic(x.id):"❔"):"🔒"}</span><span class="nl">${k?nm(x.id):"？"}</span><span class="pips">${regrow?"":"●".repeat(n.left)}</span></button>`;
 }
 function floatText(el, text, cls){
-  const sc=$("#rscene"); if(!sc||!el) return;
+  const sc=$("#rnodes"); if(!sc||!el) return;
   const f=document.createElement("span"); f.className="float "+(cls||""); f.textContent=text;
   f.style.left=el.style.left; f.style.top=el.style.top; sc.appendChild(f); setTimeout(()=>f.remove(), RM?600:1100);
 }
 function banner(text){ const b=$("#banner"); if(!b) return; b.textContent=text; b.classList.remove("on"); void b.offsetWidth; b.classList.add("on"); }
 const TOOLFX = {forest:"🪓",mountain:"⛏️",mine:"⛏️",cave:"⛏️",volcano:"⛏️",river:"✋",coast:"✋",grassland:"✋",oilfield:"🛢️"};
 function doGather(rid, id){
+  if(U.tab!=="explore" || modalOpen()) return;
   const r = D.regions.find(x=>x.id===rid), res=r.res.find(x=>x.id===id), el=$("#n-"+id);
   const g = E.gatherInfo(S,r,res);
   if(!g.ok){ floatText(el, g.reason, "ng"); return; }
@@ -456,28 +527,26 @@ function doGather(rid, id){
   const out = E.gather(S,rid,id,{combo:U.combo});
   if(!out.ok){ floatText(el,out.reason,"ng"); return; }
   n.left--; if(n.left<=0) n.until=now+regrowMs(rid);
-  const sc=$("#rscene");
+  const sc=$("#rnodes");
   const sw=document.createElement("span"); sw.className="swing"; sw.textContent=owned("steamengine")&&["mine","mountain"].includes(rid)?"⚙️":TOOLFX[rid]||"✋";
   if(el&&sc){ sw.style.left=el.style.left; sw.style.top=el.style.top; sc.appendChild(sw); setTimeout(()=>sw.remove(),500); }
   floatText(el, (out.crit?"会心！ ":"")+ic(id)+"＋"+out.n, out.crit?"crit":"");
   const cb=$("#combo"); if(cb){ cb.textContent = U.combo>=2 ? "コンボ×"+U.combo+(U.combo%5===0?"　おまけ＋1！":"") : ""; cb.classList.toggle("on",U.combo>=2); }
   afterChange(out.news);
-  if(E.exploreLv(S,rid)!==lvBefore || out.news.length){ drawRegion(); }
+  if(E.exploreLv(S,rid)!==lvBefore || out.news.length){ fieldSig=""; renderField(); drawRegion(); }
   else { const ne=$("#n-"+id); if(ne){ ne.outerHTML = nodeHTML(r,res); const nn=$("#n-"+id); if(nn&&!RM) nn.classList.add("hit"); } }
   if(out.rares.length) banner("✨ 珍しい発見！ "+out.rares.map(nm).join("・"));
   else if(out.lvUp) banner("⭐ 探索Lv"+out.lvUp+"に上がった！");
 }
+/* 2D表示での地域の移動（地図パネルのピンから） */
 function travel(rid){
   const r = D.regions.find(x=>x.id===rid);
   if(!E.regionOpen(S,r)){
     const p=document.querySelector(`.pin[data-id="${rid}"]`); if(p){ p.classList.remove("shake"); void p.offsetWidth; p.classList.add("shake"); }
     const rb=$("#regionBox"); if(rb){ const n=document.createElement("div"); n.className="note bad"; n.innerHTML=`<h4>🔒 ${r.name}</h4><p style="margin:0">${r.kid}${r.unlock?"<br>入るには「"+r.unlock.map(nm).join("」か「")+"」が必要。":""}</p>`; rb.prepend(n); setTimeout(()=>n.remove(),3500); }
     return; }
-  if(U.walking || rid===U.region) return;
-  U.walking=true; U.region=rid; U.combo=0;
-  document.querySelectorAll(".pin").forEach(p=>p.classList.toggle("here",p.dataset.id===rid));
-  const av=$("#avatar"); if(av){ av.style.left=r.x+"%"; av.style.top=r.y+"%"; av.classList.add("walk"); }
-  setTimeout(()=>{ U.walking=false; av&&av.classList.remove("walk"); drawRegion(); const rb=$("#regionBox"); if(rb&&innerWidth<900) rb.scrollIntoView({block:"start",behavior:RM?"auto":"smooth"}); }, RM?50:(owned("steamengine")?350:700));
+  U.region=rid; U.combo=0; fieldSig="";
+  setTab("explore"); renderField(); banner(r.icon+" "+r.name+"に着いた");
 }
 setInterval(()=>{ if(!$("#rscene")) return; const r=D.regions.find(x=>x.id===U.region); if(!r) return;
   r.res.forEach(x=>{ const n=U.nodes[nodeKey(r.id,x.id)]; if(n && n.left<=0){ const el=$("#n-"+x.id); if(Date.now()>=n.until){ n.left=nodeCap(r.id); n.until=0; if(el) el.outerHTML=nodeHTML(r,x); } else if(el){ el.style.setProperty("--p", Math.max(0,100-(n.until-Date.now())/regrowMs(r.id)*100)); } } });
@@ -584,13 +653,15 @@ function applySavedPos(){
   if(W3.gfx) W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false});
   if(W3.gfx) syncAll3D();
 }
+/* 描画の一時停止：Muse の公開API pauseGraphics / resumeGraphics があれば使い、なければ従来の内部メソッド */
 function pause3D(){ if(W3.raf) cancelAnimationFrame(W3.raf); W3.raf=0; haltField();
-  try{ if(W3.gfx && typeof W3.gfx.stopLoop==="function") W3.gfx.stopLoop(); }catch(e){} }
+  try{ if(!W3.gfx) return; if(typeof W3.gfx.pauseGraphics==="function") W3.gfx.pauseGraphics(); else if(typeof W3.gfx.stopLoop==="function") W3.gfx.stopLoop(); }catch(e){} }
 function resume3D(){ if(W3.state!=="ready" || W3.raf) return;
-  try{ if(typeof W3.gfx.startLoop==="function") W3.gfx.startLoop(); }catch(e){}
+  try{ if(typeof W3.gfx.resumeGraphics==="function") W3.gfx.resumeGraphics(); else if(typeof W3.gfx.startLoop==="function") W3.gfx.startLoop(); }catch(e){}
   W3.lastTs=0; W3.raf=requestAnimationFrame(loop3D); }
 
-function fieldShown(){ return U.tab==="explore" || WIDE.matches; }
+/* パネルの後ろにマップが見えている間は描画を続ける。スマホで全高近くのシートを開いたときだけ止める */
+function fieldShown(){ return U.tab==="explore" || !(uiMode()==="touch" && $("#dock").dataset.size==="tall"); }
 const modalOpen = ()=> $("#modal").classList.contains("open");
 /* フィールドが入力を受け付けるのは、パネルも案内（モーダル）も開いていないときだけ */
 function fieldInputActive(){ return U.tab==="explore" && !modalOpen() && W3.state==="ready" && S.flags.view!=="2d" && !document.hidden; }
@@ -605,7 +676,8 @@ function updateFieldActivity(){
   if(W3.state!=="ready" || S.flags.view==="2d") return;
   if(fieldShown() && !document.hidden) resume3D(); else pause3D();
 }
-WIDE.addEventListener("change", ()=>{ updateFieldActivity(); layout(); });
+/* 実際の描画領域の寸法を描画モジュールの公開API resizeGraphics へ渡す（モバイルのアドレスバー伸縮も含む） */
+if(window.ResizeObserver) new ResizeObserver(()=>{ const v=$("#view"); if(W3.gfx && v && v.clientWidth>0 && v.clientHeight>0 && typeof W3.gfx.resizeGraphics==="function") W3.gfx.resizeGraphics(v.clientWidth, v.clientHeight); }).observe(document.getElementById("view"));
 
 /* ---------- カメラ基準の向き・画面座標 ---------- */
 function camBasis(){
@@ -669,7 +741,7 @@ function loop3D(ts){
   W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving});
   // 地域の判定
   const reg = regionAt(W3.pos.x, W3.pos.z);
-  if(reg!==W3.region){ W3.region=reg; if(reg){ U.region=reg.id; U.combo=0; } updateArea3D(); drawRegion(); }
+  if(reg!==W3.region){ W3.region=reg; if(reg){ U.region=reg.id; U.combo=0; } updateLoc(); drawRegion(); }
   // いちばん近い資源
   let near=null, nd=NEAR_R; NODES.forEach(n=>{ const d=Math.hypot(n.pos.x-W3.pos.x, n.pos.z-W3.pos.z); if(d<nd){nd=d; near=n;} });
   if(near!==W3.near){ const old=W3.near; W3.near=near; if(old) syncNode(old); if(near) syncNode(near); updateAction3D(); }
@@ -678,18 +750,30 @@ function loop3D(ts){
   updateLabels3D();
   if(ts-W3.lastSave>2000 && (!S.pos || Math.abs(S.pos.x-W3.pos.x)>0.01 || Math.abs(S.pos.z-W3.pos.z)>0.01)){ W3.lastSave=ts; S.pos={x:+W3.pos.x.toFixed(2), z:+W3.pos.z.toFixed(2)}; save(); }
 }
-function updateArea3D(){
-  const el=$("#w3area"); if(!el) return; const r=W3.region;
-  el.innerHTML = r ? `${r.icon} <b>${r.name}</b> <small>探索Lv${E.exploreLv(S,r.id)}</small>` : `🧭 <b>移動中</b> <small>地域の外</small>`;
-}
+/* 行動ボタン：近くの資源の状態に合わせて名前を変える。使えないときは理由を表示する */
 function updateAction3D(){
-  const b=$("#w3act"); if(!b) return; const n=W3.near;
-  if(!n){ b.hidden=true; return; }
-  const g=E.gatherInfo(S,n.r,n.res), k=S.disc[n.res.id], ns=nodeState(n.r.id,n.res.id);
-  b.hidden=false;
-  b.disabled = !g.ok || ns.left<=0;
-  b.innerHTML = !g.ok ? `🔒 ${g.reason}` : ns.left<=0 ? `⏳ もうすぐ生えてくる` : `${k?ic(n.res.id):"❔"} ${k?nm(n.res.id):"何か"}を採る <small>＋${g.n}</small>`;
+  const b=$("#w3act"); if(!b) return;
+  if(!in3D() || W3.state!=="ready"){ b.hidden=true; return; }
+  const n=W3.near, pc=uiMode()==="pc";
+  let mode, html;
+  if(!n){ mode="look"; html = pc ? "" : `<span class="ai">🔍</span><span>調べる</span>`; }
+  else { const g=E.gatherInfo(S,n.r,n.res), k=S.disc[n.res.id], ns=nodeState(n.r.id,n.res.id);
+    if(!g.ok){ mode="lock"; html=`<span class="ai">🔒</span><span>${g.reason}</span>`; }
+    else if(ns.left<=0){ mode="regrow"; html=`<span class="ai">⏳</span><span>もうすぐ生えてくる</span>`; }
+    else { mode="gather"; html=`${pc?'<span class="kbd">E</span>':""}<span class="ai">${k?ic(n.res.id):"❔"}</span><span>${k?nm(n.res.id):"何か"}を採る <small>＋${g.n}</small></span>`; } }
+  const sig=mode+"|"+html; if(b._sig===sig && !b.hidden) return; b._sig=sig;
+  b.hidden=false; b.dataset.mode=mode; b.className="w3act"+(mode==="look"?" idle":mode==="gather"?"":" lock"); b.innerHTML=html;
+  b.title = mode==="gather" ? "採取する（E キーかスペース）" : mode==="look" ? "近くを調べる" : "";
 }
+/* 行動ボタンを押したとき */
+function pressAction(){
+  if(!fieldInputActive()) return;
+  const n=W3.near;
+  if(!n){ banner("🔍 近くに採れるものはない。光っている名札に近づこう"); return; }
+  const g=E.gatherInfo(S,n.r,n.res); if(!g.ok){ banner("🔒 "+g.reason); return; }
+  gather3D(n);
+}
+const updateArea3D = updateLoc;
 function updateLabels3D(){
   const box=$("#w3labels"); if(!box) return;
   NODES.forEach(n=>{
@@ -741,14 +825,22 @@ function bind3DInput(){
     let best=null, bd=2.2; NODES.forEach(n=>{ const d=Math.hypot(n.pos.x-hit.x,n.pos.z-hit.z); if(d<bd){bd=d;best=n;} });
     if(best) goTo3D(best.pos.x,best.pos.z,best); else goTo3D(hit.x,hit.z,null);
     W3.gfx.playVisualEffect("sparkle", best?best.pos:hit); });
+}
+/* HUD のスティックと行動ボタン。指ごと（pointerId）に区別するので、歩きながら採取ボタンを押せる */
+function bindHudInput(){
   const joy=$("#joy"), knob=joy&&joy.querySelector(".knob");
+  const act=$("#w3act");
+  if(act){ let aid=null;
+    act.addEventListener("pointerdown", e=>{ if(e.pointerType==="mouse") return; aid=e.pointerId; });
+    act.addEventListener("pointerup", e=>{ if(e.pointerId!==aid) return; aid=null; pressAction(); });
+    act.addEventListener("pointercancel", e=>{ if(e.pointerId===aid) aid=null; }); }
   if(joy){ let id=null, cx=0, cy=0; const R=42;
     W3.joyReset = ()=>{ if(id!==null){ try{ joy.releasePointerCapture(id); }catch(err){} } id=null; W3.joy=null; knob.style.transform=""; };
-    joy.addEventListener("pointerdown", e=>{ if(!fieldInputActive()) return; id=e.pointerId; joy.setPointerCapture(id); const r=joy.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; mv(e); e.preventDefault(); });
+    joy.addEventListener("pointerdown", e=>{ if(!fieldInputActive() || id!==null) return; id=e.pointerId; try{ joy.setPointerCapture(id); }catch(err){} const r=joy.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; mv(e); e.preventDefault(); });
     const mv=e=>{ if(e.pointerId!==id) return; if(!fieldInputActive()){ W3.joyReset(); return; } let dx=e.clientX-cx, dy=e.clientY-cy; const l=Math.hypot(dx,dy); if(l>R){dx*=R/l;dy*=R/l;} knob.style.transform=`translate(${dx}px,${dy}px)`; const m=Math.hypot(dx,dy)/R; W3.joy = m<0.18?null:{x:dx/R, y:dy/R}; };
     joy.addEventListener("pointermove", mv);
     const end=e=>{ if(e.pointerId!==id) return; id=null; W3.joy=null; knob.style.transform=""; };
-    joy.addEventListener("pointerup", end); joy.addEventListener("pointercancel", end); }
+    joy.addEventListener("pointerup", end); joy.addEventListener("pointercancel", end); joy.addEventListener("lostpointercapture", end); }
 }
 const TYPING = "input,textarea,select,[contenteditable],[contenteditable] *,[role=textbox]";
 document.addEventListener("keydown", e=>{
@@ -762,34 +854,22 @@ document.addEventListener("keyup", e=>{ const k=e.key.length===1?e.key.toLowerCa
 window.addEventListener("blur", haltField);
 
 /* ---------- 探索ホーム（3D版） ---------- */
-function travelChips(){ return D.regions.map(r=>{ const open=E.regionOpen(S,r); return `<button class="chip tchip ${open?"":"lockc"}" data-act="travel" data-id="${r.id}">${open?r.icon:"🔒"} ${r.name}</button>`; }).join(""); }
 function renderExplore3D(v){
   let built = false;
   if(!v.querySelector(".w3")){
     built = true;
-    v.innerHTML = `<div class="w3" id="w3"><div class="w3slot" id="w3slot"></div>
-      <div class="w3labels" id="w3labels"></div>
-      <div class="w3area" id="w3area"></div>
-      <div class="w3tools"><button class="w3btn" data-act="home" aria-label="拠点へ戻る">🏠</button><button class="w3btn" data-act="hero" aria-label="主人公を変える">👤</button><button class="w3btn" data-act="view2d" aria-label="2Dの地図に切り替える">🗺️</button></div>
-      <div class="combo" id="combo"></div><div class="banner" id="banner"></div>
-      <div class="joy" id="joy" aria-label="移動スティック"><div class="knob"></div></div>
-      <button class="w3act" id="w3act" data-act="g3" hidden></button>
-      <div class="w3loading"><div>🌄 3Dフィールドを準備中…</div><small>初回は少し時間がかかります</small></div>
-    </div>
-    <div class="travel" id="travel"></div>
-    <p class="desc">地面をタップするとそこへ歩く。資源の名札をタップすると、歩いて行って採取する。スティック・矢印キー・WASDでも動ける（Eキーかスペースで採取）。</p>
-    <div id="regionBox"></div>`;
+    v.innerHTML = `<div class="w3" id="w3"><div class="w3slot" id="w3slot"></div><div class="w3labels" id="w3labels"></div>
+      <div class="w3loading"><div>🌄 3Dフィールドを準備中…</div><small>初回は少し時間がかかります</small></div></div>`;
     W3.labelEls = {}; W3.synced = false;
     if(W3.host) $("#w3slot").appendChild(W3.host);
     bind3DInput();
   }
-  $("#travel").innerHTML = travelChips();
   if(W3.state==="ready"){
     const ld=v.querySelector(".w3loading"); if(ld) ld.remove();
     if(built || !W3.synced){ syncAll3D(); W3.region=undefined; W3.synced=true; } else syncStructures();
-    updateArea3D(); updateAction3D(); updateFieldActivity();
+    updateFieldActivity();
   }
-  drawRegion();
+  updateLoc(); updateAction3D();
 }
 
 /* ===================== 工作 ===================== */
@@ -949,14 +1029,16 @@ document.addEventListener("click", ev=>{
     case "again": { if(U.busy) break; const p=D.procs.find(x=>x.id===b.dataset.proc); U.tray=Object.assign({},p.inp); U.fac=b.dataset.fac; U.op=p.op; U.last=null;
       if(U.tab!=="lab") setTab("lab", b); else renderPanel(); runLab(); break; }
     case "go": travel(id); break;
-    case "g3": if(W3.near && fieldInputActive()) gather3D(W3.near); break;
+    case "g3": if(!ev.pointerType || ev.pointerType==="mouse") pressAction(); break;  /* 指・ペンは pointerup で処理済み */
     case "w3go": { if(!fieldInputActive()) break; const n=NODES&&NODES.find(x=>x.key===b.dataset.n); if(n){ if(W3.near===n) gather3D(n); else goTo3D(n.pos.x,n.pos.z,n); } break; }
-    case "travel": { const r=D.regions.find(x=>x.id===id); if(!E.regionOpen(S,r)){ banner("🔒 "+r.name+"：入るには「"+r.unlock.map(nm).join("」か「")+"」が必要"); break; } if(W3.state==="ready"){ goTo3D(r.w.x,r.w.z+REGION_R*0.2,null); $("#w3").scrollIntoView({block:"nearest",behavior:RM?"auto":"smooth"}); } break; }
-    case "home": if(W3.state==="ready") goTo3D(D.base.x,D.base.z,null); break;
+    case "travel": { const r=D.regions.find(x=>x.id===id); if(!E.regionOpen(S,r)) break; /* 理由はボタンに表示済み */
+      setTab("explore"); if(W3.state==="ready"){ goTo3D(r.w.x,r.w.z+REGION_R*0.2,null); banner(r.icon+" "+r.name+"へ向かう"); } break; }
+    case "home": setTab("explore"); if(W3.state==="ready"){ goTo3D(D.base.x,D.base.z,null); banner("🏠 拠点へ戻る"); } break;
     case "hero": { S.flags.hero = S.flags.hero==="girl"?"boy":"girl"; save(); if(W3.gfx) W3.gfx.setPlayerSpriteSheet(heroUrl()); banner(S.flags.hero==="girl"?"👧 女の子に交代！":"👦 男の子に交代！"); break; }
-    case "pickhero": S.flags.hero=id; save(); if(W3.gfx) W3.gfx.setPlayerSpriteSheet(heroUrl()); document.querySelectorAll(".heropick").forEach(x=>x.setAttribute("aria-pressed",x.dataset.id===id)); break;
-    case "view2d": S.flags.view="2d"; pause3D(); save(); fieldSig=""; renderField(); break;
-    case "view3d": S.flags.view="3d"; save(); fieldSig=""; renderField(); break;
+    case "pickhero": S.flags.hero=id; save(); if(W3.gfx) W3.gfx.setPlayerSpriteSheet(heroUrl()); document.querySelectorAll(".heropick").forEach(x=>x.setAttribute("aria-pressed",x.dataset.id===id)); const av=$("#avatar"); if(av) av.style.backgroundImage=`url(${heroUrl()})`; break;
+    case "view2d": S.flags.view="2d"; pause3D(); save(); fieldSig=""; renderField(); renderPanel(); break;
+    case "view3d": S.flags.view="3d"; save(); fieldSig=""; renderField(); renderPanel(); break;
+    case "introagain": S.flags.intro=0; setTab("explore"); intro(); break;
     case "gather": doGather(b.dataset.r, id); break;
     case "auto": { const i=S.auto.findIndex(x=>x.r===b.dataset.r&&x.id===id); if(i>=0) S.auto.splice(i,1); else if(S.auto.length<E.autoSlots(S)) S.auto.push({r:b.dataset.r,id}); save(); drawRegion(); break; }
     case "craft": { const r=E.runCraft(S,id,S.seq); if(r.ok){ afterChange(r.news); render(); } break; }
@@ -991,21 +1073,24 @@ function closeModal(){
 }
 
 /* 自動採取 */
-setInterval(()=>{ if(document.hidden || !S.auto.length) return; const got=E.autoTick(S); if(got.length){ afterChange(got.flatMap(g=>g.news)); if(U.tab==="lab" && !U.busy) drawLabCtl(); if(U.tab==="explore") drawRegion(); } }, 10000);
+setInterval(()=>{ if(document.hidden || !S.auto.length) return; const got=E.autoTick(S); if(got.length){ afterChange(got.flatMap(g=>g.news)); if(U.tab==="lab" && !U.busy) drawLabCtl(); drawRegion(); } }, 10000);
 
 /* はじめに */
 function intro(){
   if(S.flags.intro) return;
-  $("#sheet").innerHTML = `<div class="hd"><span class="bigi">🦉</span><div><h2>ようこそ！ 私はホウ博士</h2><div class="yomi">ゼロからの科学へ</div></div></div>
-  <div class="kidbox">ここには道具も研究所も何もない。あるのは石と水と木だけ。<br>でも科学の力があれば、ガラスも金属も、電気もプラスチックも作れるんだ。一緒に文明を作り直そう！</div>
-  <ul><li>🗺️ <b>探索</b>：ここがホーム。フィールドを歩いて、自然の材料を採取する</li><li>下のボタンで開く：🧪 <b>研究室</b>（材料・装置・操作を選んで実験）、🔨 <b>工作</b>（道具や設備を組み立てる）、📖 <b>図鑑</b>（見つけたものの説明）など</li><li>🏙️ 発見が進むと、フィールドが原始時代から現代の都市へ進化していく</li></ul>
-  <h5>主人公を選んでね（あとで探索画面の👤ボタンでも変えられる）</h5>
+  const touch = uiMode()==="touch";
+  $("#sheet").innerHTML = `<div class="hd"><span class="bigi">🦉</span><div><h2>ゼロからの科学</h2><div class="yomi">〜石と水と木から〜</div></div></div>
+  <div class="kidbox">ようこそ！ 私はホウ博士。ここには道具も研究所も何もない。あるのは石と水と木だけ。<br>でも科学の力があれば、ガラスも金属も、電気もプラスチックも作れるんだ。一緒に文明を作り直そう！</div>
+  <ul><li>🗺️ <b>探索</b>：この画面がフィールド。歩いて、自然の材料を採取する</li>
+    <li>${touch?"下のボタン":"下のメニュー"}で開く：🧪 <b>研究室</b>（実験）・🔨 <b>工作</b>（道具づくり）${touch?"・☰ <b>メニュー</b>（図鑑・技術・記録・設定）":"・📖 <b>図鑑</b>・🕸️ <b>技術</b>・📓 <b>記録</b>"}</li>
+    <li>${touch?"左下のスティックで歩き、右下のボタンで採取":"WASD か矢印キーで歩き、E キーで採取（クリックでも移動・採取できる）"}</li></ul>
+  <h5>主人公を選んでね（あとで「設定」でも変えられる）</h5>
   <div class="row">${["boy","girl"].map(h=>`<button class="heropick" data-act="pickhero" data-id="${h}" aria-pressed="${(S.flags.hero||"boy")===h}"><span class="hero big" style="background-image:url(${ASSETS[h]})"></span>${h==="boy"?"男の子":"女の子"}</button>`).join("")}</div>
   <p class="desc">このゲームの化学は本物の化学がもとになっています。でも火や薬品を使う実験は危ないので、現実では大人と一緒に安全な場所でやろうね。</p>
   <div class="row mt"><button class="btn big" data-act="close" id="introGo">始める！</button></div>`;
   if(!S.flags.hero) S.flags.hero="boy";
   openModal($("#introGo")); S.flags.intro=1; save();
 }
-renderChrome(); render(); intro();
+document.getElementById("app").dataset.ui = detectUi(); bindHudInput(); renderChrome(); render(); layout(); intro();
 window.__GAME__ = {get S(){return S;}, E, D, U, W3, get NODES(){return NODES;}, screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);
