@@ -25,8 +25,13 @@ export class WorldRenderer {
       decor?: DecorOptions;
     },
   ) {
-    void assets;
-    this.terrain = new TerrainRenderer(cfg, textures.terrainDetail, textures.detailBrightness ?? 1);
+    this.terrain = new TerrainRenderer(
+      cfg,
+      textures.terrainDetail,
+      textures.detailBrightness ?? 1,
+      quality,
+      assets.createRiverbedTexture(),
+    );
     this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, textures.decor ?? {});
     this.group.add(this.terrain.group);
     this.group.add(this.environment.group);

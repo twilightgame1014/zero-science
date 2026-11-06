@@ -130,3 +130,17 @@ gpt-forest の上に積んだブランチ。詳細は INTEGRATION.md §16。
 - 検証: Claude の feature/game-walk-and-assets ＋本グラフィックでビルドし、
   pauseGraphics / setNaturalObjects が成果物に含まれることと実画面を確認。
   ゲート（typecheck / test 21/21 / build / e2e）全合格。
+
+## 追補5: 水表現の刷新＋物質アイコン／環境テクスチャ（2026-11-06、feature/graphics-item-icons-water）
+- 水を3層構成に刷新（川底リボン＋濡れ土バンド＋水深グラデーション水面）。
+  波紋はドット調の短線2層、泡は浅瀬の途切れた帯、グリントは控えめ。
+  調整は `config.water` の13パラメータ（INTEGRATION §17）。API 変更なし。
+- 新規依存なし。モジュール外の制作ツール（Material Maker / Blender）は
+  実行依存に含めていない。
+- 物質アイコン137点を `assets/item-icons/` に独立納品（data.js 全件と
+  1:1 照合済み）。読み込み方法と修正一覧は同フォルダ README。
+- 環境テクスチャ8種を `assets/env-textures/` に独立納品（法線・モバイル版・
+  反復プレビューつき）。地表への適用は統合側の作業。
+- 検証: デモの川サンプルで PC／スマホ描画と波紋の動き（フレーム差分）
+  を実測。ゲーム本体ビルド成功、test 33/33。e2e の1件失敗は素の
+  game-walk-and-assets でも再現する既存事象（切り分け済み）。
