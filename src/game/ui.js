@@ -80,6 +80,13 @@ function layout(){
   const app=$("#app"), n=$("#nav"); if(!app || !n) return;
   const a=app.getBoundingClientRect(), r=n.getBoundingClientRect();
   app.style.setProperty("--navh", Math.max(0, Math.round(a.bottom - r.top))+"px");
+  /* HUD に隠れない範囲を描画モジュールへ伝える（公開API setViewportInsets がある場合だけ） */
+  if(typeof W3!=="undefined" && W3.gfx && typeof W3.gfx.setViewportInsets==="function"){ try{ W3.gfx.setViewportInsets(hudInsets()); }catch(e){} }
+}
+function hudInsets(){
+  const app=$("#app"), tl=$(".hud-tl"), n=$("#nav"); if(!app||!tl||!n) return {top:0,bottom:0};
+  const a=app.getBoundingClientRect();
+  return {top: Math.round(tl.getBoundingClientRect().bottom - a.top), bottom: Math.round(a.bottom - n.getBoundingClientRect().top)};
 }
 addEventListener("resize", ()=>applyUiMode());
 if(window.visualViewport) visualViewport.addEventListener("resize", layout);
@@ -459,10 +466,8 @@ function regionArt(r, st){
   }
   return sky;
 }
-const nodeKey=(r,id)=>r+":"+id;
-function nodeCap(rid){ return 5 + E.exploreLv(S,rid); }
-function regrowMs(rid){ return Math.max(3000, 6000 - E.exploreLv(S,rid)*1000); }
-function nodeState(rid,id){ const k=nodeKey(rid,id); let n=U.nodes[k]; if(!n){ n=U.nodes[k]={left:nodeCap(rid), until:0}; } if(n.until && Date.now()>=n.until){ n.left=nodeCap(rid); n.until=0; } return n; }
+/* 地域の資源（採取地点）の残量と再生はエンジンで管理し、セーブに残す */
+const depInfo = (rid,id)=>E.depositInfo(S,rid,id);
 function renderExplore(v){
   if(S.flags.view!=="2d"){ ensure3D(); if(W3.state!=="failed"){ renderExplore3D(v); return; } }
   renderExplore2D(v);
@@ -505,10 +510,10 @@ function drawRegion(){
     </div></div>`;
 }
 function nodeHTML(r,x){
-  const g = E.gatherInfo(S,r,x), k=S.disc[x.id], n=nodeState(r.id,x.id), regrow = n.left<=0;
-  const pct = regrow ? Math.max(0,Math.min(100,100-(n.until-Date.now())/regrowMs(r.id)*100)) : 100;
+  const g = E.gatherInfo(S,r,x), k=S.disc[x.id], n=depInfo(r.id,x.id), regrow = g.ok && n.left<=0;
+  const rule = E.depositRule(S,r.id,x.id), pct = regrow && n.until ? Math.max(0,Math.min(100,100-(n.until-Date.now())/rule.regrow*100)) : 100;
   return `<button class="node ${g.ok?"":"nlock"} ${regrow?"regrow":""}" id="n-${x.id}" style="left:${x.p[0]}%;top:${x.p[1]}%;--p:${pct}" data-act="gather" data-r="${r.id}" data-id="${x.id}" aria-label="${k?nm(x.id):"未発見の資源"}">
-    <span class="ni">${g.ok?(k?ic(x.id):"❔"):"🔒"}</span><span class="nl">${k?nm(x.id):"？"}</span><span class="pips">${regrow?"":"●".repeat(n.left)}</span></button>`;
+    <span class="ni">${g.ok?(k?ic(x.id):"❔"):"🔒"}</span><span class="nl">${k?nm(x.id):"？"}</span><span class="pips">${regrow||!isFinite(n.left)?"":"●".repeat(Math.min(n.left,8))}</span></button>`;
 }
 function floatText(el, text, cls){
   const sc=$("#rnodes"); if(!sc||!el) return;
@@ -517,17 +522,16 @@ function floatText(el, text, cls){
 }
 function banner(text){ const b=$("#banner"); if(!b) return; b.textContent=text; b.classList.remove("on"); void b.offsetWidth; b.classList.add("on"); }
 const TOOLFX = {forest:"🪓",mountain:"⛏️",mine:"⛏️",cave:"⛏️",volcano:"⛏️",river:"✋",coast:"✋",grassland:"✋",oilfield:"🛢️"};
+/* 2D表示での採取（地域の採取地点。残量・二重取得防止はエンジン） */
 function doGather(rid, id){
   if(U.tab!=="explore" || modalOpen()) return;
   const r = D.regions.find(x=>x.id===rid), res=r.res.find(x=>x.id===id), el=$("#n-"+id);
-  const g = E.gatherInfo(S,r,res);
-  if(!g.ok){ floatText(el, g.reason, "ng"); return; }
-  const n = nodeState(rid,id); if(n.left<=0){ floatText(el,"もうすぐ生えてくる…","ng"); return; }
+  const inf = depInfo(rid,id);
+  if(!inf.ok){ floatText(el, inf.kind==="empty"?"もうすぐ戻る…":inf.reason, "ng"); return; }
   const now=Date.now(); U.combo = (now-U.lastGather<1600) ? U.combo+1 : 1; U.lastGather=now;
   const lvBefore = E.exploreLv(S,rid);
-  const out = E.gather(S,rid,id,{combo:U.combo});
+  const out = E.harvestDeposit(S,rid,id,{combo:U.combo, token:S.seq});
   if(!out.ok){ floatText(el,out.reason,"ng"); return; }
-  n.left--; if(n.left<=0) n.until=now+regrowMs(rid);
   const sc=$("#rnodes");
   const sw=document.createElement("span"); sw.className="swing"; sw.textContent=owned("steamengine")&&["mine","mountain"].includes(rid)?"⚙️":TOOLFX[rid]||"✋";
   if(el&&sc){ sw.style.left=el.style.left; sw.style.top=el.style.top; sc.appendChild(sw); setTimeout(()=>sw.remove(),500); }
@@ -539,7 +543,6 @@ function doGather(rid, id){
   if(out.rares.length) banner("✨ 珍しい発見！ "+out.rares.map(nm).join("・"));
   else if(out.lvUp) banner("⭐ 探索Lv"+out.lvUp+"に上がった！");
 }
-/* 2D表示での地域の移動（地図パネルのピンから） */
 function travel(rid){
   const r = D.regions.find(x=>x.id===rid);
   if(!E.regionOpen(S,r)){
@@ -550,8 +553,8 @@ function travel(rid){
   setTab("explore"); renderField(); banner(r.icon+" "+r.name+"に着いた");
 }
 setInterval(()=>{ if(!$("#rscene")) return; const r=D.regions.find(x=>x.id===U.region); if(!r) return;
-  r.res.forEach(x=>{ const n=U.nodes[nodeKey(r.id,x.id)]; if(n && n.left<=0){ const el=$("#n-"+x.id); if(Date.now()>=n.until){ n.left=nodeCap(r.id); n.until=0; if(el) el.outerHTML=nodeHTML(r,x); } else if(el){ el.style.setProperty("--p", Math.max(0,100-(n.until-Date.now())/regrowMs(r.id)*100)); } } });
-}, 400);
+  r.res.forEach(x=>{ const el=$("#n-"+x.id); if(!el) return; const html=nodeHTML(r,x); if(el._h!==html){ el.outerHTML=html; const ne=$("#n-"+x.id); if(ne) ne._h=html; } });
+}, 1000);
 
 /* ===================== 3Dフィールド（HD-2D描画モジュールとの連携） =====================
    座標・移動・採取・建築の判定はすべてこちら（ゲーム側）が正本。
@@ -568,24 +571,51 @@ const RES_VIS = {twig:"tree",log:"tree",resin:"tree",wax:"tree",bark:"tree",seed
 const PLANT = ["tree","herb","flowers"];
 const heroUrl = ()=> S.flags.hero==="girl" ? ASSETS.girl : ASSETS.boy;
 let NODES = null;
+/* 地域の採取地点（3D上の位置はエンジンの depositPos） */
 function buildNodes(){
   NODES = [];
   D.regions.forEach(r=>{ if(!r.w) return;
     r.res.forEach((res,i)=>{
-      const x = r.w.x + (res.p[0]-50)/50*6.5, z = r.w.z + (res.p[1]-62)/38*5;
-      NODES.push({key:r.id+":"+res.id, vid:"res-"+r.id+"-"+res.id, r, res, pos:{x,z},
+      const pos = E.depositPos(r,res);
+      NODES.push({key:r.id+":"+res.id, vid:E.depositId(r.id,res.id), r, res, pos,
         type:RES_VIS[res.id]||"rock", rot:(i*1.7)%6.28, scale: RES_VIS[res.id]==="tree"?1.1:1});
     }); });
 }
 function nodeVisual(n){
-  const ns = nodeState(n.r.id, n.res.id);
-  return {position:n.pos, type:n.type, rotationY:n.rot, scale:n.scale, depleted: ns.left<=0, highlighted: W3.near===n, visible:true};
+  const inf = depInfo(n.r.id, n.res.id);
+  return {position:n.pos, type:n.type, rotationY:n.rot, scale:n.scale, depleted: inf.left<=0, highlighted: W3.near===n || W3.sel===n, visible:true};
 }
 function syncNode(n, force){
   if(!W3.gfx) return;
   const v = nodeVisual(n), sig = v.depleted+"|"+v.highlighted;
   if(!force && W3.visSig[n.vid]===sig) return;
   W3.visSig[n.vid]=sig; W3.gfx.updateResourceVisual(n.vid, v);
+}
+/* ---------- フィールドの自然物（正本は nature.js。描画には状態だけを渡す） ---------- */
+let WORLD = null;
+function world(){
+  if(!WORLD && window.TERRAIN && window.NATURE) WORLD = NATURE.create(D, E, {terrainHeight:TERRAIN.terrainHeight, distanceToRiver:TERRAIN.distanceToRiver, cfg:TERRAIN.DEFAULT_CONFIG});
+  return WORLD;
+}
+/* 既存の資源タイプで表示する（Muse に専用タイプを依頼中：twig・pebble・grass・bush と切り株・残骸・刈り跡） */
+const NAT_VIS = {tree:o=>["tree",o.scale], rock:o=>["rock",o.scale], pebble:o=>["rock",0.3*o.scale], twig:o=>["clay",0.3*o.scale], grass:o=>["herb",o.scale], bush:o=>["herb",1.6*o.scale]};
+const NAT_SHOW_R = 32, NAT_HIDE_R = 38;
+function natVisual(o){
+  const v = WORLD.visual(S,o), [type,scale] = NAT_VIS[o.kind](o);
+  return {position:v.position, type, rotationY:o.rot, scale, depleted: v.state!=="intact", visible: v.state!=="gone",
+    highlighted: (W3.sel&&W3.sel.o===o) || (W3.near&&W3.near.o===o),
+    natural:{id:o.id, kind:o.kind, variant:o.variant, state:v.state, collider:v.collider, left:v.left, uses:v.uses}};
+}
+function syncNature(force){
+  if(!W3.gfx || !world() || !W3.pos) return;
+  const shown = W3.natShown || (W3.natShown = new Set());
+  WORLD.objects.forEach(o=>{
+    const d = Math.hypot(o.x-W3.pos.x, o.z-W3.pos.z);
+    if(d > NAT_HIDE_R || (d > NAT_SHOW_R && !shown.has(o.id))){ if(shown.has(o.id)){ W3.gfx.updateResourceVisual(o.id, null); shown.delete(o.id); delete W3.visSig[o.id]; } return; }
+    const v = natVisual(o), sig = v.natural.state+"|"+v.highlighted;
+    if(!force && shown.has(o.id) && W3.visSig[o.id]===sig) return;
+    W3.visSig[o.id]=sig; shown.add(o.id); W3.gfx.updateResourceVisual(o.id, v);
+  });
 }
 /* 文明の段階に合わせて拠点の建物が増えていく（フィールドの進化） */
 const STRUCT_PLAN = [
@@ -608,7 +638,7 @@ function syncStructures(){
       if(W3.state==="ready") W3.gfx.playVisualEffect("levelup", p.at); }
     else if(!want && has){ W3.gfx.removeStructureVisual(p.id); W3.structs.delete(p.id); } });
 }
-function syncAll3D(){ if(!NODES) buildNodes(); NODES.forEach(n=>syncNode(n,true)); syncStructures(); }
+function syncAll3D(){ if(!NODES) buildNodes(); NODES.forEach(n=>syncNode(n,true)); syncNature(true); syncStructures(); }
 
 (function(){ const m=document.getElementById("gfxmod"); if(m) m.addEventListener("error", ()=>{ W3.modErr=true; if(W3.state==="loading" && !window.HD2D){ W3.state="failed"; W3.err="3D描画モジュール（Three.js）を読み込めませんでした。通信環境かブラウザの制限が原因かもしれません。"; renderField(); } }); })();
 function ensure3D(){
@@ -638,19 +668,31 @@ async function start3D(){
       playerSpriteUrl: heroUrl(), grassDetailUrl: ASSETS.grass, rockDetailUrl: ASSETS.rock,
       particleTextureUrl: ASSETS.particle, shadowTextureUrl: ASSETS.shadow,
       quality: MOBILE ? "low" : "high", postEffects: !MOBILE,
+      /* 連携契約（docs/handoff/NATURAL-OBJECTS-CONTRACT.md）：木・岩・倒木・小石はゲーム側の自然物として渡すので、
+         描画モジュール独自の装飾としては描かない。未対応の版では無視される */
+      decor: {trees:false, rocks:false, logs:false, pebbles:false},
+      viewportInsets: hudInsets(),
       onContextLost: ()=>{ W3.lost=true; }, onContextRestored: ()=>{ W3.lost=false; } });
     W3.gfx.setWorldVisualState({timeOfDay:0.44, weather:"clear", ambientParticles:true});
-    W3.pos = (S.pos && isFinite(S.pos.x) && isFinite(S.pos.z)) ? {x:S.pos.x, z:S.pos.z} : {x:D.base.x, z:D.base.z};
+    W3.pos = spawnPos();
     syncAll3D();
     W3.state = "ready";
     W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false});
     renderField(); updateFieldActivity();
   }catch(e){ console.error(e); W3.state="failed"; W3.err="3D表示を開始できませんでした："+((e&&e.message)||e); renderField(); }
 }
+/* セーブの位置から始める。新しい当たり判定で木や岩に埋まっていたら、近くの立てる場所へ移す */
+function spawnPos(){
+  const p = (S.pos && isFinite(S.pos.x) && isFinite(S.pos.z)) ? {x:S.pos.x, z:S.pos.z} : {x:D.base.x, z:D.base.z};
+  if(!world()) return p;
+  const q = WORLD.safeSpawn(S, p);
+  if(q.moved){ S.pos={x:+q.x.toFixed(2), z:+q.z.toFixed(2)}; save(); setTimeout(()=>banner("🧭 木や岩と重ならない場所へ移動した"), 600); }
+  return {x:q.x, z:q.z};
+}
 function applySavedPos(){
   if(!W3.pos) return;
-  W3.pos = (S.pos && isFinite(S.pos.x) && isFinite(S.pos.z)) ? {x:S.pos.x, z:S.pos.z} : {x:D.base.x, z:D.base.z};
-  W3.target=null; W3.autoGather=null;
+  W3.pos = spawnPos();
+  haltField();
   if(W3.gfx) W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false});
   if(W3.gfx) syncAll3D();
 }
@@ -668,7 +710,8 @@ const modalOpen = ()=> $("#modal").classList.contains("open");
 function fieldInputActive(){ return U.tab==="explore" && !modalOpen() && W3.state==="ready" && S.flags.view!=="2d" && !document.hidden; }
 /* 押しっぱなしのキー・スティック・タップ中の指・移動予約をすべて解除する（閉じた瞬間に勝手に歩かないように） */
 function haltField(){
-  W3.keys={}; W3.joy=null; W3.down=null; W3.target=null; W3.autoGather=null;
+  W3.keys={}; W3.joy=null; W3.down=null; W3.target=null; W3.path=null; W3.intent=null;
+  if(W3.work) cancelWork(null);
   if(W3.joyReset) W3.joyReset();
   if(W3.moving && W3.gfx && W3.pos){ W3.moving=false; W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving:false}); }
 }
@@ -696,7 +739,9 @@ function toScreen(x,y,z){
    実WebGLの地形メッシュとの差は、俯角28〜50度・3種類の画面で最大0.26マス（2026-11-06 測定）。
    水面は今は描かれていない（Muse に修正依頼中）ため、水面の高さでは判定しない。 */
 function screenToGround(cx, cy){
-  const T=HD2D.THREE, cam=W3.gfx.getCamera(), rect=$("#w3").getBoundingClientRect();
+  const rect=$("#w3").getBoundingClientRect();
+  if(typeof W3.gfx.pickGround==="function"){ try{ const g=W3.gfx.pickGround(cx-rect.left, cy-rect.top); return g ? {x:g.x, z:g.z} : null; }catch(e){} }
+  const T=HD2D.THREE, cam=W3.gfx.getCamera();
   const ndc=new T.Vector2((cx-rect.left)/rect.width*2-1, -((cy-rect.top)/rect.height)*2+1);
   const rc=new T.Raycaster(); rc.setFromCamera(ndc, cam);
   const o=rc.ray.origin, d=rc.ray.direction; let lo=0, prev=o.y-groundY(o.x,o.z);
@@ -708,124 +753,220 @@ function screenToGround(cx, cy){
   return null;
 }
 
+/* ---------- 採取できるもの（フィールドの自然物 {o} と地域の採取地点 {n}）を同じ形で扱う ---------- */
+function tPos(t){ return t.o ? {x:t.o.x, z:t.o.z} : t.n.pos; }
+function tGap(t,p){ return t.o ? WORLD.reachGap(t.o,p) : Math.max(0, Math.hypot(p.x-t.n.pos.x, p.z-t.n.pos.z)-0.6); }
+function tSame(a,b){ return !!a && !!b && (a.o ? a.o===b.o : a.n===b.n); }
+function tInfo(t){
+  if(t.o) return WORLD.info(S,t.o);
+  const n=t.n, inf=depInfo(n.r.id,n.res.id), k=S.disc[n.res.id];
+  return {ok:inf.ok, kind:inf.kind, reason:inf.kind==="empty"?"取り尽くした（少し待つと戻る）":inf.reason, name:k?nm(n.res.id):"何か", icon:k?ic(n.res.id):"❔", verb:"採る",
+    yields:{[n.res.id]:inf.n||n.res.n}, left:inf.left, until:inf.until};
+}
+const tWork = t => t.o ? NATURE.KINDS[t.o.kind].work : 450;
+const yieldText = y => Object.keys(y).map(id=>(S.disc[id]?ic(id)+nm(id):"❔"+nm(id))+"×"+y[id]).join("・");
+
 /* ---------- 毎フレームの更新（移動・地域判定・近くの資源） ---------- */
 function regionAt(x,z){ let best=null, bd=1e9; D.regions.forEach(r=>{ if(!r.w) return; const d=Math.hypot(x-r.w.x,z-r.w.z); if(d<bd){bd=d;best=r;} }); return bd<=REGION_R+3?best:null; }
 function loop3D(ts){
   W3.raf = requestAnimationFrame(loop3D);
   if(W3.state!=="ready" || W3.lost) return;
-  const dt = W3.lastTs ? Math.min(0.05,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
+  /* 大きなフレーム間隔でも進む距離を保つ（すり抜けは nature.move が細かく分けて防ぐ） */
+  const dt = W3.lastTs ? Math.min(0.1,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
   let ix=0, iy=0;
   const active = fieldInputActive();
-  if(!active && (W3.target || W3.joy || Object.keys(W3.keys).length)) haltField();
+  if(!active && (W3.path || W3.joy || W3.work || Object.keys(W3.keys).length)) haltField();
   const k=W3.keys; if(k.ArrowLeft||k.a) ix-=1; if(k.ArrowRight||k.d) ix+=1; if(k.ArrowUp||k.w) iy-=1; if(k.ArrowDown||k.s) iy+=1;
   if(W3.joy){ ix=W3.joy.x; iy=W3.joy.y; }
   const B = camBasis(); let mx=0, mz=0;
-  if(ix||iy){ W3.target=null; W3.autoGather=null; const l=Math.hypot(ix,iy); if(l>1){ix/=l; iy/=l;}
+  if(ix||iy){ W3.path=null; W3.target=null; W3.intent=null; const l=Math.hypot(ix,iy); if(l>1){ix/=l; iy/=l;}
     mx = B.r.x*ix - B.f.x*iy; mz = B.r.z*ix - B.f.z*iy; }
-  else if(W3.target){ const dx=W3.target.x-W3.pos.x, dz=W3.target.z-W3.pos.z, d=Math.hypot(dx,dz);
-    const stop = W3.autoGather ? NEAR_R*0.6 : 0.3;
-    if(d<=stop){ W3.target=null; if(W3.autoGather){ const n=W3.autoGather; W3.autoGather=null; W3.near=n; gather3D(n); } }
+  else if(W3.path && W3.path.length){ const wp=W3.path[0], dx=wp.x-W3.pos.x, dz=wp.z-W3.pos.z, d=Math.hypot(dx,dz);
+    if(d<0.2){ W3.path.shift(); if(!W3.path.length) arrive(); }
     else { mx=dx/d; mz=dz/d; } }
   const len=Math.hypot(mx,mz); let moving = len>0.01;
   if(moving && dt>0){
-    const sp = 7*(owned("steamengine")?1.6:1)*Math.min(1,len);
-    let px=W3.pos.x+mx/len*sp*dt, pz=W3.pos.z+mz/len*sp*dt;
-    px=Math.max(-WORLD_R,Math.min(WORLD_R,px)); pz=Math.max(-WORLD_R,Math.min(WORLD_R,pz));
-    const lk = D.regions.find(r=>r.w && !E.regionOpen(S,r) && Math.hypot(px-r.w.x,pz-r.w.z)<REGION_R);
-    if(lk){ moving=false; W3.target=null; W3.autoGather=null;
-      if(ts-W3.blockAt>2500){ W3.blockAt=ts; banner("🔒 "+lk.name+"：入るには「"+lk.unlock.map(nm).join("」か「")+"」が必要"); } }
-    else { W3.pos.x=px; W3.pos.z=pz;
-      const sx = mx*B.r.x + mz*B.r.z, sy = -(mx*B.f.x + mz*B.f.z);
+    const sp = 7*(owned("steamengine")?1.6:1)*Math.min(1,len), step = sp*dt;
+    const before = {x:W3.pos.x, z:W3.pos.z};
+    const res = WORLD.move(S, W3.pos, mx/len*step, mz/len*step);
+    if(res.locked){ moving=false; W3.path=null; W3.target=null; W3.intent=null;
+      if(ts-W3.blockAt>2500){ W3.blockAt=ts; banner("🔒 "+res.locked.name+"：入るには「"+res.locked.unlock.map(nm).join("」か「")+"」が必要"); } }
+    W3.pos.x=res.x; W3.pos.z=res.z;
+    const got = Math.hypot(res.x-before.x, res.z-before.z);
+    /* クリック移動で進めなくなったら、経路を引き直す。それでも進めなければ止める */
+    if(W3.path){ W3.stuck = got < step*0.2 ? (W3.stuck||0)+dt : 0;
+      if(W3.stuck>0.5){ W3.stuck=0; const goal=W3.path[W3.path.length-1]; const p=(W3.repath=(W3.repath||0)+1)<=2 ? WORLD.findPath(S,W3.pos,goal) : null;
+        if(p) W3.path=p; else { W3.path=null; W3.target=null; W3.intent=null; W3.repath=0; banner("🚫 ここから先へは進めない"); } } }
+    if(got>0.001){ const sx = (res.x-before.x)*B.r.x + (res.z-before.z)*B.r.z, sy = -((res.x-before.x)*B.f.x + (res.z-before.z)*B.f.z);
       W3.dir = Math.abs(sx)>Math.abs(sy) ? (sx>0?"right":"left") : (sy>0?"down":"up"); }
+    else moving = !!W3.path;
   }
   W3.moving = moving;
-  W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving});
+  W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving, action: W3.work ? "gather" : undefined});
+  tickWork(ts);
   // 地域の判定
   const reg = regionAt(W3.pos.x, W3.pos.z);
   if(reg!==W3.region){ W3.region=reg; if(reg){ U.region=reg.id; U.combo=0; } updateLoc(); drawRegion(); }
-  // いちばん近い資源
-  let near=null, nd=NEAR_R; NODES.forEach(n=>{ const d=Math.hypot(n.pos.x-W3.pos.x, n.pos.z-W3.pos.z); if(d<nd){nd=d; near=n;} });
-  if(near!==W3.near){ const old=W3.near; W3.near=near; if(old) syncNode(old); if(near) syncNode(near); updateAction3D(); }
-  // 資源の再生
-  if(++W3.tick%20===0){ NODES.forEach(n=>{ const ns=U.nodes[nodeKey(n.r.id,n.res.id)]; if(ns && (ns.left<=0 || ns.until)){ nodeState(n.r.id,n.res.id); syncNode(n); } }); updateAction3D(); }
+  // 手の届く採取対象（選んだものを優先）
+  const near = findNear();
+  if(!tSame(near,W3.near) || (!near && W3.near)){ const old=W3.near; W3.near=near; if(old&&old.n) syncNode(old.n); if(near&&near.n) syncNode(near.n); syncNature(); updateAction3D(); }
+  // 資源の再生・表示範囲
+  if(++W3.tick%20===0){ NODES.forEach(n=>syncNode(n)); syncNature(); updateAction3D(); }
   updateLabels3D();
   if(ts-W3.lastSave>2000 && (!S.pos || Math.abs(S.pos.x-W3.pos.x)>0.01 || Math.abs(S.pos.z-W3.pos.z)>0.01)){ W3.lastSave=ts; S.pos={x:+W3.pos.x.toFixed(2), z:+W3.pos.z.toFixed(2)}; save(); }
 }
-/* 行動ボタン：近くの資源の状態に合わせて名前を変える。使えないときは理由を表示する */
+function findNear(){
+  const p=W3.pos, R=E.REACH;
+  if(W3.sel && tGap(W3.sel,p)<=R) return W3.sel;
+  let best=null, bd=1e9;
+  WORLD.around(p.x,p.z,R+2).forEach(o=>{ if(!WORLD.present(S,o)) return; const g=WORLD.reachGap(o,p); if(g<=R && g<bd){ bd=g; best={o}; } });
+  NODES.forEach(n=>{ const g=tGap({n},p); if(g<=R && g<bd){ bd=g; best={n}; } });
+  return best;
+}
+/* 移動先を決める。t があれば、その採取対象の外周（立てる場所）へ向かい、着いたら採取する */
+function goTo3D(x,z,t){
+  if(W3.work) cancelWork("別の場所へ向かうので、採取をやめた");
+  W3.intent = t||null; W3.repath=0; W3.stuck=0;
+  if(t && tGap(t,W3.pos)<=E.REACH){ W3.path=null; W3.target=null; arrive(); return true; }
+  const lk = !t && D.regions.find(r=>r.w && r.unlock && !E.regionOpen(S,r) && Math.hypot(x-r.w.x,z-r.w.z)<REGION_R);
+  if(lk){ banner("🔒 "+lk.name+"：入るには「"+lk.unlock.map(nm).join("」か「")+"」が必要"); W3.intent=null; return false; }
+  const dest = t ? (t.o ? WORLD.approachPoint(S,t.o,W3.pos) : WORLD.nearestFree(S,t.n.pos,undefined,4)) : WORLD.nearestFree(S,{x,z},undefined,6);
+  const path = dest && WORLD.findPath(S,W3.pos,dest);
+  if(!path){ banner("🚫 そこへは行けない（道がない）"); W3.path=null; W3.target=null; W3.intent=null; return false; }
+  W3.path=path; W3.target=path[path.length-1];
+  return true;
+}
+function arrive(){
+  W3.path=null; W3.target=null;
+  const t=W3.intent; W3.intent=null; if(!t) return;
+  if(tGap(t,W3.pos)<=E.REACH) startWork(t); else banner("🚫 近づけなかった");
+}
+/* 採取の流れ：近づく → 条件確認 → 作業（短い時間）→ 一度だけ確定。作業中に動く・メニューを開くと中断（何も減らない） */
+function startWork(t){
+  if(W3.work) return;                         // 作業中の連打・長押しは受け付けない
+  if(tGap(t,W3.pos) > E.REACH){ banner("遠すぎる。もっと近づこう"); return; }
+  const inf=tInfo(t);
+  if(!inf.ok){ banner((inf.kind==="tool"?"🔒 ":"")+inf.name+"："+inf.reason); return; }
+  W3.sel=t; W3.path=null; W3.target=null; W3.intent=null;
+  W3.work={t, start:performance.now(), dur:RM?150:tWork(t), token:S.seq, pos:{x:W3.pos.x, z:W3.pos.z}};
+  updateAction3D();
+}
+function cancelWork(msg){ if(!W3.work) return; W3.work=null; const b=$("#w3act"); if(b) b.style.removeProperty("--p"); if(msg) banner(msg); updateAction3D(); }
+function tickWork(ts){
+  const w=W3.work; if(!w) return;
+  if(Math.hypot(W3.pos.x-w.pos.x, W3.pos.z-w.pos.z) > 0.05){ cancelWork("採取を中断した（何も減っていない）"); return; }
+  const p=Math.min(1,(performance.now()-w.start)/w.dur); const b=$("#w3act"); if(b) b.style.setProperty("--p", Math.round(p*100)+"%");
+  if(p>=1) finishWork();
+}
+function finishWork(){
+  const w=W3.work; W3.work=null; const b=$("#w3act"); if(b) b.style.removeProperty("--p");
+  const t=w.t, now=Date.now(); U.combo=(now-U.lastGather<2500)?U.combo+1:1; U.lastGather=now;
+  const out = t.o ? WORLD.harvest(S, t.o.id, {pos:W3.pos, token:w.token, combo:U.combo})
+                  : E.harvestDeposit(S, t.n.r.id, t.n.res.id, {pos:W3.pos, token:w.token, combo:U.combo});
+  if(!out.ok){ banner(out.reason||"採れなかった"); updateAction3D(); return; }
+  const got = out.got || {[t.n.res.id]:out.n};
+  const pos = tPos(t), kind = t.o ? t.o.kind : t.n.type;
+  W3.gfx.playVisualEffect(out.news.length?"discovery": ["tree","bush","grass","herb","flowers"].includes(kind)?"leaves": kind==="water"?"splash": kind==="rock"?"smoke":"sparkle", pos);
+  if(out.lvUp) W3.gfx.playVisualEffect("levelup", W3.pos);
+  float3D(pos,(out.crit?"会心！ ":"")+Object.keys(got).map(id=>ic(id)+"＋"+got[id]).join(" "), out.crit?"crit":"");
+  if(t.o && out.depleted) banner(out.after==="stump" ? "🪵 切り株になった" : out.after==="rubble" ? "🪨 岩が砕けた" : "✋ "+out.name+"をとった");
+  const cb=$("#combo"); if(cb){ cb.textContent = U.combo>=2 ? "コンボ×"+U.combo+(U.combo%5===0?"　おまけ＋1！":"") : ""; cb.classList.toggle("on",U.combo>=2); }
+  if(out.rares && out.rares.length) banner("✨ 珍しい発見！ "+out.rares.map(nm).join("・"));
+  else if(out.lvUp) banner("⭐ 探索Lv"+out.lvUp+"に上がった！");
+  if(t.n) syncNode(t.n); syncNature(true);
+  if(t.o && out.depleted){ W3.sel=null; }
+  afterChange(out.news); updateAction3D(); updateLoc(); drawRegion();
+}
+/* 行動ボタン：手の届く対象の名前・得られる素材・必要な道具・採れない理由を出す */
 function updateAction3D(){
   const b=$("#w3act"); if(!b) return;
-  if(!in3D() || W3.state!=="ready"){ b.hidden=true; return; }
-  const n=W3.near, pc=uiMode()==="pc";
+  if(!in3D() || W3.state!=="ready" || !WORLD){ b.hidden=true; return; }
+  const t=W3.near, pc=uiMode()==="pc";
   let mode, html;
-  if(!n){ mode="look"; html = pc ? "" : `<span class="ai">🔍</span><span>調べる</span>`; }
-  else { const g=E.gatherInfo(S,n.r,n.res), k=S.disc[n.res.id], ns=nodeState(n.r.id,n.res.id);
-    if(!g.ok){ mode="lock"; html=`<span class="ai">🔒</span><span>${g.reason}</span>`; }
-    else if(ns.left<=0){ mode="regrow"; html=`<span class="ai">⏳</span><span>もうすぐ生えてくる</span>`; }
-    else { mode="gather"; html=`${pc?'<span class="kbd">E</span>':""}<span class="ai">${k?ic(n.res.id):"❔"}</span><span>${k?nm(n.res.id):"何か"}を採る <small>＋${g.n}</small></span>`; } }
+  if(W3.work){ const inf=tInfo(W3.work.t); mode="work"; html=`<span class="ai">${inf.icon}</span><span>${inf.name}を${inf.verb==="採る"?"採って":inf.verb.replace(/る$/,"って")}いる…</span>`; }
+  else if(!t){ const sel=W3.sel; mode="look"; html = pc ? "" : `<span class="ai">🔍</span><span>調べる</span>`;
+    if(sel && W3.path){ const inf=tInfo(sel); mode="go"; html=`<span class="ai">${inf.icon}</span><span>${inf.name}へ移動中</span>`; } }
+  else { const inf=tInfo(t);
+    if(!inf.ok){ mode="lock"; html=`<span class="ai">${inf.kind==="tool"?"🔒":inf.kind==="empty"?"⏳":"🔒"}</span><span>${inf.name}：${inf.reason}</span>`; }
+    else { mode="gather"; html=`${pc?'<span class="kbd">E</span>':""}<span class="ai">${inf.icon}</span><span>${inf.name}を${inf.verb} <small>→ ${yieldText(inf.yields)}</small></span>`; } }
   const sig=mode+"|"+html; if(b._sig===sig && !b.hidden) return; b._sig=sig;
-  b.hidden=false; b.dataset.mode=mode; b.className="w3act"+(mode==="look"?" idle":mode==="gather"?"":" lock"); b.innerHTML=html;
+  b.hidden=false; b.dataset.mode=mode; b.className="w3act"+(mode==="look"?" idle":mode==="gather"?"":mode==="work"||mode==="go"?" busy":" lock"); b.innerHTML=html;
   b.title = mode==="gather" ? "採取する（E キーかスペース）" : mode==="look" ? "近くを調べる" : "";
 }
-/* 行動ボタンを押したとき */
+/* 行動ボタン・E キー */
 function pressAction(){
-  if(!fieldInputActive()) return;
-  const n=W3.near;
-  if(!n){ banner("🔍 近くに採れるものはない。光っている名札に近づこう"); return; }
-  const g=E.gatherInfo(S,n.r,n.res); if(!g.ok){ banner("🔒 "+g.reason); return; }
-  gather3D(n);
+  if(!fieldInputActive() || W3.work) return;
+  const t=W3.near;
+  if(!t){ banner("🔍 手の届く所に採れるものはない。木や石を選んで近づこう"); return; }
+  startWork(t);
 }
 const updateArea3D = updateLoc;
+/* 名札：地域の採取地点と、選んだ・手の届く自然物に出す */
+function labelFor(key, act, data, x, y, z, html, cls, aria){
+  const box=$("#w3labels"); let el=W3.labelEls[key];
+  const s=toScreen(x,y,z);
+  if(!s.ok){ if(el) el.style.display="none"; return; }
+  if(!el || !el.isConnected){ el=document.createElement("button"); el.className="w3lab"; el.dataset.act=act; Object.assign(el.dataset, data); box.appendChild(el); W3.labelEls[key]=el; el._sig=""; }
+  const sig=html+"|"+cls; if(sig!==el._sig){ el._sig=sig; el.className="w3lab"+cls; el.innerHTML=html; el.setAttribute("aria-label", aria); }
+  el.style.display=""; el.style.transform=`translate(${s.x}px,${s.y}px) translate(-50%,-100%)`;
+}
 function updateLabels3D(){
   const box=$("#w3labels"); if(!box) return;
   NODES.forEach(n=>{
     const d=Math.hypot(n.pos.x-W3.pos.x, n.pos.z-W3.pos.z);
-    let el=W3.labelEls[n.key];
-    if(d>17){ if(el) el.style.display="none"; return; }
-    const s=toScreen(n.pos.x, groundY(n.pos.x,n.pos.z)+(n.type==="tree"?2.6:1.5), n.pos.z);
-    if(!s.ok){ if(el) el.style.display="none"; return; }
-    if(!el || !el.isConnected){ el=document.createElement("button"); el.className="w3lab"; el.dataset.act="w3go"; el.dataset.n=n.key; box.appendChild(el); W3.labelEls[n.key]=el; el._sig=""; }
-    const g=E.gatherInfo(S,n.r,n.res), k=S.disc[n.res.id], ns=nodeState(n.r.id,n.res.id);
-    const sig=[g.ok,k?1:0,ns.left,W3.near===n].join("|");
-    if(sig!==el._sig){ el._sig=sig; el.className="w3lab"+(g.ok?"":" lock")+(ns.left<=0?" regrow":"")+(W3.near===n?" near":"");
-      el.innerHTML=`<span>${g.ok?(k?ic(n.res.id):"❔"):"🔒"}</span>${k?nm(n.res.id):"？"}${ns.left>0&&g.ok?`<i>${"●".repeat(Math.min(ns.left,8))}</i>`:""}`;
-      el.setAttribute("aria-label", (k?nm(n.res.id):"未発見の資源")+"へ行って採取する"); }
-    el.style.display=""; el.style.transform=`translate(${s.x}px,${s.y}px) translate(-50%,-100%)`;
+    if(d>17){ const el=W3.labelEls[n.key]; if(el) el.style.display="none"; return; }
+    const g=E.gatherInfo(S,n.r,n.res), k=S.disc[n.res.id], inf=depInfo(n.r.id,n.res.id), isNear=W3.near&&W3.near.n===n;
+    labelFor(n.key, "w3go", {n:n.key}, n.pos.x, groundY(n.pos.x,n.pos.z)+(n.type==="tree"?2.6:1.5), n.pos.z,
+      `<span>${g.ok?(k?ic(n.res.id):"❔"):"🔒"}</span>${k?nm(n.res.id):"？"}${inf.left>0&&g.ok&&isFinite(inf.left)?`<i>${"●".repeat(Math.min(inf.left,8))}</i>`:""}`,
+      (g.ok?"":" lock")+(g.ok&&inf.left<=0?" regrow":"")+(isNear?" near":""), (k?nm(n.res.id):"未発見の資源")+"へ行って採取する");
   });
+  const want = new Set();
+  [W3.sel, W3.near].forEach(t=>{ if(!t || !t.o) return; const o=t.o; want.add("o:"+o.id);
+    const inf=WORLD.info(S,o), K=NATURE.KINDS[o.kind], h = o.kind==="tree" ? 3.2*o.scale : o.kind==="rock" ? 1.4*o.scale : 0.9;
+    labelFor("o:"+o.id, "w3pick", {o:o.id}, o.x, groundY(o.x,o.z)+h, o.z,
+      `<span>${inf.ok?inf.icon:"🔒"}</span>${inf.name}<small style="font-weight:700;margin-left:4px">${inf.ok?"→ "+yieldText(inf.yields):inf.reason}</small>`,
+      (inf.ok?"":" lock")+(W3.near&&W3.near.o===o?" near":""), inf.name+"："+(inf.ok?K.verb+"と"+yieldText(inf.yields):inf.reason)); });
+  Object.keys(W3.labelEls).forEach(k=>{ if(k.startsWith("o:") && !want.has(k)){ W3.labelEls[k].remove(); delete W3.labelEls[k]; } });
 }
-function float3D(n, text, cls){
+function float3D(p, text, cls){
   const box=$("#w3labels"); if(!box) return;
-  const s=toScreen(n.pos.x, groundY(n.pos.x,n.pos.z)+1.2, n.pos.z);
+  const s=toScreen(p.x, groundY(p.x,p.z)+1.2, p.z);
   const f=document.createElement("span"); f.className="float "+(cls||""); f.textContent=text;
   f.style.left=s.x+"px"; f.style.top=s.y+"px"; box.appendChild(f); setTimeout(()=>f.remove(), RM?600:1100);
 }
-function gather3D(n){
-  const r=n.r, res=n.res, g=E.gatherInfo(S,r,res);
-  if(!g.ok){ float3D(n,g.reason,"ng"); return; }
-  const ns=nodeState(r.id,res.id); if(ns.left<=0){ float3D(n,"もうすぐ生えてくる…","ng"); return; }
-  const now=Date.now(); U.combo=(now-U.lastGather<1600)?U.combo+1:1; U.lastGather=now;
-  const out=E.gather(S,r.id,res.id,{combo:U.combo}); if(!out.ok){ float3D(n,out.reason,"ng"); return; }
-  ns.left--; if(ns.left<=0) ns.until=now+regrowMs(r.id);
-  W3.gfx.playVisualEffect(out.news.length?"discovery":PLANT.includes(n.type)?"leaves":n.type==="water"?"splash":"sparkle", n.pos);
-  if(out.lvUp) W3.gfx.playVisualEffect("levelup", W3.pos);
-  float3D(n,(out.crit?"会心！ ":"")+ic(res.id)+"＋"+out.n, out.crit?"crit":"");
-  const cb=$("#combo"); if(cb){ cb.textContent = U.combo>=2 ? "コンボ×"+U.combo+(U.combo%5===0?"　おまけ＋1！":"") : ""; cb.classList.toggle("on",U.combo>=2); }
-  if(out.rares.length) banner("✨ 珍しい発見！ "+out.rares.map(nm).join("・"));
-  else if(out.lvUp) banner("⭐ 探索Lv"+out.lvUp+"に上がった！");
-  syncNode(n); afterChange(out.news); updateAction3D(); updateArea3D(); drawRegion();
+/* 画面上の点にある採取対象を選ぶ（木は幹から樹冠まで、小さなものは周りも少し広めに当てる） */
+function pickAt(cx, cy){
+  const rect=$("#w3").getBoundingClientRect(), cam=W3.gfx.getCamera();
+  const ppu = cam.top!==undefined ? rect.height / ((cam.top-cam.bottom)/(cam.zoom||1)) : 30;
+  const px=cx-rect.left, py=cy-rect.top; let best=null, bs=1e9;
+  const test=(t, h, wr)=>{ const p=tPos(t), s=toScreen(p.x, groundY(p.x,p.z)+h, p.z); if(!s.ok) return;
+    const rad=Math.max(22, wr*ppu), d=Math.hypot(s.x-px, s.y-py)/rad; if(d<1 && d<bs){ bs=d; best=t; } };
+  WORLD.around(W3.pos.x, W3.pos.z, 34).forEach(o=>{
+    if(o.kind==="tree"){ test({o}, 0.8*o.scale, 0.55*o.scale); test({o}, 2.4*o.scale, 1.15*o.scale); }
+    else test({o}, o.kind==="rock" ? 0.45*o.scale : 0.12, o.r+0.25);
+  });
+  NODES.forEach(n=>{ if(Math.hypot(n.pos.x-W3.pos.x,n.pos.z-W3.pos.z)<34) test({n}, n.type==="tree"?1.4:0.4, 0.8); });
+  return best;
 }
-function goTo3D(x,z,node){ W3.target={x,z}; W3.autoGather=node||null; }
+function selectAndGo(t){
+  W3.sel=t; syncNature(); if(t.n) syncNode(t.n);
+  const inf=tInfo(t);
+  if(!inf.ok && inf.kind==="tool"){ banner("🔒 "+inf.name+"："+inf.reason); }
+  goTo3D(0,0,t); updateAction3D();
+}
 
-/* ---------- 入力：タップで移動・ジョイスティック・キーボード ---------- */
+/* ---------- 入力：タップ・クリックで選択と移動 ---------- */
 function bind3DInput(){
   const w=$("#w3"); if(!w || w._bound) return; w._bound=true;
   w.addEventListener("pointerdown", e=>{ if(!fieldInputActive() || e.target.closest(".joy,.w3lab,button")) return; W3.down={x:e.clientX,y:e.clientY,t:Date.now(),id:e.pointerId}; });
   w.addEventListener("pointercancel", ()=>{ W3.down=null; });
   w.addEventListener("pointerup", e=>{ const down=W3.down; if(!down || down.id!==e.pointerId || !fieldInputActive()) return; const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y); const quick=Date.now()-down.t<450; W3.down=null;
     if(moved>10||!quick) return;
+    const t = pickAt(e.clientX, e.clientY);
+    if(t){ selectAndGo(t); W3.gfx.playVisualEffect("sparkle", tPos(t)); return; }
     const hit=screenToGround(e.clientX,e.clientY); if(!hit) return;
-    let best=null, bd=2.2; NODES.forEach(n=>{ const d=Math.hypot(n.pos.x-hit.x,n.pos.z-hit.z); if(d<bd){bd=d;best=n;} });
-    if(best) goTo3D(best.pos.x,best.pos.z,best); else goTo3D(hit.x,hit.z,null);
-    W3.gfx.playVisualEffect("sparkle", best?best.pos:hit); });
+    W3.sel=null; syncNature();
+    if(goTo3D(hit.x,hit.z,null)) W3.gfx.playVisualEffect("sparkle", hit); });
 }
 /* HUD のスティックと行動ボタン。指ごと（pointerId）に区別するので、歩きながら採取ボタンを押せる */
 function bindHudInput(){
@@ -850,7 +991,7 @@ document.addEventListener("keydown", e=>{
   if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","w","a","s","d"].includes(k)){ W3.keys[k]=true; e.preventDefault(); }
   /* ボタンにフォーカスがあるときのスペースは、そのボタンを押す操作なので採取しない */
   if(k===" " && e.target.closest && e.target.closest("button,a,summary,[role=button]")) return;
-  if((k===" "||k==="e") && W3.near && !e.repeat){ e.preventDefault(); gather3D(W3.near); } });
+  if((k===" "||k==="e")){ e.preventDefault(); if(!e.repeat) pressAction(); } });
 document.addEventListener("keyup", e=>{ const k=e.key.length===1?e.key.toLowerCase():e.key; delete W3.keys[k]; });
 window.addEventListener("blur", haltField);
 
@@ -1031,7 +1172,8 @@ document.addEventListener("click", ev=>{
       if(U.tab!=="lab") setTab("lab", b); else renderPanel(); runLab(); break; }
     case "go": travel(id); break;
     case "g3": if(!ev.pointerType || ev.pointerType==="mouse") pressAction(); break;  /* 指・ペンは pointerup で処理済み */
-    case "w3go": { if(!fieldInputActive()) break; const n=NODES&&NODES.find(x=>x.key===b.dataset.n); if(n){ if(W3.near===n) gather3D(n); else goTo3D(n.pos.x,n.pos.z,n); } break; }
+    case "w3pick": { if(!fieldInputActive()) break; const o=WORLD&&WORLD.byId.get(b.dataset.o); if(o){ if(W3.near&&W3.near.o===o) pressAction(); else selectAndGo({o}); } break; }
+    case "w3go": { if(!fieldInputActive()) break; const n=NODES&&NODES.find(x=>x.key===b.dataset.n); if(n){ if(W3.near&&W3.near.n===n) pressAction(); else selectAndGo({n}); } break; }
     case "travel": { const r=D.regions.find(x=>x.id===id); if(!E.regionOpen(S,r)) break; /* 理由はボタンに表示済み */
       setTab("explore"); if(W3.state==="ready"){ goTo3D(r.w.x,r.w.z+REGION_R*0.2,null); banner(r.icon+" "+r.name+"へ向かう"); } break; }
     case "home": setTab("explore"); if(W3.state==="ready"){ goTo3D(D.base.x,D.base.z,null); banner("🏠 拠点へ戻る"); } break;
@@ -1048,8 +1190,8 @@ document.addEventListener("click", ev=>{
     case "close": closeModal(); break;
     case "target": closeModal(); U.target=id; if(U.tab!=="map") setTab("map", b); else renderPanel(); break;
     case "copy": { const t=$("#exportBox"); t.select(); try{ navigator.clipboard.writeText(t.value); $("#saveMsg").textContent="コピーしたよ"; }catch(e){ $("#saveMsg").textContent="文字を選んでコピーしてね"; } break; }
-    case "import": { try{ const n=E.deserialize($("#importBox").value.trim()); S=n; lastMission=E.missionIndex(S); lastStage=stage(); U.tray={}; U.fac=null; U.op=null; U.nodes={}; fieldSig=""; applySavedPos(); save(); renderChrome(); render(); $("#saveMsg").textContent="読み込んだよ"; }catch(e){ $("#saveMsg").textContent="読み込めなかった：形式が違うみたい"; } break; }
-    case "reset": if(confirm("本当に最初からやり直す？（発見の記録も消えます）")){ S=E.newState(); lastMission=0; lastStage=0; U.tray={}; U.fac=null; U.op=null; U.last=null; U.nodes={}; U.region="forest"; fieldSig=""; applySavedPos(); save(); setTab("explore"); renderChrome(); render(); intro(); } break;
+    case "import": { try{ const n=E.deserialize($("#importBox").value.trim()); S=n; lastMission=E.missionIndex(S); lastStage=stage(); U.tray={}; U.fac=null; U.op=null; fieldSig=""; applySavedPos(); save(); renderChrome(); render(); $("#saveMsg").textContent="読み込んだよ"; }catch(e){ $("#saveMsg").textContent="読み込めなかった：形式が違うみたい"; } break; }
+    case "reset": if(confirm("本当に最初からやり直す？（発見の記録も消えます）")){ S=E.newState(); lastMission=0; lastStage=0; U.tray={}; U.fac=null; U.op=null; U.last=null; U.region="forest"; fieldSig=""; applySavedPos(); save(); setTab("explore"); renderChrome(); render(); intro(); } break;
   }
 });
 document.addEventListener("change", ev=>{ if(ev.target.dataset.act==="pick"){ U.target=ev.target.value; renderPanel(); } });
@@ -1093,5 +1235,5 @@ function intro(){
   openModal($("#introGo")); S.flags.intro=1; save();
 }
 document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); bindHudInput(); renderChrome(); render(); layout(); intro();
-window.__GAME__ = {get S(){return S;}, E, D, U, W3, get NODES(){return NODES;}, screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
+window.__GAME__ = {get S(){return S;}, E, D, U, W3, get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);

@@ -15,6 +15,12 @@ const gfx = await build({
   external: ['three', 'three/addons/*'], logLevel: 'warning',
 });
 const gfxCode = gfx.outputFiles[0].text;
+// 地形関数（three に依存しない）を、ゲームのロジック用に別にまとめる
+const terrain = await build({
+  entryPoints: [path.join(root, 'src/terrain-entry.ts')],
+  bundle: true, format: 'iife', globalName: 'TERRAIN', target: 'es2020', write: false, logLevel: 'warning',
+});
+const terrainCode = terrain.outputFiles[0].text;
 
 const dataUrl = (p, mime) => `data:${mime};base64,${fs.readFileSync(path.join(root, p)).toString('base64')}`;
 const ASSETS = {
@@ -35,6 +41,8 @@ const parts = {
   '/*ASSETS*/': 'var ASSETS=' + JSON.stringify(ASSETS) + ';',
   '/*DATA*/': rd('src/game/data.js'),
   '/*ENGINE*/': rd('src/game/engine.js'),
+  '/*TERRAIN*/': terrainCode,
+  '/*NATURE*/': rd('src/game/nature.js'),
   '/*UI*/': rd('src/game/ui.js'),
 };
 let html = rd('src/template.html');

@@ -1,11 +1,12 @@
 /* ===================== ゲームエンジン（UIから独立） ===================== */
 var ENGINE = (function(D){
-  const SCHEMA = 1;
+  const SCHEMA = 2;
   const IT = D.items;
   const BASKET_RES = ["twig","leaves","vine","seed","grass","grape","shell","seaweed","cobble","sand","clay"];
   const AIR = ["O","N","C","H"]; // 空気中の酸素・窒素・二酸化炭素・水蒸気
 
-  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, created:Date.now()}; }
+  /* nature：変化した自然物・採取地点の状態だけを保存する（{id:{u:使った回数, t:取り尽くした時刻}}） */
+  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, created:Date.now()}; }
   const cnt = (S,id)=> S.inv[id]||0;
   const has = (S,id)=> cnt(S,id)>0;
   const keyOf = obj => Object.keys(obj).filter(k=>obj[k]>0).sort().join("+");
@@ -44,34 +45,96 @@ var ENGINE = (function(D){
     if(exploreLv(S,r.id)>=2) n += 1;
     return {ok:true, n};
   }
-  // opt: {rng:乱数関数, combo:コンボ数, auto:自動採取か}
-  function gather(S, regionId, resId, opt){
+  /* 採取の報酬を付与する（地域の資源・フィールドの自然物で共通）。
+     items：{素材ID:個数}。regionId があればその地域の探索度と珍しい発見を進める。
+     opt: {rng:乱数関数, combo:コンボ数, auto:自動採取か} */
+  function collect(S, regionId, items, opt){
     opt = opt||{}; const rng = opt.rng||Math.random;
-    const r = D.regions.find(x=>x.id===regionId); if(!r) return {ok:false, reason:"地域がない"};
-    const res = r.res.find(x=>x.id===resId); if(!res) return {ok:false, reason:"資源がない"};
-    const g = gatherInfo(S,r,res); if(!g.ok) return g;
-    let n = g.n, crit=false;
-    if(!opt.auto && rng()<0.12){ n*=2; crit=true; }
-    if(!opt.auto && opt.combo && opt.combo>0 && opt.combo%5===0) n+=1;
-    const news=[]; if(addItem(S,resId,n,"gather:"+regionId)) news.push(resId);
-    S.gathered[resId] = (S.gathered[resId]||0) + n;
+    const r = regionId ? D.regions.find(x=>x.id===regionId) : null;
+    const crit = !opt.auto && rng()<0.12;
+    const got={}, news=[];
+    Object.keys(items).forEach((id,i)=>{ let n=items[id]; if(crit) n*=2; if(i===0 && !opt.auto && opt.combo && opt.combo>0 && opt.combo%5===0) n+=1;
+      got[id]=n; if(addItem(S,id,n,"gather:"+(regionId||"wild"))) news.push(id); S.gathered[id]=(S.gathered[id]||0)+n; });
     const rares=[]; let lvUp=null;
-    if(!opt.auto){
-      S.explore = S.explore||{}; const before = exploreLv(S,regionId);
-      S.explore[regionId] = (S.explore[regionId]||0)+1;
-      const after = exploreLv(S,regionId);
+    if(!opt.auto && r){
+      S.explore = S.explore||{}; const before = exploreLv(S,r.id);
+      S.explore[r.id] = (S.explore[r.id]||0)+1;
+      const after = exploreLv(S,r.id);
       if(after>before){ lvUp=after;
         if(after===2){ const rr=(r.rare||[]).find(x=>!S.disc[x.id]); if(rr) rares.push(rr.id); } }
       const mult = after>=3?2:after>=1?1.5:1;
       (r.rare||[]).forEach(x=>{ if(!rares.includes(x.id) && rng() < x.chance*mult) rares.push(x.id); });
-      rares.forEach(id=>{ if(addItem(S,id,1,"rare:"+regionId)) news.push(id); });
+      rares.forEach(id=>{ if(addItem(S,id,1,"rare:"+r.id)) news.push(id); });
     }
-    return {ok:true, n, crit, rares, lvUp, news, isNew:news.includes(resId)};
+    return {ok:true, got, crit, rares, lvUp, news};
+  }
+  // 地域の資源を1回採る（残量は見ない。残量つきの採取は harvestDeposit）
+  function gather(S, regionId, resId, opt){
+    opt = opt||{};
+    const r = D.regions.find(x=>x.id===regionId); if(!r) return {ok:false, reason:"地域がない"};
+    const res = r.res.find(x=>x.id===resId); if(!res) return {ok:false, reason:"資源がない"};
+    const g = gatherInfo(S,r,res); if(!g.ok) return g;
+    const c = collect(S, regionId, {[resId]:g.n}, opt);
+    return {ok:true, n:c.got[resId], crit:c.crit, rares:c.rares, lvUp:c.lvUp, news:c.news, isNew:c.news.includes(resId)};
+  }
+
+  /* ---------- 残量と再生（地域の資源・自然物で共通。状態は S.nature に保存） ----------
+     uses：満タンの回数（Infinity なら減らない）／regrow：取り尽くしてから満タンに戻るまでのミリ秒（null なら戻らない） */
+  function stockOf(S, id, uses, regrow, now){
+    now = now||Date.now(); S.nature = S.nature||{};
+    const st = S.nature[id];
+    if(!st) return {left:uses, used:0, until:0};
+    if(st.t && regrow!=null && now - st.t >= regrow){ delete S.nature[id]; return {left:uses, used:0, until:0}; }
+    const left = Math.max(0, uses - (st.u||0));
+    return {left, used:st.u||0, until: left<=0 && st.t && regrow!=null ? st.t + regrow : 0};
+  }
+  function useStock(S, id, uses, regrow, now){
+    now = now||Date.now(); const k = stockOf(S,id,uses,regrow,now);
+    if(!isFinite(uses)) return k;
+    const st = S.nature[id] || (S.nature[id] = {u:0});
+    st.u = (st.u||0) + 1;
+    if(st.u >= uses) st.t = now; else if(st.t && regrow==null) delete st.t;
+    return stockOf(S,id,uses,regrow,now);
+  }
+  /* 地域の資源（採取地点）：水は減らない。植物は早く、石や鉱物はゆっくり戻る */
+  const WATER = ["rain","river","spring","seawater"];
+  const PLANT_RES = ["twig","leaves","vine","seed","grass","grape","resin","wax","bark","shell","seaweed","log"];
+  const depositId = (rid,resId)=> "d:"+rid+":"+resId;
+  function depositRule(S, rid, resId){
+    if(WATER.includes(resId)) return {uses:Infinity, regrow:null};
+    return {uses: 5 + exploreLv(S,rid), regrow: PLANT_RES.includes(resId) ? 20000 : 90000};
+  }
+  /* 採取地点の3D上の位置（地域の中心 w と地域画面での配置 p から決める） */
+  function depositPos(r, res){ return {x: r.w.x + (res.p[0]-50)/50*6.5, z: r.w.z + (res.p[1]-62)/38*5}; }
+  const REACH = 1.6;   // 採取できる距離（対象の外周から）
+  function depositInfo(S, rid, resId, now){
+    const r = D.regions.find(x=>x.id===rid), res = r && r.res.find(x=>x.id===resId);
+    if(!res) return {ok:false, reason:"資源がない"};
+    const g = gatherInfo(S,r,res), rule = depositRule(S,rid,resId), k = stockOf(S, depositId(rid,resId), rule.uses, rule.regrow, now);
+    if(!g.ok) return Object.assign({left:k.left, until:k.until, uses:rule.uses}, g);
+    if(k.left<=0) return {ok:false, kind:"empty", left:0, until:k.until, uses:rule.uses, reason:"取り尽くした（少し待つと戻る）"};
+    return {ok:true, n:g.n, left:k.left, until:k.until, uses:rule.uses};
+  }
+  /* 残量つきで地域の資源を採る。opt.token は二重実行防止（S.seq と一致したときだけ確定）、
+     opt.pos があれば距離を確認する。自動採取（opt.auto）も同じ残量を使う */
+  function harvestDeposit(S, rid, resId, opt){
+    opt = opt||{}; const now = opt.now||Date.now();
+    if(!opt.auto && opt.token!==undefined && opt.token!==S.seq) return {ok:false, kind:"dup", reason:"もう採取した"};
+    const r = D.regions.find(x=>x.id===rid), res = r && r.res.find(x=>x.id===resId);
+    if(!res) return {ok:false, reason:"資源がない"};
+    if(opt.pos){ const p=depositPos(r,res); if(Math.hypot(opt.pos.x-p.x, opt.pos.z-p.z) > REACH+0.6) return {ok:false, kind:"far", reason:"遠すぎる。もっと近づこう"}; }
+    const inf = depositInfo(S, rid, resId, now); if(!inf.ok) return inf;
+    if(!opt.auto) S.seq++;
+    const rule = depositRule(S,rid,resId);
+    useStock(S, depositId(rid,resId), rule.uses, rule.regrow, now);
+    const c = collect(S, rid, {[resId]:inf.n}, opt);
+    const k = stockOf(S, depositId(rid,resId), rule.uses, rule.regrow, now);
+    return {ok:true, n:c.got[resId], crit:c.crit, rares:c.rares, lvUp:c.lvUp, news:c.news, left:k.left, until:k.until};
   }
   function autoSlots(S){ return ["basket","storehouse","steamengine","generator"].filter(t=>has(S,t)).length*2; }
   function autoTick(S){
     const out=[]; S.auto = S.auto.slice(0, autoSlots(S));
-    for(const a of S.auto){ const g = gather(S,a.r,a.id,{auto:true}); if(g.ok) out.push({id:a.id,n:g.n,news:g.news}); }
+    for(const a of S.auto){ const g = harvestDeposit(S,a.r,a.id,{auto:true}); if(g.ok) out.push({id:a.id,n:g.n,news:g.news}); }
     return out;
   }
 
@@ -230,7 +293,8 @@ var ENGINE = (function(D){
       if(s.inventory) n.inv = Object.assign({}, s.inventory);
       if(Array.isArray(s.found)) s.found.forEach(id=>{ n.disc[id]={first:Date.now(),made:1,total:1,routes:[],best:0}; });
       return n;
-    }
+    },
+    1: s => { s.nature = {}; return s; }  // v1→v2：自然物・採取地点の状態（最初は何も変化していない）
   };
   const ALIASES = {}; // 名称変更したIDの対応表（例：{"oldId":"newId"}）
   function migrate(raw){
@@ -241,6 +305,8 @@ var ENGINE = (function(D){
     for(const box of ["inv","disc"]){ for(const k of Object.keys(n[box])){ if(ALIASES[k]){ n[box][ALIASES[k]] = n[box][k]; delete n[box][k]; } } }
     for(const k in n.inv){ const x = n.inv[k]; if(typeof x!=="number" || !isFinite(x) || x<=0) delete n.inv[k]; else n.inv[k]=Math.floor(x); }
     if(!Array.isArray(n.hist)) n.hist=[]; if(!Array.isArray(n.auto)) n.auto=[];
+    if(!n.nature || typeof n.nature!=="object" || Array.isArray(n.nature)) n.nature={};
+    for(const k of Object.keys(n.nature)){ const x=n.nature[k]; if(!x || typeof x!=="object" || !(x.u>0) || !isFinite(x.u)) delete n.nature[k]; else { x.u=Math.floor(x.u); if(x.t!==undefined && !isFinite(x.t)) delete x.t; } }
     return n;
   }
   function serialize(S){ return JSON.stringify(S); }
@@ -307,10 +373,25 @@ var ENGINE = (function(D){
     ok("古い形式（スキーマv0）のセーブを移行できる・未知のIDも消さない", old.v===SCHEMA && old.inv.twig===3 && old.inv.future_item===2 && old.disc.twig);
     const neg = deserialize(JSON.stringify({v:1, inv:{twig:-5, ash:2.7}}));
     ok("壊れた数量（負の数・小数）を修正する", !neg.inv.twig && neg.inv.ash===2);
+    const v1 = deserialize(JSON.stringify({v:1, inv:{twig:2}, disc:{twig:{first:1,made:1,total:2,routes:[],best:0}}, pos:{x:-20,z:20}}));
+    ok("スキーマv1のセーブをv2へ移行できる（自然物の状態は空・座標は残る）", v1.v===2 && v1.inv.twig===2 && v1.pos.x===-20 && JSON.stringify(v1.nature)==="{}");
+    const badN = deserialize(JSON.stringify({v:2, nature:{"t:1,2":{u:-1}, "d:river:cobble":{u:2.5,t:"x"}}}));
+    ok("壊れた自然物の状態を修正する", !badN.nature["t:1,2"] && badN.nature["d:river:cobble"].u===2 && badN.nature["d:river:cobble"].t===undefined);
+    // 7 残量つきの採取（地域の資源）
+    const S5 = newState(); const T0 = 1000000; let n5=0;
+    for(let i=0;i<9;i++){ const h=harvestDeposit(S5,"river","cobble",{token:S5.seq, now:T0, rng:()=>0.99}); if(h.ok) n5++; }
+    ok("採取地点は取り尽くすと採れない（満タン5回）", n5===5 && !harvestDeposit(S5,"river","cobble",{token:S5.seq, now:T0}).ok);
+    ok("石の採取地点は90秒で戻る・それより前は戻らない", !depositInfo(S5,"river","cobble",T0+89000).ok && depositInfo(S5,"river","cobble",T0+90000).ok);
+    const S6 = newState(); const tk=S6.seq; const a1=harvestDeposit(S6,"forest","twig",{token:tk,rng:()=>0.99}); const a2=harvestDeposit(S6,"forest","twig",{token:tk,rng:()=>0.99});
+    ok("同じ操作の二重実行で素材が増えない（採取）", a1.ok && !a2.ok && a2.kind==="dup" && S6.inv.twig===2);
+    const far = harvestDeposit(newState(),"forest","twig",{token:0, pos:{x:0,z:0}});
+    ok("離れた場所からは採取できない", !far.ok && far.kind==="far");
+    const S7 = newState(); S7.inv.basket=1; S7.auto=[{r:"river",id:"cobble"}]; for(let i=0;i<5;i++) S7.nature[depositId("river","cobble")]={u:5+exploreLv(S7,"river"), t:Date.now()};
+    ok("自動採取も残量を守る（取り尽くした所からは集めない）", autoTick(S7).length===0 && !S7.inv.cobble);
     return R;
   }
 
-  return {SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, regionOpen, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
+  return {SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, collect, stockOf, useStock, harvestDeposit, depositInfo, depositRule, depositId, depositPos, REACH, regionOpen, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
           planCraft, runCraft, producers, usesOf, status, hint, suggest, stageOf, missionIndex, tagProgress, serialize, deserialize, runTests};
 })(typeof DATA!=="undefined"?DATA:require("./data.js"));
 if (typeof module!=="undefined") module.exports = ENGINE;
