@@ -37,7 +37,9 @@ export class LightingManager {
     scene.add(this.sun);
     scene.add(this.sun.target);
 
-    scene.fog = new THREE.Fog(0xcfe4ef, 70, 165);
+    // Fog pushed out (2026-11-06): it now shapes only the far
+    // distance instead of washing over the whole exploration view.
+    scene.fog = new THREE.Fog(0xcfe4ef, 88, 195);
     this.applyTimeOfDay();
   }
 
@@ -63,11 +65,11 @@ export class LightingManager {
     const fog = this.scene.fog as THREE.Fog;
     switch (weather) {
       case 'clear':
-        fog.near = 70; fog.far = 165; break;
+        fog.near = 88; fog.far = 195; break;
       case 'cloudy':
-        fog.near = 55; fog.far = 140; break;
+        fog.near = 68; fog.far = 168; break;
       case 'rain':
-        fog.near = 45; fog.far = 120; break;
+        fog.near = 52; fog.far = 138; break;
       case 'fog':
         fog.near = 22; fog.far = 80; break;
     }

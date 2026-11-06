@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { StructureType, Vec3Like } from './types';
 import { AssetManager } from './AssetManager';
+import { segmentPointDistance } from './utils';
 
 export type StructureFactory = () => THREE.Group;
 
@@ -12,10 +13,18 @@ export type StructureFactory = () => THREE.Group;
  * low-poly placeholders for now — register a factory that loads a GLB
  * to upgrade any type without touching call sites.
  */
+interface StructureFade {
+  mats: Array<{ mat: THREE.Material; base: number }>;
+  center: THREE.Vector3;
+  radius: number;
+  fade: number;
+}
+
 export class StructureRenderer {
   readonly group = new THREE.Group();
   private factories = new Map<string, StructureFactory>();
   private instances = new Map<string, THREE.Group>();
+  private fadeState = new Map<string, StructureFade>();
   private groundHeightAt: (x: number, z: number) => number;
   private flames: THREE.Object3D[] = [];
   /** Procedural architectural textures so structures match the
@@ -82,6 +91,23 @@ export class StructureRenderer {
     });
     this.instances.set(id, obj);
     this.group.add(obj);
+    // Register per-structure materials for the occlusion fade. Factory
+    // materials are created fresh per structure, so fading one building
+    // never leaks into another.
+    const mats = new Map<THREE.Material, number>();
+    obj.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const m of list) if (m && !mats.has(m)) mats.set(m, m.opacity);
+    });
+    const sphere = new THREE.Box3().setFromObject(obj).getBoundingSphere(new THREE.Sphere());
+    this.fadeState.set(id, {
+      mats: [...mats.entries()].map(([mat, base]) => ({ mat, base })),
+      center: sphere.center,
+      radius: sphere.radius,
+      fade: 1,
+    });
   }
 
   remove(id: string): void {
@@ -91,6 +117,33 @@ export class StructureRenderer {
     this.group.remove(obj);
     disposeObject(obj);
     this.instances.delete(id);
+    this.fadeState.delete(id);
+  }
+
+  /**
+   * Fade structures whose bounding sphere blocks the camera's line of
+   * sight to the player (low exploration camera), easing back when the
+   * view clears. Visual only; existence and placement stay logic-owned.
+   */
+  updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+    const FADE_MIN = 0.22;
+    const k = Math.min(1, dt * 7);
+    for (const st of this.fadeState.values()) {
+      const d = segmentPointDistance(
+        cameraPos.x, cameraPos.y, cameraPos.z,
+        playerPos.x, playerPos.y, playerPos.z,
+        st.center.x, st.center.y, st.center.z,
+      );
+      const goal = d < st.radius ? FADE_MIN : 1;
+      if (st.fade === goal) continue;
+      let next = st.fade + (goal - st.fade) * k;
+      if (Math.abs(goal - next) < 0.01) next = goal;
+      st.fade = next;
+      for (const { mat, base } of st.mats) {
+        mat.opacity = base * next;
+        mat.transparent = next < 0.999 || base < 1;
+      }
+    }
   }
 
   has(id: string): boolean {
