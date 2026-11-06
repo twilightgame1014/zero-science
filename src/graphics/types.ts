@@ -132,6 +132,14 @@ export interface DecorOptions {
   logs?: boolean;
   pebbles?: boolean;
   shrubs?: boolean;
+  /**
+   * Circular areas kept free of ALL scenery (trees, rocks, shrubs,
+   * grass tufts, flowers, herb patches, logs, riverbank pebbles) so
+   * game-owned natural objects can stand there alone — e.g. the
+   * sample plot where placement / collision / harvest wiring is
+   * verified, or a spawn clearing. World units, centre + radius.
+   */
+  clearings?: Array<{ x: number; z: number; r: number }>;
 }
 
 export interface GraphicsOptions {

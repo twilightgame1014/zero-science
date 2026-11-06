@@ -120,6 +120,52 @@ export class EnvironmentRenderer {
   /** Soft soil/leaf discs that ground trees and rocks (collected
    *  during their builds, instanced once at the end). */
   private groundDiscs: Array<{ x: number; z: number; r: number; tint: THREE.Color }> = [];
+  /** Scenery-free circles (DecorOptions.clearings). */
+  private clearings: Array<{ x: number; z: number; r: number }> = [];
+  /** Ground-cover instances that can be thinned around game-owned
+   *  natural objects (grass tufts, wildflowers, herb patches), with
+   *  their original placement so a recompute can restore them. */
+  private coverSpots: Array<{
+    mesh: THREE.InstancedMesh; index: number;
+    x: number; y: number; z: number; ry: number; sx: number; sy: number; sz: number;
+  }> = [];
+
+  private inClearing(x: number, z: number): boolean {
+    for (const c of this.clearings) {
+      const dx = x - c.x;
+      const dz = z - c.z;
+      if (dx * dx + dz * dz < c.r * c.r) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Hide ground-cover instances (scenery grass tufts, wildflowers,
+   * decorative herb patches) within the given circles, restoring any
+   * that are no longer covered. The game calls this with its natural
+   * objects so a harvestable grass/herb/flower patch stands in a
+   * readable clearing of its own instead of dissolving into look-
+   * alike scenery — and a harvested cut-patch stays visible.
+   * Rendering only; placement data is unchanged.
+   */
+  thinGroundCover(points: Array<{ x: number; z: number; r: number }>): void {
+    if (this.coverSpots.length === 0) return;
+    const dirty = new Set<THREE.InstancedMesh>();
+    for (const s of this.coverSpots) {
+      let hide = this.inClearing(s.x, s.z);
+      if (!hide) {
+        for (const p of points) {
+          const dx = s.x - p.x;
+          const dz = s.z - p.z;
+          if (dx * dx + dz * dz < p.r * p.r) { hide = true; break; }
+        }
+      }
+      if (hide) this.setInstance(s.mesh, s.index, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+      else this.setInstance(s.mesh, s.index, s.x, s.y, s.z, s.ry, s.sx, s.sy, s.sz);
+      dirty.add(s.mesh);
+    }
+    for (const m of dirty) m.instanceMatrix.needsUpdate = true;
+  }
 
   constructor(
     cfg: GraphicsConfig,
@@ -148,6 +194,7 @@ export class EnvironmentRenderer {
     // (GraphicsOptions.decor) so scenery never doubles as a fake
     // harvest target. Fine detail (grass, ferns, litter, decals)
     // always stays renderer-side.
+    this.clearings = decor.clearings ?? [];
     if (decor.trees !== false) this.buildTrees(scale);
     this.buildGrass(scale);
     this.buildGroundCover(scale, decor.shrubs !== false);
@@ -273,7 +320,15 @@ export class EnvironmentRenderer {
           playerPos.x, playerPos.y, playerPos.z,
           set.centers[i * 3], set.centers[i * 3 + 1], set.centers[i * 3 + 2],
         );
-        const goal = d < r + 0.45 ? FADE_MIN : 1;
+        // Segment test alone misses the neighbour whose crown hangs
+        // over the player from the side (Claude 2026-11-06: in dense
+        // forest the player stayed half-covered). A canopy whose
+        // horizontal reach overlaps the player's position fades too —
+        // the world-space proxy for "covers the player's screen rect".
+        const pdx = set.centers[i * 3] - playerPos.x;
+        const pdz = set.centers[i * 3 + 2] - playerPos.z;
+        const nearPlayer = pdx * pdx + pdz * pdz < (r + 1.05) * (r + 1.05);
+        const goal = d < r + 0.45 || nearPlayer ? FADE_MIN : 1;
         const cur = set.fades[i];
         if (cur === goal) continue;
         const next = cur + (goal - cur) * k;
@@ -299,7 +354,7 @@ export class EnvironmentRenderer {
     while (out.length < count && guard-- > 0) {
       const x = (this.rng() * 2 - 1) * half;
       const z = (this.rng() * 2 - 1) * half;
-      if (accept(x, z)) out.push({ x, z });
+      if (accept(x, z) && !this.inClearing(x, z)) out.push({ x, z });
     }
     return out;
   }
@@ -622,10 +677,16 @@ export class EnvironmentRenderer {
       this.windMaterials.push(wind);
       const mesh = new THREE.InstancedMesh(tuftGeo, wind.material, v.list.length);
       v.list.forEach((s, i) => {
-        const sc = 0.85 + this.rng() * 0.55;
-        const tall = this.rng() < 0.12 ? 1.5 : 1;
-        this.setInstance(mesh, i, s.x, this.groundY(s.x, s.z) - 0.02, s.z,
-          this.rng() * Math.PI, sc, sc * tall * 0.92, sc);
+        // Height capped (2026-11-06): scenery tufts stay at ankle-to-
+        // shin height so the game's taller gatherable grass clumps
+        // read as a different thing, not more of the same carpet.
+        const sc = 0.8 + this.rng() * 0.45;
+        const tall = this.rng() < 0.12 ? 1.12 : 1;
+        const ry = this.rng() * Math.PI;
+        const sy = sc * tall * 0.92;
+        const y = this.groundY(s.x, s.z) - 0.02;
+        this.setInstance(mesh, i, s.x, y, s.z, ry, sc, sy, sc);
+        this.coverSpots.push({ mesh, index: i, x: s.x, y, z: s.z, ry, sx: sc, sy, sz: sc });
         // Slightly luminous yellow-green so tufts separate from the
         // (already grassy) GPT ground tile instead of dissolving in.
         const b = 0.88 + this.rng() * 0.22;
@@ -656,9 +717,11 @@ export class EnvironmentRenderer {
       });
       const mesh = new THREE.InstancedMesh(this.crossPlanes(0.55, 0.38), mat, list.length);
       list.forEach((s, i) => {
-        const sc = 0.8 + this.rng() * 0.5;
-        this.setInstance(mesh, i, s.x, this.groundY(s.x, s.z) - 0.01, s.z,
-          this.rng() * Math.PI, sc, sc, sc);
+        const sc = 0.75 + this.rng() * 0.35;
+        const ry = this.rng() * Math.PI;
+        const y = this.groundY(s.x, s.z) - 0.01;
+        this.setInstance(mesh, i, s.x, y, s.z, ry, sc, sc, sc);
+        this.coverSpots.push({ mesh, index: i, x: s.x, y, z: s.z, ry, sx: sc, sy: sc, sz: sc });
       });
       mesh.receiveShadow = true;
       this.group.add(mesh);
@@ -680,9 +743,14 @@ export class EnvironmentRenderer {
       });
       const mesh = new THREE.InstancedMesh(this.crossPlanes(0.7, 0.42), mat, hSpots.length);
       hSpots.forEach((s, i) => {
-        const sc = 0.85 + this.rng() * 0.6;
-        this.setInstance(mesh, i, s.x, this.groundY(s.x, s.z) - 0.01, s.z,
-          this.rng() * Math.PI, sc, sc, sc);
+        // Kept smaller than the game's herb node and thinned around
+        // real nodes (coverSpots), so decoration never reads as the
+        // harvestable patch.
+        const sc = 0.7 + this.rng() * 0.35;
+        const ry = this.rng() * Math.PI;
+        const y = this.groundY(s.x, s.z) - 0.01;
+        this.setInstance(mesh, i, s.x, y, s.z, ry, sc, sc, sc);
+        this.coverSpots.push({ mesh, index: i, x: s.x, y, z: s.z, ry, sx: sc, sy: sc, sz: sc });
       });
       mesh.receiveShadow = true;
       this.group.add(mesh);
@@ -987,8 +1055,12 @@ export class EnvironmentRenderer {
       const side = this.rng() < 0.5 ? -1 : 1;
       const x = riverCenterX(z) + side * (3.6 + this.rng() * 2.6);
       const sc = 0.5 + this.rng() * 1.5;
-      this.setInstance(pebbles, i, x, Math.max(this.groundY(x, z), 0.1) + 0.03, z,
-        this.rng() * Math.PI, sc, sc * 0.55, sc);
+      if (this.inClearing(x, z)) {
+        this.setInstance(pebbles, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+      } else {
+        this.setInstance(pebbles, i, x, Math.max(this.groundY(x, z), 0.1) + 0.03, z,
+          this.rng() * Math.PI, sc, sc * 0.55, sc);
+      }
       pebbles.setColorAt(i, tmp.copy(cA).lerp(cB, this.rng()));
     }
     if (pebbles.instanceColor) pebbles.instanceColor.needsUpdate = true;
@@ -1009,6 +1081,7 @@ export class EnvironmentRenderer {
       // it would read as a blocked route (placement is decorative,
       // but the picture must not lie about where one can walk).
       if (distanceToPath(x, z) < 2.6) continue;
+      if (this.inClearing(x, z)) continue;
       if (Math.hypot(x - pc.x, z - pc.z) < this.cfg.world.plateauRadius + 2.5) continue;
       const len = 2.4 + this.rng() * 2.4;
       const log = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.27, len, 8), logMat);
@@ -1029,7 +1102,7 @@ export class EnvironmentRenderer {
     for (let i = 0; i < 60; i++) {
       const x = (this.rng() * 2 - 1) * 52;
       const z = (this.rng() * 2 - 1) * 52;
-      if (distanceToPath(x, z) < 1.6) {
+      if (distanceToPath(x, z) < 1.6 || this.inClearing(x, z)) {
         this.setInstance(branches, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
         continue;
       }

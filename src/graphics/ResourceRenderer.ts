@@ -4,9 +4,24 @@ import { disposeObject } from './StructureRenderer';
 import { AssetManager } from './AssetManager';
 import { segmentPointDistance } from './utils';
 
+interface SlotRef {
+  pool: InstancedPool;
+  index: number;
+  /** Local placement relative to the node origin. */
+  dx: number; dy: number; dz: number;
+  /** Total Y rotation of the quad (crossed planes differ per slot). */
+  yaw: number;
+  sx: number; sy: number; sz: number;
+  /** Base instance colour (restored when no blink flash is active). */
+  tint: THREE.Color;
+}
+
 interface Entry {
-  group: THREE.Group;
   state: ResourceVisualState;
+  /** Group-path visual (null when the node is instanced). */
+  group: THREE.Group | null;
+  /** Instanced-path slots (empty when the node is group-rendered). */
+  slots: SlotRef[];
   pulseMaterials: THREE.MeshStandardMaterial[];
   /** Material opacities as built (fade multiplies these). */
   baseOpacities: number[];
@@ -15,10 +30,18 @@ interface Entry {
   fade: number;
   /** Ground ring shown while the node is highlighted. */
   ring: THREE.Mesh | null;
+  /** Node origin in world space (ring / occlusion anchor). */
+  pos: THREE.Vector3;
+  /** Whether slot matrices currently carry a reaction tilt. */
+  tilted: boolean;
+  /** Whether slot colours currently carry a blink flash. */
+  flashed: boolean;
 }
 
-/** Scratch vector for the per-frame occlusion test (no allocation). */
+/** Scratch objects for the per-frame work (no allocation). */
 const OCCL_POINT = new THREE.Vector3();
+const FLASH_COLOR = new THREE.Color(1.35, 1.18, 0.85);
+const WHITE = new THREE.Color(1, 1, 1);
 
 /** Deterministic vertex jitter (same input position -> same offset),
  *  so resource rocks share the environment rocks' craggy silhouette. */
@@ -35,11 +58,89 @@ function jitterRock(geo: THREE.BufferGeometry, amount = 0.16): void {
 }
 
 /**
+ * A fixed-capacity InstancedMesh pool. Slots are allocated per node;
+ * a released slot collapses to a zero-scale matrix underground.
+ * Capacity is generous for the game's streaming window; if a pool
+ * ever fills, the caller falls back to the group path for that node.
+ */
+class InstancedPool {
+  readonly mesh: THREE.InstancedMesh;
+  private freeList: number[] = [];
+  private dummy = new THREE.Object3D();
+
+  constructor(geo: THREE.BufferGeometry, mat: THREE.Material, capacity: number, parent: THREE.Group) {
+    this.mesh = new THREE.InstancedMesh(geo, mat, capacity);
+    this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.mesh.frustumCulled = false;
+    for (let i = capacity - 1; i >= 0; i--) {
+      this.freeList.push(i);
+      this.dummy.position.set(0, -50, 0);
+      this.dummy.rotation.set(0, 0, 0);
+      this.dummy.scale.setScalar(0.001);
+      this.dummy.updateMatrix();
+      this.mesh.setMatrixAt(i, this.dummy.matrix);
+      this.mesh.setColorAt(i, WHITE);
+    }
+    if (this.mesh.instanceColor) this.mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+    parent.add(this.mesh);
+  }
+
+  get free(): number {
+    return this.freeList.length;
+  }
+
+  alloc(): number {
+    return this.freeList.length > 0 ? this.freeList.pop()! : -1;
+  }
+
+  release(index: number): void {
+    this.dummy.position.set(0, -50, 0);
+    this.dummy.rotation.set(0, 0, 0);
+    this.dummy.scale.setScalar(0.001);
+    this.dummy.updateMatrix();
+    this.mesh.setMatrixAt(index, this.dummy.matrix);
+    this.mesh.instanceMatrix.needsUpdate = true;
+    this.freeList.push(index);
+  }
+
+  setSlot(index: number, x: number, y: number, z: number, yaw: number, tiltZ: number,
+    sx: number, sy: number, sz: number): void {
+    this.dummy.position.set(x, y, z);
+    this.dummy.rotation.set(0, yaw, tiltZ, 'YZX' as THREE.EulerOrder);
+    this.dummy.scale.set(sx, sy, sz);
+    this.dummy.updateMatrix();
+    this.mesh.setMatrixAt(index, this.dummy.matrix);
+    this.mesh.instanceMatrix.needsUpdate = true;
+  }
+
+  setTint(index: number, color: THREE.Color): void {
+    this.mesh.setColorAt(index, color);
+    if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+  }
+
+  dispose(parent: THREE.Group): void {
+    parent.remove(this.mesh);
+    this.mesh.geometry.dispose();
+    (this.mesh.material as THREE.Material).dispose();
+  }
+}
+
+/**
  * Logic-driven resource nodes (trees to harvest, ore rocks, herbs...).
  *
  * The game logic owns existence/amount/depletion; this class renders
  * whatever state it is handed, including the depleted variant
  * (stump / rubble / picked-clean) when state.depleted is true.
+ *
+ * Rendering paths (2026-11-06): the numerous small kinds — sprite
+ * props (branch, pebble, herb, flowers, grass) and the water / oil
+ * pools — are drawn through shared InstancedMesh pools, so a forest
+ * of natural objects costs a handful of draw calls for them instead
+ * of one group per object. The large kinds (tree, rock, ore, bush,
+ * clay, mushroom) keep per-node groups because each carries unique
+ * materials for the occlusion fade and the reaction blink, but their
+ * geometries come from a shared cache instead of being re-allocated
+ * per node.
  */
 export class ResourceRenderer {
   readonly group = new THREE.Group();
@@ -51,6 +152,10 @@ export class ResourceRenderer {
   private gpt: Record<string, THREE.Texture>;
   /** Camera azimuth: sprite props stand facing it (the camera never orbits). */
   private yawRad: number;
+  /** Shared geometries for the group path (never disposed per node). */
+  private geoCache = new Map<string, THREE.BufferGeometry>();
+  /** Instanced pools, created lazily per texture / shape. */
+  private pools = new Map<string, InstancedPool>();
 
   constructor(
     groundHeightAt: (x: number, z: number) => number,
@@ -66,6 +171,56 @@ export class ResourceRenderer {
     this.rockCrackTex = am.createRockCrackTexture();
   }
 
+  /* ---------------- instanced pool plumbing ---------------- */
+
+  private geo(key: string, make: () => THREE.BufferGeometry): THREE.BufferGeometry {
+    let g = this.geoCache.get(key);
+    if (!g) {
+      g = make();
+      g.userData.shared = true;
+      this.geoCache.set(key, g);
+    }
+    return g;
+  }
+
+  private spritePool(texKey: string, flat = false): InstancedPool | null {
+    const tex = this.gpt[texKey];
+    if (!tex) return null;
+    const key = flat ? `flat:${texKey}` : `spr:${texKey}`;
+    let pool = this.pools.get(key);
+    if (!pool) {
+      const mat = new THREE.MeshStandardMaterial({
+        map: tex,
+        alphaTest: flat ? 0.5 : 0.45,
+        side: THREE.DoubleSide,
+        roughness: 0.95,
+        // Same soft lift as the group-path sprites: a flat plane
+        // facing away from the low sun must not go black.
+        ...(flat ? {} : { emissive: 0x66553d, emissiveMap: tex, emissiveIntensity: 0.38 }),
+        ...(flat ? { polygonOffset: true, polygonOffsetFactor: -2 } : {}),
+      });
+      const geo = flat
+        ? (() => { const p = new THREE.PlaneGeometry(1, 0.75); p.rotateX(-Math.PI / 2); return p; })()
+        : (() => { const p = new THREE.PlaneGeometry(1, 1); p.translate(0, 0.5, 0); return p; })();
+      pool = new InstancedPool(geo, mat, 224, this.group);
+      pool.mesh.receiveShadow = flat;
+      this.pools.set(key, pool);
+    }
+    return pool;
+  }
+
+  private shapePool(key: string, makeGeo: () => THREE.BufferGeometry,
+    mat: THREE.Material, capacity: number): InstancedPool {
+    let pool = this.pools.get(key);
+    if (!pool) {
+      pool = new InstancedPool(makeGeo(), mat, capacity, this.group);
+      this.pools.set(key, pool);
+    }
+    return pool;
+  }
+
+  /* ---------------- public API ---------------- */
+
   setResource(id: string, state: ResourceVisualState | null): void {
     if (state === null || state.visible === false) {
       this.removeResource(id);
@@ -73,86 +228,163 @@ export class ResourceRenderer {
     }
     const prev = this.entries.get(id);
     const needsRebuild =
-      !prev || prev.state.type !== state.type || prev.state.depleted !== state.depleted;
+      !prev || prev.state.type !== state.type || prev.state.depleted !== state.depleted ||
+      prev.state.natural?.variant !== state.natural?.variant;
+    const y = state.position.y ?? this.groundHeightAt(state.position.x, state.position.z);
     if (needsRebuild) {
       this.removeResource(id);
       const seed = [...id].reduce((a, c) => a + c.charCodeAt(0), 0);
-      const built = this.buildNode(state, seed);
-      built.group.position.set(
-        state.position.x,
-        state.position.y ?? this.groundHeightAt(state.position.x, state.position.z),
-        state.position.z,
-      );
-      built.group.rotation.y = state.rotationY ?? 0;
       const s = state.scale ?? 1;
-      built.group.scale.setScalar(s);
-      this.group.add(built.group);
-      this.entries.set(id, {
-        group: built.group,
-        state,
-        pulseMaterials: built.pulseMaterials,
-        baseOpacities: built.pulseMaterials.map((m) => m.opacity),
-        baseScale: s,
-        fade: 1,
-        ring: null,
-      });
+      const inst = state.depleted
+        ? this.buildInstancedDepleted(state, seed)
+        : this.buildInstanced(state, seed);
+      if (inst) {
+        const entry: Entry = {
+          state, group: null, slots: inst, pulseMaterials: [], baseOpacities: [],
+          baseScale: s, fade: 1, ring: null,
+          pos: new THREE.Vector3(state.position.x, y, state.position.z),
+          tilted: false, flashed: false,
+        };
+        this.entries.set(id, entry);
+        this.placeSlots(entry, 0);
+      } else {
+        const built = this.buildNode(state, seed);
+        built.group.position.set(state.position.x, y, state.position.z);
+        built.group.rotation.y = state.rotationY ?? 0;
+        built.group.scale.setScalar(s);
+        this.group.add(built.group);
+        this.entries.set(id, {
+          state,
+          group: built.group,
+          slots: [],
+          pulseMaterials: built.pulseMaterials,
+          baseOpacities: built.pulseMaterials.map((m) => m.opacity),
+          baseScale: s,
+          fade: 1,
+          ring: null,
+          pos: new THREE.Vector3(state.position.x, y, state.position.z),
+          tilted: false,
+          flashed: false,
+        });
+      }
     } else if (prev) {
       prev.state = state;
-      prev.group.position.set(
-        state.position.x,
-        state.position.y ?? this.groundHeightAt(state.position.x, state.position.z),
-        state.position.z,
-      );
+      prev.pos.set(state.position.x, y, state.position.z);
+      if (prev.group) {
+        prev.group.position.copy(prev.pos);
+      } else {
+        this.placeSlots(prev, 0);
+      }
+      if (prev.ring) prev.ring.position.set(prev.pos.x, prev.pos.y + 0.07, prev.pos.z);
     }
   }
 
   removeResource(id: string): void {
     const entry = this.entries.get(id);
     if (!entry) return;
-    this.group.remove(entry.group);
-    disposeObject(entry.group);
+    if (entry.group) {
+      this.group.remove(entry.group);
+      this.disposeGroup(entry.group);
+    }
+    for (const slot of entry.slots) slot.pool.release(slot.index);
+    if (entry.ring) {
+      this.group.remove(entry.ring);
+      disposeObject(entry.ring);
+    }
     this.entries.delete(id);
+  }
+
+  /** Dispose a node group without touching shared cached geometries. */
+  private disposeGroup(root: THREE.Group): void {
+    root.traverse((o) => {
+      if (o instanceof THREE.Mesh) {
+        if (!o.geometry.userData.shared) o.geometry.dispose();
+        const mat = o.material as THREE.Material | THREE.Material[];
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+        else mat.dispose();
+      }
+    });
+  }
+
+  /** Write an instanced entry's slot matrices (optionally tilted). */
+  private placeSlots(entry: Entry, tiltZ: number): void {
+    const s = entry.baseScale;
+    for (const slot of entry.slots) {
+      slot.pool.setSlot(
+        slot.index,
+        entry.pos.x + slot.dx * s, entry.pos.y + slot.dy * s, entry.pos.z + slot.dz * s,
+        slot.yaw, tiltZ,
+        slot.sx * s, slot.sy * s, slot.sz * s,
+      );
+    }
+    entry.tilted = tiltZ !== 0;
+  }
+
+  private setSlotsFlash(entry: Entry, on: boolean): void {
+    for (const slot of entry.slots) slot.pool.setTint(slot.index, on ? FLASH_COLOR : slot.tint);
+    entry.flashed = on;
   }
 
   update(time: number): void {
     for (const entry of this.entries.values()) {
       const st = entry.state;
       const reacting = st.phase === 'reacting' && !st.depleted;
-      // Harvest reaction (cosmetic only): the game sets phase while a
-      // harvest is in progress; visuals return exactly to rest when it
-      // ends, so a finished reaction can never leave a node tilted.
-      if (reacting) {
-        if (st.type === 'tree') {
-          entry.group.rotation.z = Math.sin(time * 26) * 0.035;
-          entry.group.rotation.x = Math.cos(time * 22) * 0.02;
-        } else if (st.type === 'rock' || st.type === 'ore') {
-          const j = 1 + Math.sin(time * 30) * 0.012;
-          entry.group.scale.setScalar(entry.baseScale * j);
-          entry.group.rotation.z = Math.sin(time * 30) * 0.008;
-        } else if (st.type === 'water' || st.type === 'oil') {
-          // Pools do not sway; the blink alone marks the interaction.
+      if (entry.group) {
+        // Harvest reaction (cosmetic only): the game sets phase while
+        // a harvest is in progress; visuals return exactly to rest
+        // when it ends, so a finished reaction can never leave a node
+        // tilted.
+        if (reacting) {
+          if (st.type === 'tree') {
+            entry.group.rotation.z = Math.sin(time * 26) * 0.035;
+            entry.group.rotation.x = Math.cos(time * 22) * 0.02;
+          } else if (st.type === 'rock' || st.type === 'ore') {
+            const j = 1 + Math.sin(time * 30) * 0.012;
+            entry.group.scale.setScalar(entry.baseScale * j);
+            entry.group.rotation.z = Math.sin(time * 30) * 0.008;
+          } else if (st.type === 'water' || st.type === 'oil') {
+            // Pools do not sway; the blink alone marks the interaction.
+          } else {
+            entry.group.rotation.z = Math.sin(time * 10) * 0.06;
+          }
+          // Warm blink, kept well below blow-out: the node must stay
+          // identifiable while it reacts (verified against screenshots
+          // — a 0.4 peak washed the whole tree white under bloom).
+          const flash = Math.sin(time * 18) > 0 ? 0.2 : 0.02;
+          for (const mat of entry.pulseMaterials) mat.emissive.setRGB(flash, flash * 0.85, flash * 0.55);
         } else {
-          entry.group.rotation.z = Math.sin(time * 10) * 0.06;
+          entry.group.rotation.x = 0;
+          entry.group.rotation.z = 0;
+          entry.group.scale.setScalar(entry.baseScale);
+          for (const mat of entry.pulseMaterials) mat.emissive.setRGB(0, 0, 0);
         }
-        // Warm blink, kept well below blow-out: the node must stay
-        // identifiable while it reacts (verified against screenshots —
-        // a 0.4 peak washed the whole tree white under bloom).
-        const flash = Math.sin(time * 18) > 0 ? 0.2 : 0.02;
-        for (const mat of entry.pulseMaterials) mat.emissive.setRGB(flash, flash * 0.85, flash * 0.55);
-      } else {
-        entry.group.rotation.x = 0;
-        entry.group.rotation.z = 0;
-        entry.group.scale.setScalar(entry.baseScale);
-        for (const mat of entry.pulseMaterials) mat.emissive.setRGB(0, 0, 0);
+      } else if (entry.slots.length > 0) {
+        // Instanced path: sway = a small tilt on the slot matrices,
+        // blink = a warm instance-colour flash (shared materials
+        // cannot blink per node).
+        if (reacting) {
+          if (st.type !== 'water' && st.type !== 'oil') {
+            this.placeSlots(entry, Math.sin(time * 10) * 0.06);
+          }
+          const on = Math.sin(time * 18) > 0;
+          if (on !== entry.flashed) this.setSlotsFlash(entry, on);
+        } else {
+          if (entry.tilted) this.placeSlots(entry, 0);
+          if (entry.flashed) this.setSlotsFlash(entry, false);
+        }
       }
       // Highlight = a pulsing ring at the node's feet (2026-11-06,
       // Claude's request). The previous whole-node emissive pulse lit
-      // up entire canopies and hid the player and name labels.
+      // up entire canopies and hid the player and name labels. The
+      // ring renders through foliage (depth test off, top render
+      // order) because under a canopy it was otherwise invisible in
+      // the forest — it is a UI marker, not a world object.
       if (st.highlighted === true && !st.depleted) {
         if (!entry.ring) {
-          const r = (RESOURCE_VISUAL_SPECS[st.type]?.footprintRadius ?? 0.5) * 1.3;
+          const r = (RESOURCE_VISUAL_SPECS[st.type]?.footprintRadius ?? 0.5) * 1.3 * entry.baseScale;
           entry.ring = this.makeRing(r);
-          entry.group.add(entry.ring);
+          entry.ring.position.set(entry.pos.x, entry.pos.y + 0.07, entry.pos.z);
+          this.group.add(entry.ring);
         }
         entry.ring.visible = true;
         const m = entry.ring.material as THREE.MeshBasicMaterial;
@@ -171,29 +403,32 @@ export class ResourceRenderer {
       transparent: true,
       opacity: 0.7,
       depthWrite: false,
+      depthTest: false,
       side: THREE.DoubleSide,
     });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.y = 0.07;
     mesh.scale.setScalar(radius);
-    mesh.renderOrder = 3;
+    mesh.renderOrder = 999;
+    mesh.frustumCulled = false;
     return mesh;
   }
 
   /**
    * Fade tall nodes (trees, rocks, ore, bushes) that block the
-   * camera's line of sight to the player — the same treatment the
-   * environment trees and structures get (2026-11-06, Claude's
-   * request: most forest trees are game-owned nodes, and the player
-   * vanished completely behind them). Node materials are unique per
-   * node, so fading one never touches another.
+   * camera's view of the player. Two tests: the node near the
+   * camera->player segment, and — for trees — a crown that simply
+   * hangs over the player from the side (Claude 2026-11-06: the
+   * segment test alone left the player half-covered in dense
+   * forest). Node materials are unique per node, so fading one never
+   * touches another. Only group-path kinds can be in the fade set;
+   * the instanced kinds are all low ground props.
    */
   updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
     const FADE_MIN = 0.22;
     const k = Math.min(1, dt * 7);
     for (const entry of this.entries.values()) {
       const st = entry.state;
-      if (st.depleted) continue;
+      if (!entry.group || st.depleted) continue;
       if (st.type !== 'tree' && st.type !== 'rock' && st.type !== 'ore' && st.type !== 'bush') continue;
       const spec = RESOURCE_VISUAL_SPECS[st.type];
       const p = entry.group.position;
@@ -204,7 +439,13 @@ export class ResourceRenderer {
         playerPos.x, playerPos.y, playerPos.z,
         OCCL_POINT.x, OCCL_POINT.y, OCCL_POINT.z,
       );
-      const goal = d < radius ? FADE_MIN : 1;
+      let goal = d < radius ? FADE_MIN : 1;
+      if (goal === 1 && st.type === 'tree') {
+        const dx = p.x - playerPos.x;
+        const dz = p.z - playerPos.z;
+        const reach = 3.1 * entry.baseScale;
+        if (dx * dx + dz * dz < reach * reach) goal = FADE_MIN;
+      }
       if (entry.fade === goal) continue;
       let next = entry.fade + (goal - entry.fade) * k;
       if (Math.abs(goal - next) < 0.01) next = goal;
@@ -218,9 +459,150 @@ export class ResourceRenderer {
 
   dispose(): void {
     for (const id of [...this.entries.keys()]) this.removeResource(id);
+    for (const pool of this.pools.values()) pool.dispose(this.group);
+    this.pools.clear();
+    for (const g of this.geoCache.values()) g.dispose();
+    this.geoCache.clear();
   }
 
-  /* ---------------------------------------------------------- */
+  /* ---------------- instanced builders ---------------- */
+
+  private allocSlots(pool: InstancedPool,
+    defs: Array<Omit<SlotRef, 'pool' | 'index'>>): SlotRef[] | null {
+    if (pool.free < defs.length) return null;
+    return defs.map((d) => ({ pool, index: pool.alloc(), ...d }));
+  }
+
+  /** Crossed yaw-facing sprite planes (all sharing the node origin). */
+  private crossSlots(texKey: string, count: number, w: number, h: number,
+    tint: THREE.Color): SlotRef[] | null {
+    const pool = this.spritePool(texKey);
+    if (!pool) return null;
+    const defs: Array<Omit<SlotRef, 'pool' | 'index'>> = [];
+    for (let i = 0; i < count; i++) {
+      defs.push({
+        dx: 0, dy: 0, dz: 0,
+        yaw: this.yawRad + (i * Math.PI) / count,
+        sx: w, sy: h, sz: 1,
+        tint,
+      });
+    }
+    return this.allocSlots(pool, defs);
+  }
+
+  /** Try the instanced path; null means "use the group path". */
+  private buildInstanced(state: ResourceVisualState, seed: number): SlotRef[] | null {
+    switch (state.type) {
+      case 'branch': {
+        const pool = this.spritePool('prop_branch');
+        if (!pool) return null;
+        return this.allocSlots(pool, [{
+          dx: 0, dy: 0, dz: 0, yaw: this.yawRad, sx: 0.95, sy: 0.78, sz: 1, tint: WHITE,
+        }]);
+      }
+      case 'pebble': {
+        const pool = this.spritePool('prop_pebbles');
+        if (!pool) return null;
+        const tint = state.natural?.variant === 'flint'
+          ? new THREE.Color(0.56, 0.56, 0.6) : WHITE;
+        return this.allocSlots(pool, [{
+          dx: 0, dy: 0, dz: 0, yaw: this.yawRad, sx: 0.6, sy: 0.49, sz: 1, tint,
+        }]);
+      }
+      case 'herb':
+        return this.crossSlots('herb_patch', 2, 0.62, 0.37, WHITE);
+      case 'flowers': {
+        const keys = ['flower_white', 'flower_yellow', 'flower_purple'];
+        return this.crossSlots(keys[seed % 3], 2, 0.6, 0.42, WHITE);
+      }
+      case 'grass': {
+        // Gatherable grass （草むら）: four crossed planes, taller and
+        // denser than the scenery tufts (which are now height-capped
+        // and thinned around nodes), with a warm-green tint — the
+        // clump must read as its own thing at a glance.
+        const key = this.gpt.grass_wide ? 'grass_wide' : 'grass_short';
+        return this.crossSlots(key, 4, 1.05, 0.85, new THREE.Color(1.05, 1.12, 0.85));
+      }
+      case 'water':
+      case 'oil': {
+        const water = state.type === 'water';
+        const cyl = this.shapePool(
+          water ? 'waterCyl' : 'oilCyl',
+          () => new THREE.CylinderGeometry(0.5, water ? 0.56 : 0.57, 1, 18),
+          new THREE.MeshStandardMaterial(water
+            ? { color: 0x2e7cc2, roughness: 0.12, metalness: 0.05, transparent: true, opacity: 0.92 }
+            : { color: 0x16120e, roughness: 0.18, metalness: 0.1, transparent: true, opacity: 0.97 }),
+          96,
+        );
+        const sheen = this.shapePool(
+          water ? 'waterSheen' : 'oilSheen',
+          () => { const c = new THREE.CircleGeometry(0.5, 18); c.rotateX(-Math.PI / 2); return c; },
+          new THREE.MeshStandardMaterial(water
+            ? { color: 0x9fd0ee, roughness: 0.1, transparent: true, opacity: 0.4 }
+            : { color: 0x6a5a8c, roughness: 0.15, transparent: true, opacity: 0.3 }),
+          96,
+        );
+        const stones = this.shapePool(
+          'rimStones',
+          () => { const g = new THREE.IcosahedronGeometry(0.5, 1); jitterRock(g, 0.18); return g; },
+          new THREE.MeshStandardMaterial({
+            map: this.gpt.rock_layered ?? this.rockCrackTex, color: 0xbdbdc2, roughness: 0.98,
+          }),
+          512,
+        );
+        stones.mesh.castShadow = true;
+        const stoneCount = water ? 6 : 3;
+        if (cyl.free < 1 || sheen.free < 1 || stones.free < stoneCount) return null;
+        const slots: SlotRef[] = [];
+        slots.push({
+          pool: cyl, index: cyl.alloc(), dx: 0, dy: water ? 0.05 : 0.045, dz: 0, yaw: 0,
+          sx: water ? 1.32 : 1.28, sy: water ? 0.1 : 0.09, sz: water ? 1.32 : 1.28, tint: WHITE,
+        });
+        slots.push({
+          pool: sheen, index: sheen.alloc(), dx: 0, dy: water ? 0.105 : 0.095, dz: 0, yaw: 0,
+          sx: water ? 0.84 : 0.8, sy: 1, sz: water ? 0.84 : 0.8, tint: WHITE,
+        });
+        for (let i = 0; i < stoneCount; i++) {
+          const a = (i / stoneCount) * Math.PI * 2 + (water ? seed : seed * 0.7);
+          const d = water ? (i % 2 === 0 ? 0.22 : 0.3) : 0.32;
+          slots.push({
+            pool: stones, index: stones.alloc(),
+            dx: Math.cos(a) * (water ? 0.66 : 0.62), dy: water ? 0.05 : 0.08, dz: Math.sin(a) * (water ? 0.66 : 0.62),
+            yaw: a, sx: d, sy: d * 0.6, sz: d, tint: WHITE,
+          });
+        }
+        return slots;
+      }
+      default:
+        return null;
+    }
+  }
+
+  /** Instanced depleted forms; [] = handled, draw nothing. */
+  private buildInstancedDepleted(state: ResourceVisualState, seed: number): SlotRef[] | null {
+    switch (state.type) {
+      case 'grass':
+      case 'herb':
+      case 'flowers': {
+        const pool = this.spritePool('prop_cut_patch', true);
+        if (!pool) return null;
+        return this.allocSlots(pool, [{
+          dx: 0, dy: 0.03, dz: 0, yaw: seed * 1.7, sx: 0.85, sy: 1, sz: 0.85, tint: WHITE,
+        }]);
+      }
+      case 'branch':
+      case 'pebble':
+      case 'water':
+      case 'oil':
+        // Bare ground, exactly as the group path draws it.
+        return [];
+      default:
+        return null;
+    }
+  }
+
+  /* ---------------- group builder (large kinds) ---------------- */
+
   private buildNode(state: ResourceVisualState, seed = 0): {
     group: THREE.Group;
     pulseMaterials: THREE.MeshStandardMaterial[];
@@ -248,7 +630,8 @@ export class ResourceRenderer {
     if (variant === 'flint') rockM.color.set(0x5c5c64);
     /** Upright GPT sprite prop, bottom at the ground contact point,
      *  facing the (fixed) camera azimuth. */
-    const sprite = (tex: THREE.Texture | undefined, w: number, h: number): THREE.Mesh | null => {
+    const sprite = (tex: THREE.Texture | undefined, w: number, h: number,
+      tint?: THREE.Color): THREE.Mesh | null => {
       if (!tex) return null;
       const m = new THREE.MeshStandardMaterial({
         map: tex,
@@ -262,9 +645,13 @@ export class ResourceRenderer {
         emissiveMap: tex,
         emissiveIntensity: 0.38,
       });
+      if (tint) m.color.copy(tint);
       pulseMaterials.push(m);
-      const geo = new THREE.PlaneGeometry(w, h);
-      geo.translate(0, h / 2, 0);
+      const geo = this.geo(`plane:${w}x${h}`, () => {
+        const p = new THREE.PlaneGeometry(w, h);
+        p.translate(0, h / 2, 0);
+        return p;
+      });
       const mesh = new THREE.Mesh(geo, m);
       mesh.rotation.y = this.yawRad - (state.rotationY ?? 0);
       return mesh;
@@ -280,7 +667,8 @@ export class ResourceRenderer {
         polygonOffsetFactor: -2,
       });
       pulseMaterials.push(m);
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size * 0.75), m);
+      const geo = this.geo(`flat:${size}`, () => new THREE.PlaneGeometry(size, size * 0.75));
+      const mesh = new THREE.Mesh(geo, m);
       mesh.rotation.x = -Math.PI / 2;
       mesh.rotation.z = seed * 1.7;
       mesh.position.y = 0.03;
@@ -300,9 +688,11 @@ export class ResourceRenderer {
         const spr = sprite(this.gpt.prop_stump, 1.05, 0.79);
         if (spr) g.add(spr);
         else {
-          const stump = add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 0.4, 8), wood));
+          const stump = add(new THREE.Mesh(
+            this.geo('stump', () => new THREE.CylinderGeometry(0.22, 0.3, 0.4, 8)), wood));
           stump.position.y = 0.2;
-          const top = add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 8), std(0xc8a165, 1)));
+          const top = add(new THREE.Mesh(
+            this.geo('stumpTop', () => new THREE.CylinderGeometry(0.22, 0.22, 0.03, 8)), std(0xc8a165, 1)));
           top.position.y = 0.41;
         }
       } else if (state.type === 'rock' || state.type === 'ore') {
@@ -310,9 +700,9 @@ export class ResourceRenderer {
         if (spr) g.add(spr);
         else {
           for (let i = 0; i < 3; i++) {
-            const geo = new THREE.IcosahedronGeometry(0.22, 0);
-            jitterRock(geo);
-            const r = add(new THREE.Mesh(geo, rockM));
+            const r = add(new THREE.Mesh(
+              this.geo('rubbleJit', () => { const geo = new THREE.IcosahedronGeometry(0.22, 0); jitterRock(geo); return geo; }),
+              rockM));
             r.position.set((i - 1) * 0.3, 0.12, (i % 2) * 0.25 - 0.1);
           }
         }
@@ -325,7 +715,8 @@ export class ResourceRenderer {
         const flat = flatSprite(this.gpt.prop_cut_patch, 0.85);
         if (flat) g.add(flat);
         else {
-          const patch = add(new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.34, 0.05, 10), std(0x5d7031, 1)));
+          const patch = add(new THREE.Mesh(
+            this.geo('patchCyl', () => new THREE.CylinderGeometry(0.32, 0.34, 0.05, 10)), std(0x5d7031, 1)));
           patch.position.y = 0.025;
         }
       }
@@ -336,18 +727,21 @@ export class ResourceRenderer {
 
     switch (state.type) {
       case 'tree': {
-        const trunk = add(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.26, 1.8, 7), wood));
+        const trunk = add(new THREE.Mesh(
+          this.geo('trunk', () => new THREE.CylinderGeometry(0.14, 0.26, 1.8, 7)), wood));
         trunk.position.y = 0.9;
         // Two limbs reaching into the canopy (matches the environment
         // trees' trunk + branches + leaf-mass reading).
         for (let i = 0; i < 2; i++) {
-          const limb = add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.09, 1.1, 5), wood));
+          const limb = add(new THREE.Mesh(
+            this.geo('limb', () => new THREE.CylinderGeometry(0.045, 0.09, 1.1, 5)), wood));
           limb.position.set((i === 0 ? 0.28 : -0.24), 1.95, (i === 0 ? 0.1 : -0.12));
           limb.rotation.z = (i === 0 ? -0.7 : 0.75);
           limb.rotation.x = (i === 0 ? 0.15 : -0.2);
         }
         for (let i = 0; i < 3; i++) {
-          const blob = add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.05 - i * 0.18, 1), leaf));
+          const blob = add(new THREE.Mesh(
+            this.geo(`treeBlob${i}`, () => new THREE.IcosahedronGeometry(1.05 - i * 0.18, 1)), leaf));
           blob.position.set((i - 1) * 0.45, 2.3 + i * 0.5, (i % 2) * 0.4 - 0.2);
           blob.scale.y = 0.85;
         }
@@ -365,9 +759,9 @@ export class ResourceRenderer {
       case 'rock': {
         // Plain rock: no crystal (Claude 2026-11-06 — the crystal made
         // every rock read as an ore deposit). Crystals live on 'ore'.
-        const rockGeo = new THREE.IcosahedronGeometry(0.85, 1);
-        jitterRock(rockGeo);
-        const rock = add(new THREE.Mesh(rockGeo, rockM));
+        const rock = add(new THREE.Mesh(
+          this.geo('rockJit', () => { const geo = new THREE.IcosahedronGeometry(0.85, 1); jitterRock(geo); return geo; }),
+          rockM));
         rock.position.y = 0.45;
         rock.scale.set(1.15, 0.8, 1);
         break;
@@ -375,9 +769,9 @@ export class ResourceRenderer {
       case 'ore': {
         // Ore-bearing rock: the host rock plus a small crystal cluster
         // (quartz white + amber) so the deposit reads at a glance.
-        const rockGeo = new THREE.IcosahedronGeometry(0.85, 1);
-        jitterRock(rockGeo);
-        const rock = add(new THREE.Mesh(rockGeo, rockM));
+        const rock = add(new THREE.Mesh(
+          this.geo('rockJit', () => { const geo = new THREE.IcosahedronGeometry(0.85, 1); jitterRock(geo); return geo; }),
+          rockM));
         rock.position.y = 0.45;
         rock.scale.set(1.15, 0.8, 1);
         const quartz = std(0xf3ead8, 0.25);
@@ -388,116 +782,78 @@ export class ResourceRenderer {
           [0.08, 0.92, -0.36, 0.11, quartz],
         ];
         for (const [cx, cy, cz, cs, cm] of crystals) {
-          const c = add(new THREE.Mesh(new THREE.OctahedronGeometry(cs), cm));
+          const c = add(new THREE.Mesh(
+            this.geo('crystal', () => new THREE.OctahedronGeometry(1)), cm));
           c.position.set(cx, cy, cz);
-          c.scale.y = 1.6;
+          c.scale.set(cs, cs * 1.6, cs);
         }
         break;
       }
       case 'water': {
-        // Water source: a spring pool with a stone rim. The disc sits
-        // slightly above the ground contact so it reads as water even
-        // on dry land away from the river.
+        // Group-path fallback for the spring pool (the instanced
+        // path is the norm; this covers pool exhaustion only).
         const waterM = new THREE.MeshStandardMaterial({
           color: 0x2e7cc2, roughness: 0.12, metalness: 0.05,
           transparent: true, opacity: 0.92,
         });
         pulseMaterials.push(waterM);
-        const pool = add(new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.7, 0.1, 18), waterM));
+        const pool = add(new THREE.Mesh(
+          this.geo('waterCyl', () => new THREE.CylinderGeometry(0.62, 0.7, 0.1, 18)), waterM));
         pool.position.y = 0.05;
         pool.castShadow = false;
         const sheen = new THREE.MeshStandardMaterial({
           color: 0x9fd0ee, roughness: 0.1, transparent: true, opacity: 0.4,
         });
         pulseMaterials.push(sheen);
-        const top = add(new THREE.Mesh(new THREE.CircleGeometry(0.42, 18), sheen));
+        const top = add(new THREE.Mesh(
+          this.geo('sheenCircle', () => new THREE.CircleGeometry(0.42, 18)), sheen));
         top.rotation.x = -Math.PI / 2;
         top.position.y = 0.105;
         top.castShadow = false;
         for (let i = 0; i < 6; i++) {
           const a = (i / 6) * Math.PI * 2 + seed;
-          const s = add(new THREE.Mesh(new THREE.SphereGeometry(0.11 + (i % 2) * 0.04, 7, 6), rockM));
+          const s = add(new THREE.Mesh(
+            this.geo(`rimStone${i % 2}`, () => new THREE.SphereGeometry(0.11 + (i % 2) * 0.04, 7, 6)), rockM));
           s.scale.y = 0.6;
           s.position.set(Math.cos(a) * 0.66, 0.05, Math.sin(a) * 0.66);
         }
         break;
       }
       case 'oil': {
-        // Crude-oil seep: a near-black glossy pool with a faint
-        // violet sheen and dark rocks at the rim.
         const oilM = new THREE.MeshStandardMaterial({
           color: 0x16120e, roughness: 0.18, metalness: 0.1,
           transparent: true, opacity: 0.97,
         });
         pulseMaterials.push(oilM);
-        const pool = add(new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.68, 0.09, 18), oilM));
+        const pool = add(new THREE.Mesh(
+          this.geo('oilCyl', () => new THREE.CylinderGeometry(0.6, 0.68, 0.09, 18)), oilM));
         pool.position.y = 0.045;
         pool.castShadow = false;
         const sheen = new THREE.MeshStandardMaterial({
           color: 0x6a5a8c, roughness: 0.15, transparent: true, opacity: 0.3,
         });
         pulseMaterials.push(sheen);
-        const top = add(new THREE.Mesh(new THREE.CircleGeometry(0.4, 18), sheen));
+        const top = add(new THREE.Mesh(
+          this.geo('sheenCircle', () => new THREE.CircleGeometry(0.42, 18)), sheen));
         top.rotation.x = -Math.PI / 2;
         top.position.y = 0.095;
         top.castShadow = false;
         const darkRock = std(0x33302c, 1);
         for (let i = 0; i < 3; i++) {
           const a = (i / 3) * Math.PI * 2 + seed * 0.7;
-          const geo = new THREE.IcosahedronGeometry(0.16, 0);
-          jitterRock(geo);
-          const r = add(new THREE.Mesh(geo, darkRock));
+          const r = add(new THREE.Mesh(
+            this.geo('oilRock', () => { const geo = new THREE.IcosahedronGeometry(0.16, 0); jitterRock(geo); return geo; }),
+            darkRock));
           r.position.set(Math.cos(a) * 0.62, 0.08, Math.sin(a) * 0.62);
         }
         break;
       }
-      case 'grass': {
-        // Gatherable grass tuft (game-owned 草むら): denser crossed
-        // sprite planes than the decorative ground grass.
-        const tex = this.gpt.grass_wide ?? this.gpt.grass_short;
-        let placed = false;
-        for (let i = 0; i < 3; i++) {
-          const spr = sprite(tex, 0.95, 0.6);
-          if (!spr) break;
-          spr.rotation.y += (i * Math.PI) / 3;
-          g.add(spr);
-          placed = true;
-        }
-        if (!placed) {
-          for (let i = 0; i < 6; i++) {
-            const blade = add(new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.6, 5), leaf));
-            const a = (i / 6) * Math.PI * 2;
-            blade.position.set(Math.cos(a) * 0.18, 0.28, Math.sin(a) * 0.18);
-            blade.rotation.set(Math.sin(a) * 0.3, 0, Math.cos(a) * 0.3);
-          }
-        }
-        break;
-      }
-      case 'bush': {
-        // Gatherable bush （やぶ）: foliage masses + shrub leaf cards,
-        // visibly denser than a decorative shrub.
-        for (let i = 0; i < 3; i++) {
-          const geo = new THREE.IcosahedronGeometry(0.5 - i * 0.09, 1);
-          jitterRock(geo, 0.3);
-          const blob = add(new THREE.Mesh(geo, leaf));
-          blob.position.set((i - 1) * 0.3, 0.36 + (i % 2) * 0.14, (i % 2) * 0.24 - 0.12);
-          blob.scale.y = 0.8;
-        }
-        for (let i = 0; i < 3; i++) {
-          const card = sprite(this.gpt.leaf_shrub, 0.8, 0.66);
-          if (!card) break;
-          const a = (i / 3) * Math.PI * 2 + seed;
-          card.position.set(Math.cos(a) * 0.34, 0.3, Math.sin(a) * 0.34);
-          g.add(card);
-        }
-        break;
-      }
       case 'branch': {
-        // Fallen branch pickup as a GPT sprite (sheet F).
         const spr = sprite(this.gpt.prop_branch, 0.95, 0.78);
         if (spr) g.add(spr);
         else {
-          const main = add(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 1.0, 6), wood));
+          const main = add(new THREE.Mesh(
+            this.geo('branchCyl', () => new THREE.CylinderGeometry(0.04, 0.06, 1.0, 6)), wood));
           main.rotation.z = Math.PI / 2;
           main.rotation.y = 0.4;
           main.position.y = 0.06;
@@ -511,10 +867,10 @@ export class ResourceRenderer {
             (spr.material as THREE.MeshStandardMaterial).color.set(0x8f8f98);
           }
           g.add(spr);
-        }
-        else {
+        } else {
           for (let i = 0; i < 3; i++) {
-            const p = add(new THREE.Mesh(new THREE.SphereGeometry(0.13 + (i % 2) * 0.05, 8, 6), rockM));
+            const p = add(new THREE.Mesh(
+              this.geo(`pebbleS${i % 2}`, () => new THREE.SphereGeometry(0.13 + (i % 2) * 0.05, 8, 6)), rockM));
             p.scale.y = 0.6;
             p.position.set((i - 1) * 0.22, 0.06, (i % 2) * 0.16 - 0.06);
           }
@@ -522,7 +878,6 @@ export class ResourceRenderer {
         break;
       }
       case 'herb': {
-        // Crossed cutout planes with the GPT herb sprite.
         const spr = sprite(this.gpt.herb_patch, 0.62, 0.37);
         if (spr) {
           g.add(spr);
@@ -533,7 +888,8 @@ export class ResourceRenderer {
           }
         } else {
           for (let i = 0; i < 5; i++) {
-            const blade = add(new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.55, 5), leaf));
+            const blade = add(new THREE.Mesh(
+              this.geo('herbCone', () => new THREE.ConeGeometry(0.09, 0.55, 5)), leaf));
             const a = (i / 5) * Math.PI * 2;
             blade.position.set(Math.cos(a) * 0.16, 0.26, Math.sin(a) * 0.16);
             blade.rotation.set(Math.sin(a) * 0.35, 0, Math.cos(a) * 0.35);
@@ -542,7 +898,6 @@ export class ResourceRenderer {
         break;
       }
       case 'flowers': {
-        // Flower colour is a stable per-id choice (seeded by the id).
         const texes = [this.gpt.flower_white, this.gpt.flower_yellow, this.gpt.flower_purple];
         const spr = sprite(texes[seed % 3], 0.6, 0.42);
         if (spr) {
@@ -558,29 +913,82 @@ export class ResourceRenderer {
           for (let i = 0; i < 4; i++) {
             const x = (i % 2) * 0.4 - 0.2;
             const z = Math.floor(i / 2) * 0.4 - 0.2;
-            const stem = add(new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 5), stemM));
+            const stem = add(new THREE.Mesh(
+              this.geo('flowerStem', () => new THREE.CylinderGeometry(0.02, 0.02, 0.4, 5)), stemM));
             stem.position.set(x, 0.2, z);
-            const head = add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 0), headM));
+            const head = add(new THREE.Mesh(
+              this.geo('flowerHead', () => new THREE.IcosahedronGeometry(0.11, 0)), headM));
             head.position.set(x, 0.45, z);
           }
         }
         break;
       }
+      case 'grass': {
+        // Group-path fallback for the gatherable grass clump (used
+        // only when the instanced pool or its texture is unavailable):
+        // same taller, denser, warm-tinted form as the pooled one.
+        const tex = this.gpt.grass_wide ?? this.gpt.grass_short;
+        let placed = false;
+        for (let i = 0; i < 4; i++) {
+          const spr = sprite(tex, 1.05, 0.85, new THREE.Color(1.05, 1.12, 0.85));
+          if (!spr) break;
+          spr.rotation.y += (i * Math.PI) / 4;
+          g.add(spr);
+          placed = true;
+        }
+        if (!placed) {
+          for (let i = 0; i < 6; i++) {
+            const blade = add(new THREE.Mesh(
+              this.geo('grassCone', () => new THREE.ConeGeometry(0.1, 0.6, 5)), leaf));
+            const a = (i / 6) * Math.PI * 2;
+            blade.position.set(Math.cos(a) * 0.18, 0.28, Math.sin(a) * 0.18);
+            blade.rotation.set(Math.sin(a) * 0.3, 0, Math.cos(a) * 0.3);
+          }
+        }
+        break;
+      }
+      case 'bush': {
+        // Gatherable bush （やぶ）: foliage masses + shrub leaf cards,
+        // visibly denser than a decorative shrub.
+        for (let i = 0; i < 3; i++) {
+          const blob = add(new THREE.Mesh(
+            this.geo(`bushBlob${i}`, () => {
+              const geo = new THREE.IcosahedronGeometry(0.5 - i * 0.09, 1);
+              jitterRock(geo, 0.3);
+              return geo;
+            }),
+            leaf));
+          blob.position.set((i - 1) * 0.3, 0.36 + (i % 2) * 0.14, (i % 2) * 0.24 - 0.12);
+          blob.scale.y = 0.8;
+        }
+        for (let i = 0; i < 3; i++) {
+          const card = sprite(this.gpt.leaf_shrub, 0.8, 0.66);
+          if (!card) break;
+          const a = (i / 3) * Math.PI * 2 + seed;
+          card.position.set(Math.cos(a) * 0.34, 0.3, Math.sin(a) * 0.34);
+          g.add(card);
+        }
+        break;
+      }
       case 'clay': {
-        const mound = add(new THREE.Mesh(new THREE.SphereGeometry(0.6, 10, 8), std(0xa9764e, 1)));
+        const mound = add(new THREE.Mesh(
+          this.geo('clayMound', () => new THREE.SphereGeometry(0.6, 10, 8)), std(0xa9764e, 1)));
         mound.scale.y = 0.55;
         mound.position.y = 0.08;
         break;
       }
       case 'mushroom': {
-        const stem = add(new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 0.35, 8), std(0xe8dcc3, 0.8)));
+        const stem = add(new THREE.Mesh(
+          this.geo('mushStem', () => new THREE.CylinderGeometry(0.09, 0.13, 0.35, 8)), std(0xe8dcc3, 0.8)));
         stem.position.y = 0.17;
-        const cap = add(new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), std(0xb8452e, 0.7)));
+        const cap = add(new THREE.Mesh(
+          this.geo('mushCap', () => new THREE.SphereGeometry(0.3, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2)), std(0xb8452e, 0.7)));
         cap.position.y = 0.34;
         break;
       }
       default: {
-        const blob = add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.4, 1), leaf));
+        const blob = add(new THREE.Mesh(
+          this.geo('defaultBlob', () => new THREE.IcosahedronGeometry(0.4, 1)), leaf));
         blob.position.y = 0.35;
       }
     }
@@ -616,7 +1024,7 @@ export const RESOURCE_VISUAL_SPECS: Record<string, ResourceVisualSpec> = {
   mushroom: { footprintRadius: 0.32, height: 0.65, depletedForm: 'none' },
   branch: { footprintRadius: 0.5, height: 0.78, depletedForm: 'none' },
   pebble: { footprintRadius: 0.32, height: 0.49, depletedForm: 'none' },
-  grass: { footprintRadius: 0.45, height: 0.55, depletedForm: 'cut-patch' },
+  grass: { footprintRadius: 0.45, height: 0.85, depletedForm: 'cut-patch' },
   bush: { footprintRadius: 0.55, height: 0.85, depletedForm: 'cut-patch' },
   water: { footprintRadius: 0.7, height: 0.15, depletedForm: 'none' },
   oil: { footprintRadius: 0.7, height: 0.12, depletedForm: 'none' },

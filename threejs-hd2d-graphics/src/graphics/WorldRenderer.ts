@@ -57,6 +57,11 @@ export class WorldRenderer {
     this.environment.updateOcclusion(cameraPos, playerPos, dt);
   }
 
+  /** Hide scenery ground cover around game-owned natural objects. */
+  thinGroundCover(points: Array<{ x: number; z: number; r: number }>): void {
+    this.environment.thinGroundCover(points);
+  }
+
   /** Raycast helper behind GraphicsEngine.pickGround(). */
   pick(raycaster: THREE.Raycaster): { point: THREE.Vector3; surface: 'terrain' | 'water' } | null {
     return this.terrain.pick(raycaster);
