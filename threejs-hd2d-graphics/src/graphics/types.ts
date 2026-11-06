@@ -49,6 +49,17 @@ export interface ResourceVisualState {
   /** Gentle attention pulse (e.g. currently targeted by the player). */
   highlighted?: boolean;
   /**
+   * Natural-object metadata (2026-11-06, NATURAL-OBJECTS-CONTRACT).
+   * Owned and decided by the game; the renderer only reads `variant`
+   * for appearance ('flint' pebbles read darker, 'basalt' rocks are
+   * black rocks). Everything else is ignored by the renderer.
+   */
+  natural?: {
+    kind?: string;
+    variant?: string | null;
+    state?: string;
+  };
+  /**
    * Interaction phase (2026-11-06). 'reacting' while the player is
    * actively harvesting this node: trees shake, rocks jolt and flash,
    * herbs sway — purely cosmetic, driven by the game sending the
@@ -72,6 +83,11 @@ export type StructureType =
   | 'factory'
   | 'power-plant'
   | 'research-institute'
+  | 'waterwheel'
+  | 'steam-engine'
+  | 'distillation-tower'
+  | 'drilling-rig'
+  | 'bridge'
   | (string & {});
 
 export type EffectType =
@@ -102,6 +118,22 @@ export interface GroundPick {
   surface: 'terrain' | 'water';
 }
 
+/**
+ * Which built-in decoration families the renderer scatters on its own.
+ * Families the game manages as gatherable natural objects (handed over
+ * with updateResourceVisual) should be turned off here so the same
+ * tree or rock is never drawn twice — once as scenery, once as a node.
+ * Fine detail (grass blades, ferns, fallen leaves, ground decals) is
+ * not affected. All default to true (2026-11-06, requested by Claude).
+ */
+export interface DecorOptions {
+  trees?: boolean;
+  rocks?: boolean;
+  logs?: boolean;
+  pebbles?: boolean;
+  shrubs?: boolean;
+}
+
 export interface GraphicsOptions {
   /** Rendering quality. 'auto' picks from device hints. Default 'auto'. */
   quality?: QualityTier | 'auto';
@@ -122,6 +154,8 @@ export interface GraphicsOptions {
   /** HUD safe-area insets (CSS px) known at startup. Can be updated
    *  at runtime with setViewportInsets(). */
   viewportInsets?: ViewportInsets;
+  /** Built-in decoration families to draw (see DecorOptions). */
+  decor?: DecorOptions;
   /** Called when the WebGL context is lost / restored. */
   onContextLost?: () => void;
   onContextRestored?: () => void;

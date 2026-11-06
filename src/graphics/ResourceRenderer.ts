@@ -2,13 +2,23 @@ import * as THREE from 'three';
 import type { ResourceVisualState } from './types';
 import { disposeObject } from './StructureRenderer';
 import { AssetManager } from './AssetManager';
+import { segmentPointDistance } from './utils';
 
 interface Entry {
   group: THREE.Group;
   state: ResourceVisualState;
   pulseMaterials: THREE.MeshStandardMaterial[];
+  /** Material opacities as built (fade multiplies these). */
+  baseOpacities: number[];
   baseScale: number;
+  /** Occlusion fade factor, 1 = fully visible. */
+  fade: number;
+  /** Ground ring shown while the node is highlighted. */
+  ring: THREE.Mesh | null;
 }
+
+/** Scratch vector for the per-frame occlusion test (no allocation). */
+const OCCL_POINT = new THREE.Vector3();
 
 /** Deterministic vertex jitter (same input position -> same offset),
  *  so resource rocks share the environment rocks' craggy silhouette. */
@@ -77,7 +87,15 @@ export class ResourceRenderer {
       const s = state.scale ?? 1;
       built.group.scale.setScalar(s);
       this.group.add(built.group);
-      this.entries.set(id, { group: built.group, state, pulseMaterials: built.pulseMaterials, baseScale: s });
+      this.entries.set(id, {
+        group: built.group,
+        state,
+        pulseMaterials: built.pulseMaterials,
+        baseOpacities: built.pulseMaterials.map((m) => m.opacity),
+        baseScale: s,
+        fade: 1,
+        ring: null,
+      });
     } else if (prev) {
       prev.state = state;
       prev.group.position.set(
@@ -107,10 +125,12 @@ export class ResourceRenderer {
         if (st.type === 'tree') {
           entry.group.rotation.z = Math.sin(time * 26) * 0.035;
           entry.group.rotation.x = Math.cos(time * 22) * 0.02;
-        } else if (st.type === 'rock') {
+        } else if (st.type === 'rock' || st.type === 'ore') {
           const j = 1 + Math.sin(time * 30) * 0.012;
           entry.group.scale.setScalar(entry.baseScale * j);
           entry.group.rotation.z = Math.sin(time * 30) * 0.008;
+        } else if (st.type === 'water' || st.type === 'oil') {
+          // Pools do not sway; the blink alone marks the interaction.
         } else {
           entry.group.rotation.z = Math.sin(time * 10) * 0.06;
         }
@@ -119,16 +139,80 @@ export class ResourceRenderer {
         // a 0.4 peak washed the whole tree white under bloom).
         const flash = Math.sin(time * 18) > 0 ? 0.2 : 0.02;
         for (const mat of entry.pulseMaterials) mat.emissive.setRGB(flash, flash * 0.85, flash * 0.55);
-        continue;
+      } else {
+        entry.group.rotation.x = 0;
+        entry.group.rotation.z = 0;
+        entry.group.scale.setScalar(entry.baseScale);
+        for (const mat of entry.pulseMaterials) mat.emissive.setRGB(0, 0, 0);
       }
-      entry.group.rotation.x = 0;
-      entry.group.rotation.z = 0;
-      entry.group.scale.setScalar(entry.baseScale);
-      const on = st.highlighted === true;
-      const pulse = on ? 0.35 + Math.sin(time * 5) * 0.25 : 0;
-      for (const mat of entry.pulseMaterials) {
-        mat.emissive.setRGB(pulse, pulse * 0.85, pulse * 0.2);
+      // Highlight = a pulsing ring at the node's feet (2026-11-06,
+      // Claude's request). The previous whole-node emissive pulse lit
+      // up entire canopies and hid the player and name labels.
+      if (st.highlighted === true && !st.depleted) {
+        if (!entry.ring) {
+          const r = (RESOURCE_VISUAL_SPECS[st.type]?.footprintRadius ?? 0.5) * 1.3;
+          entry.ring = this.makeRing(r);
+          entry.group.add(entry.ring);
+        }
+        entry.ring.visible = true;
+        const m = entry.ring.material as THREE.MeshBasicMaterial;
+        m.opacity = 0.55 + Math.sin(time * 5) * 0.2;
+      } else if (entry.ring) {
+        entry.ring.visible = false;
       }
+    }
+  }
+
+  private makeRing(radius: number): THREE.Mesh {
+    const geo = new THREE.RingGeometry(0.84, 1, 40);
+    geo.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xffd75e,
+      transparent: true,
+      opacity: 0.7,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.y = 0.07;
+    mesh.scale.setScalar(radius);
+    mesh.renderOrder = 3;
+    return mesh;
+  }
+
+  /**
+   * Fade tall nodes (trees, rocks, ore, bushes) that block the
+   * camera's line of sight to the player — the same treatment the
+   * environment trees and structures get (2026-11-06, Claude's
+   * request: most forest trees are game-owned nodes, and the player
+   * vanished completely behind them). Node materials are unique per
+   * node, so fading one never touches another.
+   */
+  updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+    const FADE_MIN = 0.22;
+    const k = Math.min(1, dt * 7);
+    for (const entry of this.entries.values()) {
+      const st = entry.state;
+      if (st.depleted) continue;
+      if (st.type !== 'tree' && st.type !== 'rock' && st.type !== 'ore' && st.type !== 'bush') continue;
+      const spec = RESOURCE_VISUAL_SPECS[st.type];
+      const p = entry.group.position;
+      const radius = (spec?.footprintRadius ?? 0.6) * entry.baseScale + 0.45;
+      OCCL_POINT.set(p.x, p.y + (spec?.height ?? 1) * entry.baseScale * 0.55, p.z);
+      const d = segmentPointDistance(
+        cameraPos.x, cameraPos.y, cameraPos.z,
+        playerPos.x, playerPos.y, playerPos.z,
+        OCCL_POINT.x, OCCL_POINT.y, OCCL_POINT.z,
+      );
+      const goal = d < radius ? FADE_MIN : 1;
+      if (entry.fade === goal) continue;
+      let next = entry.fade + (goal - entry.fade) * k;
+      if (Math.abs(goal - next) < 0.01) next = goal;
+      entry.fade = next;
+      entry.pulseMaterials.forEach((mat, i) => {
+        mat.opacity = entry.baseOpacities[i] * next;
+        mat.transparent = next < 0.999 || entry.baseOpacities[i] < 1;
+      });
     }
   }
 
@@ -156,6 +240,12 @@ export class ResourceRenderer {
     const rockM = std(0x8d8d90, 0.98);
     rockM.map = this.gpt.rock_layered ?? this.rockCrackTex;
     rockM.color.set(0xbdbdc2);
+    // Game-owned variant tinting (NATURAL-OBJECTS-CONTRACT): basalt
+    // rocks are black rocks, flint pebbles read darker than round
+    // stones. Materials are per-node, so tinting is safe.
+    const variant = state.natural?.variant ?? null;
+    if (variant === 'basalt') rockM.color.set(0x48484f);
+    if (variant === 'flint') rockM.color.set(0x5c5c64);
     /** Upright GPT sprite prop, bottom at the ground contact point,
      *  facing the (fixed) camera azimuth. */
     const sprite = (tex: THREE.Texture | undefined, w: number, h: number): THREE.Mesh | null => {
@@ -215,7 +305,7 @@ export class ResourceRenderer {
           const top = add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 8), std(0xc8a165, 1)));
           top.position.y = 0.41;
         }
-      } else if (state.type === 'rock') {
+      } else if (state.type === 'rock' || state.type === 'ore') {
         const spr = sprite(this.gpt.prop_rubble, 1.1, 0.78);
         if (spr) g.add(spr);
         else {
@@ -226,7 +316,10 @@ export class ResourceRenderer {
             r.position.set((i - 1) * 0.3, 0.12, (i % 2) * 0.25 - 0.1);
           }
         }
-      } else if (state.type === 'herb' || state.type === 'flowers') {
+      } else if (
+        state.type === 'herb' || state.type === 'flowers' ||
+        state.type === 'grass' || state.type === 'bush'
+      ) {
         // Cut patch sprite (cropped stubble), so a harvested spot
         // stays readable instead of vanishing into bare ground.
         const flat = flatSprite(this.gpt.prop_cut_patch, 0.85);
@@ -270,17 +363,133 @@ export class ResourceRenderer {
         break;
       }
       case 'rock': {
+        // Plain rock: no crystal (Claude 2026-11-06 — the crystal made
+        // every rock read as an ore deposit). Crystals live on 'ore'.
         const rockGeo = new THREE.IcosahedronGeometry(0.85, 1);
         jitterRock(rockGeo);
         const rock = add(new THREE.Mesh(rockGeo, rockM));
         rock.position.y = 0.45;
         rock.scale.set(1.15, 0.8, 1);
-        const crystal = add(new THREE.Mesh(
-          new THREE.OctahedronGeometry(0.2),
-          std(0xf3ead8, 0.25),
-        ));
-        crystal.position.set(0.45, 0.85, 0.3);
-        crystal.scale.y = 1.6;
+        break;
+      }
+      case 'ore': {
+        // Ore-bearing rock: the host rock plus a small crystal cluster
+        // (quartz white + amber) so the deposit reads at a glance.
+        const rockGeo = new THREE.IcosahedronGeometry(0.85, 1);
+        jitterRock(rockGeo);
+        const rock = add(new THREE.Mesh(rockGeo, rockM));
+        rock.position.y = 0.45;
+        rock.scale.set(1.15, 0.8, 1);
+        const quartz = std(0xf3ead8, 0.25);
+        const amber = std(0xd9a441, 0.35);
+        const crystals: Array<[number, number, number, number, THREE.MeshStandardMaterial]> = [
+          [0.45, 0.85, 0.3, 0.2, quartz],
+          [-0.32, 0.68, 0.4, 0.13, amber],
+          [0.08, 0.92, -0.36, 0.11, quartz],
+        ];
+        for (const [cx, cy, cz, cs, cm] of crystals) {
+          const c = add(new THREE.Mesh(new THREE.OctahedronGeometry(cs), cm));
+          c.position.set(cx, cy, cz);
+          c.scale.y = 1.6;
+        }
+        break;
+      }
+      case 'water': {
+        // Water source: a spring pool with a stone rim. The disc sits
+        // slightly above the ground contact so it reads as water even
+        // on dry land away from the river.
+        const waterM = new THREE.MeshStandardMaterial({
+          color: 0x2e7cc2, roughness: 0.12, metalness: 0.05,
+          transparent: true, opacity: 0.92,
+        });
+        pulseMaterials.push(waterM);
+        const pool = add(new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.7, 0.1, 18), waterM));
+        pool.position.y = 0.05;
+        pool.castShadow = false;
+        const sheen = new THREE.MeshStandardMaterial({
+          color: 0x9fd0ee, roughness: 0.1, transparent: true, opacity: 0.4,
+        });
+        pulseMaterials.push(sheen);
+        const top = add(new THREE.Mesh(new THREE.CircleGeometry(0.42, 18), sheen));
+        top.rotation.x = -Math.PI / 2;
+        top.position.y = 0.105;
+        top.castShadow = false;
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 + seed;
+          const s = add(new THREE.Mesh(new THREE.SphereGeometry(0.11 + (i % 2) * 0.04, 7, 6), rockM));
+          s.scale.y = 0.6;
+          s.position.set(Math.cos(a) * 0.66, 0.05, Math.sin(a) * 0.66);
+        }
+        break;
+      }
+      case 'oil': {
+        // Crude-oil seep: a near-black glossy pool with a faint
+        // violet sheen and dark rocks at the rim.
+        const oilM = new THREE.MeshStandardMaterial({
+          color: 0x16120e, roughness: 0.18, metalness: 0.1,
+          transparent: true, opacity: 0.97,
+        });
+        pulseMaterials.push(oilM);
+        const pool = add(new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.68, 0.09, 18), oilM));
+        pool.position.y = 0.045;
+        pool.castShadow = false;
+        const sheen = new THREE.MeshStandardMaterial({
+          color: 0x6a5a8c, roughness: 0.15, transparent: true, opacity: 0.3,
+        });
+        pulseMaterials.push(sheen);
+        const top = add(new THREE.Mesh(new THREE.CircleGeometry(0.4, 18), sheen));
+        top.rotation.x = -Math.PI / 2;
+        top.position.y = 0.095;
+        top.castShadow = false;
+        const darkRock = std(0x33302c, 1);
+        for (let i = 0; i < 3; i++) {
+          const a = (i / 3) * Math.PI * 2 + seed * 0.7;
+          const geo = new THREE.IcosahedronGeometry(0.16, 0);
+          jitterRock(geo);
+          const r = add(new THREE.Mesh(geo, darkRock));
+          r.position.set(Math.cos(a) * 0.62, 0.08, Math.sin(a) * 0.62);
+        }
+        break;
+      }
+      case 'grass': {
+        // Gatherable grass tuft (game-owned 草むら): denser crossed
+        // sprite planes than the decorative ground grass.
+        const tex = this.gpt.grass_wide ?? this.gpt.grass_short;
+        let placed = false;
+        for (let i = 0; i < 3; i++) {
+          const spr = sprite(tex, 0.95, 0.6);
+          if (!spr) break;
+          spr.rotation.y += (i * Math.PI) / 3;
+          g.add(spr);
+          placed = true;
+        }
+        if (!placed) {
+          for (let i = 0; i < 6; i++) {
+            const blade = add(new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.6, 5), leaf));
+            const a = (i / 6) * Math.PI * 2;
+            blade.position.set(Math.cos(a) * 0.18, 0.28, Math.sin(a) * 0.18);
+            blade.rotation.set(Math.sin(a) * 0.3, 0, Math.cos(a) * 0.3);
+          }
+        }
+        break;
+      }
+      case 'bush': {
+        // Gatherable bush （やぶ）: foliage masses + shrub leaf cards,
+        // visibly denser than a decorative shrub.
+        for (let i = 0; i < 3; i++) {
+          const geo = new THREE.IcosahedronGeometry(0.5 - i * 0.09, 1);
+          jitterRock(geo, 0.3);
+          const blob = add(new THREE.Mesh(geo, leaf));
+          blob.position.set((i - 1) * 0.3, 0.36 + (i % 2) * 0.14, (i % 2) * 0.24 - 0.12);
+          blob.scale.y = 0.8;
+        }
+        for (let i = 0; i < 3; i++) {
+          const card = sprite(this.gpt.leaf_shrub, 0.8, 0.66);
+          if (!card) break;
+          const a = (i / 3) * Math.PI * 2 + seed;
+          card.position.set(Math.cos(a) * 0.34, 0.3, Math.sin(a) * 0.34);
+          g.add(card);
+        }
         break;
       }
       case 'branch': {
@@ -297,7 +506,12 @@ export class ResourceRenderer {
       }
       case 'pebble': {
         const spr = sprite(this.gpt.prop_pebbles, 0.6, 0.49);
-        if (spr) g.add(spr);
+        if (spr) {
+          if (variant === 'flint') {
+            (spr.material as THREE.MeshStandardMaterial).color.set(0x8f8f98);
+          }
+          g.add(spr);
+        }
         else {
           for (let i = 0; i < 3; i++) {
             const p = add(new THREE.Mesh(new THREE.SphereGeometry(0.13 + (i % 2) * 0.05, 8, 6), rockM));
@@ -402,4 +616,9 @@ export const RESOURCE_VISUAL_SPECS: Record<string, ResourceVisualSpec> = {
   mushroom: { footprintRadius: 0.32, height: 0.65, depletedForm: 'none' },
   branch: { footprintRadius: 0.5, height: 0.78, depletedForm: 'none' },
   pebble: { footprintRadius: 0.32, height: 0.49, depletedForm: 'none' },
+  grass: { footprintRadius: 0.45, height: 0.55, depletedForm: 'cut-patch' },
+  bush: { footprintRadius: 0.55, height: 0.85, depletedForm: 'cut-patch' },
+  water: { footprintRadius: 0.7, height: 0.15, depletedForm: 'none' },
+  oil: { footprintRadius: 0.7, height: 0.12, depletedForm: 'none' },
+  ore: { footprintRadius: 1.0, height: 1.15, depletedForm: 'rubble' },
 };

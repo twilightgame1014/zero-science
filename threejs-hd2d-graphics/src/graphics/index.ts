@@ -15,6 +15,7 @@ export { AssetManager } from './AssetManager';
 export { DEFAULT_CONFIG, resolveConfig } from './config';
 export { terrainHeight, riverCenterX, distanceToRiver } from './utils';
 export type {
+  DecorOptions,
   Direction,
   EffectType,
   GraphicsConfig,

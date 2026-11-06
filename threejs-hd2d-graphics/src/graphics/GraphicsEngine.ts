@@ -229,6 +229,7 @@ export class GraphicsEngine {
       detailBrightness: gpt.ground_grass_base ? 1.5 : 1,
       particle: particleTexture,
       gpt,
+      decor: options.decor,
     });
     const groundAt = (x: number, z: number) => world.getGroundHeight(x, z);
     const character = new CharacterRenderer(
@@ -301,6 +302,39 @@ export class GraphicsEngine {
     });
   }
 
+  /**
+   * Public API (2026-11-06, NATURAL-OBJECTS-CONTRACT §5.3): hand over
+   * the game's natural objects in one call instead of one call per
+   * object. Entries are upserted; ids previously handed over through
+   * this method but missing from `list` are removed (the game streams
+   * the neighbourhood around the player). Ids managed through
+   * updateResourceVisual are never pruned by this method.
+   */
+  setNaturalObjects(list: Array<ResourceVisualState & { id: string }>): void {
+    const seen = new Set<string>();
+    for (const item of list) {
+      seen.add(item.id);
+      this.updateResourceVisual(item.id, item);
+    }
+    for (const id of [...this.naturalIds]) {
+      if (!seen.has(id)) {
+        this.resources.setResource(id, null);
+        this.naturalIds.delete(id);
+      }
+    }
+    for (const id of seen) this.naturalIds.add(id);
+  }
+
+  /** Single natural-object update; same contract as
+   *  updateResourceVisual (kept as a named pair with setNaturalObjects). */
+  updateNaturalObject(id: string, state: ResourceVisualState | null): void {
+    if (state === null) this.naturalIds.delete(id);
+    else this.naturalIds.add(id);
+    this.updateResourceVisual(id, state);
+  }
+
+  private naturalIds = new Set<string>();
+
   addStructureVisual(
     id: string,
     type: StructureType,
@@ -318,6 +352,25 @@ export class GraphicsEngine {
   playVisualEffect(type: EffectType, position: Vec3Like): void {
     const p = toScenePosition(position, this.cfg);
     this.effects.play(type, { x: p.x, z: p.z, y: position.y });
+  }
+
+  /**
+   * Public pause API (2026-11-06): stop the render loop while another
+   * screen covers the field. Only rendering stops; all scene state is
+   * kept and no game state is touched. Safe to call repeatedly.
+   */
+  pauseGraphics(): void {
+    this.stopLoop();
+  }
+
+  /**
+   * Resume after pauseGraphics(). The loop clock restarts cleanly, so
+   * the first frame after resuming does not jump. Safe to call while
+   * already running, and a no-op after disposeGraphics().
+   */
+  resumeGraphics(): void {
+    if (this.disposed) return;
+    this.startLoop();
   }
 
   resizeGraphics(width: number, height: number): void {
@@ -435,6 +488,7 @@ export class GraphicsEngine {
       OCCL_TARGET.set(rp.x, rp.y + 1.0, rp.z);
       this.world.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
       this.structures.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
+      this.resources.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
 
       this.world.update(time);
       this.structures.update(time);
