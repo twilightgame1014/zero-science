@@ -126,6 +126,13 @@ export class AssetManager {
         ctx.fillStyle = 'rgba(70,104,50,0.35)';
         ctx.fillRect(rnd() * s, rnd() * s, 3 + rnd() * 5, 2 + rnd() * 3);
       }
+      // Deeper shadow pockets so canopies stop reading as one tone.
+      for (let i = 0; i < 16; i++) {
+        ctx.fillStyle = 'rgba(43,66,30,0.4)';
+        ctx.beginPath();
+        ctx.ellipse(rnd() * s, rnd() * s, 5 + rnd() * 9, 3 + rnd() * 6, rnd() * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
     });
   }
 
@@ -153,6 +160,192 @@ export class AssetManager {
         ctx.stroke();
       }
     });
+  }
+
+  /** Grass tuft: a fan of tapered blades on transparency, for
+   *  alpha-tested crossed-plane tufts (ankle-to-shin scale in world). */
+  createGrassTuftTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d')!;
+    const rnd = this.rand(151);
+    // Bright tones on purpose: instance colours multiply the map,
+    // so a mid-dark texture would double-darken the tufts.
+    const tones: Array<[string, string]> = [
+      ['#6f9c46', '#93bd63'],
+      ['#7fae56', '#a9d17c'],
+      ['#8fbc58', '#c2e091'],
+      ['#9cc46a', '#d4ecab'],
+    ];
+    for (let i = 0; i < 17; i++) {
+      const baseX = 14 + rnd() * 100;
+      const lean = (rnd() - 0.5) * 44;
+      const topY = 8 + rnd() * 52;
+      const wdt = 5 + rnd() * 4.5;
+      const [dark, light] = tones[Math.floor(rnd() * tones.length)];
+      ctx.fillStyle = dark;
+      ctx.beginPath();
+      ctx.moveTo(baseX - wdt, 128);
+      ctx.quadraticCurveTo(baseX - wdt * 0.4, (128 + topY) / 2, baseX + lean, topY);
+      ctx.quadraticCurveTo(baseX + wdt * 0.4, (128 + topY) / 2, baseX + wdt, 128);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = light;
+      ctx.beginPath();
+      ctx.moveTo(baseX - wdt * 0.35, 128);
+      ctx.quadraticCurveTo(baseX, (128 + topY) / 2, baseX + lean, topY + 4);
+      ctx.quadraticCurveTo(baseX + wdt * 0.2, (128 + topY) / 2, baseX + wdt * 0.35, 128);
+      ctx.closePath();
+      ctx.fill();
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    this.disposables.push(tex);
+    return tex;
+  }
+
+  /** Fern fronds: broader arcs with leaflet ticks, same cutout style. */
+  createFernTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d')!;
+    const rnd = this.rand(157);
+    for (let f = 0; f < 8; f++) {
+      const dir = f % 2 === 0 ? -1 : 1;
+      const spread = 12 + (f >> 1) * 13;
+      const tipX = 64 + dir * spread * (0.8 + rnd() * 0.5);
+      const tipY = 26 + rnd() * 34;
+      ctx.strokeStyle = '#3c7031';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(64, 128);
+      ctx.quadraticCurveTo(64 + dir * spread * 0.3, 74, tipX, tipY);
+      ctx.stroke();
+      ctx.strokeStyle = f % 2 ? '#4c8a3d' : '#5d9c48';
+      ctx.lineWidth = 2.2;
+      for (let t = 0.25; t < 0.95; t += 0.13) {
+        const bx = 64 + (tipX - 64) * t;
+        const by = 128 + (tipY - 128) * t + Math.sin(t * Math.PI) * -6;
+        const len = 11 * (1 - t) + 3;
+        ctx.beginPath();
+        ctx.moveTo(bx - len, by + 3);
+        ctx.lineTo(bx, by);
+        ctx.lineTo(bx + len, by + 3);
+        ctx.stroke();
+      }
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    this.disposables.push(tex);
+    return tex;
+  }
+
+  /** Leaf cluster card: a bunch of ellipse leaves with a darker
+   *  underlay, for shrub/canopy surface detail (alpha-tested). */
+  createLeafClusterTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d')!;
+    const rnd = this.rand(163);
+    const leaf = (cx: number, cy: number, len: number, ang: number, fill: string) => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(ang);
+      ctx.fillStyle = fill;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, len, len * 0.42, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+    for (let i = 0; i < 30; i++) {
+      const a = rnd() * Math.PI * 2;
+      const r = rnd() * 40;
+      leaf(64 + Math.cos(a) * r, 64 + Math.sin(a) * r * 0.8, 13 + rnd() * 8, a + 0.6, '#33512a');
+    }
+    const tones = ['#4c7d38', '#5d9142', '#6fa34c', '#86b95e'];
+    for (let i = 0; i < 34; i++) {
+      const a = rnd() * Math.PI * 2;
+      const r = rnd() * 42;
+      leaf(64 + Math.cos(a) * r, 64 + Math.sin(a) * r * 0.8, 11 + rnd() * 9, a + 0.6,
+        tones[Math.floor(rnd() * tones.length)]);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    this.disposables.push(tex);
+    return tex;
+  }
+
+  /** Ground patch: irregular soft-edged blob with leaf-fleck speckle.
+   *  Bright base so instance colours can tint it (leaf litter, worn
+   *  earth, dark soil rings under trees and rocks). */
+  createGroundPatchTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d')!;
+    const rnd = this.rand(167);
+    // Irregular soft-edged blob (overlapping radial gradients).
+    for (let i = 0; i < 9; i++) {
+      const cx = 34 + rnd() * 60;
+      const cy = 34 + rnd() * 60;
+      const r = 22 + rnd() * 30;
+      const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
+      grad.addColorStop(0, 'rgba(255,250,238,0.72)');
+      grad.addColorStop(1, 'rgba(255,250,238,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+    }
+    // Flecks and darker blotches only land where the blob has alpha.
+    ctx.globalCompositeOperation = 'source-atop';
+    this.speckle(ctx, 128, rnd, ['#c9a86a', '#a8823f', '#8a6b35', '#e3cd96'], 300, 0.55);
+    for (let i = 0; i < 30; i++) {
+      const cx = 20 + rnd() * 88;
+      const cy = 20 + rnd() * 88;
+      const r = 6 + rnd() * 15;
+      const grad = ctx.createRadialGradient(cx, cy, 1, cx, cy, r);
+      grad.addColorStop(0, `rgba(74,54,26,${0.16 + rnd() * 0.2})`);
+      grad.addColorStop(1, 'rgba(74,54,26,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    this.disposables.push(tex);
+    return tex;
+  }
+
+  /** Soft irregular blob as a LINEAR alpha map (for ground patches:
+   *  leaf litter, gravel banks, worn dirt). Green channel is read. */
+  createPatchAlphaTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, 128, 128);
+    const rnd = this.rand(173);
+    for (let i = 0; i < 9; i++) {
+      const cx = 34 + rnd() * 60;
+      const cy = 34 + rnd() * 60;
+      const r = 22 + rnd() * 30;
+      const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
+      grad.addColorStop(0, 'rgba(255,255,255,0.85)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 4;
+    this.disposables.push(tex);
+    return tex;
   }
 
   /* ------------- architectural canvas textures (original, procedural) ------------- */

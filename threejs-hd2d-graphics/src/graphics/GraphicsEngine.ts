@@ -22,6 +22,7 @@ import { StructureRenderer } from './StructureRenderer';
 import { ResourceRenderer, RESOURCE_VISUAL_SPECS } from './ResourceRenderer';
 import type { ResourceVisualSpec } from './ResourceRenderer';
 import { EffectsManager } from './EffectsManager';
+import { GPT_TEXTURES } from './gptTextures';
 import { PostEffects } from './PostEffects';
 import { toScenePosition } from './utils';
 
@@ -179,6 +180,25 @@ export class GraphicsEngine {
     );
     void options.rockDetailUrl; // reserved: rocks currently use flat shading
 
+    // GPT-generated nature assets (bundled as data URIs; see
+    // assets/gpt-nature/). Any that fail to decode are simply absent
+    // from the record and renderers fall back to procedural textures.
+    const GPT_TILING = new Set([
+      'ground_grass_base', 'ground_dirt', 'ground_leaves', 'ground_gravel',
+      'bark_deep', 'bark_birch', 'bark_moss',
+      'rock_layered', 'rock_moss', 'rock_slate',
+    ]);
+    const gpt: Record<string, THREE.Texture> = {};
+    await Promise.all(
+      Object.entries(GPT_TEXTURES).map(async ([key, uri]) => {
+        try {
+          gpt[key] = await assets.loadTexture(uri, { repeat: GPT_TILING.has(key) });
+        } catch {
+          /* procedural fallback */
+        }
+      }),
+    );
+
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
@@ -203,8 +223,12 @@ export class GraphicsEngine {
     const lighting = new LightingManager(scene, quality);
     const cameraRig = new CameraController(cfg.camera);
     const world = new WorldRenderer(cfg, quality, assets, {
-      terrainDetail,
+      terrainDetail: gpt.ground_grass_base ?? terrainDetail,
+      // The GPT grass tile is much darker than the old noise detail;
+      // compensate so overall ground luminance stays where it was.
+      detailBrightness: gpt.ground_grass_base ? 1.5 : 1,
       particle: particleTexture,
+      gpt,
     });
     const groundAt = (x: number, z: number) => world.getGroundHeight(x, z);
     const character = new CharacterRenderer(
@@ -214,7 +238,7 @@ export class GraphicsEngine {
       groundAt,
     );
     const structures = new StructureRenderer(groundAt);
-    const resources = new ResourceRenderer(groundAt);
+    const resources = new ResourceRenderer(groundAt, gpt, cfg.camera.yawDegrees);
     const effects = new EffectsManager(particleTexture, groundAt);
     scene.add(world.group, character.group, structures.group, resources.group, effects.group);
 

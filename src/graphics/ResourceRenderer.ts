@@ -38,9 +38,18 @@ export class ResourceRenderer {
   private barkTex: THREE.Texture;
   private foliageTex: THREE.Texture;
   private rockCrackTex: THREE.Texture;
+  private gpt: Record<string, THREE.Texture>;
+  /** Camera azimuth: sprite props stand facing it (the camera never orbits). */
+  private yawRad: number;
 
-  constructor(groundHeightAt: (x: number, z: number) => number) {
+  constructor(
+    groundHeightAt: (x: number, z: number) => number,
+    gpt: Record<string, THREE.Texture> = {},
+    yawDegrees = 45,
+  ) {
     this.groundHeightAt = groundHeightAt;
+    this.gpt = gpt;
+    this.yawRad = THREE.MathUtils.degToRad(yawDegrees);
     const am = new AssetManager();
     this.barkTex = am.createBarkTexture();
     this.foliageTex = am.createFoliageTexture();
@@ -57,7 +66,8 @@ export class ResourceRenderer {
       !prev || prev.state.type !== state.type || prev.state.depleted !== state.depleted;
     if (needsRebuild) {
       this.removeResource(id);
-      const built = this.buildNode(state);
+      const seed = [...id].reduce((a, c) => a + c.charCodeAt(0), 0);
+      const built = this.buildNode(state, seed);
       built.group.position.set(
         state.position.x,
         state.position.y ?? this.groundHeightAt(state.position.x, state.position.z),
@@ -127,7 +137,7 @@ export class ResourceRenderer {
   }
 
   /* ---------------------------------------------------------- */
-  private buildNode(state: ResourceVisualState): {
+  private buildNode(state: ResourceVisualState, seed = 0): {
     group: THREE.Group;
     pulseMaterials: THREE.MeshStandardMaterial[];
   } {
@@ -139,13 +149,54 @@ export class ResourceRenderer {
       return m;
     };
     const wood = std(0x7a5230, 0.95);
-    wood.map = this.barkTex;
+    wood.map = this.gpt.bark_deep ?? this.barkTex;
     wood.color.set(0xffffff);
     const leaf = std(0x55963f);
     leaf.map = this.foliageTex;
     const rockM = std(0x8d8d90, 0.98);
-    rockM.map = this.rockCrackTex;
+    rockM.map = this.gpt.rock_layered ?? this.rockCrackTex;
     rockM.color.set(0xbdbdc2);
+    /** Upright GPT sprite prop, bottom at the ground contact point,
+     *  facing the (fixed) camera azimuth. */
+    const sprite = (tex: THREE.Texture | undefined, w: number, h: number): THREE.Mesh | null => {
+      if (!tex) return null;
+      const m = new THREE.MeshStandardMaterial({
+        map: tex,
+        alphaTest: 0.45,
+        side: THREE.DoubleSide,
+        roughness: 0.95,
+        // A flat plane facing away from the low sun would go nearly
+        // black; a soft texture-tinted emissive keeps props readable
+        // (they must stay identifiable as harvest targets).
+        emissive: 0x66553d,
+        emissiveMap: tex,
+        emissiveIntensity: 0.38,
+      });
+      pulseMaterials.push(m);
+      const geo = new THREE.PlaneGeometry(w, h);
+      geo.translate(0, h / 2, 0);
+      const mesh = new THREE.Mesh(geo, m);
+      mesh.rotation.y = this.yawRad - (state.rotationY ?? 0);
+      return mesh;
+    };
+    /** Flat GPT sprite lying on the ground (cut patches, piles). */
+    const flatSprite = (tex: THREE.Texture | undefined, size: number): THREE.Mesh | null => {
+      if (!tex) return null;
+      const m = new THREE.MeshStandardMaterial({
+        map: tex,
+        alphaTest: 0.5,
+        roughness: 1,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+      });
+      pulseMaterials.push(m);
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size * 0.75), m);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.rotation.z = seed * 1.7;
+      mesh.position.y = 0.03;
+      mesh.receiveShadow = true;
+      return mesh;
+    };
     const add = (mesh: THREE.Mesh) => {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
@@ -155,26 +206,34 @@ export class ResourceRenderer {
 
     if (state.depleted) {
       if (state.type === 'tree') {
-        const stump = add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 0.4, 8), wood));
-        stump.position.y = 0.2;
-        const top = add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 8), std(0xc8a165, 1)));
-        top.position.y = 0.41;
+        // GPT stump sprite; the low cylinder remains as a fallback.
+        const spr = sprite(this.gpt.prop_stump, 1.05, 0.79);
+        if (spr) g.add(spr);
+        else {
+          const stump = add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 0.4, 8), wood));
+          stump.position.y = 0.2;
+          const top = add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 8), std(0xc8a165, 1)));
+          top.position.y = 0.41;
+        }
       } else if (state.type === 'rock') {
-        for (let i = 0; i < 3; i++) {
-          const geo = new THREE.IcosahedronGeometry(0.22, 0);
-          jitterRock(geo);
-          const r = add(new THREE.Mesh(geo, rockM));
-          r.position.set((i - 1) * 0.3, 0.12, (i % 2) * 0.25 - 0.1);
+        const spr = sprite(this.gpt.prop_rubble, 1.1, 0.78);
+        if (spr) g.add(spr);
+        else {
+          for (let i = 0; i < 3; i++) {
+            const geo = new THREE.IcosahedronGeometry(0.22, 0);
+            jitterRock(geo);
+            const r = add(new THREE.Mesh(geo, rockM));
+            r.position.set((i - 1) * 0.3, 0.12, (i % 2) * 0.25 - 0.1);
+          }
         }
       } else if (state.type === 'herb' || state.type === 'flowers') {
-        // Cut patch: a close-cropped disc with stubble, so a harvested
-        // spot stays readable instead of vanishing into bare ground.
-        const patch = add(new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.34, 0.05, 10), std(0x5d7031, 1)));
-        patch.position.y = 0.025;
-        for (let i = 0; i < 5; i++) {
-          const stub = add(new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.13, 5), std(0x6d8a44)));
-          const a = (i / 5) * Math.PI * 2;
-          stub.position.set(Math.cos(a) * 0.15, 0.09, Math.sin(a) * 0.15);
+        // Cut patch sprite (cropped stubble), so a harvested spot
+        // stays readable instead of vanishing into bare ground.
+        const flat = flatSprite(this.gpt.prop_cut_patch, 0.85);
+        if (flat) g.add(flat);
+        else {
+          const patch = add(new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.34, 0.05, 10), std(0x5d7031, 1)));
+          patch.position.y = 0.025;
         }
       }
       // branch / pebble and other depleted types show bare ground:
@@ -199,6 +258,15 @@ export class ResourceRenderer {
           blob.position.set((i - 1) * 0.45, 2.3 + i * 0.5, (i % 2) * 0.4 - 0.2);
           blob.scale.y = 0.85;
         }
+        // Leaf cards (GPT sheet D), matching the environment trees.
+        for (let i = 0; i < 4; i++) {
+          const card = sprite(this.gpt.leaf_oak, 1.25, 1.1);
+          if (!card) break;
+          const a = (i / 4) * Math.PI * 2 + seed;
+          card.position.set(Math.cos(a) * 0.55, 2.15 + (i % 2) * 0.7, Math.sin(a) * 0.55);
+          card.rotation.x = (i % 2 ? -0.25 : 0.2);
+          g.add(card);
+        }
         break;
       }
       case 'rock': {
@@ -216,44 +284,71 @@ export class ResourceRenderer {
         break;
       }
       case 'branch': {
-        // Fallen branch pickup: two crossed limbs on the ground.
-        const main = add(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 1.0, 6), wood));
-        main.rotation.z = Math.PI / 2;
-        main.rotation.y = 0.4;
-        main.position.y = 0.06;
-        const off = add(new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.04, 0.55, 5), wood));
-        off.rotation.z = Math.PI / 2;
-        off.rotation.y = -0.5;
-        off.position.set(0.12, 0.1, 0.08);
+        // Fallen branch pickup as a GPT sprite (sheet F).
+        const spr = sprite(this.gpt.prop_branch, 0.95, 0.78);
+        if (spr) g.add(spr);
+        else {
+          const main = add(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 1.0, 6), wood));
+          main.rotation.z = Math.PI / 2;
+          main.rotation.y = 0.4;
+          main.position.y = 0.06;
+        }
         break;
       }
       case 'pebble': {
-        for (let i = 0; i < 3; i++) {
-          const p = add(new THREE.Mesh(new THREE.SphereGeometry(0.13 + (i % 2) * 0.05, 8, 6), rockM));
-          p.scale.y = 0.6;
-          p.position.set((i - 1) * 0.22, 0.06, (i % 2) * 0.16 - 0.06);
+        const spr = sprite(this.gpt.prop_pebbles, 0.6, 0.49);
+        if (spr) g.add(spr);
+        else {
+          for (let i = 0; i < 3; i++) {
+            const p = add(new THREE.Mesh(new THREE.SphereGeometry(0.13 + (i % 2) * 0.05, 8, 6), rockM));
+            p.scale.y = 0.6;
+            p.position.set((i - 1) * 0.22, 0.06, (i % 2) * 0.16 - 0.06);
+          }
         }
         break;
       }
       case 'herb': {
-        for (let i = 0; i < 5; i++) {
-          const blade = add(new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.55, 5), leaf));
-          const a = (i / 5) * Math.PI * 2;
-          blade.position.set(Math.cos(a) * 0.16, 0.26, Math.sin(a) * 0.16);
-          blade.rotation.set(Math.sin(a) * 0.35, 0, Math.cos(a) * 0.35);
+        // Crossed cutout planes with the GPT herb sprite.
+        const spr = sprite(this.gpt.herb_patch, 0.62, 0.37);
+        if (spr) {
+          g.add(spr);
+          const spr2 = sprite(this.gpt.herb_patch, 0.62, 0.37);
+          if (spr2) {
+            spr2.rotation.y += Math.PI / 2;
+            g.add(spr2);
+          }
+        } else {
+          for (let i = 0; i < 5; i++) {
+            const blade = add(new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.55, 5), leaf));
+            const a = (i / 5) * Math.PI * 2;
+            blade.position.set(Math.cos(a) * 0.16, 0.26, Math.sin(a) * 0.16);
+            blade.rotation.set(Math.sin(a) * 0.35, 0, Math.cos(a) * 0.35);
+          }
         }
         break;
       }
       case 'flowers': {
-        const stemM = std(0x4d7d3a);
-        const headM = std(0xff9ec4, 0.6);
-        for (let i = 0; i < 4; i++) {
-          const x = (i % 2) * 0.4 - 0.2;
-          const z = Math.floor(i / 2) * 0.4 - 0.2;
-          const stem = add(new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 5), stemM));
-          stem.position.set(x, 0.2, z);
-          const head = add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 0), headM));
-          head.position.set(x, 0.45, z);
+        // Flower colour is a stable per-id choice (seeded by the id).
+        const texes = [this.gpt.flower_white, this.gpt.flower_yellow, this.gpt.flower_purple];
+        const spr = sprite(texes[seed % 3], 0.6, 0.42);
+        if (spr) {
+          g.add(spr);
+          const spr2 = sprite(texes[seed % 3], 0.6, 0.42);
+          if (spr2) {
+            spr2.rotation.y += Math.PI / 2;
+            g.add(spr2);
+          }
+        } else {
+          const stemM = std(0x4d7d3a);
+          const headM = std(0xff9ec4, 0.6);
+          for (let i = 0; i < 4; i++) {
+            const x = (i % 2) * 0.4 - 0.2;
+            const z = Math.floor(i / 2) * 0.4 - 0.2;
+            const stem = add(new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 5), stemM));
+            stem.position.set(x, 0.2, z);
+            const head = add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 0), headM));
+            head.position.set(x, 0.45, z);
+          }
         }
         break;
       }
@@ -305,6 +400,6 @@ export const RESOURCE_VISUAL_SPECS: Record<string, ResourceVisualSpec> = {
   flowers: { footprintRadius: 0.35, height: 0.55, depletedForm: 'cut-patch' },
   clay: { footprintRadius: 0.65, height: 0.4, depletedForm: 'none' },
   mushroom: { footprintRadius: 0.32, height: 0.65, depletedForm: 'none' },
-  branch: { footprintRadius: 0.5, height: 0.16, depletedForm: 'none' },
-  pebble: { footprintRadius: 0.32, height: 0.2, depletedForm: 'none' },
+  branch: { footprintRadius: 0.5, height: 0.78, depletedForm: 'none' },
+  pebble: { footprintRadius: 0.32, height: 0.49, depletedForm: 'none' },
 };

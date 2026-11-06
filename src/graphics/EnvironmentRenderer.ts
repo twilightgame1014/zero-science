@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { GraphicsConfig, QualityTier } from './types';
 import { AssetManager } from './AssetManager';
 import {
@@ -109,13 +110,25 @@ export class EnvironmentRenderer {
   private barkTex!: THREE.Texture;
   private foliageTex!: THREE.Texture;
   private rockCrackTex!: THREE.Texture;
+  private tuftTex!: THREE.Texture;
+  private fernTex!: THREE.Texture;
+  private leafCardTex!: THREE.Texture;
+  private patchTex!: THREE.Texture;
+  private patchAlpha!: THREE.Texture;
+  /** GPT-generated image textures (may be empty -> procedural fallbacks). */
+  private gpt: Record<string, THREE.Texture> = {};
+  /** Soft soil/leaf discs that ground trees and rocks (collected
+   *  during their builds, instanced once at the end). */
+  private groundDiscs: Array<{ x: number; z: number; r: number; tint: THREE.Color }> = [];
 
   constructor(
     cfg: GraphicsConfig,
     quality: QualityTier,
     particleTexture: THREE.Texture,
+    gpt: Record<string, THREE.Texture> = {},
   ) {
     this.cfg = cfg;
+    this.gpt = gpt;
     this.rng = mulberry32(cfg.world.seed);
     const scale = quality === 'high' ? 1 : 0.5;
     // Shared procedural pixel textures (bark / foliage / cracked rock)
@@ -124,6 +137,11 @@ export class EnvironmentRenderer {
     this.barkTex = am.createBarkTexture();
     this.foliageTex = am.createFoliageTexture();
     this.rockCrackTex = am.createRockCrackTexture();
+    this.tuftTex = am.createGrassTuftTexture();
+    this.fernTex = am.createFernTexture();
+    this.leafCardTex = am.createLeafClusterTexture();
+    this.patchTex = am.createGroundPatchTexture();
+    this.patchAlpha = am.createPatchAlphaTexture();
 
     this.buildTrees(scale);
     this.buildGrass(scale);
@@ -135,6 +153,75 @@ export class EnvironmentRenderer {
     this.buildBackdropMountains();
     this.buildWaterfall(particleTexture);
     this.buildStonework();
+    this.buildGrounding();
+  }
+
+  /** Deterministic position-hashed vertex jitter (shared vertices
+   *  move together, so geometry never cracks apart). */
+  private jitter(geo: THREE.BufferGeometry, amount: number): void {
+    const pos = geo.attributes.position as THREE.BufferAttribute;
+    const v = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      const h = Math.sin(v.x * 12.9898 + v.y * 78.233 + v.z * 37.719) * 43758.5453;
+      v.multiplyScalar(1 - amount / 2 + (h - Math.floor(h)) * amount);
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
+    geo.computeVertexNormals();
+  }
+
+  /** Smooth value noise for meadow / bare-patch masking. */
+  private vnoise(x: number, z: number): number {
+    const xi = Math.floor(x);
+    const zi = Math.floor(z);
+    const xf = x - xi;
+    const zf = z - zi;
+    const h = (a: number, b: number) => {
+      const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+      return s - Math.floor(s);
+    };
+    const u = xf * xf * (3 - 2 * xf);
+    const v = zf * zf * (3 - 2 * zf);
+    return (
+      h(xi, zi) * (1 - u) * (1 - v) +
+      h(xi + 1, zi) * u * (1 - v) +
+      h(xi, zi + 1) * (1 - u) * v +
+      h(xi + 1, zi + 1) * u * v
+    );
+  }
+
+  /** Two crossed vertical planes (grass tufts, ferns, leaf cards). */
+  private crossPlanes(w: number, h: number): THREE.BufferGeometry {
+    const a = new THREE.PlaneGeometry(w, h);
+    a.translate(0, h / 2, 0);
+    const b = a.clone();
+    b.rotateY(Math.PI / 2);
+    return mergeGeometries([a, b])!;
+  }
+
+  /** Instanced soft discs under trees/rocks: contact soil that keeps
+   *  objects visually rooted instead of hovering on flat green. */
+  private buildGrounding(): void {
+    if (this.groundDiscs.length === 0) return;
+    const geo = new THREE.CircleGeometry(1, 14);
+    geo.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshStandardMaterial({
+      map: this.patchTex,
+      transparent: true,
+      depthWrite: false,
+      roughness: 1,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+    });
+    const discs = new THREE.InstancedMesh(geo, mat, this.groundDiscs.length);
+    this.groundDiscs.forEach((d, i) => {
+      this.setInstance(discs, i, d.x, this.groundY(d.x, d.z) + 0.02, d.z, 0, d.r, 1, d.r);
+      discs.setColorAt(i, d.tint);
+    });
+    if (discs.instanceColor) discs.instanceColor.needsUpdate = true;
+    discs.renderOrder = 1;
+    discs.receiveShadow = true;
+    this.group.add(discs);
   }
 
   update(time: number): void {
@@ -269,10 +356,20 @@ export class EnvironmentRenderer {
       return this.rng() < density;
     });
 
-    const trunkGeo = new THREE.CylinderGeometry(0.13, 0.26, 1.7, 6);
+    const trunkGeo = new THREE.CylinderGeometry(0.13, 0.38, 1.7, 7);
     trunkGeo.translate(0, 0.85, 0);
-    const trunkMat = new THREE.MeshStandardMaterial({ map: this.barkTex, roughness: 0.95 });
+    const trunkMat = new THREE.MeshStandardMaterial({
+      map: this.gpt.bark_deep ?? this.barkTex,
+      roughness: 0.95,
+    });
     const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, spots.length);
+    // Birch variant: pale bark, slimmer trunk (GPT sheet B).
+    const birchTrunkMat = new THREE.MeshStandardMaterial({
+      map: this.gpt.bark_birch ?? this.barkTex,
+      color: this.gpt.bark_birch ? 0xffffff : 0xd9d2bd,
+      roughness: 0.9,
+    });
+    const birchTrunks = new THREE.InstancedMesh(trunkGeo, birchTrunkMat, spots.length);
 
     // Branches for broadleaf trees: short tilted limbs reaching into
     // the canopy, so a tree reads as trunk + branches + leaf masses
@@ -283,6 +380,7 @@ export class EnvironmentRenderer {
     let bri = 0;
 
     const blobGeo = new THREE.IcosahedronGeometry(1, 1);
+    this.jitter(blobGeo, 0.36); // irregular canopy silhouette, not balls
     const blobWind = makeWindMaterial(
       new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.9 }),
       1,
@@ -299,6 +397,7 @@ export class EnvironmentRenderer {
     this.canopy.push({ centers: blobCenters, radii: blobRadii, fades: blobFades, attr: blobAttr });
 
     const coneGeo = new THREE.ConeGeometry(1, 2.4, 8);
+    this.jitter(coneGeo, 0.13);
     coneGeo.translate(0, 1.2, 0);
     const coneWind = makeWindMaterial(
       new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.9 }),
@@ -315,6 +414,31 @@ export class EnvironmentRenderer {
     coneGeo.setAttribute('aFade', pineAttr);
     this.canopy.push({ centers: pineCenters, radii: pineRadii, fades: pineFades, attr: pineAttr });
 
+    // Leaf cards (GPT sheet D): alpha-cutout branch sprites layered
+    // through the canopy volume, so trees read as leaf masses with
+    // gaps and depth instead of textured balls alone. The blobs stay
+    // underneath as the darker inner mass.
+    const makeCards = (tex: THREE.Texture | undefined, fallback: THREE.Texture) => {
+      const geo = new THREE.PlaneGeometry(1.15, 1.0);
+      const mat = new THREE.MeshStandardMaterial({
+        map: tex ?? fallback,
+        alphaTest: 0.45,
+        side: THREE.DoubleSide,
+        roughness: 0.95,
+      });
+      addInstanceFade(mat);
+      const mesh = new THREE.InstancedMesh(geo, mat, spots.length * 8);
+      const centers = new Float32Array(spots.length * 8 * 3);
+      const radii = new Float32Array(spots.length * 8).fill(1);
+      const fades = new Float32Array(spots.length * 8).fill(1);
+      const attr = new THREE.InstancedBufferAttribute(fades, 1);
+      geo.setAttribute('aFade', attr);
+      this.canopy.push({ centers, radii, fades, attr });
+      return { mesh, centers, count: 0 };
+    };
+    const oakCards = makeCards(this.gpt.leaf_oak, this.leafCardTex);
+    const birchCards = makeCards(this.gpt.leaf_birch, this.leafCardTex);
+
     const cA = new THREE.Color(0x4e8f3e);
     const cB = new THREE.Color(0x77a944);
     const cC = new THREE.Color(0x3c7a44);
@@ -330,8 +454,16 @@ export class EnvironmentRenderer {
       const roll = this.rng();
       const pine = s.z < -14 || roll < 0.22;
       const slim = !pine && roll >= 0.62 && roll < 0.8;
-      this.setInstance(trunks, i, s.x, y - 0.1, s.z, this.rng() * Math.PI,
-        size, size * (pine ? 1.5 : slim ? 2.1 : 1.1), size);
+      const birch = !pine && !slim && roll >= 0.8;
+      if (birch) {
+        this.setInstance(birchTrunks, i, s.x, y - 0.1, s.z, this.rng() * Math.PI,
+          size * 0.7, size * 1.25, size * 0.7);
+        this.setInstance(trunks, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+      } else {
+        this.setInstance(trunks, i, s.x, y - 0.1, s.z, this.rng() * Math.PI,
+          size, size * (pine ? 1.5 : slim ? 2.1 : 1.1), size);
+        this.setInstance(birchTrunks, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+      }
       tmp.copy(cA).lerp(this.rng() < 0.5 ? cB : cC, this.rng() * 0.8);
       if (pine) {
         for (let k = 0; k < 2; k++) {
@@ -373,6 +505,39 @@ export class EnvironmentRenderer {
         }
       }
       if (!pine) {
+        const cards = birch ? birchCards : oakCards;
+        const nCards = slim ? 3 : 8;
+        const cy = y + (slim ? 3.35 : 2.55) * size;
+        // Cards sit ON the canopy surface (radius ~ blob extent), not
+        // inside the blob volume where they'd be swallowed.
+        const spread = size * (slim ? 0.55 : 1.12);
+        for (let k = 0; k < nCards; k++) {
+          const a = this.rng() * Math.PI * 2;
+          const rr = spread * (0.55 + this.rng() * 0.5);
+          const px = s.x + Math.cos(a) * rr;
+          const pz = s.z + Math.sin(a) * rr;
+          const py = cy + (this.rng() - 0.5) * 1.1 * size;
+          this.dummy.position.set(px, py, pz);
+          this.dummy.rotation.set((this.rng() - 0.5) * 0.9, this.rng() * Math.PI, (this.rng() - 0.5) * 0.5);
+          const cs = size * (1.1 + this.rng() * 0.55);
+          this.dummy.scale.set(cs, cs, cs);
+          this.dummy.updateMatrix();
+          cards.mesh.setMatrixAt(cards.count, this.dummy.matrix);
+          // Bright warm tint so cards read as sunlit leaf surface
+          // against the darker blob mass beneath them.
+          cards.mesh.setColorAt(cards.count,
+            new THREE.Color(1.22, 1.26, 1.08).multiplyScalar(0.92 + this.rng() * 0.16));
+          cards.centers[cards.count * 3] = px;
+          cards.centers[cards.count * 3 + 1] = py;
+          cards.centers[cards.count * 3 + 2] = pz;
+          cards.count++;
+        }
+      }
+      this.groundDiscs.push({
+        x: s.x, z: s.z, r: 0.85 * size,
+        tint: new THREE.Color().setHSL(0.08, 0.3, 0.1 + this.rng() * 0.03),
+      });
+      if (!pine) {
         for (let b = 0; b < 2; b++) {
           const yaw = this.rng() * Math.PI * 2;
           const tilt = 0.55 + this.rng() * 0.4;
@@ -389,6 +554,16 @@ export class EnvironmentRenderer {
     for (let i = bi; i < spots.length * 3; i++) this.setInstance(blobs, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
     for (let i = pi; i < spots.length * 2; i++) this.setInstance(pines, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
     for (let i = bri; i < spots.length * 2; i++) this.setInstance(branches, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+    for (const cards of [oakCards, birchCards]) {
+      for (let i = cards.count; i < spots.length * 8; i++) {
+        this.setInstance(cards.mesh, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+      }
+      if (cards.mesh.instanceColor) cards.mesh.instanceColor.needsUpdate = true;
+      cards.mesh.receiveShadow = true;
+      this.group.add(cards.mesh);
+    }
+    birchTrunks.castShadow = true;
+    this.group.add(birchTrunks);
 
     for (const m of [trunks, blobs, pines, branches]) {
       m.castShadow = true;
@@ -400,80 +575,188 @@ export class EnvironmentRenderer {
 
   /* ---------------- grass & flowers ---------------- */
   private buildGrass(scale: number): void {
-    const bladeGeo = new THREE.ConeGeometry(0.075, 0.72, 4);
-    bladeGeo.translate(0, 0.36, 0);
-    bladeGeo.scale(1, 1, 0.4);
-    const wind = makeWindMaterial(
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92 }),
-      0.72,
-      0.13,
-    );
-    this.windMaterials.push(wind);
-    const count = Math.round(3600 * scale);
-    const grass = new THREE.InstancedMesh(bladeGeo, wind.material, count);
-    const cA = new THREE.Color(0x5f9c40);
-    const cB = new THREE.Color(0x8fbc58);
-    const tmp = new THREE.Color();
+    // Grass tufts: GPT sheet-E sprites (short / wide / dry variants)
+    // on crossed alpha-cutout planes, ankle-to-shin height against
+    // the player. The procedural canvas tuft is the fallback if the
+    // images failed to decode. Distribution follows a meadow noise
+    // mask (colonies + bare patches), dry tufts hug the path and dry
+    // zones, wide tufts fill meadow cores.
+    const tuftGeo = this.crossPlanes(1.05, 0.62);
+    const count = Math.round(4200 * scale);
     const spots = this.scatter(count, (x, z) =>
       !isInRiver(x, z, 4.4) &&
       this.groundY(x, z) > 0.42 &&
       distanceToPath(x, z) > 1.35 &&
-      x - z * 0.35 < 40);
-    spots.forEach((s, i) => {
-      const sc = 0.7 + this.rng() * 0.9;
-      this.setInstance(grass, i, s.x, this.groundY(s.x, s.z) - 0.03, s.z,
-        this.rng() * Math.PI, sc, sc * (0.8 + this.rng() * 0.5), sc);
-      grass.setColorAt(i, tmp.copy(cA).lerp(cB, this.rng()));
-    });
-    if (grass.instanceColor) grass.instanceColor.needsUpdate = true;
-    grass.receiveShadow = true;
-    this.group.add(grass);
+      x - z * 0.35 < 40 &&
+      (this.vnoise(x * 0.06 + 7.3, z * 0.06 - 2.9) > 0.36 || this.rng() < 0.12));
+    const variants: Array<{ tex: THREE.Texture | undefined; list: Array<{ x: number; z: number }> }> = [
+      { tex: this.gpt.grass_short, list: [] },
+      { tex: this.gpt.grass_wide, list: [] },
+      { tex: this.gpt.grass_dry, list: [] },
+    ];
+    for (const s of spots) {
+      const dry =
+        distanceToPath(s.x, s.z) < 3.4 ||
+        this.vnoise(s.x * 0.11 - 4.2, s.z * 0.11 + 9.1) > 0.72;
+      const wide = !dry && this.vnoise(s.x * 0.06 + 7.3, s.z * 0.06 - 2.9) > 0.62;
+      variants[dry ? 2 : wide ? 1 : 0].list.push(s);
+    }
+    const tmp = new THREE.Color();
+    for (const v of variants) {
+      if (v.list.length === 0) continue;
+      const wind = makeWindMaterial(
+        new THREE.MeshStandardMaterial({
+          map: v.tex ?? this.tuftTex,
+          alphaTest: 0.35,
+          side: THREE.DoubleSide,
+          roughness: 0.92,
+        }),
+        0.5,
+        0.09,
+      );
+      this.windMaterials.push(wind);
+      const mesh = new THREE.InstancedMesh(tuftGeo, wind.material, v.list.length);
+      v.list.forEach((s, i) => {
+        const sc = 0.85 + this.rng() * 0.55;
+        const tall = this.rng() < 0.12 ? 1.5 : 1;
+        this.setInstance(mesh, i, s.x, this.groundY(s.x, s.z) - 0.02, s.z,
+          this.rng() * Math.PI, sc, sc * tall * 0.92, sc);
+        // Slightly luminous yellow-green so tufts separate from the
+        // (already grassy) GPT ground tile instead of dissolving in.
+        const b = 0.88 + this.rng() * 0.22;
+        mesh.setColorAt(i, tmp.setRGB(b * 0.88, b * 1.06, b * 0.8));
+      });
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      mesh.receiveShadow = true;
+      this.group.add(mesh);
+    }
 
-    // Wildflowers sprinkled over the meadow.
-    const flowerGeo = new THREE.IcosahedronGeometry(0.09, 0);
-    const flowerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+    // Wildflowers as sprite tufts (GPT sheet E: white/yellow/purple).
     const fCount = Math.round(240 * scale);
-    const flowers = new THREE.InstancedMesh(flowerGeo, flowerMat, fCount);
-    const palette = [0xffffff, 0xffd94d, 0xff9ec4, 0xb79ced, 0xff8a5c]
-      .map((c) => new THREE.Color(c));
     const fSpots = this.scatter(fCount, (x, z) =>
       !isInRiver(x, z, 6) &&
       this.groundY(x, z) > 0.45 &&
       this.groundY(x, z) < 1.8 &&
       x - z * 0.35 < 26);
-    fSpots.forEach((s, i) => {
-      this.setInstance(flowers, i, s.x, this.groundY(s.x, s.z) + 0.32, s.z, 0, 1, 1, 1);
-      flowers.setColorAt(i, palette[Math.floor(this.rng() * palette.length)]);
+    const flowerTexs = [this.gpt.flower_white, this.gpt.flower_yellow, this.gpt.flower_purple];
+    const per = Math.max(1, Math.ceil(fSpots.length / 3));
+    flowerTexs.forEach((tex, vi) => {
+      const list = fSpots.slice(vi * per, (vi + 1) * per);
+      if (list.length === 0) return;
+      const mat = new THREE.MeshStandardMaterial({
+        map: tex ?? this.tuftTex,
+        alphaTest: 0.45,
+        side: THREE.DoubleSide,
+        roughness: 0.9,
+      });
+      const mesh = new THREE.InstancedMesh(this.crossPlanes(0.55, 0.38), mat, list.length);
+      list.forEach((s, i) => {
+        const sc = 0.8 + this.rng() * 0.5;
+        this.setInstance(mesh, i, s.x, this.groundY(s.x, s.z) - 0.01, s.z,
+          this.rng() * Math.PI, sc, sc, sc);
+      });
+      mesh.receiveShadow = true;
+      this.group.add(mesh);
     });
-    if (flowers.instanceColor) flowers.instanceColor.needsUpdate = true;
-    this.group.add(flowers);
+
+    // Decorative herb patches (NOT harvest nodes — those come from
+    // the game through ResourceRenderer; these are landscape only).
+    if (this.gpt.herb_patch) {
+      const hCount = Math.round(130 * scale);
+      const hSpots = this.scatter(hCount, (x, z) =>
+        !isInRiver(x, z, 5) &&
+        this.groundY(x, z) > 0.45 &&
+        (x + z * 0.2 < -4 || this.vnoise(x * 0.05 - 8, z * 0.05 + 5) > 0.6));
+      const mat = new THREE.MeshStandardMaterial({
+        map: this.gpt.herb_patch,
+        alphaTest: 0.45,
+        side: THREE.DoubleSide,
+        roughness: 0.92,
+      });
+      const mesh = new THREE.InstancedMesh(this.crossPlanes(0.7, 0.42), mat, hSpots.length);
+      hSpots.forEach((s, i) => {
+        const sc = 0.85 + this.rng() * 0.6;
+        this.setInstance(mesh, i, s.x, this.groundY(s.x, s.z) - 0.01, s.z,
+          this.rng() * Math.PI, sc, sc, sc);
+      });
+      mesh.receiveShadow = true;
+      this.group.add(mesh);
+    }
   }
 
   /* ---------------- shrubs, ferns, leaf litter ---------------- */
   private buildGroundCover(scale: number): void {
+    // Shrubs (2026-11-06 overhaul): a jittered 3-blob cluster per
+    // shrub (dark satellite = inner shade) plus alpha-cutout leaf
+    // cards on the surface, instead of one smooth single-colour ball.
     const shrubGeo = new THREE.IcosahedronGeometry(0.55, 1);
+    this.jitter(shrubGeo, 0.34);
     const shrubMat = new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.95 });
     const sCount = Math.round(150 * scale);
-    const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, sCount);
+    const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, sCount * 3);
+    const cards = new THREE.InstancedMesh(
+      new THREE.PlaneGeometry(0.8, 0.66),
+      new THREE.MeshStandardMaterial({
+        map: this.gpt.leaf_shrub ?? this.leafCardTex,
+        alphaTest: 0.45,
+        side: THREE.DoubleSide,
+        roughness: 0.95,
+      }),
+      sCount * 4,
+    );
     const cA = new THREE.Color(0x477f36);
     const cB = new THREE.Color(0x6da34c);
     const tmp = new THREE.Color();
     const spots = this.scatter(sCount, (x, z) => !isInRiver(x, z, 5.6) && distanceToPath(x, z) > 1.8);
-    spots.forEach((s, i) => {
+    let bi = 0;
+    let ci = 0;
+    spots.forEach((s) => {
       const sc = 0.6 + this.rng() * 1.1;
-      this.setInstance(shrubs, i, s.x, this.groundY(s.x, s.z) + 0.3 * sc, s.z,
-        this.rng() * Math.PI, sc, sc * 0.7, sc);
-      shrubs.setColorAt(i, tmp.copy(cA).lerp(cB, this.rng()));
+      const y = this.groundY(s.x, s.z);
+      const parts: Array<[number, number, number, number, number]> = [
+        // [dx, dy, dz, scale, shade]
+        [0, 0.3, 0, 1, 1],
+        [0.4, 0.2, 0.14, 0.62, 0.82],
+        [-0.34, 0.17, -0.2, 0.52, 0.62],
+      ];
+      for (const [dx, dy, dz, ps, shade] of parts) {
+        this.setInstance(shrubs, bi, s.x + dx * sc, y + dy * sc, s.z + dz * sc,
+          this.rng() * Math.PI, sc * ps, sc * ps * 0.72, sc * ps);
+        shrubs.setColorAt(bi, tmp.copy(cA).lerp(cB, this.rng()).multiplyScalar(shade));
+        bi++;
+      }
+      for (let k = 0; k < 4; k++) {
+        const a = this.rng() * Math.PI * 2;
+        const px = s.x + Math.cos(a) * 0.42 * sc;
+        const pz = s.z + Math.sin(a) * 0.42 * sc;
+        this.dummy.position.set(px, y + (0.42 + this.rng() * 0.25) * sc, pz);
+        this.dummy.rotation.set(-0.5 - this.rng() * 0.5, a, 0);
+        const cs = sc * (0.75 + this.rng() * 0.5);
+        this.dummy.scale.set(cs, cs, cs);
+        this.dummy.updateMatrix();
+        cards.setMatrixAt(ci++, this.dummy.matrix);
+      }
+      this.groundDiscs.push({
+        x: s.x, z: s.z, r: 0.8 * sc,
+        tint: new THREE.Color(0x3e2f1f),
+      });
     });
+    for (let i = bi; i < sCount * 3; i++) this.setInstance(shrubs, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+    for (let i = ci; i < sCount * 4; i++) this.setInstance(cards, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
     if (shrubs.instanceColor) shrubs.instanceColor.needsUpdate = true;
     shrubs.castShadow = true;
     this.group.add(shrubs);
+    this.group.add(cards);
 
-    // Ferns hug the riverbanks and forest floor.
-    const fernGeo = new THREE.ConeGeometry(0.42, 0.5, 6);
-    fernGeo.translate(0, 0.22, 0);
-    fernGeo.scale(1, 1, 1);
-    const fernMat = new THREE.MeshStandardMaterial({ color: 0x3f9142, roughness: 0.9 });
+    // Ferns hug the riverbanks and forest floor — frond cutouts now,
+    // not green cones.
+    const fernGeo = this.crossPlanes(0.95, 0.55);
+    const fernMat = new THREE.MeshStandardMaterial({
+      map: this.gpt.fern_frond ?? this.fernTex,
+      alphaTest: 0.45,
+      side: THREE.DoubleSide,
+      roughness: 0.9,
+    });
     const fCount = Math.round(170 * scale);
     const ferns = new THREE.InstancedMesh(fernGeo, fernMat, fCount);
     const fSpots = this.scatter(fCount, (x, z) => {
@@ -488,23 +771,98 @@ export class EnvironmentRenderer {
     });
     this.group.add(ferns);
 
-    // Leaf litter discs under the forest canopy.
-    const litterGeo = new THREE.CircleGeometry(0.85, 10);
-    litterGeo.rotateX(-Math.PI / 2);
-    const litterMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
-    const lCount = Math.round(190 * scale);
-    const litter = new THREE.InstancedMesh(litterGeo, litterMat, lCount);
-    const lc = [new THREE.Color(0x8a6b35), new THREE.Color(0x77572e), new THREE.Color(0x5d7031)];
-    const lSpots = this.scatter(lCount, (x, z) => x + z * 0.2 < 4 && !isInRiver(x, z, 5));
-    lSpots.forEach((s, i) => {
-      const sc = 0.7 + this.rng() * 1.3;
-      this.setInstance(litter, i, s.x, this.groundY(s.x, s.z) + 0.03, s.z,
-        this.rng() * Math.PI, sc, 1, sc);
-      litter.setColorAt(i, lc[Math.floor(this.rng() * lc.length)]);
-    });
-    if (litter.instanceColor) litter.instanceColor.needsUpdate = true;
-    litter.receiveShadow = true;
-    this.group.add(litter);
+    // Ground decals (soft alpha-masked texture patches, no square
+    // borders): leaf litter under the canopy, gravel on the banks,
+    // worn dirt along the path. One helper, three materials.
+    const decal = (
+      tex: THREE.Texture | undefined,
+      tints: THREE.Color[],
+      count: number,
+      accept: (x: number, z: number) => boolean,
+      sMin: number,
+      sMax: number,
+      repeat = 1.6,
+    ) => {
+      const geo = new THREE.CircleGeometry(0.95, 14);
+      geo.rotateX(-Math.PI / 2);
+      let map = tex;
+      if (tex) {
+        map = tex.clone();
+        map.repeat.set(repeat, repeat);
+        map.needsUpdate = true;
+      }
+      const mat = new THREE.MeshStandardMaterial({
+        map: map ?? this.patchTex,
+        alphaMap: tex ? this.patchAlpha : undefined,
+        transparent: true,
+        depthWrite: false,
+        roughness: 1,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+      });
+      const spots = this.scatter(count, accept);
+      const mesh = new THREE.InstancedMesh(geo, mat, spots.length);
+      spots.forEach((s, i) => {
+        const sc = sMin + this.rng() * (sMax - sMin);
+        this.setInstance(mesh, i, s.x, this.groundY(s.x, s.z) + 0.025, s.z,
+          this.rng() * Math.PI, sc, 1, sc);
+        mesh.setColorAt(i, tints[Math.floor(this.rng() * tints.length)]);
+      });
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      mesh.renderOrder = 1;
+      mesh.receiveShadow = true;
+      this.group.add(mesh);
+    };
+    decal(
+      this.gpt.ground_leaves,
+      [new THREE.Color(0xd9d0bf), new THREE.Color(0xcfc2ab), new THREE.Color(0xe2d8c6)],
+      Math.round(190 * scale),
+      (x, z) => x + z * 0.2 < 4 && !isInRiver(x, z, 5),
+      0.7, 2.0,
+      1.15,
+    );
+    decal(
+      this.gpt.ground_gravel,
+      [new THREE.Color(0x9a958c), new THREE.Color(0x8a8378), new THREE.Color(0xa89f8d)],
+      Math.round(120 * scale),
+      (x, z) => {
+        const d = distanceToRiver(x, z);
+        return d > 2.8 && d < 7 && this.groundY(x, z) > 0.3;
+      },
+      1.0, 2.4,
+    );
+    decal(
+      this.gpt.ground_dirt,
+      [new THREE.Color(0xa08050), new THREE.Color(0x8f7040)],
+      Math.round(130 * scale),
+      (x, z) => {
+        const d = distanceToPath(x, z);
+        return d > 0.7 && d < 2.6 && this.groundY(x, z) > 0.42;
+      },
+      0.8, 1.7,
+    );
+    // Fallen-leaf piles as flat sprites (GPT sheet F) under trees.
+    if (this.gpt.prop_leaves_pile) {
+      const pCount = Math.round(80 * scale);
+      const pSpots = this.scatter(pCount, (x, z) => x + z * 0.2 < -2 && !isInRiver(x, z, 5.5));
+      const geo = new THREE.PlaneGeometry(0.95, 0.75);
+      geo.rotateX(-Math.PI / 2);
+      const mat = new THREE.MeshStandardMaterial({
+        map: this.gpt.prop_leaves_pile,
+        alphaTest: 0.5,
+        roughness: 1,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+      });
+      const mesh = new THREE.InstancedMesh(geo, mat, pSpots.length);
+      pSpots.forEach((s, i) => {
+        const sc = 0.7 + this.rng() * 0.6;
+        this.setInstance(mesh, i, s.x, this.groundY(s.x, s.z) + 0.03, s.z,
+          this.rng() * Math.PI, sc, 1, sc);
+      });
+      mesh.receiveShadow = true;
+      this.group.add(mesh);
+    }
   }
 
   /* ---------------- rocks & cliffs ---------------- */
@@ -515,30 +873,48 @@ export class EnvironmentRenderer {
     // squashed into the ground, darker granite colours, clustered
     // towards the highland instead of evenly scattered pale domes.
     const rockGeo = new THREE.IcosahedronGeometry(1, 0);
+    this.jitter(rockGeo, 0.3);
     {
+      // Base grime: darker, slightly mossy towards the ground line so
+      // rocks sit IN the terrain instead of on it (baked as vertex
+      // colours, multiplied with the crack map and instance colour).
       const posAttr = rockGeo.attributes.position as THREE.BufferAttribute;
-      const v = new THREE.Vector3();
+      const colors = new Float32Array(posAttr.count * 3);
       for (let i = 0; i < posAttr.count; i++) {
-        v.fromBufferAttribute(posAttr, i);
-        const h = Math.sin(v.x * 12.9898 + v.y * 78.233 + v.z * 37.719) * 43758.5453;
-        v.multiplyScalar(0.84 + (h - Math.floor(h)) * 0.3);
-        posAttr.setXYZ(i, v.x, v.y, v.z);
+        const t = THREE.MathUtils.clamp((posAttr.getY(i) + 1) / 2, 0, 1);
+        const k = smoothstep(0.08, 0.55, t);
+        colors[i * 3] = 0.5 + 0.5 * k;
+        colors[i * 3 + 1] = 0.56 + 0.44 * k;
+        colors[i * 3 + 2] = 0.42 + 0.58 * k;
       }
-      rockGeo.computeVertexNormals();
+      rockGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     }
-    const rockMat = new THREE.MeshStandardMaterial({ map: this.rockCrackTex, roughness: 0.98, flatShading: true });
-    addInstanceFade(rockMat);
     const count = Math.round(170 * scale);
-    const rocks = new THREE.InstancedMesh(rockGeo, rockMat, count);
-    const rockCenters = new Float32Array(count * 3);
-    const rockRadii = new Float32Array(count);
-    const rockFades = new Float32Array(count).fill(1);
-    const rockAttr = new THREE.InstancedBufferAttribute(rockFades, 1);
-    rockGeo.setAttribute('aFade', rockAttr);
-    this.canopy.push({ centers: rockCenters, radii: rockRadii, fades: rockFades, attr: rockAttr });
+    // Two rock materials (GPT sheet C): layered rock generally, the
+    // mossy variant near the river and in the forest shade. Each mesh
+    // gets its own geometry clone (per-mesh aFade attribute).
+    const makeRockMesh = (tex: THREE.Texture | undefined) => {
+      const geo = rockGeo.clone();
+      const mat = new THREE.MeshStandardMaterial({
+        map: tex ?? this.rockCrackTex,
+        roughness: 0.98,
+        flatShading: true,
+        vertexColors: true,
+      });
+      addInstanceFade(mat);
+      const mesh = new THREE.InstancedMesh(geo, mat, count);
+      const centers = new Float32Array(count * 3);
+      const radii = new Float32Array(count);
+      const fades = new Float32Array(count).fill(1);
+      const attr = new THREE.InstancedBufferAttribute(fades, 1);
+      geo.setAttribute('aFade', attr);
+      this.canopy.push({ centers, radii, fades, attr });
+      return { mesh, centers, radii, n: 0 };
+    };
+    const rocks = makeRockMesh(this.gpt.rock_layered);
+    const mossRocks = makeRockMesh(this.gpt.rock_moss);
     const cA = new THREE.Color(0x76767c);
     const cB = new THREE.Color(0x9c968a);
-    const cMoss = new THREE.Color(0x6f8f56);
     const tmp = new THREE.Color();
     const pc = this.cfg.world.plateauCenter;
     const spots = this.scatter(count, (x, z) =>
@@ -548,33 +924,45 @@ export class EnvironmentRenderer {
       // density follows the rocky highland; sparse elsewhere
       this.rng() < 0.35 + smoothstep(10, 42, x - z * 0.35) * 0.85);
     const rockTransforms: Array<{ x: number; y: number; z: number; s: number }> = [];
-    spots.forEach((s, i) => {
+    spots.forEach((s) => {
       const highland = smoothstep(16, 44, s.x - s.z * 0.35);
       const sc = (0.25 + Math.pow(this.rng(), 1.8) * 1.1) * (1 + highland * 2.6);
       const y = this.groundY(s.x, s.z) + sc * 0.02;
+      // Mossy texture where the world is wet or shaded: near the
+      // river, or deep in the forest side. Highland rocks get a
+      // slate-blue instance tint over the layered texture.
+      const mossy = distanceToRiver(s.x, s.z) < 10 || s.x + s.z * 0.2 < -18;
+      const target = mossy ? mossRocks : rocks;
+      const i = target.n++;
       this.dummy.position.set(s.x, y, s.z);
       this.dummy.rotation.set(this.rng() * 0.6, this.rng() * Math.PI, this.rng() * 0.6);
       this.dummy.scale.set(sc * (0.8 + this.rng() * 0.5), sc * (0.5 + this.rng() * 0.3), sc * (0.8 + this.rng() * 0.5));
       this.dummy.updateMatrix();
-      rocks.setMatrixAt(i, this.dummy.matrix);
+      target.mesh.setMatrixAt(i, this.dummy.matrix);
       tmp.copy(cA).lerp(cB, this.rng());
-      if (this.rng() < 0.22) tmp.lerp(cMoss, 0.45); // mossy rocks
-      rocks.setColorAt(i, tmp);
-      rockCenters[i * 3] = s.x;
-      rockCenters[i * 3 + 1] = y + sc * 0.35;
-      rockCenters[i * 3 + 2] = s.z;
-      rockRadii[i] = sc * 1.05;
+      if (highland > 0.55) tmp.lerp(new THREE.Color(0x707a8c), 0.5);
+      target.mesh.setColorAt(i, tmp);
+      target.centers[i * 3] = s.x;
+      target.centers[i * 3 + 1] = y + sc * 0.35;
+      target.centers[i * 3 + 2] = s.z;
+      target.radii[i] = sc * 1.05;
+      if (sc > 0.45) {
+        this.groundDiscs.push({
+          x: s.x, z: s.z, r: sc * 1.05,
+          tint: new THREE.Color(0x403a33),
+        });
+      }
       if (sc > 0.8) rockTransforms.push({ x: s.x, y: y + sc * 0.5, z: s.z, s: sc });
     });
-    // If scatter ran dry, hide the unfilled tail instead of leaving
-    // identity-matrix rocks at the origin.
-    for (let i = spots.length; i < count; i++) {
-      this.setInstance(rocks, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+    for (const target of [rocks, mossRocks]) {
+      for (let i = target.n; i < count; i++) {
+        this.setInstance(target.mesh, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+      }
+      if (target.mesh.instanceColor) target.mesh.instanceColor.needsUpdate = true;
+      target.mesh.castShadow = true;
+      target.mesh.receiveShadow = true;
+      this.group.add(target.mesh);
     }
-    if (rocks.instanceColor) rocks.instanceColor.needsUpdate = true;
-    rocks.castShadow = true;
-    rocks.receiveShadow = true;
-    this.group.add(rocks);
 
     // Exposed mineral crystals on a few large rocks (visual only).
     const crystalGeo = new THREE.OctahedronGeometry(0.16);
