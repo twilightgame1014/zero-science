@@ -112,7 +112,18 @@ ok('岩はハンマーで3回割ると残骸になり、何日たっても元に
   const K = N.KINDS;
   ok('木の当たり判定は描画の幹の太さ以上で、幹から大きくはみ出さない（樹冠は壁にしない）', K.tree.r >= SPEC.tree.trunkRadius && K.tree.r <= SPEC.tree.trunkRadius + 0.15 && K.tree.r < SPEC.tree.footprintRadius * 0.5, JSON.stringify({ game: K.tree.r, spec: SPEC.tree }));
   ok('岩の当たり判定は描画の占有半径とほぼ同じ（±15%）', K.rock.r >= SPEC.rock.footprintRadius * 0.85 && K.rock.r <= SPEC.rock.footprintRadius * 1.15, JSON.stringify({ game: K.rock.r, spec: SPEC.rock }));
-  ok('描画に必要な種類（tree・rock・branch・pebble・herb）と採取後の形がそろっている', ['tree', 'rock', 'branch', 'pebble', 'herb'].every(t => SPEC[t]) && SPEC.tree.depletedForm === 'stump' && SPEC.rock.depletedForm === 'rubble' && SPEC.herb.depletedForm === 'cut-patch');
+  ok('草むら・やぶの判定（歩行は妨げない）は描画の grass・bush の占有半径と一致する', Math.abs(K.grass.r - SPEC.grass.footprintRadius) < 0.01 && Math.abs(K.bush.r - SPEC.bush.footprintRadius) < 0.01 && !K.grass.block && !K.bush.block, JSON.stringify({ grass: [K.grass.r, SPEC.grass], bush: [K.bush.r, SPEC.bush] }));
+  const DS = N.DEPOSIT_SHAPE, allRes = [...new Set(D.regions.flatMap(r => r.res.map(x => x.id)))];
+  ok('すべての地域の採取地点に、描画の種類と当たり判定の決まりがある（描画に存在する種類）', allRes.every(id => DS[id] && SPEC[DS[id].vis]), allRes.filter(id => !DS[id] || !SPEC[DS[id].vis]).join(','));
+  const solidBad = allRes.filter(id => { const d = DS[id]; const sp = SPEC[d.vis];
+    if (d.vis === 'rock' || d.vis === 'ore') return !(d.r >= sp.footprintRadius * 0.85 && d.r <= sp.footprintRadius * 1.15);
+    if (d.vis === 'tree') return !(d.r >= sp.trunkRadius && d.r <= sp.trunkRadius + 0.15);
+    return d.r !== 0; });
+  ok('岩・鉱石の姿の採取地点は占有半径の±15%、木の姿は幹の太さで壁になり、それ以外は歩行を妨げない', solidBad.length === 0, solidBad.join(','));
+  const S9 = E.newState(); S9.inv.pickaxe = 1; S9.inv.ironpick = 1; S9.inv.torch = 1; S9.inv.rig = 1;
+  const depBad = W.statics.filter(st => { if (W.free(S9, st.x, st.z)) return true; const ap = W.nearestFree(S9, { x: st.x, z: st.z }, undefined, 4); return !ap || Math.hypot(ap.x - st.x, ap.z - st.z) - 0.6 > E.REACH; });
+  ok('壁になる採取地点は中心に入れず、外周の立てる場所から手が届く', depBad.length === 0, depBad.map(s => s.id).join(','));
+  ok('描画に必要な種類（tree・rock・branch・pebble・herb・grass・bush・ore・water・oil）と採取後の形がそろっている', ['tree', 'rock', 'branch', 'pebble', 'herb', 'grass', 'bush', 'ore', 'water', 'oil'].every(t => SPEC[t]) && SPEC.tree.depletedForm === 'stump' && SPEC.rock.depletedForm === 'rubble' && SPEC.herb.depletedForm === 'cut-patch');
   const big = W.objects.filter(o => o.kind === 'tree' || o.kind === 'rock').reduce((m, o) => Math.max(m, o.scale), 0);
   ok('いちばん大きい木・岩でも、外周から手の届く距離で採取でき、外周の立てる場所が見つかる', W.objects.filter(o => (o.kind === 'tree' || o.kind === 'rock') && o.scale >= big - 0.05).every(o => { const ap = W.approachPoint(E.newState(), o, { x: o.x + 5, z: o.z }); return ap && W.reachGap(o, ap) <= E.REACH; }), 'max scale ' + big);
 }

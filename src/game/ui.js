@@ -633,7 +633,7 @@ function buildNodes(){
     r.res.forEach((res,i)=>{
       const pos = E.depositPos(r,res);
       NODES.push({key:r.id+":"+res.id, vid:E.depositId(r.id,res.id), r, res, pos,
-        type:RES_VIS[res.id]||"rock", rot:(i*1.7)%6.28, scale: RES_VIS[res.id]==="tree"?1.1:1});
+        type:(NATURE.DEPOSIT_SHAPE[res.id]||{}).vis||RES_VIS[res.id]||"rock", rot:(i*1.7)%6.28, scale: (NATURE.DEPOSIT_SHAPE[res.id]||{}).vis==="tree"?1.1:1});
     }); });
 }
 function nodeVisual(n){
@@ -655,7 +655,7 @@ function world(){
 }
 /* 描画モジュールの資源タイプ（INTEGRATION.md §13）。落ち枝は branch、小石は pebble。
    寸法は getResourceVisualSpecs と照合した（当たり判定の正本は nature.js） */
-const NAT_VIS = {tree:o=>["tree",o.scale], rock:o=>["rock",o.scale], pebble:o=>["pebble",0.75*o.scale], twig:o=>["branch",0.8*o.scale], grass:o=>["herb",o.scale], bush:o=>["herb",1.6*o.scale]};
+const NAT_VIS = {tree:o=>["tree",o.scale], rock:o=>["rock",o.scale], pebble:o=>["pebble",0.75*o.scale], twig:o=>["branch",0.8*o.scale], grass:o=>["grass",o.scale], bush:o=>["bush",o.scale]};
 const NAT_SHOW_R = 32, NAT_HIDE_R = 38;
 function natVisual(o){
   const v = WORLD.visual(S,o), [type,scale] = NAT_VIS[o.kind](o);
@@ -942,7 +942,7 @@ function finishWork(){
   if(!out.ok){ banner(out.reason||"採れなかった"); updateAction3D(); return; }
   const got = out.got || {[t.n.res.id]:out.n};
   const pos = tPos(t), kind = t.o ? t.o.kind : t.n.type;
-  W3.gfx.playVisualEffect(out.news.length?"discovery": ["tree","bush","grass","herb","flowers"].includes(kind)?"leaves": kind==="water"?"splash": kind==="rock"?"smoke":"sparkle", pos);
+  W3.gfx.playVisualEffect(out.news.length?"discovery": ["tree","bush","grass","herb","flowers"].includes(kind)?"leaves": kind==="water"?"splash": (kind==="rock"||kind==="ore")?"smoke":"sparkle", pos);
   if(out.lvUp) W3.gfx.playVisualEffect("levelup", W3.pos);
   float3D(pos,(out.crit?"会心！ ":"")+Object.keys(got).map(id=>ic(id)+"＋"+got[id]).join(" "), out.crit?"crit":"");
   if(t.o && out.depleted) banner(out.after==="stump" ? "🪵 切り株になった" : out.after==="rubble" ? "🪨 岩が砕けた" : "✋ "+out.name+"をとった");

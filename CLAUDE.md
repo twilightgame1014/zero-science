@@ -48,19 +48,19 @@
 ## 主なデータの場所
 - 地域と3D上の位置：`data.js` の `regions`（`w` がワールド座標、`res[].p` が地域内の配置）
 - 拠点の建物（段階で増える）：`ui.js` の `STRUCT_PLAN`
-- 資源の見た目タイプ：`ui.js` の `RES_VIS`（`water` / `oil` は Muse に追加依頼中の独自タイプ）
+- 地域の採取地点の見た目と当たり判定：`nature.js` の `DEPOSIT_SHAPE`（描画の資源タイプと半径。岩・鉱石・木の姿は固定の障害物）。自然物の見た目は `ui.js` の `NAT_VIS`
 - 研究室の背景：`ui.js` の `labBackground`（SVG）。`assets/lab/` の画像は原本として残すだけで、ビルドには使わない
 
 ## Muse への依頼事項（未解決）
 1. （対応済み：一時停止API `pauseGraphics` / `resumeGraphics` は `feature/graphics-pause-resume-api` を統合。ゲームはこれを使う）
-2. 資源タイプ `water`（水源）・`oil`（原油）・`ore`（鉱石）の見た目
+2. （対応済み：資源タイプ `water`・`oil`・`ore`・`grass`・`bush` を統合し、ゲームで使用）
 3. 洞窟・鉱山・火山・海岸・油田のバイオーム
 4. 川を渡る橋（今は水の中を歩いて渡れる）
 5. 水位（0.32）より低い土地が水中色で塗られているのが意図どおりか
-6. 建物タイプ：水車・蒸気機関・精留塔・掘削やぐら
+6. 建物タイプ（水車・蒸気機関・精留塔・掘削やぐら・橋）は描画側に追加済み。ゲームの `STRUCT_PLAN` への組み込みと、橋の通行の決まりはゲーム側の作業として残っている
 7. （対応済み：川の水面・`pickGround`・`setViewportInsets` は `feature/graphics-world-polish` で追加され、このブランチに統合）
-8. **景観の木・岩・茂み・倒木・小石・草むらが、ゲームの採取対象と別の乱数で描かれている**（見えるのに採れない・当たらない）。`GraphicsOptions.decor`（提案パッチ `docs/handoff/patches/graphics-decor-option.patch`）か配置の共有が必要。まとめて描くAPIも（`docs/handoff/NATURAL-OBJECTS-CONTRACT.md`）
-9. 採取ノードの木に遮蔽フェードが効かない・選択の強調が大きい（`docs/handoff/CLAUDE-TO-MUSE-2026-11-06.md` §7・§8）。待機中の歩行コマは対応済み（moving=false で列0に固定）
+8. `GraphicsOptions.decor` は統合済み（景観の木・岩・茂み・倒木・小石は描かない）。残り：景観の草むら（十字面の群落）がゲームの採取できる草むらと見分けにくい・まとめて描くAPIの中身をインスタンス描画にする（性能）
+9. 採取ノードの遮蔽フェードと足元の輪は統合済み。残り：フェードは主人公とカメラを結ぶ線上の1本だけなので、密な森では隣の樹冠が主人公にかかる・足元の輪が樹冠の下で見えにくい（`docs/handoff/CLAUDE-TO-MUSE-2026-11-06.md` §9）。アイコンは `assets/ui-icons`（使用中）と `assets/icons`（未使用）の2か所にある
 
 ## 今後の拡張候補
 - 第5段階（集積回路・医薬品・ナノ材料）

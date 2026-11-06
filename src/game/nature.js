@@ -32,6 +32,19 @@ var NATURE = (function(){
     "rock:basalt":  {name:"黒い岩（玄武岩）", yields:{basalt:1, cobble:1}},
   };
 
+  /* 地域の採取地点の姿（描画モジュールの資源タイプ）と、当たり判定の半径（0 は歩行を妨げない）。
+     見た目と当たり判定の正本をここ1か所にする。半径は RESOURCE_VISUAL_SPECS（幹 0.26／岩・鉱石の占有 1.0）に合わせる */
+  const T_ = (vis, r)=>({vis, r:r||0});
+  const DEPOSIT_SHAPE = {
+    twig:T_("branch"), cobble:T_("pebble"), flint:T_("pebble"), shell:T_("pebble"),
+    log:T_("tree",0.38), resin:T_("tree",0.38), wax:T_("tree",0.38), bark:T_("tree",0.38), seed:T_("tree",0.38),
+    leaves:T_("herb"), seaweed:T_("herb"), vine:T_("bush"), grass:T_("grass"), grape:T_("flowers"),
+    clay:T_("clay"), ochre:T_("clay"), sand:T_("clay"),
+    rain:T_("water"), river:T_("water"), spring:T_("water"), seawater:T_("water"), crude:T_("oil"),
+    basalt:T_("rock",0.9), limestone:T_("rock",0.9), granite:T_("rock",0.9),
+    quartz:T_("ore",0.9), coal:T_("ore",0.9), rocksalt:T_("ore",0.9), hematite:T_("ore",0.9), malachite:T_("ore",0.9),
+    cassiterite:T_("ore",0.9), sphalerite:T_("ore",0.9), bauxite:T_("ore",0.9), sulfur:T_("ore",0.9), obsidian:T_("ore",0.9),
+  };
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
   const smooth = (a,b,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); };
 
@@ -112,11 +125,10 @@ var NATURE = (function(){
     scatter("bush", 26, (x,z)=>0.05 + 0.8*g2(x,z,fw,18) - 0.6*highland(x,z), ()=>0.9+rng()*0.4);
 
     const byId = new Map(objs.map(o=>[o.id,o]));
-    /* 木の姿をしている地域の採取地点（枝の多い木・やにの出る木など）は、幹に当たり判定を持つ固定の障害物 */
-    const TREE_DEPOSITS = ["log","resin","wax","bark","seed"];   // 枝（twig）の採取地点は落ち枝の見た目なので壁にしない
+    /* 地域の採取地点のうち、木・岩・鉱石の姿のものは固定の障害物（見た目の幹・占有範囲に合わせる） */
     const statics = [];
-    D.regions.forEach(r=>{ if(r.w) r.res.forEach(res=>{ if(!TREE_DEPOSITS.includes(res.id)) return; const p=E.depositPos(r,res);
-      statics.push({id:E.depositId(r.id,res.id), kind:"deposit", x:p.x, z:p.z, r:0.38, block:true, static:true}); }); });
+    D.regions.forEach(r=>{ if(r.w) r.res.forEach(res=>{ const sh=DEPOSIT_SHAPE[res.id]; if(!sh || !sh.r) return; const p=E.depositPos(r,res);
+      statics.push({id:E.depositId(r.id,res.id), kind:"deposit", x:p.x, z:p.z, r:sh.r, block:true, static:true}); }); });
 
     /* ---------- 状態 ---------- */
     const kindOf = o=>KINDS[o.kind];
@@ -302,6 +314,6 @@ var NATURE = (function(){
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
             free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids};
   }
-  return {create, KINDS, VARIANTS, PLAYER_R, SEED};
+  return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE};
 })();
 if (typeof module!=="undefined") module.exports = NATURE;
