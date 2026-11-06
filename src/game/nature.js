@@ -11,7 +11,7 @@ var NATURE = (function(){
   const PLAYER_R = 0.35;          // 主人公の当たり判定の半径
   const WORLD_R = 56;             // 歩ける範囲：-56〜56 の正方形（地形は120×120。端の丘の手前まで）
   const inWorld = (x,z,m)=> Math.abs(x) <= WORLD_R-(m||0) && Math.abs(z) <= WORLD_R-(m||0);
-  const REGION_R = 9;
+  const REGION_R = 9;             // 地域の半径（ゲーム側の取り決め）
   /* 拠点の外に建てる建物の場所（ui.js の STRUCT_PLAN と一致させる）。ここには自然物を置かない */
   const SITES = [{id:"st-wheel", x:15.2, z:3.8, r:2.4}];   // 水車は水ぎわ（車輪の半分が川にかかる）。車軸は川を横切る向き（ui.js の rot）
   /* 描画モジュールが以前置いていた石の階段・石積みの壁（"Stonework"）の跡。開始時は人工物を置かないので、
@@ -22,7 +22,7 @@ var NATURE = (function(){
     {at:[-6,22.9],  put:[["grass",1.0],["pebble",0.9]]},
     {at:[10.2,15.1],put:[["rock",0.62],["grass",1.0],["pebble",1.0]]},
     {at:[22.6,2.7], put:[["pebble",1.0,"flint"],["pebble",0.9],["grass",0.9]]},
-  ];             // 地域の半径（ゲーム側の取り決め）
+  ];
   const MIN = 60000;
 
   /* 種類ごとの決まり。
@@ -142,6 +142,78 @@ var NATURE = (function(){
     FORMER_STONEWORK.forEach(f=>f.put.forEach(([kind,sc,variant])=>{
       for(let k=0;k<24;k++){ const ang=rng2()*Math.PI*2, d=0.6+rng2()*2.9, x=f.at[0]+Math.cos(ang)*d, z=f.at[1]+Math.sin(ang)*d, s=sc*(0.85+rng2()*0.3);
         if(fits(kind,x,z,s) && !SITES.some(p=>near(x,z,p.x,p.z) < p.r + KINDS[kind].r*s)){ add(kind,x,z,s,variant||null,rng2); break; } } }));
+
+    /* ---------- 第2層：マップ全体の植生（2026-11-07） ----------
+       第1層（上）だけでは地域の近くにしか木や草がなかったので、歩ける地面全体に自然物を広げる。
+       別の乱数（SEED+101）で、第1層のあとに足すだけなので、第1層の位置・ID・セーブの状態は変わらない。
+       揺らぎのある格子（等間隔に見えないよう、マスの中でずらす）に、場所ごとの密度とまとまりのノイズを掛けて置く。
+       ・森（森林の周り・西側）：木とやぶが密集、ところどころに空き地
+       ・草原・野原：草むらが多く、木はまばら
+       ・川岸：草むら・やぶ・小石、木は少し
+       ・高地・山・火山：岩と小石、木は若木がまばら（火山は植物なし）
+       置かない所：川の中と岸のすぐそば・急な斜面・拠点の台地（壁になる物）・拠点から各地域への通り道（壁になる物）・採取地点のそば
+       ※第1層は「水位＋0.15 より低い土地」に置かなかったが、そこは川の外では乾いた低地（描画も土色）で、マップの約半分あった。
+         第2層では低地にも置く（湿った低地は木を減らし、草むら・やぶを多めにする） */
+    const L2 = mulberry32(SEED + 101);
+    const vhash = (i,j,k)=>{ let h = (i*374761393 + j*668265263 + k*1442695041) | 0; h = (h ^ (h>>>13)) * 1274126177 | 0; return ((h ^ (h>>>16)) >>> 0) / 4294967296; };
+    const vnoise = (x,z,cell,k)=>{ const fx=x/cell, fz=z/cell, i=Math.floor(fx), j=Math.floor(fz), u=smooth(0,1,fx-i), v=smooth(0,1,fz-j);
+      const a=vhash(i,j,k), b=vhash(i+1,j,k), c=vhash(i,j+1,k), d=vhash(i+1,j+1,k); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v; };
+    const clump = (x,z,k)=> 0.65*vnoise(x,z,9,k) + 0.35*vnoise(x,z,4,k+7);      // まとまり（密な所と空き地）
+    const cw = R("coast"), vw = R("volcano");
+    const forestness = (x,z)=> Math.min(1, 0.95*g2(x,z,fw,20) + (x<-6 && z>-14 ? 0.45 : 0) + 0.25*g2(x,z,rw,14)) * (1 - 0.85*highland(x,z));
+    const volcanic = (x,z)=> g2(x,z,vw,14);
+    const coastal = (x,z)=> g2(x,z,cw,13);
+    const lowland = (x,z)=> smooth(wl+0.2, wl-0.25, H(x,z));      // 湿った低地（1 に近いほど低い）
+    /* 通り道：拠点から、最初から行ける地域と鍵のかかった地域の中心まで（壁になる物を置かない幅） */
+    const corridors = D.regions.filter(r=>r.w).map(r=>({a:{x:base.x,z:base.z}, b:{x:r.w.x,z:r.w.z}}));
+    const segD = (x,z,s)=>{ const dx=s.b.x-s.a.x, dz=s.b.z-s.a.z, L=dx*dx+dz*dz; const t=Math.max(0,Math.min(1,((x-s.a.x)*dx+(z-s.a.z)*dz)/L)); return Math.hypot(x-(s.a.x+dx*t), z-(s.a.z+dz*t)); };
+    const onCorridor = (x,z,w)=> corridors.some(s=>segD(x,z,s) < w);
+    /* 第2層の置ける場所：第1層の規則に加えて、通り道を空ける。鍵のかかった地域の中にも置く（開放後に森や岩場がある） */
+    function fits2(kind, x, z, s){
+      const K = KINDS[kind], rr = K.r*s;
+      if(!inWorld(x,z,3)) return false;
+      const dr = T.distanceToRiver(x,z);
+      if(kind==="pebble" ? dr < 4.0 : dr < 5.6) return false;
+      if(slope(x,z) > (K.block ? 0.55 : 0.9)) return false;
+      if(K.block && near(x,z,base.x,base.z) < 15) return false;
+      if(!K.block && near(x,z,base.x,base.z) < 3.5) return false;
+      if(K.block && onCorridor(x,z,1.9 + rr)) return false;
+      if(deps.some(p=>near(x,z,p.x,p.z) < 2.4)) return false;
+      if(SITES.some(p=>near(x,z,p.x,p.z) < p.r + rr)) return false;
+      for(const o of objs){
+        if(Math.abs(o.x-x) > 4 || Math.abs(o.z-z) > 4) continue;
+        const d = near(x,z,o.x,o.z);
+        const gap = (K.block && o.block) ? rr + o.r + 1.4 : (K.block || o.block) ? rr + o.r + 0.5 : 0.8;
+        if(d < gap) return false;
+      }
+      return true;
+    }
+    /* 揺らぎのある格子に置く。density(x,z) は 0〜1（そのマスに置く確率） */
+    function field(kind, cell, density, size, variantOf){
+      let n=0;
+      for(let gz=-54; gz<54; gz+=cell) for(let gx=-54; gx<54; gx+=cell){
+        const x = gx + L2()*cell, z = gz + L2()*cell, roll = L2(), s = size();
+        if(roll > density(x,z)) continue;
+        if(!fits2(kind,x,z,s)) continue;
+        if(add(kind,x,z,s,variantOf?variantOf(x,z):null,L2)) n++;
+      }
+      return n;
+    }
+    const L2N = {};
+    L2N.tree = field("tree", 2.9, (x,z)=>{ const c=clump(x,z,1); return volcanic(x,z)>0.3 ? 0 : Math.min(1,(0.1 + 1.25*forestness(x,z)) * (c<0.26 ? 0.06 : 0.5 + c)) * (1-0.7*coastal(x,z)) * (1-0.4*lowland(x,z)); },
+      ()=> 0.75 + L2()*0.7);
+    L2N.rock = field("rock", 6.5, (x,z)=> 0.04 + 0.55*highland(x,z) + 0.6*volcanic(x,z) + 0.35*g2(x,z,mw,12) + 0.12*clump(x,z,3), ()=>0.6+L2()*0.75,
+      (x,z)=> highland(x,z)>0.4 || volcanic(x,z)>0.3 || near(x,z,mw.x,mw.z)<14 ? "basalt" : null);
+    L2N.bush = field("bush", 4.2, (x,z)=> volcanic(x,z)>0.3 ? 0 : (0.05 + 0.5*forestness(x,z) + 0.25*smooth(9,5.6,T.distanceToRiver(x,z))) * (0.4 + clump(x,z,5)), ()=>0.85+L2()*0.45);
+    L2N.grass = field("grass", 3.4, (x,z)=>{ if(volcanic(x,z)>0.3) return 0; const open = 1 - forestness(x,z);
+      return (0.06 + 0.55*open*(1-highland(x,z)) + 0.35*g2(x,z,gw,18) + 0.25*smooth(10,5.6,T.distanceToRiver(x,z)) + 0.2*lowland(x,z)) * (0.3 + clump(x,z,9)); }, ()=>0.85+L2()*0.5);
+    L2N.pebble = field("pebble", 5.5, (x,z)=>{ const dr=T.distanceToRiver(x,z); return 0.05 + (dr>4 && dr<9 ? 0.45 : 0) + 0.3*highland(x,z) + 0.3*coastal(x,z) + 0.2*volcanic(x,z); },
+      ()=>0.85+L2()*0.4, (x,z)=>{ const dr=T.distanceToRiver(x,z); return (dr<9 && L2()<0.3) || volcanic(x,z)>0.3 && L2()<0.4 ? "flint" : null; });
+    // 落ち枝は第2層の木の根もとに（木の多い所ほど多い）
+    const trees2 = objs.filter(o=>o.kind==="tree" && !o.id.startsWith("x"));
+    L2N.twig = 0;
+    for(let i=0; i<6000 && L2N.twig<Math.round(trees2.length*0.45); i++){ const t=trees2[Math.floor(L2()*trees2.length)]; const a=L2()*Math.PI*2, d=t.r+0.9+L2()*1.8;
+      const x=t.x+Math.cos(a)*d, z=t.z+Math.sin(a)*d; if(fits2("twig",x,z,1) && add("twig",x,z,1,null,L2)) L2N.twig++; }
 
     const byId = new Map(objs.map(o=>[o.id,o]));
     /* 地域の採取地点のうち、木・岩・鉱石の姿のものは固定の障害物（見た目の幹・占有範囲に合わせる） */
@@ -328,10 +400,14 @@ var NATURE = (function(){
       return {x:q.x, z:q.z, moved:true};
     }
     /* 近くの自然物（半径 rad 以内） */
-    function around(x, z, rad){ return objs.filter(o=>Math.abs(o.x-x)<=rad && Math.abs(o.z-z)<=rad && Math.hypot(o.x-x,o.z-z)<=rad); }
+    /* 近くの自然物だけを引く（8マスの格子。毎フレームの近接判定・表示の同期で全件を走査しない） */
+    const AG = 8, agrid = new Map(); objs.forEach(o=>{ const k=Math.floor(o.x/AG)+","+Math.floor(o.z/AG); if(!agrid.has(k)) agrid.set(k,[]); agrid.get(k).push(o); });
+    function around(x, z, rad){ const out=[]; const x0=Math.floor((x-rad)/AG), x1=Math.floor((x+rad)/AG), z0=Math.floor((z-rad)/AG), z1=Math.floor((z+rad)/AG);
+      for(let i=x0;i<=x1;i++) for(let j=z0;j<=z1;j++){ const c=agrid.get(i+","+j); if(c) for(const o of c) if(Math.abs(o.x-x)<=rad && Math.abs(o.z-z)<=rad && Math.hypot(o.x-x,o.z-z)<=rad) out.push(o); }
+      return out; }
 
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
-            free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids};
+            free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids, layer2:L2N};
   }
   return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, SITES, FORMER_STONEWORK};
 })();

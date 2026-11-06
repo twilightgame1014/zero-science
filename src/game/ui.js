@@ -697,16 +697,28 @@ function natVisual(o){
     highlighted: (W3.sel&&W3.sel.o===o) || (W3.near&&W3.near.o===o), phase: W3.work && W3.work.t.o===o ? "reacting" : "idle",
     natural:{id:o.id, kind:o.kind, variant:o.variant, state:v.state, collider:v.collider, left:v.left, uses:v.uses}};
 }
+/* 自然物を描画モジュールへ渡すのは、近くの格子（WORLD.around）にあって画面の中（＋余白）に入るものだけ。
+   全件を毎回走査しない・画面外の木を描かない（スマホの負荷対策）。出し入れには余白の差（ヒステリシス）を付ける */
+function onScreenish(x, z, h, margin){
+  const s=toScreen(x, groundY(x,z)+h, z); if(!s.ok) return false;
+  const r=$("#w3").getBoundingClientRect(), mx=r.width*margin, my=r.height*margin;
+  return s.x>-mx && s.x<r.width+mx && s.y>-my && s.y<r.height+my*1.6;   // 下側は背の高い木の樹冠が入るので広め
+}
 function syncNature(force){
   if(!W3.gfx || !world() || !W3.pos) return;
   const shown = W3.natShown || (W3.natShown = new Set());
-  WORLD.objects.forEach(o=>{
-    const d = Math.hypot(o.x-W3.pos.x, o.z-W3.pos.z);
-    if(d > NAT_HIDE_R || (d > NAT_SHOW_R && !shown.has(o.id))){ if(shown.has(o.id)){ W3.gfx.updateResourceVisual(o.id, null); shown.delete(o.id); delete W3.visSig[o.id]; } return; }
+  const hide = o=>{ W3.gfx.updateResourceVisual(o.id, null); shown.delete(o.id); delete W3.visSig[o.id]; };
+  const near = WORLD.around(W3.pos.x, W3.pos.z, NAT_HIDE_R), seen = new Set();
+  near.forEach(o=>{
+    seen.add(o.id);
+    const h = o.kind==="tree" ? 2*o.scale : 0.3, keep = W3.sel&&W3.sel.o===o || W3.near&&W3.near.o===o;
+    const inView = keep || onScreenish(o.x, o.z, h, shown.has(o.id) ? 0.45 : 0.22);
+    if(!inView){ if(shown.has(o.id)) hide(o); return; }
     const v = natVisual(o), sig = v.natural.state+"|"+v.highlighted+"|"+v.phase;
     if(!force && shown.has(o.id) && W3.visSig[o.id]===sig) return;
     W3.visSig[o.id]=sig; shown.add(o.id); W3.gfx.updateResourceVisual(o.id, v);
   });
+  [...shown].forEach(id=>{ if(!seen.has(id)){ const o=WORLD.byId.get(id); if(o) hide(o); else shown.delete(id); } });
 }
 /* 文明の段階に合わせて拠点の建物が増えていく（フィールドの進化） */
 /* 拠点の建物：プレイヤーが工作で作った設備（E.has＝所持）に1対1で対応させる。
@@ -755,18 +767,9 @@ function cameraPreview(){
     const [p,v]=q.split(",").map(Number);
     return (p>=20 && p<=60 && v>=10 && v<=40) ? {pitchDegrees:p, viewSize:v} : null; }catch(e){ return null; }
 }
-/* 開始時の景観は手つかずの自然にする。描画モジュールが独自に置く人工物（石の階段・石積みの壁＝"Stonework"）は、
-   ゲームの進行と関係なく置かれ、当たり判定もないので、開始時から表示しない。
-   描画モジュールが decor.stonework:false に対応したら、ここは何もしない（見つからないので）。
+/* 開始時の景観は手つかずの自然にする。描画モジュールが独自に置く石の階段・石積みの壁（Stonework）は
+   decor.stonework:false で描かせない（Muse §19。以前のシーン走査で取り除く処理はこれに置き換えた）。
    建物はゲームの STRUCT_PLAN（プレイヤーが作った設備）だけから置く。 */
-const PREBUILT_SCENERY = ["Stonework"];
-function stripPrebuilt(gfx){
-  const sc = gfx && typeof gfx.getScene==="function" ? gfx.getScene() : null; if(!sc || !sc.getObjectByName) return 0;
-  let n=0;
-  PREBUILT_SCENERY.forEach(name=>{ let o; while((o = sc.getObjectByName(name))){ o.parent && o.parent.remove(o);
-    o.traverse && o.traverse(c=>{ if(c.geometry) c.geometry.dispose(); const m=c.material; (Array.isArray(m)?m:m?[m]:[]).forEach(mm=>{ if(mm.map) mm.map.dispose(); mm.dispose(); }); }); n++; } });
-  W3.stripped = n; return n;
-}
 async function start3D(){
   try{
     W3.host = document.createElement("div"); W3.host.className="w3canvas";
@@ -783,7 +786,6 @@ async function start3D(){
       viewportInsets: hudInsets(),
       onContextLost: ()=>{ W3.lost=true; }, onContextRestored: ()=>{ W3.lost=false; } });
     W3.gfx.setWorldVisualState({timeOfDay:0.44, weather:"clear", ambientParticles:true});
-    stripPrebuilt(W3.gfx);
     W3.pos = spawnPos();
     syncAll3D();
     W3.state = "ready";
@@ -1041,14 +1043,20 @@ function labelFor(key, act, data, x, y, z, html, cls, aria){
   if(!s.ok){ if(el) el.style.display="none"; return; }
   if(!el || !el.isConnected){ el=document.createElement("button"); el.className="w3lab"; el.dataset.act=act; Object.assign(el.dataset, data); box.appendChild(el); W3.labelEls[key]=el; el._sig=""; }
   const sig=html+"|"+cls; if(sig!==el._sig){ el._sig=sig; el.className="w3lab"+cls; el.innerHTML=html; el.setAttribute("aria-label", aria); }
-  el.style.display=""; el.style.transform=`translate(${s.x}px,${s.y}px) translate(-50%,-100%)`;
+  /* 名札で主人公が隠れないように：主人公の絵（頭の上〜足もと）に重なる名札は、主人公の頭の上へずらす */
+  let ly=s.y;
+  if(W3.pos){ const p=toScreen(W3.pos.x, groundY(W3.pos.x,W3.pos.z), W3.pos.z), ph=W3.heroPx||56;
+    if(p.ok && Math.abs(s.x-p.x)<90 && ly>p.y-ph-6 && ly-34<p.y) ly = p.y-ph-8; }
+  el.style.display=""; el.style.transform=`translate(${s.x}px,${ly}px) translate(-50%,-100%)`;
 }
 function updateLabels3D(){
   const box=$("#w3labels"); if(!box) return;
   NODES.forEach(n=>{
-    const d=Math.hypot(n.pos.x-W3.pos.x, n.pos.z-W3.pos.z);
-    if(d>17){ const el=W3.labelEls[n.key]; if(el) el.style.display="none"; return; }
-    const g=E.gatherInfo(S,n.r,n.res), k=S.disc[n.res.id], inf=depInfo(n.r.id,n.res.id), isNear=W3.near&&W3.near.n===n;
+    const d=Math.hypot(n.pos.x-W3.pos.x, n.pos.z-W3.pos.z), isNear=W3.near&&W3.near.n===n, isSel=W3.sel&&W3.sel.n===n;
+    /* 名札は、近い（6マス以内）・手が届く・選んだ・技術画面で目標にした素材のときだけ（遠くの採取地点に常に名札を出さない） */
+    const wanted = isNear || isSel || d<6 || (U.target===n.res.id && d<17);
+    if(!wanted){ const el=W3.labelEls[n.key]; if(el) el.style.display="none"; return; }
+    const g=E.gatherInfo(S,n.r,n.res), k=S.disc[n.res.id], inf=depInfo(n.r.id,n.res.id);
     labelFor(n.key, "w3go", {n:n.key}, n.pos.x, groundY(n.pos.x,n.pos.z)+(n.type==="tree"?2.6:1.5), n.pos.z,
       `<span>${g.ok?(k?ic(n.res.id):"❔"):"🔒"}</span>${k?nm(n.res.id):"？"}${inf.left>0&&g.ok&&isFinite(inf.left)?`<i>${"●".repeat(Math.min(inf.left,8))}</i>`:""}`,
       (g.ok?"":" lock")+(g.ok&&inf.left<=0?" regrow":"")+(isNear?" near":""), (k?nm(n.res.id):"未発見の資源")+"へ行って採取する");
@@ -1375,5 +1383,5 @@ function intro(){
   openModal($("#introGo")); S.flags.intro=1; save();
 }
 document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); applyIcons(); bindHudInput(); renderChrome(); render(); layout(); intro();
-window.__GAME__ = {get S(){return S;}, E, D, U, W3, get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
+window.__GAME__ = {get S(){return S;}, E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);

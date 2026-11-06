@@ -50,12 +50,12 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   const fc = await fullCheck(page);
   ok('スマホ：表示領域の端から端までマップで、ページがスクロールしない', fc.full && fc.noScroll && fc.ui === 'touch', JSON.stringify(fc));
   const init = await page.evaluate(`(()=>{ const W=${G}.WORLD, p=${G}.W3.pos, near=W.objects.filter(o=>Math.hypot(o.x-p.x,o.z-p.z)<30);
-    return {state:${G}.W3.state, deps:${G}.NODES.every(n=>__FAKE.resources[n.vid]), nat:near.length, natSent:near.filter(o=>__FAKE.resources[o.id]&&__FAKE.resources[o.id].natural&&__FAKE.resources[o.id].natural.id===o.id).length,
+    return {state:${G}.W3.state, deps:${G}.NODES.every(n=>__FAKE.resources[n.vid]), nat:near.length, natSent:near.filter(o=>__FAKE.resources[o.id]&&__FAKE.resources[o.id].natural&&__FAKE.resources[o.id].natural.id===o.id).length, natView:near.filter(o=>${G}.onScreenish(o.x,o.z,o.kind==='tree'?2*o.scale:0.3,0.22)).length, natAll:Object.keys(__FAKE.resources).filter(k=>__FAKE.resources[k].natural).length,
       decor:JSON.stringify(__FAKE.opts.decor), girl:__FAKE.sprite===ASSETS.girl}; })()`);
-  ok('3Dフィールドが初期化され、採取地点と周りの自然物（ID・状態・当たり判定つき）が描画モジュールに渡る', init.state === 'ready' && init.deps && init.nat > 10 && init.natSent === init.nat, JSON.stringify(init));
+  ok('3Dフィールドが初期化され、採取地点と、画面に入る自然物（ID・状態・当たり判定つき）だけが描画モジュールに渡る', init.state === 'ready' && init.deps && init.nat > 10 && init.natSent > 10 && init.natSent === init.natView, JSON.stringify(init));
   ok('描画モジュールには、木・岩などを独自の装飾として描かないよう伝える（連携契約）', init.decor === '{"trees":false,"rocks":false,"logs":false,"pebbles":false,"shrubs":false,"stonework":false}', init.decor);
-  const pre = await page.evaluate(`({left: __FAKE.scene ? __FAKE.scene.children.map(c=>c.name) : null, structs: Object.keys(__FAKE.structures)})`);
-  ok('開始時の原野に人工物がない（石の階段・石積みの壁を取り除き、建物は1つもない）', Array.isArray(pre.left) && pre.left.length === 0 && pre.structs.length === 0, JSON.stringify(pre));
+  const pre = await page.evaluate(`({stonework: __FAKE.opts.decor.stonework, structs: Object.keys(__FAKE.structures)})`);
+  ok('開始時の原野に人工物がない（石の階段・石積みの壁は decor.stonework:false で描かせず、建物は1つもない）', pre.stonework === false && pre.structs.length === 0, JSON.stringify(pre));
   ok('ボタン共通のスタイルが効いている', await page.evaluate(`getComputedStyle(document.querySelector('#nav button')).cursor==='pointer' && getComputedStyle(document.createElement('div')).color!==undefined`) && await page.evaluate(`(()=>{ const b=document.createElement('button'); b.className='btn'; document.body.appendChild(b); const c=getComputedStyle(b).backgroundColor; b.remove(); return c==='rgb(62, 107, 74)'; })()`));
 
   // 見えている自然物（拠点のまわりの小石）を選んで、近づいて採取する。連打しても1回だけ
@@ -271,7 +271,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await page.keyboard.down('d'); await page.waitForTimeout(500); await page.keyboard.up('d');
   ok('メニューを閉じるとWASDで移動できる', !same(p0, await pos(page)));
   await page.mouse.click(683, 300); await page.waitForTimeout(60);
-  ok('マップのクリックで移動先が決まる', await page.evaluate(`!!${G}.W3.target`));
+  ok('マップのクリックで移動先（地面、または近くの自然物）が決まる', await page.evaluate(`!!(${G}.W3.target || ${G}.W3.sel)`));
   await page.click('.hud-tr [data-tab="settings"]'); await page.waitForTimeout(150);
   ok('設定にタイトル・説明・主人公・表示・遊び方がまとまっている', await page.evaluate(`(()=>{ const t=document.getElementById('dockBody').textContent; return /ゼロからの科学/.test(t) && /主人公/.test(t) && /遊び方/.test(t) && !!document.querySelector('#dockBody [data-act="view2d"]'); })()`));
   /* ---------- 歩行状態（描画へ渡す moving）：実際に進んだときだけ歩く ---------- */
@@ -344,7 +344,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
     ['bench','campfire','kiln','furnace','pot','glass','twig'].forEach((id,i)=>{ S.inv[id]=(id==='twig'?7:id==='glass'?3:1); if(!S.disc[id]) S.disc[id]={first:Date.now(),made:1,total:1,routes:[],best:0}; });
     S.pos={x:rock.x, z:rock.z}; localStorage.setItem('zero-kagaku-save', E.serialize(S)); return {rock:{id:rock.id,x:rock.x,z:rock.z,r:rock.r}, st:E.stageOf(S)}; })()`);
   await page.reload(); await page.waitForTimeout(900);
-  const after = await page.evaluate(`(()=>{ const G=${G}, S=G.S, p=G.W3.pos; return {structs:Object.keys(__FAKE.structures).sort(), left:__FAKE.scene.children.map(c=>c.name), st:G.E.stageOf(S),
+  const after = await page.evaluate(`(()=>{ const G=${G}, S=G.S, p=G.W3.pos; return {structs:Object.keys(__FAKE.structures).sort(), left:(__FAKE.opts.decor.stonework===false?[]:['Stonework']), st:G.E.stageOf(S),
     inv:{twig:S.inv.twig, glass:S.inv.glass, bench:S.inv.bench}, d:Math.hypot(p.x-(${prep.rock.x}), p.z-(${prep.rock.z}))}; })()`);
   ok('既存セーブ：段階だけで自動に出ていた小屋・研究所・石の家は出ず、作った設備（作業台・たき火・かまど・簡易炉）は残る',
     prep.st === 3 && after.structs.join() === 'st-bench,st-fire,st-kiln,st-smelter', JSON.stringify({ prep, after }));

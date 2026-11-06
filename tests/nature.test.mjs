@@ -19,10 +19,20 @@ const kinds = {}; W.objects.forEach(o => { kinds[o.kind] = (kinds[o.kind] || 0) 
 ok('木・岩・小石・落ち枝・草むら・やぶがそろっている', ['tree', 'rock', 'pebble', 'twig', 'grass', 'bush'].every(k => kinds[k] >= 10), JSON.stringify(kinds));
 ok('すべての自然物にID・種類・位置・向き・大きさ・当たり判定がある', W.objects.every(o => o.id && N.KINDS[o.kind] && isFinite(o.x) && isFinite(o.z) && isFinite(o.rot) && o.scale > 0 && o.r > 0 && typeof o.block === 'boolean'));
 ok('IDが重ならない', new Set(W.objects.map(o => o.id)).size === W.objects.length);
-const wet = W.objects.filter(o => T.terrainHeight(o.x, o.z, T.DEFAULT_CONFIG) < T.DEFAULT_CONFIG.world.waterLevel + 0.1);
-ok('水の中に置かれていない', wet.length === 0, wet.map(o => o.id).join(','));
+// 水面は川の帯だけ（描画の buildWater：中心から約3.9マス）。川の外の低い土地は乾いた地面なので置いてよい（2026-11-07〜）
+const wet = W.objects.filter(o => T.distanceToRiver(o.x, o.z, T.DEFAULT_CONFIG) < 4.0);
+ok('川の水面の中には置かれていない', wet.length === 0, wet.map(o => o.id).join(','));
 const locked = D.regions.filter(r => r.unlock);
-ok('まだ入れない地域の中には置かれていない', !W.objects.some(o => locked.some(r => Math.hypot(o.x - r.w.x, o.z - r.w.z) < 9)));
+/* 鍵のかかった地域を全部開けた状態（たいまつ・鉄のつるはし・掘削やぐらを持つ） */
+const SU = E.newState(); ['torch', 'ironpick', 'pickaxe', 'rig', 'candle'].forEach(id => { SU.inv[id] = 1; SU.disc[id] = { first: 0, made: 1, total: 1, routes: [], best: 0 }; });
+ok('鍵のかかった地域は、開放するまで中の自然物へ入れない', locked.every(r => !W.findPath(E.newState(), { x: D.base.x, z: D.base.z }, { x: r.w.x, z: r.w.z })));
+const t0gen = Date.now(); N.create(D, E, env); const genMs = Date.now() - t0gen;
+ok('マップ全体の自然物の生成は速い（1秒未満）', genMs < 1000, genMs + 'ms');
+const L2 = W.layer2 || {};
+ok('第2層（マップ全体の植生）で、木・草むら・やぶ・小石・岩・落ち枝が追加されている', L2.tree >= 80 && L2.grass >= 150 && L2.bush >= 40 && L2.pebble >= 30 && L2.rock >= 15 && L2.twig >= 40, JSON.stringify(L2));
+{ let land = 0, cov = 0; for (let x = -50; x < 50; x += 8) for (let z = -50; z < 50; z += 8) {
+    if (T.distanceToRiver(x + 4, z + 4, T.DEFAULT_CONFIG) < 6) continue; land++; if (W.around(x + 4, z + 4, 5.66).length) cov++; }
+  ok('川以外の地面のほとんど（8マス四方の85%以上）に、何かしらの自然物がある', cov / land >= 0.85, cov + '/' + land); }
 let tight = []; const bl = W.objects.filter(o => o.block);
 bl.forEach((a, i) => bl.slice(i + 1).forEach(b => { if (Math.hypot(a.x - b.x, a.z - b.z) < a.r + b.r + 2 * PR + 0.05) tight.push(a.id + '/' + b.id); }));
 ok('木や岩のすき間は主人公が通れる幅がある', tight.length === 0, tight.slice(0, 5).join(' '));
@@ -125,7 +135,8 @@ ok('岩はハンマーで3回割ると残骸になり、何日たっても元に
   ok('壁になる採取地点は中心に入れず、外周の立てる場所から手が届く', depBad.length === 0, depBad.map(s => s.id).join(','));
   ok('描画に必要な種類（tree・rock・branch・pebble・herb・grass・bush・ore・water・oil）と採取後の形がそろっている', ['tree', 'rock', 'branch', 'pebble', 'herb', 'grass', 'bush', 'ore', 'water', 'oil'].every(t => SPEC[t]) && SPEC.tree.depletedForm === 'stump' && SPEC.rock.depletedForm === 'rubble' && SPEC.herb.depletedForm === 'cut-patch');
   const big = W.objects.filter(o => o.kind === 'tree' || o.kind === 'rock').reduce((m, o) => Math.max(m, o.scale), 0);
-  ok('いちばん大きい木・岩でも、外周から手の届く距離で採取でき、外周の立てる場所が見つかる', W.objects.filter(o => (o.kind === 'tree' || o.kind === 'rock') && o.scale >= big - 0.05).every(o => { const ap = W.approachPoint(E.newState(), o, { x: o.x + 5, z: o.z }); return ap && W.reachGap(o, ap) <= E.REACH; }), 'max scale ' + big);
+  const unreach = W.objects.filter(o => o.block).filter(o => { const ap = W.approachPoint(SU, o, { x: o.x + 5, z: o.z }); return !(ap && W.reachGap(o, ap) <= E.REACH); });
+  ok('壁になる木・岩はすべて（いちばん大きい物も、地域を開放すれば鍵のかかった地域の中も）外周の立てる場所から手が届く', unreach.length === 0, 'max scale ' + big + ' ' + unreach.map(o => o.id).join(','));
 }
 
 /* ---------- 古いセーブ ---------- */
@@ -169,7 +180,7 @@ ok('最初の目標（木の枝）と2番目（丸い石・火打ち石）を新
   const plan = ui.slice(ui.indexOf('const STRUCT_PLAN = ['), ui.indexOf('];', ui.indexOf('const STRUCT_PLAN = [')));
   const rows = plan.split('\n').filter(l => /\{id:"st-/.test(l));
   ok('拠点の建物は、プレイヤーが作った設備（owned）だけで出る（段階・研究の完了だけでは出ない）', rows.length >= 10 && rows.every(l => /when:\(\)=>owned\("/.test(l) && !/stage\(\)/.test(l)), rows.filter(l => !/owned\("/.test(l) || /stage\(\)/.test(l)).join('\n'));
-  ok('描画モジュールが独自に置く石の階段・石積みの壁（Stonework）を取り除き、decor でも止める', /PREBUILT_SCENERY = \["Stonework"\]/.test(ui) && /stonework:false/.test(ui) && /stripPrebuilt\(W3\.gfx\)/.test(ui));
+  ok('描画モジュールの石の階段・石積みの壁（Stonework）は decor.stonework:false で描かせる（シーン走査はしない）', /stonework:false/.test(ui) && !/getObjectByName\("Stonework"\)|PREBUILT_SCENERY/.test(ui));
   const fn = name => { const i = ui.indexOf('function ' + name + '('); return ui.slice(i, ui.indexOf('\nfunction ', i + 10)); };
   const byStage = ['fieldSVG', 'baseArt', 'regionArt'].filter(n => /st\s*>=|st\s*===|S\.disc\.solarcell/.test(fn(n)));
   ok('地図・2D表示の道路・線路・工場・町並み・拠点の絵も、段階や研究ではなく作った設備（CIV）で決める', byStage.length === 0 && /const CIV = \(\)=>/.test(ui), byStage.join(','));
@@ -185,6 +196,11 @@ ok('最初の目標（木の枝）と2番目（丸い石・火打ち石）を新
   ok('旧「石の階段・壁」の跡へも拠点から歩いて行ける（階段を外しても進行不能にならない）', blocked.length === 0, JSON.stringify(blocked.map(f => f.at)));
   const open = D.regions.filter(r => r.w && !r.unlock), noWay = open.filter(r => !W.findPath(S0, { x: D.base.x + 4, z: D.base.z }, { x: r.w.x, z: r.w.z }));
   ok('開始地点（拠点）から、最初から行けるすべての地域へ経路がある', noWay.length === 0, noWay.map(r => r.id).join(','));
+  const noWay2 = D.regions.filter(r => r.w).filter(r => !W.findPath(SU, { x: D.base.x + 4, z: D.base.z }, { x: r.w.x, z: r.w.z }));
+  ok('鍵を開けたあとは、拠点からすべての地域（洞窟・鉱山・火山・油田も）へ経路がある', noWay2.length === 0, noWay2.map(r => r.id).join(','));
+  const vm = await import('node:vm'); let synErr = '';
+  for (const f of ['ui.js', 'engine.js', 'data.js', 'nature.js']) { try { new vm.Script(fs.readFileSync(new URL('../src/game/' + f, import.meta.url), 'utf8'), { filename: f }); } catch (e) { synErr += f + ': ' + e.message + ' '; } }
+  ok('ゲームのスクリプトに構文エラーがない（ui.js・engine.js・data.js・nature.js）', !synErr, synErr);
 }
 console.log(`\n${total - fail}/${total} 合格`);
 process.exit(fail ? 1 : 0);
