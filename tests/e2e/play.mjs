@@ -139,7 +139,20 @@ async function newPage(viewport) {
   ok('PCで背景（フィールド側）をクリックするとパネルが閉じ、そのクリックで歩き出さない', (await page.evaluate(`${G}.U.tab`)) === 'explore' && !(await page.evaluate(`${G}.W3.target`)) && same(p0, await pos(page)));
   await page.keyboard.down('d'); await page.waitForTimeout(500); await page.keyboard.up('d');
   ok('パネルを閉じるとキーで移動できる', !same(p0, await pos(page)));
+  ok('既定ではゲーム側からカメラ設定を渡さない（描画モジュールの既定値を使う）', await page.evaluate(`__FAKE.opts && __FAKE.opts.config === undefined`));
   ok('ページでエラーが起きていない（PC）', errors.length === 0, errors.join('\n'));
+  await page.close();
+}
+
+/* ---------------- 確認用カメラ（?camera=俯角,viewSize） ---------------- */
+{
+  const page = await browser.newPage({ viewport: { width: 844, height: 390 } });
+  await page.route('https://cdn.jsdelivr.net/**', r => r.abort()); await page.route('https://fonts.googleapis.com/**', r => r.abort());
+  await page.addInitScript(FAKE); await page.goto(url + '?camera=32,16'); await page.waitForTimeout(300); await page.click('#introGo'); await page.waitForTimeout(500);
+  const c = await page.evaluate(`({opt:__FAKE.opts.config && __FAKE.opts.config.camera, cfg:${G}.W3.cfg.camera})`);
+  ok('?camera=32,16 のときだけ確認用カメラを公開オプション config.camera で渡す', c.opt && c.opt.pitchDegrees === 32 && c.opt.viewSize === 16 && c.cfg.pitchDegrees === 32 && c.cfg.yawDegrees === 45, JSON.stringify(c));
+  await page.goto(url + '?camera=90,2'); await page.waitForTimeout(800);
+  ok('範囲外の ?camera は無視する', await page.evaluate(`__FAKE.opts.config === undefined`));
   await page.close();
 }
 

@@ -550,12 +550,21 @@ function ensure3D(){
   else { window.addEventListener("hd2d-ready", go, {once:true});
     setTimeout(()=>{ if(W3.state==="loading" && !window.HD2D){ W3.state="failed"; W3.err="3D描画モジュール（Three.js）を読み込めませんでした。通信環境かブラウザの制限が原因かもしれません。"; renderField(); } }, 15000); }
 }
+/* カメラの値は描画モジュール（Muse）の既定値を正とし、ゲーム側からは上書きしない。
+   確認用に限り、URL に ?camera=俯角,viewSize（例：?camera=32,16）を付けたときだけ
+   既存の公開オプション config.camera で渡す。 */
+function cameraPreview(){
+  try{ const q=new URLSearchParams(location.search).get("camera"); if(!q) return null;
+    const [p,v]=q.split(",").map(Number);
+    return (p>=20 && p<=60 && v>=10 && v<=40) ? {pitchDegrees:p, viewSize:v} : null; }catch(e){ return null; }
+}
 async function start3D(){
   try{
     W3.host = document.createElement("div"); W3.host.className="w3canvas";
     const slot=$("#w3slot"); if(slot) slot.appendChild(W3.host);
-    W3.cfg = HD2D.resolveConfig();
-    W3.gfx = await HD2D.initializeGraphics(W3.host, {
+    const cam = cameraPreview();
+    W3.cfg = cam ? HD2D.resolveConfig({camera:cam}) : HD2D.resolveConfig();
+    W3.gfx = await HD2D.initializeGraphics(W3.host, { ...(cam?{config:{camera:cam}}:{}),
       playerSpriteUrl: heroUrl(), grassDetailUrl: ASSETS.grass, rockDetailUrl: ASSETS.rock,
       particleTextureUrl: ASSETS.particle, shadowTextureUrl: ASSETS.shadow,
       quality: MOBILE ? "low" : "high", postEffects: !MOBILE,
@@ -610,12 +619,15 @@ function toScreen(x,y,z){
   const rect=$("#w3").getBoundingClientRect();
   return {x:(v.x+1)/2*rect.width, y:(1-v.y)/2*rect.height, ok: v.z<1 && v.x>-1.2 && v.x<1.2 && v.y>-1.2 && v.y<1.2};
 }
+/* タップ地点の地表は、描画モジュールの地形メッシュと同じ terrainHeight でたどる。
+   実WebGLの地形メッシュとの差は、俯角28〜50度・3種類の画面で最大0.26マス（2026-11-06 測定）。
+   水面は今は描かれていない（Muse に修正依頼中）ため、水面の高さでは判定しない。 */
 function screenToGround(cx, cy){
   const T=HD2D.THREE, cam=W3.gfx.getCamera(), rect=$("#w3").getBoundingClientRect();
   const ndc=new T.Vector2((cx-rect.left)/rect.width*2-1, -((cy-rect.top)/rect.height)*2+1);
   const rc=new T.Raycaster(); rc.setFromCamera(ndc, cam);
   const o=rc.ray.origin, d=rc.ray.direction; let lo=0, prev=o.y-groundY(o.x,o.z);
-  for(let t=0.5; t<600; t+=0.5){
+  for(let t=0.25; t<600; t+=0.25){
     const x=o.x+d.x*t, y=o.y+d.y*t, z=o.z+d.z*t, diff=y-groundY(x,z);
     if(diff<=0 && prev>0){ let a=lo, b=t; for(let i=0;i<20;i++){ const m=(a+b)/2; const mx=o.x+d.x*m, my=o.y+d.y*m, mz=o.z+d.z*m; if(my-groundY(mx,mz)>0) a=m; else b=m; }
       return {x:o.x+d.x*b, z:o.z+d.z*b}; }
@@ -995,5 +1007,5 @@ function intro(){
   openModal($("#introGo")); S.flags.intro=1; save();
 }
 renderChrome(); render(); intro();
-window.__GAME__ = {get S(){return S;}, E, D, U, W3, get NODES(){return NODES;}, render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
+window.__GAME__ = {get S(){return S;}, E, D, U, W3, get NODES(){return NODES;}, screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);

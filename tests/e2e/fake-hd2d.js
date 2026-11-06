@@ -11,7 +11,7 @@
   const UP={x:R.y*F.z-R.z*F.y, y:R.z*F.x-R.x*F.z, z:R.x*F.y-R.y*F.x};
   const dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
   window.__FAKE={calls:[], resources:{}, structures:{}, effects:[], player:null, sprite:null, loop:true, inits:0, starts:0, stops:0};
-  window.HD2D={ THREE:{Vector3,Vector2,Raycaster}, terrainHeight:U.terrainHeight, DEFAULT_CONFIG:cfgDefault, resolveConfig:()=>JSON.parse(JSON.stringify(cfgDefault)),
+  window.HD2D={ THREE:{Vector3,Vector2,Raycaster}, terrainHeight:U.terrainHeight, DEFAULT_CONFIG:cfgDefault, resolveConfig:(o)=>{ const c=JSON.parse(JSON.stringify(cfgDefault)); if(o) for(const k of Object.keys(o)) Object.assign(c[k],o[k]); return c; },
     initializeGraphics: async (el,opts)=>{ const FK=window.__FAKE; FK.inits++; FK.opts=opts; FK.sprite=opts.playerSpriteUrl;
       const c=document.createElement("canvas"); c.style.cssText="width:100%;height:100%;background:linear-gradient(#9cc,#6a6)"; el.appendChild(c);
       const cam={ target:{x:-20,y:0.6,z:20}, getWorldDirection(v){ v.set(F.x,F.y,F.z); return v; },
