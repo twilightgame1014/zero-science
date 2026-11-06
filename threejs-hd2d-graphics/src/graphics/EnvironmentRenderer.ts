@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { GraphicsConfig, QualityTier } from './types';
 import { AssetManager } from './AssetManager';
 import {
@@ -109,6 +110,13 @@ export class EnvironmentRenderer {
   private barkTex!: THREE.Texture;
   private foliageTex!: THREE.Texture;
   private rockCrackTex!: THREE.Texture;
+  private tuftTex!: THREE.Texture;
+  private fernTex!: THREE.Texture;
+  private leafCardTex!: THREE.Texture;
+  private patchTex!: THREE.Texture;
+  /** Soft soil/leaf discs that ground trees and rocks (collected
+   *  during their builds, instanced once at the end). */
+  private groundDiscs: Array<{ x: number; z: number; r: number; tint: THREE.Color }> = [];
 
   constructor(
     cfg: GraphicsConfig,
@@ -124,6 +132,10 @@ export class EnvironmentRenderer {
     this.barkTex = am.createBarkTexture();
     this.foliageTex = am.createFoliageTexture();
     this.rockCrackTex = am.createRockCrackTexture();
+    this.tuftTex = am.createGrassTuftTexture();
+    this.fernTex = am.createFernTexture();
+    this.leafCardTex = am.createLeafClusterTexture();
+    this.patchTex = am.createGroundPatchTexture();
 
     this.buildTrees(scale);
     this.buildGrass(scale);
@@ -135,6 +147,75 @@ export class EnvironmentRenderer {
     this.buildBackdropMountains();
     this.buildWaterfall(particleTexture);
     this.buildStonework();
+    this.buildGrounding();
+  }
+
+  /** Deterministic position-hashed vertex jitter (shared vertices
+   *  move together, so geometry never cracks apart). */
+  private jitter(geo: THREE.BufferGeometry, amount: number): void {
+    const pos = geo.attributes.position as THREE.BufferAttribute;
+    const v = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      const h = Math.sin(v.x * 12.9898 + v.y * 78.233 + v.z * 37.719) * 43758.5453;
+      v.multiplyScalar(1 - amount / 2 + (h - Math.floor(h)) * amount);
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
+    geo.computeVertexNormals();
+  }
+
+  /** Smooth value noise for meadow / bare-patch masking. */
+  private vnoise(x: number, z: number): number {
+    const xi = Math.floor(x);
+    const zi = Math.floor(z);
+    const xf = x - xi;
+    const zf = z - zi;
+    const h = (a: number, b: number) => {
+      const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+      return s - Math.floor(s);
+    };
+    const u = xf * xf * (3 - 2 * xf);
+    const v = zf * zf * (3 - 2 * zf);
+    return (
+      h(xi, zi) * (1 - u) * (1 - v) +
+      h(xi + 1, zi) * u * (1 - v) +
+      h(xi, zi + 1) * (1 - u) * v +
+      h(xi + 1, zi + 1) * u * v
+    );
+  }
+
+  /** Two crossed vertical planes (grass tufts, ferns, leaf cards). */
+  private crossPlanes(w: number, h: number): THREE.BufferGeometry {
+    const a = new THREE.PlaneGeometry(w, h);
+    a.translate(0, h / 2, 0);
+    const b = a.clone();
+    b.rotateY(Math.PI / 2);
+    return mergeGeometries([a, b])!;
+  }
+
+  /** Instanced soft discs under trees/rocks: contact soil that keeps
+   *  objects visually rooted instead of hovering on flat green. */
+  private buildGrounding(): void {
+    if (this.groundDiscs.length === 0) return;
+    const geo = new THREE.CircleGeometry(1, 14);
+    geo.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshStandardMaterial({
+      map: this.patchTex,
+      transparent: true,
+      depthWrite: false,
+      roughness: 1,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+    });
+    const discs = new THREE.InstancedMesh(geo, mat, this.groundDiscs.length);
+    this.groundDiscs.forEach((d, i) => {
+      this.setInstance(discs, i, d.x, this.groundY(d.x, d.z) + 0.02, d.z, 0, d.r, 1, d.r);
+      discs.setColorAt(i, d.tint);
+    });
+    if (discs.instanceColor) discs.instanceColor.needsUpdate = true;
+    discs.renderOrder = 1;
+    discs.receiveShadow = true;
+    this.group.add(discs);
   }
 
   update(time: number): void {
@@ -269,7 +350,7 @@ export class EnvironmentRenderer {
       return this.rng() < density;
     });
 
-    const trunkGeo = new THREE.CylinderGeometry(0.13, 0.26, 1.7, 6);
+    const trunkGeo = new THREE.CylinderGeometry(0.13, 0.38, 1.7, 7);
     trunkGeo.translate(0, 0.85, 0);
     const trunkMat = new THREE.MeshStandardMaterial({ map: this.barkTex, roughness: 0.95 });
     const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, spots.length);
@@ -283,6 +364,7 @@ export class EnvironmentRenderer {
     let bri = 0;
 
     const blobGeo = new THREE.IcosahedronGeometry(1, 1);
+    this.jitter(blobGeo, 0.36); // irregular canopy silhouette, not balls
     const blobWind = makeWindMaterial(
       new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.9 }),
       1,
@@ -299,6 +381,7 @@ export class EnvironmentRenderer {
     this.canopy.push({ centers: blobCenters, radii: blobRadii, fades: blobFades, attr: blobAttr });
 
     const coneGeo = new THREE.ConeGeometry(1, 2.4, 8);
+    this.jitter(coneGeo, 0.13);
     coneGeo.translate(0, 1.2, 0);
     const coneWind = makeWindMaterial(
       new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.9 }),
@@ -372,6 +455,10 @@ export class EnvironmentRenderer {
           bi++;
         }
       }
+      this.groundDiscs.push({
+        x: s.x, z: s.z, r: 0.85 * size,
+        tint: new THREE.Color().setHSL(0.08, 0.3, 0.1 + this.rng() * 0.03),
+      });
       if (!pine) {
         for (let b = 0; b < 2; b++) {
           const yaw = this.rng() * Math.PI * 2;
@@ -400,31 +487,50 @@ export class EnvironmentRenderer {
 
   /* ---------------- grass & flowers ---------------- */
   private buildGrass(scale: number): void {
-    const bladeGeo = new THREE.ConeGeometry(0.075, 0.72, 4);
-    bladeGeo.translate(0, 0.36, 0);
-    bladeGeo.scale(1, 1, 0.4);
+    // Grass TUFTS (2026-11-06 overhaul): crossed alpha-cutout planes
+    // with a drawn blade fan, ankle-to-shin height against the player
+    // (~1.33 units visible). The old single stretched cones read as
+    // giant needles. Distribution follows a meadow noise mask so the
+    // ground alternates between grass colonies and worn bare patches
+    // instead of an even sprinkle.
+    const tuftGeo = this.crossPlanes(0.78, 0.52);
     const wind = makeWindMaterial(
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92 }),
-      0.72,
-      0.13,
+      new THREE.MeshStandardMaterial({
+        map: this.tuftTex,
+        alphaTest: 0.42,
+        side: THREE.DoubleSide,
+        roughness: 0.92,
+      }),
+      0.5,
+      0.1,
     );
     this.windMaterials.push(wind);
-    const count = Math.round(3600 * scale);
-    const grass = new THREE.InstancedMesh(bladeGeo, wind.material, count);
-    const cA = new THREE.Color(0x5f9c40);
-    const cB = new THREE.Color(0x8fbc58);
+    const count = Math.round(4200 * scale);
+    const grass = new THREE.InstancedMesh(tuftGeo, wind.material, count);
+    const cA = new THREE.Color(0x74a94c);
+    const cB = new THREE.Color(0xaed37e);
+    const cDry = new THREE.Color(0xc2c478);
     const tmp = new THREE.Color();
     const spots = this.scatter(count, (x, z) =>
       !isInRiver(x, z, 4.4) &&
       this.groundY(x, z) > 0.42 &&
       distanceToPath(x, z) > 1.35 &&
-      x - z * 0.35 < 40);
+      x - z * 0.35 < 40 &&
+      (this.vnoise(x * 0.06 + 7.3, z * 0.06 - 2.9) > 0.36 || this.rng() < 0.12));
     spots.forEach((s, i) => {
-      const sc = 0.7 + this.rng() * 0.9;
-      this.setInstance(grass, i, s.x, this.groundY(s.x, s.z) - 0.03, s.z,
-        this.rng() * Math.PI, sc, sc * (0.8 + this.rng() * 0.5), sc);
-      grass.setColorAt(i, tmp.copy(cA).lerp(cB, this.rng()));
+      const sc = 0.8 + this.rng() * 0.5;
+      // A minority of tall tufts (knee height) for rhythm.
+      const tall = this.rng() < 0.12 ? 1.55 : 1;
+      this.setInstance(grass, i, s.x, this.groundY(s.x, s.z) - 0.02, s.z,
+        this.rng() * Math.PI, sc, sc * tall, sc);
+      tmp.copy(cA).lerp(cB, this.rng());
+      if (this.rng() < 0.18) tmp.lerp(cDry, 0.55);
+      grass.setColorAt(i, tmp);
     });
+    // Hide any unfilled slots (noise mask can starve the scatter).
+    for (let i = spots.length; i < count; i++) {
+      this.setInstance(grass, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+    }
     if (grass.instanceColor) grass.instanceColor.needsUpdate = true;
     grass.receiveShadow = true;
     this.group.add(grass);
@@ -451,29 +557,77 @@ export class EnvironmentRenderer {
 
   /* ---------------- shrubs, ferns, leaf litter ---------------- */
   private buildGroundCover(scale: number): void {
+    // Shrubs (2026-11-06 overhaul): a jittered 3-blob cluster per
+    // shrub (dark satellite = inner shade) plus alpha-cutout leaf
+    // cards on the surface, instead of one smooth single-colour ball.
     const shrubGeo = new THREE.IcosahedronGeometry(0.55, 1);
+    this.jitter(shrubGeo, 0.34);
     const shrubMat = new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.95 });
     const sCount = Math.round(150 * scale);
-    const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, sCount);
+    const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, sCount * 3);
+    const cards = new THREE.InstancedMesh(
+      new THREE.PlaneGeometry(0.55, 0.45),
+      new THREE.MeshStandardMaterial({
+        map: this.leafCardTex,
+        alphaTest: 0.4,
+        side: THREE.DoubleSide,
+        roughness: 0.95,
+      }),
+      sCount * 4,
+    );
     const cA = new THREE.Color(0x477f36);
     const cB = new THREE.Color(0x6da34c);
     const tmp = new THREE.Color();
     const spots = this.scatter(sCount, (x, z) => !isInRiver(x, z, 5.6) && distanceToPath(x, z) > 1.8);
-    spots.forEach((s, i) => {
+    let bi = 0;
+    let ci = 0;
+    spots.forEach((s) => {
       const sc = 0.6 + this.rng() * 1.1;
-      this.setInstance(shrubs, i, s.x, this.groundY(s.x, s.z) + 0.3 * sc, s.z,
-        this.rng() * Math.PI, sc, sc * 0.7, sc);
-      shrubs.setColorAt(i, tmp.copy(cA).lerp(cB, this.rng()));
+      const y = this.groundY(s.x, s.z);
+      const parts: Array<[number, number, number, number, number]> = [
+        // [dx, dy, dz, scale, shade]
+        [0, 0.3, 0, 1, 1],
+        [0.4, 0.2, 0.14, 0.62, 0.82],
+        [-0.34, 0.17, -0.2, 0.52, 0.62],
+      ];
+      for (const [dx, dy, dz, ps, shade] of parts) {
+        this.setInstance(shrubs, bi, s.x + dx * sc, y + dy * sc, s.z + dz * sc,
+          this.rng() * Math.PI, sc * ps, sc * ps * 0.72, sc * ps);
+        shrubs.setColorAt(bi, tmp.copy(cA).lerp(cB, this.rng()).multiplyScalar(shade));
+        bi++;
+      }
+      for (let k = 0; k < 4; k++) {
+        const a = this.rng() * Math.PI * 2;
+        const px = s.x + Math.cos(a) * 0.42 * sc;
+        const pz = s.z + Math.sin(a) * 0.42 * sc;
+        this.dummy.position.set(px, y + (0.42 + this.rng() * 0.25) * sc, pz);
+        this.dummy.rotation.set(-0.5 - this.rng() * 0.5, a, 0);
+        const cs = sc * (0.75 + this.rng() * 0.5);
+        this.dummy.scale.set(cs, cs, cs);
+        this.dummy.updateMatrix();
+        cards.setMatrixAt(ci++, this.dummy.matrix);
+      }
+      this.groundDiscs.push({
+        x: s.x, z: s.z, r: 0.8 * sc,
+        tint: new THREE.Color(0x3e2f1f),
+      });
     });
+    for (let i = bi; i < sCount * 3; i++) this.setInstance(shrubs, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+    for (let i = ci; i < sCount * 4; i++) this.setInstance(cards, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
     if (shrubs.instanceColor) shrubs.instanceColor.needsUpdate = true;
     shrubs.castShadow = true;
     this.group.add(shrubs);
+    this.group.add(cards);
 
-    // Ferns hug the riverbanks and forest floor.
-    const fernGeo = new THREE.ConeGeometry(0.42, 0.5, 6);
-    fernGeo.translate(0, 0.22, 0);
-    fernGeo.scale(1, 1, 1);
-    const fernMat = new THREE.MeshStandardMaterial({ color: 0x3f9142, roughness: 0.9 });
+    // Ferns hug the riverbanks and forest floor — frond cutouts now,
+    // not green cones.
+    const fernGeo = this.crossPlanes(0.95, 0.55);
+    const fernMat = new THREE.MeshStandardMaterial({
+      map: this.fernTex,
+      alphaTest: 0.4,
+      side: THREE.DoubleSide,
+      roughness: 0.9,
+    });
     const fCount = Math.round(170 * scale);
     const ferns = new THREE.InstancedMesh(fernGeo, fernMat, fCount);
     const fSpots = this.scatter(fCount, (x, z) => {
@@ -488,21 +642,30 @@ export class EnvironmentRenderer {
     });
     this.group.add(ferns);
 
-    // Leaf litter discs under the forest canopy.
-    const litterGeo = new THREE.CircleGeometry(0.85, 10);
+    // Leaf litter under the forest canopy: soft irregular patches
+    // (speckled alpha texture) instead of hard-edged flat polygons.
+    const litterGeo = new THREE.CircleGeometry(0.95, 14);
     litterGeo.rotateX(-Math.PI / 2);
-    const litterMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
+    const litterMat = new THREE.MeshStandardMaterial({
+      map: this.patchTex,
+      transparent: true,
+      depthWrite: false,
+      roughness: 1,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+    });
     const lCount = Math.round(190 * scale);
     const litter = new THREE.InstancedMesh(litterGeo, litterMat, lCount);
-    const lc = [new THREE.Color(0x8a6b35), new THREE.Color(0x77572e), new THREE.Color(0x5d7031)];
+    const lc = [new THREE.Color(0x7d5f30), new THREE.Color(0x5f4722), new THREE.Color(0x556030)];
     const lSpots = this.scatter(lCount, (x, z) => x + z * 0.2 < 4 && !isInRiver(x, z, 5));
     lSpots.forEach((s, i) => {
       const sc = 0.7 + this.rng() * 1.3;
-      this.setInstance(litter, i, s.x, this.groundY(s.x, s.z) + 0.03, s.z,
+      this.setInstance(litter, i, s.x, this.groundY(s.x, s.z) + 0.025, s.z,
         this.rng() * Math.PI, sc, 1, sc);
       litter.setColorAt(i, lc[Math.floor(this.rng() * lc.length)]);
     });
     if (litter.instanceColor) litter.instanceColor.needsUpdate = true;
+    litter.renderOrder = 1;
     litter.receiveShadow = true;
     this.group.add(litter);
   }
@@ -515,18 +678,23 @@ export class EnvironmentRenderer {
     // squashed into the ground, darker granite colours, clustered
     // towards the highland instead of evenly scattered pale domes.
     const rockGeo = new THREE.IcosahedronGeometry(1, 0);
+    this.jitter(rockGeo, 0.3);
     {
+      // Base grime: darker, slightly mossy towards the ground line so
+      // rocks sit IN the terrain instead of on it (baked as vertex
+      // colours, multiplied with the crack map and instance colour).
       const posAttr = rockGeo.attributes.position as THREE.BufferAttribute;
-      const v = new THREE.Vector3();
+      const colors = new Float32Array(posAttr.count * 3);
       for (let i = 0; i < posAttr.count; i++) {
-        v.fromBufferAttribute(posAttr, i);
-        const h = Math.sin(v.x * 12.9898 + v.y * 78.233 + v.z * 37.719) * 43758.5453;
-        v.multiplyScalar(0.84 + (h - Math.floor(h)) * 0.3);
-        posAttr.setXYZ(i, v.x, v.y, v.z);
+        const t = THREE.MathUtils.clamp((posAttr.getY(i) + 1) / 2, 0, 1);
+        const k = smoothstep(0.08, 0.55, t);
+        colors[i * 3] = 0.5 + 0.5 * k;
+        colors[i * 3 + 1] = 0.56 + 0.44 * k;
+        colors[i * 3 + 2] = 0.42 + 0.58 * k;
       }
-      rockGeo.computeVertexNormals();
+      rockGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     }
-    const rockMat = new THREE.MeshStandardMaterial({ map: this.rockCrackTex, roughness: 0.98, flatShading: true });
+    const rockMat = new THREE.MeshStandardMaterial({ map: this.rockCrackTex, roughness: 0.98, flatShading: true, vertexColors: true });
     addInstanceFade(rockMat);
     const count = Math.round(170 * scale);
     const rocks = new THREE.InstancedMesh(rockGeo, rockMat, count);
@@ -564,6 +732,12 @@ export class EnvironmentRenderer {
       rockCenters[i * 3 + 1] = y + sc * 0.35;
       rockCenters[i * 3 + 2] = s.z;
       rockRadii[i] = sc * 1.05;
+      if (sc > 0.45) {
+        this.groundDiscs.push({
+          x: s.x, z: s.z, r: sc * 1.05,
+          tint: new THREE.Color(0x403a33),
+        });
+      }
       if (sc > 0.8) rockTransforms.push({ x: s.x, y: y + sc * 0.5, z: s.z, s: sc });
     });
     // If scatter ran dry, hide the unfilled tail instead of leaving

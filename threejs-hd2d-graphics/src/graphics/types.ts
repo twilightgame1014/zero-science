@@ -162,6 +162,9 @@ export interface GraphicsConfig {
     width: number;
     height: number;
     walkFps: number;
+    /** @deprecated No longer used for frame selection: a stopped
+     *  character freezes on the standing frame instead of cycling
+     *  walk frames slowly (2026-11-06). Kept for config compat. */
     idleFps: number;
   };
 }

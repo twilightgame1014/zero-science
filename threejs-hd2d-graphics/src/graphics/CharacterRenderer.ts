@@ -15,6 +15,16 @@ const ROW_FOR_DIRECTION: Record<Direction, number> = {
 const SPRITE_BOTTOM_INSET = 0.113;
 
 /**
+ * Column of the neutral standing pose. Verified by inspecting the
+ * actual boy/girl sheets (2026-11-06): in every direction row,
+ * column 0 is the upright stance with feet together, columns 1 and 3
+ * are the strides and column 2 the passing pose. When the game says
+ * the player is not moving, the sprite freezes on this column — it
+ * must never keep cycling walk frames at a slower rate.
+ */
+const STANDING_FRAME = 0;
+
+/**
  * Renders the player as a 2D sprite standing in the 3D world.
  *
  * The sprite sheet is a 4x4 grid: rows = down/left/right/up,
@@ -121,19 +131,21 @@ export class CharacterRenderer {
     const groundY = this.groundHeightAt(this.rendered.x, this.rendered.z);
     this.rendered.y += (groundY - this.rendered.y) * dampFactor(18, dt);
 
-    this.animTime += dt;
+    // Walk cycle time advances ONLY while the game reports movement.
+    // Standing still freezes the cycle, the frame and the bob: the
+    // sprite rests on the standing column of the last direction.
     const moving = this.state.moving;
-    const fps = moving ? this.cfg.walkFps : this.cfg.idleFps;
+    if (moving) this.animTime += dt;
     const frame = moving
-      ? Math.floor(this.animTime * fps) % 4
-      : Math.floor(this.animTime * fps) % 2; // idle: gentle 2-frame sway
+      ? Math.floor(this.animTime * this.cfg.walkFps) % 4
+      : STANDING_FRAME;
     const row = ROW_FOR_DIRECTION[this.state.direction];
     this.texture.offset.set(frame / 4, 1 - (row + 1) / 4);
 
-    // Walk bob / idle breathing (visual only).
+    // Walk bob exists only while walking (no idle breathing bob).
     const bob = moving
-      ? Math.abs(Math.sin(this.animTime * fps * Math.PI * 0.5)) * 0.055
-      : Math.sin(this.animTime * 2.1) * 0.018;
+      ? Math.abs(Math.sin(this.animTime * this.cfg.walkFps * Math.PI * 0.5)) * 0.055
+      : 0;
 
     this.sprite.position.set(
       this.rendered.x,
