@@ -54,6 +54,29 @@ Three.js製のHD-2Dグラフィックモジュールと、研究室背景アセ�
 
 ---
 
+---
+
+## 追補（2026-11-06：採取ノード状態表現＋実験器具アセット）
+
+ブランチ `feature/graphics-harvest-and-assets`（world-polish の上に積み上げ）。
+
+- **採取ノード**：`updateResourceVisual` に `phase: 'reacting'`（採取中の揺れ・
+  明滅）を追加。`depleted` の見た目を拡充（木＝年輪付き切り株、岩＝破砕残骸、
+  草/花＝刈り跡パッチ）。新タイプ `branch`（落ち枝）/`pebble`（小石）。
+  状態の契約・寸法表は INTEGRATION.md §13。
+- **制作情報**：`gfx.getResourceVisualSpecs()` でタイプ別の占有半径・幹半径・
+  高さ・depleted 形態を取得できます（衝突判定はそちらの責務のまま）。
+- **画風**：幹=樹皮、樹冠=葉斑、岩=割れ目のピクセルテクスチャを環境とノードで
+  共有。環境の広葉樹に枝を追加。API 変更なし。
+- **研究室背景は終了**：以前の「研究室背景（4段階）ZIP を背景に使う」指示は
+  撤回されました。代わりに `assets/lab-apparatus/`（リポジトリ直下）の器具
+  セット（bbmodel/gltf/透過スプライト、液体・炎は別レイヤー、段階対応表は
+  同フォルダ README）を使って「実験台」に装置を並べる構成にしてください。
+- **UIアイコン**：`assets/ui-icons/` に仕上げ済みの8種（lab / craft /
+  encyclopedia / technology / journal / map / base / settings、192マスター
+  ＋48/32実寸版、対応表は同フォルダ README）。現在の絵文字仮アイコンの
+  差し替えに使えます。
+
 ## 補足（ユーザー向けメモ）
 
 - 統合で困ったら、Claude の返答（エラー内容や、どの仕様が足りないか）をそのまま Muse に持ってきてください。グラフィック側の修正は Muse が担当します。

@@ -48,6 +48,14 @@ export interface ResourceVisualState {
   visible?: boolean;
   /** Gentle attention pulse (e.g. currently targeted by the player). */
   highlighted?: boolean;
+  /**
+   * Interaction phase (2026-11-06). 'reacting' while the player is
+   * actively harvesting this node: trees shake, rocks jolt and flash,
+   * herbs sway — purely cosmetic, driven by the game sending the
+   * phase; the graphics side never starts or ends a harvest.
+   * Default 'idle'.
+   */
+  phase?: 'idle' | 'reacting';
 }
 
 /** Building / facility types the structure renderer knows out of the box.

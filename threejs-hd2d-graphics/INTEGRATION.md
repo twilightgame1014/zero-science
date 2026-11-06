@@ -155,3 +155,54 @@ await gfx.setPlayerSpriteSheet(girlSheetUrl);
 - **新API `setViewportInsets({ top, bottom, left, right })`**（単位：CSS px）：HUDに隠れる領域を伝えると、カメラが主人公を安全領域内に保ちます。初期値として `GraphicsOptions.viewportInsets` でも渡せます。ズームや追従対象は変わりません。
 - カメラ既定値：viewSize 13（主人公の見える高さは横画面で画面高の約10%）、pitch 32°は維持。霧は晴天時 88–195 に遠ざけ、チルトシフトもさらに弱めました。
 - ワールド表現：森は群生＋空き地の構成にし、細身の樹形を追加。岩は角ばった形状＋沈み込み＋岩場への集積に変更し、樹冠と同じ仕組みで遮蔽フェードの対象にしました。地面には土のムラを追加し、道の上には草・低木・倒木を置かないようにしました。地形の外周には遠景の地面（スカート）を敷き、低視点でも空白が見えません。
+
+## 13. 採取ノードの状態表現・制作情報・画風テクスチャ（2026-11-06）
+
+### 状態の契約（updateResourceVisual）
+
+ノードの存在・位置・状態は全てゲーム側が正です。描画側は受け取った状態を
+そのまま描き、同じ id＋位置には常に同じ見た目を返します。装飾として別乱数で
+生やした「採取できそうな木・岩」はワールド側に置いていません（環境の木・岩は
+景観専用で、採取対象は必ずノードとして渡してください）。
+
+- `phase: 'reacting'`（任意、既定 'idle'）：採取中の反応。木は揺れ、岩は小刻みに
+  震えて明滅し、草は揺れます。表示だけの演出で、phase を戻せば姿勢・スケールは
+  完全に元へ戻ります。採取の開始/終了・成否はゲーム側が決めます。
+- `depleted: true`：木→切り株（年輪付き）、岩→破砕した残骸、草/花→刈り跡
+  （短い株のある円形パッチ）。`branch`（落ち枝）/`pebble`（小石）の depleted は
+  裸地です。回収済みの非表示は従来どおり `visible: false` か id の削除で。
+- 描画側から復活することはありません。状態が変わるまで depleted は維持されます。
+
+新タイプ：`branch`（落ち枝：地面の枝2本）、`pebble`（小石：小岩3個）。
+
+### 制作情報 API
+
+`gfx.getResourceVisualSpecs()`（モジュール index からは `RESOURCE_VISUAL_SPECS`）
+が、タイプごとの `{ footprintRadius, trunkRadius?, height, depletedForm }` を
+返します。scale 1・原点＝接地点での寸法です（実寸は state.scale 倍）。
+幹半径・占有半径は見た目通りの値で、衝突の最終判定はゲーム側にあります。
+
+| type | footprintRadius | trunkRadius | height | depletedForm |
+|---|---|---|---|---|
+| tree | 1.15 | 0.26 | 3.6 | stump |
+| rock | 1.0 | — | 1.15 | rubble |
+| herb | 0.35 | — | 0.6 | cut-patch |
+| flowers | 0.35 | — | 0.55 | cut-patch |
+| clay | 0.65 | — | 0.4 | none |
+| mushroom | 0.32 | — | 0.65 | none |
+| branch | 0.5 | — | 0.16 | none |
+| pebble | 0.32 | — | 0.2 | none |
+
+### 画風テクスチャ
+
+環境とノードで同じ手続きピクセルテクスチャを共有し、単色プリミティブ感を
+抑えました（`AssetManager.createBarkTexture / createFoliageTexture /
+createRockCrackTexture`）。幹には樹皮、樹冠には葉の斑、岩には割れ目。
+環境の広葉樹には枝インスタンスを追加し、幹＋枝＋葉のまとまりとして読めます。
+
+### 実験器具アセット（研究室→実験台）
+
+`assets/lab-apparatus/` に器具セット（bbmodel / glTF / 透過スプライト /
+テクスチャ）を追加しました。装置と液体・炎は別レイヤーで、段階（原始＝土器・
+石、ガラス〜、近代＝金属）に対応します。詳細と対応表は同フォルダの README。
+AI生成の研究室背景は使わない前提です。

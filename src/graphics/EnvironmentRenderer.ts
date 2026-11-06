@@ -106,6 +106,9 @@ export class EnvironmentRenderer {
   private mist: THREE.Sprite | null = null;
   private canopy: CanopySet[] = [];
   private rng: () => number;
+  private barkTex!: THREE.Texture;
+  private foliageTex!: THREE.Texture;
+  private rockCrackTex!: THREE.Texture;
 
   constructor(
     cfg: GraphicsConfig,
@@ -115,6 +118,12 @@ export class EnvironmentRenderer {
     this.cfg = cfg;
     this.rng = mulberry32(cfg.world.seed);
     const scale = quality === 'high' ? 1 : 0.5;
+    // Shared procedural pixel textures (bark / foliage / cracked rock)
+    // so nature stops reading as flat single-colour primitives.
+    const am = new AssetManager();
+    this.barkTex = am.createBarkTexture();
+    this.foliageTex = am.createFoliageTexture();
+    this.rockCrackTex = am.createRockCrackTexture();
 
     this.buildTrees(scale);
     this.buildGrass(scale);
@@ -262,12 +271,20 @@ export class EnvironmentRenderer {
 
     const trunkGeo = new THREE.CylinderGeometry(0.13, 0.26, 1.7, 6);
     trunkGeo.translate(0, 0.85, 0);
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x7a5230, roughness: 0.95 });
+    const trunkMat = new THREE.MeshStandardMaterial({ map: this.barkTex, roughness: 0.95 });
     const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, spots.length);
+
+    // Branches for broadleaf trees: short tilted limbs reaching into
+    // the canopy, so a tree reads as trunk + branches + leaf masses
+    // rather than lollipops. Same bark material as the trunks.
+    const branchGeo = new THREE.CylinderGeometry(0.04, 0.085, 1.15, 5);
+    branchGeo.translate(0, 0.55, 0);
+    const branches = new THREE.InstancedMesh(branchGeo, trunkMat, spots.length * 2);
+    let bri = 0;
 
     const blobGeo = new THREE.IcosahedronGeometry(1, 1);
     const blobWind = makeWindMaterial(
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }),
+      new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.9 }),
       1,
       0.045,
     );
@@ -284,7 +301,7 @@ export class EnvironmentRenderer {
     const coneGeo = new THREE.ConeGeometry(1, 2.4, 8);
     coneGeo.translate(0, 1.2, 0);
     const coneWind = makeWindMaterial(
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }),
+      new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.9 }),
       2.4,
       0.05,
     );
@@ -355,12 +372,25 @@ export class EnvironmentRenderer {
           bi++;
         }
       }
+      if (!pine) {
+        for (let b = 0; b < 2; b++) {
+          const yaw = this.rng() * Math.PI * 2;
+          const tilt = 0.55 + this.rng() * 0.4;
+          this.dummy.position.set(s.x, y + size * (1.05 + b * 0.38), s.z);
+          this.dummy.rotation.set(Math.sin(yaw) * tilt, 0, Math.cos(yaw) * tilt);
+          const bs = size * (0.85 - b * 0.18);
+          this.dummy.scale.set(bs, bs, bs);
+          this.dummy.updateMatrix();
+          branches.setMatrixAt(bri++, this.dummy.matrix);
+        }
+      }
     });
     // Hide unused instances (pine vs round split) with zero scale.
     for (let i = bi; i < spots.length * 3; i++) this.setInstance(blobs, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
     for (let i = pi; i < spots.length * 2; i++) this.setInstance(pines, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+    for (let i = bri; i < spots.length * 2; i++) this.setInstance(branches, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
 
-    for (const m of [trunks, blobs, pines]) {
+    for (const m of [trunks, blobs, pines, branches]) {
       m.castShadow = true;
       m.receiveShadow = true;
       if (m.instanceColor) m.instanceColor.needsUpdate = true;
@@ -422,7 +452,7 @@ export class EnvironmentRenderer {
   /* ---------------- shrubs, ferns, leaf litter ---------------- */
   private buildGroundCover(scale: number): void {
     const shrubGeo = new THREE.IcosahedronGeometry(0.55, 1);
-    const shrubMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 });
+    const shrubMat = new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.95 });
     const sCount = Math.round(150 * scale);
     const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, sCount);
     const cA = new THREE.Color(0x477f36);
@@ -496,7 +526,7 @@ export class EnvironmentRenderer {
       }
       rockGeo.computeVertexNormals();
     }
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.98, flatShading: true });
+    const rockMat = new THREE.MeshStandardMaterial({ map: this.rockCrackTex, roughness: 0.98, flatShading: true });
     addInstanceFade(rockMat);
     const count = Math.round(170 * scale);
     const rocks = new THREE.InstancedMesh(rockGeo, rockMat, count);
