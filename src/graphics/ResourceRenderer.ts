@@ -25,6 +25,10 @@ interface Entry {
   pulseMaterials: THREE.MeshStandardMaterial[];
   /** Material opacities as built (fade multiplies these). */
   baseOpacities: number[];
+  /** Material alphaTest thresholds as built (fade scales these too:
+   *  a cutout material whose opacity drops below its threshold would
+   *  be discarded whole instead of fading). */
+  baseAlphaTests: number[];
   baseScale: number;
   /** Occlusion fade factor, 1 = fully visible. */
   fade: number;
@@ -150,6 +154,8 @@ export class ResourceRenderer {
   private foliageTex: THREE.Texture;
   private rockCrackTex: THREE.Texture;
   private gpt: Record<string, THREE.Texture>;
+  /** Branch/leaf spray textures for the card-built tree canopies. */
+  private branch: Record<string, THREE.Texture>;
   /** Camera azimuth: sprite props stand facing it (the camera never orbits). */
   private yawRad: number;
   /** Shared geometries for the group path (never disposed per node). */
@@ -161,9 +167,11 @@ export class ResourceRenderer {
     groundHeightAt: (x: number, z: number) => number,
     gpt: Record<string, THREE.Texture> = {},
     yawDegrees = 45,
+    branch: Record<string, THREE.Texture> = {},
   ) {
     this.groundHeightAt = groundHeightAt;
     this.gpt = gpt;
+    this.branch = branch;
     this.yawRad = THREE.MathUtils.degToRad(yawDegrees);
     const am = new AssetManager();
     this.barkTex = am.createBarkTexture();
@@ -240,7 +248,7 @@ export class ResourceRenderer {
         : this.buildInstanced(state, seed);
       if (inst) {
         const entry: Entry = {
-          state, group: null, slots: inst, pulseMaterials: [], baseOpacities: [],
+          state, group: null, slots: inst, pulseMaterials: [], baseOpacities: [], baseAlphaTests: [],
           baseScale: s, fade: 1, ring: null,
           pos: new THREE.Vector3(state.position.x, y, state.position.z),
           tilted: false, flashed: false,
@@ -259,6 +267,7 @@ export class ResourceRenderer {
           slots: [],
           pulseMaterials: built.pulseMaterials,
           baseOpacities: built.pulseMaterials.map((m) => m.opacity),
+          baseAlphaTests: built.pulseMaterials.map((m) => m.alphaTest),
           baseScale: s,
           fade: 1,
           ring: null,
@@ -453,6 +462,11 @@ export class ResourceRenderer {
       entry.pulseMaterials.forEach((mat, i) => {
         mat.opacity = entry.baseOpacities[i] * next;
         mat.transparent = next < 0.999 || entry.baseOpacities[i] < 1;
+        // Cutout materials (alphaTest > 0) must lower their threshold
+        // with the fade: opacity 0.22 against a 0.45 threshold is
+        // discarded whole, so a fading spray-card canopy would vanish
+        // instead of thinning (found on the first card-built trees).
+        mat.alphaTest = (entry.baseAlphaTests[i] ?? 0) * next;
       });
     }
   }
@@ -727,32 +741,112 @@ export class ResourceRenderer {
 
     switch (state.type) {
       case 'tree': {
+        // Canopy built from branch-spray cards (2026-11-07): crossed
+        // leafy-branch planes along limbs, in three silhouettes
+        // picked deterministically from the node id — the same id
+        // always grows the same tree. The trunk (and only the trunk)
+        // is what the game's footprint describes; the cards never
+        // take part in collision. Falls back to the previous
+        // leaf-mass build when the spray textures failed to decode.
+        const sr = (n: number) => {
+          const v = Math.sin(seed * 127.1 + n * 311.7) * 43758.5453;
+          return v - Math.floor(v);
+        };
+        const sprays = [
+          this.branch.branch_1, this.branch.branch_2,
+          this.branch.branch_3, this.branch.branch_4,
+        ].filter((t): t is THREE.Texture => !!t);
+        const arch = Math.floor(sr(1) * 3); // 0 wide, 1 tall, 2 young
+        const trunkH = arch === 1 ? 2.25 : arch === 2 ? 1.45 : 1.8;
         const trunk = add(new THREE.Mesh(
           this.geo('trunk', () => new THREE.CylinderGeometry(0.14, 0.26, 1.8, 7)), wood));
-        trunk.position.y = 0.9;
-        // Two limbs reaching into the canopy (matches the environment
-        // trees' trunk + branches + leaf-mass reading).
-        for (let i = 0; i < 2; i++) {
-          const limb = add(new THREE.Mesh(
-            this.geo('limb', () => new THREE.CylinderGeometry(0.045, 0.09, 1.1, 5)), wood));
-          limb.position.set((i === 0 ? 0.28 : -0.24), 1.95, (i === 0 ? 0.1 : -0.12));
-          limb.rotation.z = (i === 0 ? -0.7 : 0.75);
-          limb.rotation.x = (i === 0 ? 0.15 : -0.2);
-        }
-        for (let i = 0; i < 3; i++) {
-          const blob = add(new THREE.Mesh(
-            this.geo(`treeBlob${i}`, () => new THREE.IcosahedronGeometry(1.05 - i * 0.18, 1)), leaf));
-          blob.position.set((i - 1) * 0.45, 2.3 + i * 0.5, (i % 2) * 0.4 - 0.2);
-          blob.scale.y = 0.85;
-        }
-        // Leaf cards (GPT sheet D), matching the environment trees.
-        for (let i = 0; i < 4; i++) {
-          const card = sprite(this.gpt.leaf_oak, 1.25, 1.1);
-          if (!card) break;
-          const a = (i / 4) * Math.PI * 2 + seed;
-          card.position.set(Math.cos(a) * 0.55, 2.15 + (i % 2) * 0.7, Math.sin(a) * 0.55);
-          card.rotation.x = (i % 2 ? -0.25 : 0.2);
-          g.add(card);
+        trunk.scale.set(arch === 2 ? 0.8 : 1, trunkH / 1.8, arch === 2 ? 0.8 : 1);
+        trunk.position.y = trunkH / 2;
+        if (sprays.length >= 2) {
+          const crownY = arch === 1 ? 2.85 : arch === 2 ? 1.95 : 2.45;
+          const clusters = arch === 1 ? 5 : arch === 2 ? 4 : 6;
+          const spreadR = arch === 1 ? 0.45 : arch === 2 ? 0.4 : 0.85;
+          const cardW = arch === 1 ? 1.35 : arch === 2 ? 1.1 : 1.55;
+          const baseAz = sr(2) * Math.PI * 2;
+          const up = new THREE.Vector3(0, 1, 0);
+          // Limbs reaching toward the cluster ring.
+          for (let c = 0; c < clusters; c++) {
+            const az = baseAz + (c / clusters) * Math.PI * 2 + (sr(10 + c) - 0.5) * 0.6;
+            const tilt = 0.55 + sr(20 + c) * 0.35;
+            const dir = new THREE.Vector3(
+              Math.cos(az) * Math.sin(tilt), Math.cos(tilt), Math.sin(az) * Math.sin(tilt));
+            const limb = add(new THREE.Mesh(
+              this.geo('limb', () => new THREE.CylinderGeometry(0.045, 0.09, 1.1, 5)), wood));
+            limb.quaternion.setFromUnitVectors(up, dir);
+            limb.position.copy(dir).multiplyScalar(0.5);
+            limb.position.y += trunkH - 0.35;
+          }
+          const sprayCard = (
+            tex: THREE.Texture, x: number, y: number, z: number,
+            yaw: number, tiltX: number, roll: number, w: number, shade: number,
+          ) => {
+            const m = new THREE.MeshStandardMaterial({
+              map: tex,
+              alphaTest: 0.45,
+              side: THREE.DoubleSide,
+              roughness: 0.95,
+              color: new THREE.Color(shade * 0.94, shade * 1.0, shade * 0.86),
+            });
+            pulseMaterials.push(m);
+            const img = tex.image as { width: number; height: number } | undefined;
+            const aspect = img && img.width > 0 ? img.height / img.width : 0.87;
+            const mesh = new THREE.Mesh(
+              this.geo('sprayCard', () => new THREE.PlaneGeometry(1, 1)), m);
+            mesh.position.set(x, y, z);
+            mesh.rotation.set(tiltX, yaw, roll);
+            mesh.scale.set(w, w * aspect, w);
+            mesh.receiveShadow = true;
+            g.add(mesh);
+          };
+          for (let c = 0; c < clusters; c++) {
+            const az = baseAz + (c / clusters) * Math.PI * 2 + (sr(10 + c) - 0.5) * 0.6;
+            const rr = spreadR * (0.5 + sr(30 + c) * 0.55);
+            const cx = Math.cos(az) * rr;
+            const cz = Math.sin(az) * rr;
+            const cy = crownY + (sr(40 + c) - 0.5) * 0.6;
+            for (let p = 0; p < 2; p++) {
+              const tex = c === clusters - 1 && p === 1 && this.branch.branch_3
+                ? this.branch.branch_3
+                : sprays[Math.floor(sr(50 + c * 2 + p) * sprays.length) % sprays.length];
+              sprayCard(tex, cx, cy, cz,
+                az + Math.PI / 2 + p * (Math.PI / 2) + (sr(60 + c * 2 + p) - 0.5) * 0.6,
+                -0.3 + sr(70 + c * 2 + p) * 0.45, (sr(80 + c * 2 + p) - 0.5) * 0.5,
+                cardW * (0.85 + sr(90 + c * 2 + p) * 0.35), 0.92 + sr(100 + c * 2 + p) * 0.16);
+            }
+          }
+          // Inner depth sprays: dark olive, at the crown's heart.
+          sprayCard(sprays[Math.floor(sr(3) * sprays.length) % sprays.length],
+            0, crownY - 0.2, 0, sr(4) * Math.PI, -0.2, 0, cardW * 1.05, 0.42);
+          sprayCard(sprays[Math.floor(sr(6) * sprays.length) % sprays.length],
+            0.28, crownY - 0.02, -0.22, sr(5) * Math.PI, -0.1, 0.15, cardW * 0.9, 0.55);
+        } else {
+          // Legacy fallback (spray textures unavailable).
+          for (let i = 0; i < 2; i++) {
+            const limb = add(new THREE.Mesh(
+              this.geo('limb', () => new THREE.CylinderGeometry(0.045, 0.09, 1.1, 5)), wood));
+            limb.position.set((i === 0 ? 0.28 : -0.24), 1.95, (i === 0 ? 0.1 : -0.12));
+            limb.rotation.z = (i === 0 ? -0.7 : 0.75);
+            limb.rotation.x = (i === 0 ? 0.15 : -0.2);
+          }
+          for (let i = 0; i < 3; i++) {
+            const blob = add(new THREE.Mesh(
+              this.geo(`treeBlob${i}`, () => new THREE.IcosahedronGeometry(1.05 - i * 0.18, 1)), leaf));
+            blob.position.set((i - 1) * 0.45, 2.3 + i * 0.5, (i % 2) * 0.4 - 0.2);
+            blob.scale.y = 0.85;
+          }
+          for (let i = 0; i < 4; i++) {
+            const card = sprite(this.gpt.leaf_oak, 1.25, 1.1);
+            if (!card) break;
+            const a = (i / 4) * Math.PI * 2 + seed;
+            card.position.set(Math.cos(a) * 0.55, 2.15 + (i % 2) * 0.7, Math.sin(a) * 0.55);
+            card.rotation.x = (i % 2 ? -0.25 : 0.2);
+            g.add(card);
+          }
         }
         break;
       }
