@@ -117,6 +117,22 @@ export class EnvironmentRenderer {
   private patchAlpha!: THREE.Texture;
   /** GPT-generated image textures (may be empty -> procedural fallbacks). */
   private gpt: Record<string, THREE.Texture> = {};
+  /** Branch/leaf spray textures for the card-built canopies
+   *  (assets/branch-cards/; may be empty -> procedural fallback). */
+  private branch: Record<string, THREE.Texture> = {};
+  /** Full-detail spray card meshes + their base matrices, and the
+   *  far-LOD cluster mesh, for the distance swap in updateTreeLOD. */
+  private spraySets: Array<{ mesh: THREE.InstancedMesh; base: Float32Array }> = [];
+  private liteMesh: THREE.InstancedMesh | null = null;
+  private liteBase: Float32Array | null = null;
+  private liteRadiiArr: Float32Array | null = null;
+  private lodTrees: Array<{
+    x: number; z: number;
+    refs: Array<{ set: number; index: number }>;
+    lite: number[];
+    far: boolean;
+  }> = [];
+  private lodTimer = 0;
   /** Soft soil/leaf discs that ground trees and rocks (collected
    *  during their builds, instanced once at the end). */
   private groundDiscs: Array<{ x: number; z: number; r: number; tint: THREE.Color }> = [];
@@ -173,9 +189,11 @@ export class EnvironmentRenderer {
     particleTexture: THREE.Texture,
     gpt: Record<string, THREE.Texture> = {},
     decor: DecorOptions = {},
+    branch: Record<string, THREE.Texture> = {},
   ) {
     this.cfg = cfg;
     this.gpt = gpt;
+    this.branch = branch;
     this.rng = mulberry32(cfg.world.seed);
     const scale = quality === 'high' ? 1 : 0.5;
     // Shared procedural pixel textures (bark / foliage / cracked rock)
@@ -337,6 +355,50 @@ export class EnvironmentRenderer {
       }
       if (dirty) set.attr.needsUpdate = true;
     }
+    // Distance LOD for broadleaf crowns, checked a few times a
+    // second (hysteresis keeps borderline trees from flickering).
+    this.lodTimer -= dt;
+    if (this.lodTimer <= 0) {
+      this.lodTimer = 0.4;
+      this.updateTreeLOD(playerPos);
+    }
+  }
+
+  /**
+   * Swap broadleaf crowns between the full spray-card build (near)
+   * and the crossed cluster-sprite pair (far, beyond ~27 m from the
+   * player). Only instance matrices change; placement, occlusion
+   * fades and anything the game owns are untouched.
+   */
+  private updateTreeLOD(playerPos: THREE.Vector3): void {
+    if (!this.liteMesh || !this.liteBase || !this.liteRadiiArr) return;
+    const dirty = new Set<THREE.InstancedMesh>();
+    const m = new THREE.Matrix4();
+    const zero = new THREE.Matrix4().makeScale(0.001, 0.001, 0.001).setPosition(0, -50, 0);
+    for (const t of this.lodTrees) {
+      const d = Math.hypot(t.x - playerPos.x, t.z - playerPos.z);
+      const far = t.far ? d > 23 : d > 27;
+      if (far === t.far) continue;
+      t.far = far;
+      for (const ref of t.refs) {
+        const set = this.spraySets[ref.set];
+        if (!set) continue;
+        if (far) zero.toArray(set.mesh.instanceMatrix.array, ref.index * 16);
+        else m.fromArray(set.base, ref.index * 16).toArray(set.mesh.instanceMatrix.array, ref.index * 16);
+        dirty.add(set.mesh);
+      }
+      for (const li of t.lite) {
+        if (far) {
+          m.fromArray(this.liteBase, li * 16).toArray(this.liteMesh.instanceMatrix.array, li * 16);
+          this.liteRadiiArr[li] = 1.6;
+        } else {
+          zero.toArray(this.liteMesh.instanceMatrix.array, li * 16);
+          this.liteRadiiArr[li] = 0;
+        }
+        dirty.add(this.liteMesh);
+      }
+    }
+    for (const mesh of dirty) mesh.instanceMatrix.needsUpdate = true;
   }
 
   setPollenVisible(visible: boolean): void {
@@ -436,25 +498,13 @@ export class EnvironmentRenderer {
     // rather than lollipops. Same bark material as the trunks.
     const branchGeo = new THREE.CylinderGeometry(0.04, 0.085, 1.15, 5);
     branchGeo.translate(0, 0.55, 0);
-    const branches = new THREE.InstancedMesh(branchGeo, trunkMat, spots.length * 2);
+    const branches = new THREE.InstancedMesh(branchGeo, trunkMat, spots.length * 3);
     let bri = 0;
 
-    const blobGeo = new THREE.IcosahedronGeometry(1, 1);
-    this.jitter(blobGeo, 0.36); // irregular canopy silhouette, not balls
-    const blobWind = makeWindMaterial(
-      new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.9 }),
-      1,
-      0.045,
-    );
-    this.windMaterials.push(blobWind);
-    addInstanceFade(blobWind);
-    const blobs = new THREE.InstancedMesh(blobGeo, blobWind.material, spots.length * 3);
-    const blobCenters = new Float32Array(spots.length * 3 * 3);
-    const blobRadii = new Float32Array(spots.length * 3);
-    const blobFades = new Float32Array(spots.length * 3).fill(1);
-    const blobAttr = new THREE.InstancedBufferAttribute(blobFades, 1);
-    blobGeo.setAttribute('aFade', blobAttr);
-    this.canopy.push({ centers: blobCenters, radii: blobRadii, fades: blobFades, attr: blobAttr });
+    // (2026-11-07) The broadleaf canopy is no longer built from
+    // jittered foliage blobs: however rough the geometry, they read
+    // as green balls with dark spots. The canopy below is assembled
+    // purely from branch-spray cards along virtual limbs.
 
     const coneGeo = new THREE.ConeGeometry(1, 2.4, 8);
     this.jitter(coneGeo, 0.13);
@@ -474,36 +524,109 @@ export class EnvironmentRenderer {
     coneGeo.setAttribute('aFade', pineAttr);
     this.canopy.push({ centers: pineCenters, radii: pineRadii, fades: pineFades, attr: pineAttr });
 
-    // Leaf cards (GPT sheet D): alpha-cutout branch sprites layered
-    // through the canopy volume, so trees read as leaf masses with
-    // gaps and depth instead of textured balls alone. The blobs stay
-    // underneath as the darker inner mass.
-    const makeCards = (tex: THREE.Texture | undefined, fallback: THREE.Texture) => {
-      const geo = new THREE.PlaneGeometry(1.15, 1.0);
-      const mat = new THREE.MeshStandardMaterial({
-        map: tex ?? fallback,
-        alphaTest: 0.45,
-        side: THREE.DoubleSide,
-        roughness: 0.95,
-      });
-      addInstanceFade(mat);
-      const mesh = new THREE.InstancedMesh(geo, mat, spots.length * 8);
-      const centers = new Float32Array(spots.length * 8 * 3);
-      const radii = new Float32Array(spots.length * 8).fill(1);
-      const fades = new Float32Array(spots.length * 8).fill(1);
+    // Branch-spray cards (owner sheet, assets/branch-cards/): each
+    // card is a whole leafy branch spray, so crossed pairs placed
+    // along virtual limbs read as layered branches and leaves with
+    // real see-through gaps — the silhouette is leaf edges, never a
+    // smooth solid. Four sprite variants get four instanced meshes.
+    // A gentle wind patch sways the card tips (strength is small:
+    // branch tips only, per the owner's direction).
+    interface SpraySet {
+      mesh: THREE.InstancedMesh;
+      centers: Float32Array;
+      radii: Float32Array;
+      aspect: number;
+      count: number;
+    }
+    const sprayCap = spots.length * 16;
+    const makeSpraySet = (tex: THREE.Texture | undefined): SpraySet => {
+      const geo = new THREE.PlaneGeometry(1, 1);
+      const wind = makeWindMaterial(
+        new THREE.MeshStandardMaterial({
+          map: tex ?? this.leafCardTex,
+          alphaTest: 0.45,
+          side: THREE.DoubleSide,
+          roughness: 0.95,
+        }),
+        1,
+        0.035,
+      );
+      this.windMaterials.push(wind);
+      addInstanceFade(wind);
+      const mesh = new THREE.InstancedMesh(geo, wind.material, sprayCap);
+      const centers = new Float32Array(sprayCap * 3);
+      const radii = new Float32Array(sprayCap);
+      const fades = new Float32Array(sprayCap).fill(1);
       const attr = new THREE.InstancedBufferAttribute(fades, 1);
       geo.setAttribute('aFade', attr);
       this.canopy.push({ centers, radii, fades, attr });
-      return { mesh, centers, count: 0 };
+      const img = tex?.image as { width: number; height: number } | undefined;
+      return {
+        mesh, centers, radii,
+        aspect: img && img.width > 0 ? img.height / img.width : 0.87,
+        count: 0,
+      };
     };
-    const oakCards = makeCards(this.gpt.leaf_oak, this.leafCardTex);
-    const birchCards = makeCards(this.gpt.leaf_birch, this.leafCardTex);
+    const spraySets = [
+      makeSpraySet(this.branch.branch_1),
+      makeSpraySet(this.branch.branch_2),
+      makeSpraySet(this.branch.branch_3),
+      makeSpraySet(this.branch.branch_4),
+    ];
+    // Far LOD: a crossed pair of the composited cluster sprite stands
+    // in for the whole crown beyond ~27 m (swapped by updateTreeLOD);
+    // every lite instance starts collapsed.
+    const liteGeo = new THREE.PlaneGeometry(1, 1);
+    const liteMat = new THREE.MeshStandardMaterial({
+      map: this.branch.branch_cluster ?? this.leafCardTex,
+      alphaTest: 0.45,
+      side: THREE.DoubleSide,
+      roughness: 0.95,
+    });
+    addInstanceFade(liteMat);
+    const liteMesh = new THREE.InstancedMesh(liteGeo, liteMat, spots.length * 2);
+    const liteCenters = new Float32Array(spots.length * 2 * 3);
+    const liteRadii = new Float32Array(spots.length * 2);
+    const liteFades = new Float32Array(spots.length * 2).fill(1);
+    const liteAttr = new THREE.InstancedBufferAttribute(liteFades, 1);
+    liteGeo.setAttribute('aFade', liteAttr);
+    this.canopy.push({ centers: liteCenters, radii: liteRadii, fades: liteFades, attr: liteAttr });
+    this.liteMesh = liteMesh;
+    this.liteRadiiArr = liteRadii;
+    this.liteBase = new Float32Array(spots.length * 2 * 16);
+    const liteBase = this.liteBase;
+    const liteImg = this.branch.branch_cluster?.image as
+      { width: number; height: number } | undefined;
+    const liteAspect = liteImg && liteImg.width > 0 ? liteImg.height / liteImg.width : 0.87;
+    let liteCount = 0;
+    let cardCycle = 0;
+    const cardTint = new THREE.Color();
+    const placeCard = (
+      setIdx: number, x: number, y: number, z: number,
+      yaw: number, tiltX: number, roll: number, w: number,
+      tint: THREE.Color, radius: number,
+      refs: Array<{ set: number; index: number }>,
+    ): void => {
+      const set = spraySets[setIdx];
+      if (set.count >= sprayCap) return;
+      const idx = set.count++;
+      this.dummy.position.set(x, y, z);
+      this.dummy.rotation.set(tiltX, yaw, roll);
+      this.dummy.scale.set(w, w * set.aspect, w);
+      this.dummy.updateMatrix();
+      set.mesh.setMatrixAt(idx, this.dummy.matrix);
+      set.mesh.setColorAt(idx, tint);
+      set.centers[idx * 3] = x;
+      set.centers[idx * 3 + 1] = y;
+      set.centers[idx * 3 + 2] = z;
+      set.radii[idx] = radius;
+      refs.push({ set: setIdx, index: idx });
+    };
 
     const cA = new THREE.Color(0x4e8f3e);
     const cB = new THREE.Color(0x77a944);
     const cC = new THREE.Color(0x3c7a44);
     const tmp = new THREE.Color();
-    let bi = 0;
     let pi = 0;
 
     spots.forEach((s, i) => {
@@ -537,71 +660,79 @@ export class EnvironmentRenderer {
           pineRadii[pi] = size * 1.45;
           pi++;
         }
-      } else if (slim) {
-        const oy = 3.35 * size;
-        const r = 0.8 * size;
-        this.setInstance(blobs, bi, s.x, y + oy, s.z,
-          this.rng() * Math.PI, r, r * 2.1, r);
-        blobs.setColorAt(bi, tmp);
-        blobCenters[bi * 3] = s.x;
-        blobCenters[bi * 3 + 1] = y + oy;
-        blobCenters[bi * 3 + 2] = s.z;
-        blobRadii[bi] = r * 1.35;
-        bi++;
       } else {
-        for (let k = 0; k < 3; k++) {
-          const ox = (this.rng() - 0.5) * 1.1 * size;
-          const oz = (this.rng() - 0.5) * 1.1 * size;
-          const oy = (2.1 + k * 0.55 + this.rng() * 0.3) * size;
-          const r = (1.25 - k * 0.22) * size;
-          this.setInstance(blobs, bi, s.x + ox, y + oy, s.z + oz,
-            this.rng() * Math.PI, r, r * 0.82, r);
-          blobs.setColorAt(bi, tmp);
-          blobCenters[bi * 3] = s.x + ox;
-          blobCenters[bi * 3 + 1] = y + oy;
-          blobCenters[bi * 3 + 2] = s.z + oz;
-          blobRadii[bi] = r;
-          bi++;
+        // Broadleaf canopy: three silhouettes — tall (the poplar
+        // slot), wide (default) and young (small sizes). Crossed
+        // branch-spray cards sit along virtual limbs radiating from
+        // the trunk top; one dark spray at the crown's heart gives
+        // depth. No solid mass anywhere: every part of the silhouette
+        // is leaf edge or a real gap.
+        const arch = slim ? 'tall' : size < 0.95 ? 'young' : 'wide';
+        const refs: Array<{ set: number; index: number }> = [];
+        const crownY = arch === 'tall' ? 3.35 : arch === 'young' ? 1.95 : 2.5;
+        const clusters = arch === 'tall' ? 6 : arch === 'young' ? 4 : 8;
+        const spreadR = (arch === 'tall' ? 0.52 : arch === 'young' ? 0.48 : 0.95) * size;
+        const cardW = (arch === 'tall' ? 1.6 : arch === 'young' ? 1.25 : 1.85) * size;
+        const baseAz = this.rng() * Math.PI * 2;
+        for (let c = 0; c < clusters; c++) {
+          const az = baseAz + (c / clusters) * Math.PI * 2 + (this.rng() - 0.5) * 0.7;
+          const rr = spreadR * (0.45 + this.rng() * 0.6);
+          const cx = s.x + Math.cos(az) * rr;
+          const cz = s.z + Math.sin(az) * rr;
+          const cy = y + (crownY + (this.rng() - 0.5) * 0.85) * size;
+          for (let p = 0; p < 2; p++) {
+            const yaw = az + Math.PI / 2 + p * (Math.PI / 2) + (this.rng() - 0.5) * 0.6;
+            // The last cluster's second card is the drooping spray,
+            // so the crown's lower rim hangs instead of rounding off.
+            const texIdx = c === clusters - 1 && p === 1 ? 2 : cardCycle++ % 4;
+            cardTint.setRGB(0.84, 0.92, 0.78).multiplyScalar(0.88 + this.rng() * 0.16);
+            if (birch) cardTint.multiplyScalar(1.02);
+            placeCard(texIdx, cx, cy, cz, yaw,
+              -0.3 + this.rng() * 0.45, (this.rng() - 0.5) * 0.5,
+              cardW * (0.85 + this.rng() * 0.35), cardTint, cardW * 0.55, refs);
+          }
         }
-      }
-      if (!pine) {
-        const cards = birch ? birchCards : oakCards;
-        const nCards = slim ? 3 : 8;
-        const cy = y + (slim ? 3.35 : 2.55) * size;
-        // Cards sit ON the canopy surface (radius ~ blob extent), not
-        // inside the blob volume where they'd be swallowed.
-        const spread = size * (slim ? 0.55 : 1.12);
-        for (let k = 0; k < nCards; k++) {
-          const a = this.rng() * Math.PI * 2;
-          const rr = spread * (0.55 + this.rng() * 0.5);
-          const px = s.x + Math.cos(a) * rr;
-          const pz = s.z + Math.sin(a) * rr;
-          const py = cy + (this.rng() - 0.5) * 1.1 * size;
-          this.dummy.position.set(px, py, pz);
-          this.dummy.rotation.set((this.rng() - 0.5) * 0.9, this.rng() * Math.PI, (this.rng() - 0.5) * 0.5);
-          const cs = size * (1.1 + this.rng() * 0.55);
-          this.dummy.scale.set(cs, cs, cs);
+        // Inner depth sprays: dark olive, deep in the crown.
+        cardTint.setRGB(0.4, 0.45, 0.36).multiplyScalar(0.9 + this.rng() * 0.2);
+        if (birch) cardTint.multiplyScalar(1.02);
+        placeCard(cardCycle++ % 4, s.x, y + (crownY - 0.25) * size, s.z,
+          this.rng() * Math.PI, -0.2, 0, cardW * 1.05, cardTint, cardW * 0.5, refs);
+        cardTint.setRGB(0.55, 0.58, 0.48).multiplyScalar(0.9 + this.rng() * 0.2);
+        if (birch) cardTint.multiplyScalar(1.02);
+        placeCard(cardCycle++ % 4, s.x + 0.3 * size, y + (crownY - 0.05) * size, s.z - 0.24 * size,
+          this.rng() * Math.PI, -0.1, 0.15, cardW * 0.9, cardTint, cardW * 0.45, refs);
+        // Far-LOD crossed pair (cluster sprite). Its real matrix is
+        // kept in liteBase; the live instance starts collapsed and
+        // updateTreeLOD swaps it in beyond ~27 m.
+        const liteW = (arch === 'young' ? 2.3 : 3.2) * size;
+        const liteY = y + crownY * size;
+        const liteIdx: number[] = [];
+        cardTint.setRGB(0.88, 0.94, 0.83);
+        for (let p = 0; p < 2; p++) {
+          const idx = liteCount++;
+          this.dummy.position.set(s.x, liteY, s.z);
+          this.dummy.rotation.set(-0.25, baseAz + p * (Math.PI / 2), 0);
+          this.dummy.scale.set(liteW, liteW * liteAspect, liteW);
           this.dummy.updateMatrix();
-          cards.mesh.setMatrixAt(cards.count, this.dummy.matrix);
-          // Bright warm tint so cards read as sunlit leaf surface
-          // against the darker blob mass beneath them.
-          cards.mesh.setColorAt(cards.count,
-            new THREE.Color(1.22, 1.26, 1.08).multiplyScalar(0.92 + this.rng() * 0.16));
-          cards.centers[cards.count * 3] = px;
-          cards.centers[cards.count * 3 + 1] = py;
-          cards.centers[cards.count * 3 + 2] = pz;
-          cards.count++;
+          this.dummy.matrix.toArray(liteBase, idx * 16);
+          liteMesh.setColorAt(idx, cardTint);
+          liteCenters[idx * 3] = s.x;
+          liteCenters[idx * 3 + 1] = liteY;
+          liteCenters[idx * 3 + 2] = s.z;
+          liteIdx.push(idx);
+          this.setInstance(liteMesh, idx, 0, -50, 0, 0, 0.001, 0.001, 0.001);
         }
+        this.lodTrees.push({ x: s.x, z: s.z, refs, lite: liteIdx, far: false });
       }
       this.groundDiscs.push({
         x: s.x, z: s.z, r: 0.85 * size,
         tint: new THREE.Color().setHSL(0.08, 0.3, 0.1 + this.rng() * 0.03),
       });
       if (!pine) {
-        for (let b = 0; b < 2; b++) {
+        for (let b = 0; b < 3; b++) {
           const yaw = this.rng() * Math.PI * 2;
           const tilt = 0.55 + this.rng() * 0.4;
-          this.dummy.position.set(s.x, y + size * (1.05 + b * 0.38), s.z);
+          this.dummy.position.set(s.x, y + size * (0.95 + b * 0.32), s.z);
           this.dummy.rotation.set(Math.sin(yaw) * tilt, 0, Math.cos(yaw) * tilt);
           const bs = size * (0.85 - b * 0.18);
           this.dummy.scale.set(bs, bs, bs);
@@ -610,22 +741,36 @@ export class EnvironmentRenderer {
         }
       }
     });
-    // Hide unused instances (pine vs round split) with zero scale.
-    for (let i = bi; i < spots.length * 3; i++) this.setInstance(blobs, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+    // Hide unused instances (pine vs broadleaf split) with zero scale.
     for (let i = pi; i < spots.length * 2; i++) this.setInstance(pines, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
-    for (let i = bri; i < spots.length * 2; i++) this.setInstance(branches, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
-    for (const cards of [oakCards, birchCards]) {
-      for (let i = cards.count; i < spots.length * 8; i++) {
-        this.setInstance(cards.mesh, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+    for (let i = bri; i < spots.length * 3; i++) this.setInstance(branches, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+    for (const set of spraySets) {
+      for (let i = set.count; i < sprayCap; i++) {
+        this.setInstance(set.mesh, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
       }
-      if (cards.mesh.instanceColor) cards.mesh.instanceColor.needsUpdate = true;
-      cards.mesh.receiveShadow = true;
-      this.group.add(cards.mesh);
+      // Draw only the placed instances: the capacity slack would
+      // still cost vertex processing on every frame.
+      set.mesh.count = set.count;
+      if (set.mesh.instanceColor) set.mesh.instanceColor.needsUpdate = true;
+      set.mesh.receiveShadow = true;
+      this.group.add(set.mesh);
+      // Base matrices for the LOD swap (restore after a far phase).
+      this.spraySets.push({
+        mesh: set.mesh,
+        base: new Float32Array(set.mesh.instanceMatrix.array),
+      });
     }
+    for (let i = liteCount; i < spots.length * 2; i++) {
+      this.setInstance(liteMesh, i, 0, -50, 0, 0, 0.001, 0.001, 0.001);
+    }
+    liteMesh.count = liteCount;
+    if (liteMesh.instanceColor) liteMesh.instanceColor.needsUpdate = true;
+    liteMesh.receiveShadow = true;
+    this.group.add(liteMesh);
     birchTrunks.castShadow = true;
     this.group.add(birchTrunks);
 
-    for (const m of [trunks, blobs, pines, branches]) {
+    for (const m of [trunks, pines, branches]) {
       m.castShadow = true;
       m.receiveShadow = true;
       if (m.instanceColor) m.instanceColor.needsUpdate = true;

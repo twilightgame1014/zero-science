@@ -23,6 +23,7 @@ import { ResourceRenderer, RESOURCE_VISUAL_SPECS } from './ResourceRenderer';
 import type { ResourceVisualSpec } from './ResourceRenderer';
 import { EffectsManager } from './EffectsManager';
 import { GPT_TEXTURES } from './gptTextures';
+import { BRANCH_TEXTURES } from './branchTextures';
 import { PostEffects } from './PostEffects';
 import { toScenePosition } from './utils';
 
@@ -198,6 +199,18 @@ export class GraphicsEngine {
         }
       }),
     );
+    // Branch/leaf spray sprites for the card-built tree canopies
+    // (assets/branch-cards/). Same failure contract as the GPT set.
+    const branch: Record<string, THREE.Texture> = {};
+    await Promise.all(
+      Object.entries(BRANCH_TEXTURES).map(async ([key, uri]) => {
+        try {
+          branch[key] = await assets.loadTexture(uri);
+        } catch {
+          /* procedural fallback */
+        }
+      }),
+    );
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -229,6 +242,7 @@ export class GraphicsEngine {
       detailBrightness: gpt.ground_grass_base ? 1.5 : 1,
       particle: particleTexture,
       gpt,
+      branch,
       decor: options.decor,
     });
     const groundAt = (x: number, z: number) => world.getGroundHeight(x, z);
@@ -239,7 +253,7 @@ export class GraphicsEngine {
       groundAt,
     );
     const structures = new StructureRenderer(groundAt);
-    const resources = new ResourceRenderer(groundAt, gpt, cfg.camera.yawDegrees);
+    const resources = new ResourceRenderer(groundAt, gpt, cfg.camera.yawDegrees, branch);
     const effects = new EffectsManager(particleTexture, groundAt);
     scene.add(world.group, character.group, structures.group, resources.group, effects.group);
 

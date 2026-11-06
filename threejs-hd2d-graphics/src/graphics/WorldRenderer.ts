@@ -21,6 +21,7 @@ export class WorldRenderer {
       terrainDetail: THREE.Texture;
       particle: THREE.Texture;
       gpt?: Record<string, THREE.Texture>;
+      branch?: Record<string, THREE.Texture>;
       detailBrightness?: number;
       decor?: DecorOptions;
     },
@@ -32,7 +33,7 @@ export class WorldRenderer {
       quality,
       assets.createRiverbedTexture(),
     );
-    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, textures.decor ?? {});
+    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, textures.decor ?? {}, textures.branch ?? {});
     this.group.add(this.terrain.group);
     this.group.add(this.environment.group);
   }
