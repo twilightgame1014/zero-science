@@ -57,7 +57,7 @@
    ],
    "size": {
     "d": 1.47,
-    "h": 0.75,
+    "h": 0.83,
     "w": 1.52
    }
   },
@@ -106,7 +106,7 @@
     1.95
    ],
    "size": {
-    "d": 3.38,
+    "d": 3.4,
     "h": 3.16,
     "w": 3.8
    }
@@ -337,8 +337,8 @@
     0.8
    ],
    "size": {
-    "d": 1.71,
-    "h": 2.55,
+    "d": 1.73,
+    "h": 2.56,
     "w": 2.3
    }
   },
@@ -383,5 +383,6 @@
    }
   }
  ],
- "version": "2026-11-07"
+ "version": "2026-11-07",
+ "textureRevision": "2026-11-07 round 14: all 13 rebuilt on the owner's GPT material sheets (12 materials in textures/: albedo 512px, structure-derived normal + absolute roughness at 256px, world-scale UVs for uniform texel density). Windows are dark glass with single lit accents; each model gained a soft 'ContactShadow' gradient plane (named node, safe to strip). Sizes re-measured in three.js with the shadow plane excluded; footprints/entrance/operate unchanged. See README.md for the per-building material table."
 }
