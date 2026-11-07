@@ -1,0 +1,161 @@
+{
+ "sprays": {
+  "sheet-01-conifer-sprays.jpg": {
+   "mode": "gate",
+   "seg_gated_px": 50548,
+   "despill_px": 10308,
+   "items": {
+    "conifer-cedar": {
+     "bbox": [
+      48,
+      107,
+      548,
+      611
+     ],
+     "px": 109773
+    },
+    "conifer-pine": {
+     "bbox": [
+      0,
+      138,
+      596,
+      515
+     ],
+     "px": 97585
+    },
+    "conifer-young": {
+     "bbox": [
+      47,
+      70,
+      555,
+      511
+     ],
+     "px": 80327
+    },
+    "conifer-tip": "EMPTY"
+   }
+  },
+  "sheet-02-snow-sprays.jpg": {
+   "mode": "seg-union",
+   "seg_union_added_px": 270,
+   "despill_px": 10184,
+   "items": {
+    "snow-conifer": {
+     "bbox": [
+      26,
+      109,
+      602,
+      569
+     ],
+     "px": 140814
+    },
+    "snow-broadleaf": {
+     "bbox": [
+      14,
+      110,
+      589,
+      533
+     ],
+     "px": 45026
+    },
+    "snow-shrub": {
+     "bbox": [
+      23,
+      126,
+      595,
+      509
+     ],
+     "px": 134077
+    },
+    "snow-icicle": {
+     "bbox": [
+      8,
+      104,
+      608,
+      449
+     ],
+     "px": 38123
+    }
+   }
+  },
+  "sheet-06-shore-plants.jpg": {
+   "mode": "gate",
+   "seg_gated_px": 26869,
+   "despill_px": 16825,
+   "items": {
+    "reed": {
+     "bbox": [
+      65,
+      36,
+      555,
+      589
+     ],
+     "px": 69096
+    },
+    "lily": {
+     "bbox": [
+      29,
+      130,
+      573,
+      565
+     ],
+     "px": 105190
+    },
+    "dry-shrub": {
+     "bbox": [
+      42,
+      89,
+      567,
+      521
+     ],
+     "px": 66319
+    },
+    "palm-frond": {
+     "bbox": [
+      3,
+      52,
+      583,
+      590
+     ],
+     "px": 125930
+    }
+   }
+  }
+ },
+ "ground": {
+  "ground-forest": {
+   "seam_ratio": 4.79
+  },
+  "ground-mud": {
+   "seam_ratio": 4.68
+  },
+  "ground-sand-dry": {
+   "seam_ratio": 4.47
+  },
+  "ground-sand-wet": {
+   "seam_ratio": 5.05
+  },
+  "ground-volcanic": {
+   "seam_ratio": 3.39
+  },
+  "ground-snow-raw": {
+   "seam_ratio": 4.72
+  },
+  "ground-desert": {
+   "seam_ratio": 6.14
+  },
+  "ground-path": {
+   "seam_ratio": 3.17
+  },
+  "ground-snow-clean": {
+   "prints_patched": 43,
+   "seam_ratio": 4.45
+  },
+  "ground-path-plain": {
+   "note": "ruts softened 55% blur blend"
+  }
+ },
+ "lava": {
+  "crack_coverage_pct": 1.3
+ }
+}
