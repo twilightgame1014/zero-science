@@ -662,3 +662,86 @@ Claude の §12（feature/game-world-nature-verify 統合時の依頼）のう�
   雪針葉樹は近距離では「雪の棚」の読みが強い（原画由来）。
   冬木は裸木として疎なのが仕様。
 - 実ゲームでの確認・実機 FPS は未検証（統合後に地域配置と合わせて）。
+
+## 24. 広い世界（7エリア・チャンク・カメラ・NPC・プレビュー・環境）（2026-11-07、WORLD-EXPANSION-GRAPHICS-SPEC 対応）
+
+仕様書（docs/handoff/WORLD-EXPANSION-GRAPHICS-SPEC.md）への回答です。
+ブランチ `feature/graphics-world-areas`。
+
+### 24.1 エリア配置の共有データ（§1.1）
+- `GraphicsConfig.world.areas: AreaDefinition[]`（id / x / z / radius）。
+  既定配置は config.ts の DEFAULT_AREAS（utils.ts が正本）：
+  forest (0,0,78) / lakeside (108,-6,42) / coast (172,6,58) /
+  volcano (-128,-118,62) / snow (108,-128,66) / desert (-128,118,66) /
+  town (108,108,46)。
+- `areaWeights(x, z, cfg)` を utils から export（terrain-entry への
+  追加は1行：`export { areaWeights, DEFAULT_AREAS } from './graphics/utils';`
+  相当）。重みは正規化済み（合計1、forest が残りを持つ）。
+  `areaRaw` / `areaDefinitions` も export 済み。
+- 地形：`terrainHeight` が同データで7エリアを造形（湖の窪み・海岸の
+  勾配・火山錐＋クレーター・雪原の稜線＋凍結池・砂丘＋オアシス・
+  街の整地）。**既存120×120の範囲は高さ完全不変**（数値検証：
+  1.5m格子で max |Δh| = 0.0000。§1.4 の差分表は不要でした）。
+- 水：水位以下の地形はすべて開水面（湖・海・オアシス）が描かれる。
+  川のリボンは従来どおり重なる。火山クレーターには溶岩湖（殻＋
+  割れ目発光、§6準拠のゆっくりした明滅のみ）、雪原には凍結池の
+  氷盤（歩行可否はゲーム側）。
+
+### 24.2 チャンク（§1.3）
+- 地形は60mチャンク（±180mフィールド）。近傍は高分割（48）、
+  遠方は低分割（12）、半径外は破棄。法線は高さ関数の解析サンプル
+  で、境界で段差・色・法線が切れません。
+- 品質別の半径：high 近125/遠250、low 近95/遠185。
+  `gfx.setQuality('high'|'low')` で実行中に切替（ピクセル比・影
+  解像度・後処理も追随）。
+- 景観（EnvironmentRenderer の装飾）は従来どおり中央の森林のみ。
+  背景山脈リングは dist 300–340 / dist−rad ≥ 262 へ移動（フィールド
+  角254.6より外側を構造的に保証）。霧は clear 時 88–420 に拡張。
+
+### 24.3 カメラ（§2）
+- `gfx.setCameraView({yawDegrees?, pitchDegrees?, viewSize?}, {transition?, temporary?})`
+  と `gfx.getCameraView()` を実装（ゲーム側の受け口が呼ぶ名前・
+  署名そのまま）。transition は秒数（最短弧で補間）、temporary は
+  復帰点を保存し `restoreCameraView()` / `setCameraView(null)` で
+  戻ります。`setCameraOrbit` は互換エイリアスとして残置。
+- 回転後の遮蔽フェードは従来機構がそのまま効きます（カメラ位置
+  基準のため）。主人公の絵の向きはカメラ相対（ラウンド16）。
+
+### 24.4 NPC（§3）
+- `gfx.setNpcVisualState(id, {position, direction, moving, spriteUrl?} | null)`。
+  主人公と同一の CharSprite 描画（4×4シート、同寸、接地影、
+  カメラ相対の向き、moving=false で静止フレーム）。45m超のNPCは
+  更新を約5Hzに間引き。spriteUrl はURL単位でキャッシュし、
+  読込中はプレースホルダ表示。
+- 斜め4方向の絵はありません（素材不足として記録済み・GPT追加生成が
+  必要ならプロンプトを用意します）。
+
+### 24.5 建築プレビュー（§4）
+- `gfx.setStructurePreview({type, position, rotationY?, valid} | null)`。
+  ファクトリで通常モデルを組み、半透明0.5のゴースト材質に差し替え
+  （valid=緑 / invalid=赤）。影なし・遮蔽フェード対象外・可動部
+  アニメ対象外。GLB等の非同期ファクトリでも0.5秒間隔で再ゴースト。
+
+### 24.6 環境（§5）
+- `gfx.setEnvironment({weights} | {area})`。weights は areaWeights の
+  戻りをそのまま渡せます。照明・空・霧を重みで混合し減衰追随
+  （境界でポップしません）。天気（setWorldVisualState）は霧への
+  乗算として継続。
+- 粒子：雪（snow）/ 灰（volcano）/ 砂（desert）/ 水しぶき（coast）は
+  重み0.35超で切替、カメラ周囲46m箱内で循環。low品質は粒子数減。
+
+### 24.7 資源タイプ追加（§6）
+- `branch:driftwood`（漂着物：漂白された倒木、苔なし、spec は log と同じ）
+- `rock:volcanic`（火山岩：暗い玄武岩 tint、spec は rock と同じ）
+- `grass:dry`（乾燥植物：藁色の短い株、spec 追加済み）
+- 葦 `grass:reed`・針葉樹 `tree:conifer` / `tree:conifer-snow` は
+  ラウンド17で納品済み。採取物の素材対応はゲーム側データで。
+
+### 24.8 検証範囲
+- 数値：旧範囲の高さ不変（上記）、各エリア代表点の高さ・重み。
+- デモ：中央（従来表示の回帰確認）、6エリア巡回（通常距離・
+  エリア別ヨー）、集落でNPC 3人＋プレビュー有効/無効、スマホ相当。
+- 実ゲーム（feature/game-world-build へ重ねて）：起動・カメラUI
+  表示・建築モードの動作を確認予定（本書執筆時点では未実施）。
+- 未検証：実機FPS・iPhone Safari・広い世界を移動した際のメモリ
+  推移（チャンク破棄は実装済みだが実測は実機待ち）。
