@@ -101,5 +101,26 @@ ok('建物の下になった自然物は、見えない・壁にならない・�
   const in90 = !W.free(S3, -12 + 0.9, 22), along90 = !W.free(S3, -12, 22 + 0.9); W.setStructures([]);
   ok('建築：回転すると当たり判定も回る（作業台の長い辺の向きが変わる）・撤去すると壁が残らない', in0 && !in90 && along90 && W.free(S3, -12, 22));
 }
+
+/* ---------- 小さな集落（data.js の village）の配置 ---------- */
+{
+  const V = D.village, props = JSON.parse(rd('assets/gpt-expansion/props.json')).props;
+  const pspec = Object.fromEntries(props.map(p => [p.id, p.footprint.r != null ? { shape: 'circle', r: p.footprint.r } : { shape: 'rect', w: p.footprint.w, d: p.footprint.d }]));
+  const abs = p => ({ x: V.c.x + p.x, z: V.c.z + p.z });
+  const items = V.huts.map(h => ({ id: h.id, type: 'hut', ...abs(h), rot: h.rot, footprint: spec.hut.footprint })).concat(V.props.map(p => ({ id: p.id, type: 'prop-' + p.type, ...abs(p), rot: p.rot, footprint: pspec[p.type] })));
+  ok('集落の小物はすべて Muse の props.json にある種類（11種のうち使うもの）', V.props.every(p => pspec[p.type]) && new Set(V.props.map(p => p.type)).size >= 10);
+  const W5 = N.create(D, E, { terrainHeight: T.terrainHeight, distanceToRiver: T.distanceToRiver, cfg: T.DEFAULT_CONFIG });
+  W5.setStructures(items); const st5 = W5.structures(), S5 = E.newState();
+  const tight5 = []; for (const a of st5) for (const b of st5) if (a.id < b.id) { const g = Math.min(...corners(a).map(p => W5.sdist(b, p.x, p.z)), ...corners(b).map(p => W5.sdist(a, p.x, p.z))); if (g < 0.3) tight5.push(a.id + '/' + b.id + ':' + g.toFixed(2)); }
+  ok('集落の小屋・小物は重ならない（0.3マス以上あく）', tight5.length === 0, tight5.join(' '));
+  ok('集落の小屋・小物は、すべて集落の範囲（半径）の中に収まる', st5.every(o => corners(o).every(p => Math.hypot(p.x - V.c.x, p.z - V.c.z) <= V.r + 0.01)), '');
+  ok('集落の中に自然物はない（家や通り道をふさがない）', W5.objects.every(o => Math.hypot(o.x - V.c.x, o.z - V.c.z) >= V.r + o.r - 1e-6));
+  const hutBad = V.huts.filter(h => { const t = st5.find(o => o.id === 'struct:' + h.id), e = spec.hut.entrance, w = toW(t, [e[0], e[1] + 0.6]); return !W5.free(S5, w.x, w.z); });
+  ok('集落の小屋の入口の前があいている', hutBad.length === 0, hutBad.map(h => h.id).join(','));
+  const wBad = V.npcs.flatMap(n => n.wander.map(p => ({ n: n.id, ...abs(p) }))).filter(p => !W5.free(S5, p.x, p.z));
+  ok('人（NPC）が歩く地点は、どれも立てる場所（小屋・小物に埋まらない）', wBad.length === 0, JSON.stringify(wBad));
+  const goBad = V.npcs.map(n => abs(n.home)).filter(p => !W5.findPath(S5, { x: D.base.x, z: D.base.z }, { x: p.x + 1.2, z: p.z }));
+  ok('拠点から集落の人のそばまで歩いて行ける', goBad.length === 0, JSON.stringify(goBad));
+}
 console.log(`\n${total - fail}/${total} 合格`);
 process.exit(fail ? 1 : 0);

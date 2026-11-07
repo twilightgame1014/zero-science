@@ -246,6 +246,9 @@ var NATURE = (function(){
     for(let k=0, n=0; k<200 && n<7; k++){ const a=vhash(k,13,96)*Math.PI*2, d=2.5+vhash(k,15,97)*6, x=vw.x+Math.cos(a)*d, z=vw.z+Math.sin(a)*d, sc=1.1+vhash(k,17,98)*0.9;
       if(deps.some(p=>near(x,z,p.x,p.z) < 0.8*sc+2.0) || lavas.some(l=>near(x,z,l.x,l.z) < 0.8*(sc+l.scale)+1.6)) continue;
       lavas.push({id:"lava:"+Math.round(x*10)+","+Math.round(z*10), kind:"lava", type:"lava", x:+x.toFixed(2), z:+z.toFixed(2), rot:+(vhash(k,19,99)*6.28).toFixed(3), scale:+sc.toFixed(2)}); n++; }
+    /* 集落（data.js の village）の中の自然物は取り除く（人の家や通り道。生成のあとで外すので、ほかの ID は変わらない） */
+    const VIL = D.village;
+    if(VIL) for(let i=objs.length-1;i>=0;i--){ const o=objs[i]; if(near(o.x,o.z,VIL.c.x,VIL.c.z) < VIL.r + o.r) objs.splice(i,1); }
     /* 溶岩の上の自然物は取り除く（生成のあとで外すので、ほかの ID は変わらない） */
     for(let i=objs.length-1;i>=0;i--){ const o=objs[i]; if(lavas.some(l=>near(o.x,o.z,l.x,l.z) < 0.8*l.scale+o.r+0.4)) objs.splice(i,1); }
     lavas.forEach(l=>decos.push(l));
@@ -280,6 +283,9 @@ var NATURE = (function(){
         return {x: c*nx + s_*nz, z: -s_*nx + c*nz}; }      // ローカル→ワールド（rotation.y の回転）
       const dx=x-o.x, dz=z-o.z, d=Math.hypot(dx,dz); return d>1e-6 ? {x:dx/d, z:dz/d} : {x:1, z:0};
     }
+    /* 集落の人（NPC）：地面の円（半径 0.35）。主人公は人をすり抜けない。人が歩くときは自分自身を除く（move の ignore） */
+    let npcCols = [];
+    function setNpcs(list){ npcCols = (list||[]).map(n=>({id:"npc:"+n.id, kind:"npc", x:n.x, z:n.z, r:n.r||PLAYER_R, shape:"circle", block:true, static:true, npc:true})); }
     function setStructures(list){
       structs = (list||[]).filter(t=>t && t.footprint).map(t=>{ const f=t.footprint;
         return {id:"struct:"+t.id, kind:"structure", type:t.type, x:t.x, z:t.z, rot:t.rot||0, shape:f.shape==="rect"?"rect":"circle",
@@ -394,6 +400,7 @@ var NATURE = (function(){
       const out=[]; const cx=Math.floor(x/CELL), cz=Math.floor(z/CELL);
       for(let i=-1;i<=1;i++) for(let j=-1;j<=1;j++){ const a=cells.get(ck(cx+i,cz+j)); if(a) a.forEach(o=>{ if(solid(S,o,now)) out.push(o); }); }
       for(const t of structs) if(Math.abs(t.x-x) < t.r+CELL && Math.abs(t.z-z) < t.r+CELL) out.push(t);
+      for(const n of npcCols) if(n.id!==moveIgnore && Math.abs(n.x-x) < CELL && Math.abs(n.z-z) < CELL) out.push(n);
       return out;
     }
     const lockedNow = S=>lockedRegions.filter(r=>!E.regionOpen(S,r));
@@ -419,7 +426,9 @@ var NATURE = (function(){
     }
     /* 移動（キー・スティック・クリック移動で共通）。大きな移動は細かく分けて、すり抜けない。
        障害物に向かって進むと、外周に沿って滑る。戻り値：{x,z,blocked:locked地域の場合その地域} */
-    function move(S, from, dx, dz, now){
+    let moveIgnore = null;
+    function move(S, from, dx, dz, now, ignore){
+      if(ignore){ moveIgnore=ignore; try{ return move(S, from, dx, dz, now); } finally { moveIgnore=null; } }
       const len = Math.hypot(dx,dz); if(len<1e-9) return {x:from.x, z:from.z, hit:false};
       const steps = Math.max(1, Math.ceil(len/0.15));
       let p = {x:from.x, z:from.z}, hit=false, lockedHit=null;
@@ -534,7 +543,7 @@ var NATURE = (function(){
 
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
             free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids, layer2:L2N,
-            setStructures, structures:()=>structs.slice(), sdist, covered, checkPlacement, commitPlacement, removePlacement, toWorld, decos};
+            setStructures, structures:()=>structs.slice(), sdist, covered, checkPlacement, commitPlacement, removePlacement, toWorld, decos, setNpcs};
   }
   return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, SITES, FORMER_STONEWORK};
 })();

@@ -1,7 +1,7 @@
 // ゲーム側から描画モジュールを使うための入口（src/graphics 本体は改変しない）
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, RESOURCE_VISUAL_SPECS } from './graphics';
+import { initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, RESOURCE_VISUAL_SPECS, CharacterRenderer } from './graphics';
 // 検証モードのアセット一覧用（登録済みのテクスチャ。すでに同梱されているものを参照するだけ）
 import { GPT_TEXTURES } from './graphics/gptTextures';
 import { BRANCH_TEXTURES } from './graphics/branchTextures';
@@ -68,7 +68,31 @@ function tickBuildingParts(time: number): void {
     if (p.bellows) p.bellows.scale.y = p.bellowsY * (0.96 + 0.04 * Math.sin(time * 3));
   }
 }
+/* ---------- 集落の人（NPC。Muse 第17ラウンドのシートは主人公と同じ 4×4） ----------
+   描画モジュールに NPC 用の API はないので、主人公と同じ CharacterRenderer をここで作ってシーンに加える（Muse の案内：同じスプライト機構で使える）。
+   向きはワールドの軸（down＝+Z）で渡す。行はモジュールがカメラから見た向きで選ぶ。絵を読み終えてから作る（読み込み前に作ると絵のない複製になる）。 */
+type NpcState = { position: { x: number; z: number }; direction: 'down' | 'up' | 'left' | 'right'; moving: boolean };
+const npcs = new Map<string, { r?: CharacterRenderer; state: NpcState; loading: boolean }>();
+let npcShadow: THREE.Texture | null = null;
+function npcSet(gfx: any, id: string, sheetUrl: string, shadowUrl: string, state: NpcState): void {
+  let e = npcs.get(id);
+  if (!e) { e = { state, loading: true }; npcs.set(id, e); const entry = e;
+    const loader = new THREE.TextureLoader();
+    if (!npcShadow) npcShadow = loader.load(shadowUrl);
+    loader.load(sheetUrl, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const cfg = (gfx.cfg && gfx.cfg.character) || DEFAULT_CONFIG.character, wcfg = gfx.cfg || DEFAULT_CONFIG;
+      const r = new CharacterRenderer(tex, npcShadow!, cfg, (x: number, z: number) => terrainHeight(x, z, wcfg));
+      r.setState(entry.state as any); entry.r = r; entry.loading = false;
+      if (npcs.get(id) === entry) gfx.getScene().add(r.group); else { /* 読み込み中に取り除かれた */ }
+    }, undefined, () => { entry.loading = false; console.warn('NPC の絵を読めなかった：' + id); });
+  }
+  e.state = state; if (e.r) e.r.setState(state as any);
+}
+function npcRemove(gfx: any, id: string): void { const e = npcs.get(id); if (!e) return; npcs.delete(id); if (e.r) gfx.getScene().remove(e.r.group); }
+function npcTick(gfx: any, dt: number): void { const cam = gfx.getCamera(); npcs.forEach((e) => { if (e.r) e.r.update(dt, cam); }); }
+const npcStatus = () => [...npcs.entries()].map(([id, e]) => ({ id, ready: !!e.r, x: e.r ? e.r.getRenderedPosition().x : null }));
 const buildingModelStatus = () => ({ ready: [...templates.keys()], failed: [...failed], loading: [...loading.keys()].filter((k) => !templates.has(k) && !failed.has(k)) });
 (window as any).HD2D = { initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, THREE, RESOURCE_VISUAL_SPECS, GPT_TEXTURES, BRANCH_TEXTURES,
-  ensureBuildingModel, tickBuildingParts, buildingModelStatus };
+  ensureBuildingModel, tickBuildingParts, buildingModelStatus, npcSet, npcRemove, npcTick, npcStatus };
 window.dispatchEvent(new Event('hd2d-ready'));

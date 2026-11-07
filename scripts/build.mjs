@@ -71,6 +71,19 @@ if (fs.existsSync(path.join(root, toolAtlas)) && fs.existsSync(path.join(root, t
     else console.warn('建物モデルがない（scripts/make-building-glb.py を実行）：' + id);
   }
 }
+// 集落の小物（Muse 第17ラウンド・assets/gpt-expansion/models が原本。軽量版は assets/build/props）と NPC の絵（assets/build/npc）
+{
+  const pj = JSON.parse(fs.readFileSync(path.join(root, 'assets/gpt-expansion/props.json'), 'utf8'));
+  ASSETS.propSpecs = {}; ASSETS.props = {};
+  for (const p of pj.props) {
+    const f = p.footprint || {}, type = 'prop-' + p.id;
+    ASSETS.propSpecs[type] = { name: p.name, stage: p.stage, footprint: f.r != null ? { shape: 'circle', r: f.r } : { shape: 'rect', w: f.w, d: f.d }, size: p.size };
+    const g = path.join(root, 'assets/build/props', p.id + '.glb');
+    if (fs.existsSync(g)) ASSETS.props[type] = fs.readFileSync(g).toString('base64'); else console.warn('小物のモデルがない（scripts/make-building-glb.py を実行）：' + p.id);
+  }
+  ASSETS.npc = {};
+  for (const n of ['guide', 'resident', 'craftsman']) { const f = 'assets/build/npc/' + n + '.webp'; if (fs.existsSync(path.join(root, f))) ASSETS.npc[n] = dataUrl(f, 'image/webp'); else console.warn('NPC の絵がない（scripts/make-npc-sprites.py を実行）：' + n); }
+}
 // 検証モードの一覧：描画モジュールに登録されている演出と建物タイプ（ソースから読み取る。固定の数を書かない）
 {
   const fx = fs.readFileSync(path.join(root, 'src/graphics/EffectsManager.ts'), 'utf8');

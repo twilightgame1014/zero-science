@@ -4,12 +4,13 @@
   ・長辺 MAX 以下に縮小（既定 512px＝第14ラウンドの色テクスチャそのまま。法線・粗さは原本が 256px）
   ・透明な画素がない画像は JPEG（品質 82）、透明な画素がある画像は PNG のまま
 出力：assets/build/buildings/<id>.glb
-使い方：python3 scripts/make-building-glb.py [MAX]   （Pillow が必要）"""
+集落の小物（assets/gpt-expansion/models/*.glb、Muse 第17ラウンド）も同じ処理で assets/build/props/ へ。
+使い方：python3 scripts/make-building-glb.py [MAX]   （Pillow が必要。両方まとめて作る）"""
 import io, json, os, struct, sys, glob
 from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, "assets/buildings-3d/models")
-OUT = os.path.join(ROOT, "assets/build/buildings")
+SETS = [(os.path.join(ROOT, "assets/buildings-3d/models"), os.path.join(ROOT, "assets/build/buildings")),
+        (os.path.join(ROOT, "assets/gpt-expansion/models"), os.path.join(ROOT, "assets/build/props"))]
 MAX = int(sys.argv[1]) if len(sys.argv) > 1 else 512
 
 def read_glb(path):
@@ -46,21 +47,22 @@ def shrink(data):
     else: im.convert("RGB").save(out, "JPEG", quality=82, optimize=True, progressive=False); mime = "image/jpeg"
     return out.getvalue(), mime
 
-os.makedirs(OUT, exist_ok=True)
-tot0 = tot1 = 0
-for src in sorted(glob.glob(os.path.join(SRC, "*.glb"))):
-    js, binc = read_glb(src)
-    img_views = {im["bufferView"]: i for i, im in enumerate(js.get("images", [])) if "bufferView" in im}
-    new_bin = bytearray()
-    for vi, bv in enumerate(js["bufferViews"]):
-        data = binc[bv.get("byteOffset", 0): bv.get("byteOffset", 0) + bv["byteLength"]]
-        if vi in img_views:
-            data, mime = shrink(data); js["images"][img_views[vi]]["mimeType"] = mime
-        while len(new_bin) % 4: new_bin.append(0)
-        bv["byteOffset"] = len(new_bin); bv["byteLength"] = len(data); new_bin += data
-    js["buffers"] = [{"byteLength": len(new_bin)}]
-    dst = os.path.join(OUT, os.path.basename(src))
-    write_glb(dst, js, bytes(new_bin))
-    a, b = os.path.getsize(src), os.path.getsize(dst); tot0 += a; tot1 += b
-    print(f"{os.path.basename(src):26s} {a//1024:6d} KB -> {b//1024:5d} KB")
-print(f"合計 {tot0//1024} KB -> {tot1//1024} KB（{MAX}px）")
+for SRC, OUT in SETS:
+  os.makedirs(OUT, exist_ok=True)
+  tot0 = tot1 = 0
+  for src in sorted(glob.glob(os.path.join(SRC, "*.glb"))):
+      js, binc = read_glb(src)
+      img_views = {im["bufferView"]: i for i, im in enumerate(js.get("images", [])) if "bufferView" in im}
+      new_bin = bytearray()
+      for vi, bv in enumerate(js["bufferViews"]):
+          data = binc[bv.get("byteOffset", 0): bv.get("byteOffset", 0) + bv["byteLength"]]
+          if vi in img_views:
+              data, mime = shrink(data); js["images"][img_views[vi]]["mimeType"] = mime
+          while len(new_bin) % 4: new_bin.append(0)
+          bv["byteOffset"] = len(new_bin); bv["byteLength"] = len(data); new_bin += data
+      js["buffers"] = [{"byteLength": len(new_bin)}]
+      dst = os.path.join(OUT, os.path.basename(src))
+      write_glb(dst, js, bytes(new_bin))
+      a, b = os.path.getsize(src), os.path.getsize(dst); tot0 += a; tot1 += b
+      print(f"{os.path.basename(src):26s} {a//1024:6d} KB -> {b//1024:5d} KB")
+  print(f"合計 {tot0//1024} KB -> {tot1//1024} KB（{MAX}px）")

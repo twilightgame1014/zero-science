@@ -54,8 +54,8 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
       decor:JSON.stringify(__FAKE.opts.decor), girl:__FAKE.sprite===ASSETS.girl}; })()`);
   ok('3Dフィールドが初期化され、採取地点と、画面に入る自然物（ID・状態・当たり判定つき）だけが描画モジュールに渡る', init.state === 'ready' && init.deps && init.nat > 10 && init.natSent > 10 && init.natSent === init.natView, JSON.stringify(init));
   ok('描画モジュールには、木・岩などを独自の装飾として描かないよう伝える（連携契約）', init.decor === '{"trees":false,"rocks":false,"logs":false,"pebbles":false,"shrubs":false,"stonework":false}', init.decor);
-  const pre = await page.evaluate(`({stonework: __FAKE.opts.decor.stonework, structs: Object.keys(__FAKE.structures)})`);
-  ok('開始時の原野に人工物がない（石の階段・石積みの壁は decor.stonework:false で描かせず、建物は1つもない）', pre.stonework === false && pre.structs.length === 0, JSON.stringify(pre));
+  const pre = await page.evaluate(`({stonework: __FAKE.opts.decor.stonework, structs: Object.keys(__FAKE.structures).filter(k=>!/^v[hp]:/.test(k))})`);
+  ok('開始時の拠点まわりに人工物がない（石の階段・石積みの壁は decor.stonework:false で描かせず、プレイヤーの建物は1つもない。集落は別）', pre.stonework === false && pre.structs.length === 0, JSON.stringify(pre));
   ok('ボタン共通のスタイルが効いている', await page.evaluate(`getComputedStyle(document.querySelector('#nav button')).cursor==='pointer' && getComputedStyle(document.createElement('div')).color!==undefined`) && await page.evaluate(`(()=>{ const b=document.createElement('button'); b.className='btn'; document.body.appendChild(b); const c=getComputedStyle(b).backgroundColor; b.remove(); return c==='rgb(62, 107, 74)'; })()`));
 
   // 見えている自然物（拠点のまわりの小石）を選んで、近づいて採取する。連打しても1回だけ
@@ -345,7 +345,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
     ['bench','campfire','kiln','furnace','pot','glass','twig'].forEach((id,i)=>{ S.inv[id]=(id==='twig'?7:id==='glass'?3:1); if(!S.disc[id]) S.disc[id]={first:Date.now(),made:1,total:1,routes:[],best:0}; });
     S.pos={x:rock.x, z:rock.z}; localStorage.setItem('zero-kagaku-save', E.serialize(S)); return {rock:{id:rock.id,x:rock.x,z:rock.z,r:rock.r}, st:E.stageOf(S)}; })()`);
   await page.reload(); await page.waitForTimeout(900);
-  const after = await page.evaluate(`(()=>{ const G=${G}, S=G.S, p=G.W3.pos; return {structs:Object.keys(__FAKE.structures).sort(), left:(__FAKE.opts.decor.stonework===false?[]:['Stonework']), st:G.E.stageOf(S),
+  const after = await page.evaluate(`(()=>{ const G=${G}, S=G.S, p=G.W3.pos; return {structs:Object.keys(__FAKE.structures).filter(k=>!/^v[hp]:/.test(k)).sort(), left:(__FAKE.opts.decor.stonework===false?[]:['Stonework']), st:G.E.stageOf(S),
     inv:{twig:S.inv.twig, glass:S.inv.glass, bench:S.inv.bench}, d:Math.hypot(p.x-(${prep.rock.x}), p.z-(${prep.rock.z}))}; })()`);
   ok('既存セーブ：段階だけで自動に出ていた小屋・研究所・石の家は出ず、作った設備（作業台・たき火・かまど・簡易炉）は残る',
     prep.st === 3 && after.structs.join() === 'st-bench,st-fire,st-kiln,st-smelter', JSON.stringify({ prep, after }));
@@ -544,6 +544,42 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await ctx.close();
 }
 
+/* ---------------- 小さな集落と人（NPC）・会話 ---------------- */
+{
+  const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
+  await page.click('#introGo'); await page.waitForTimeout(700);
+  const v = await page.evaluate(`(()=>{ const G=${G}, V=G.D.village; const ids=Object.keys(__FAKE.structures).filter(k=>/^v[hp]:/.test(k));
+    const inside=ids.every(k=>{ const p=__FAKE.structures[k].pos; return Math.hypot(p.x-V.c.x,p.z-V.c.z) < V.r; });
+    const well=G.WORLD.structures().find(t=>t.id==='struct:vp:well');
+    return {n:ids.length, want:V.huts.length+V.props.length, inside, huts:ids.filter(k=>__FAKE.structures[k].type==='hut').length, wellCol: !!well && !G.WORLD.free(G.S, well.x, well.z), npcs:(G.W3.npcs||[]).length}; })()`);
+  ok('集落に草ぶきの小屋2つと生活の小物（Muse の11種）があり、集落の範囲の中だけ・当たり判定つき', v.n === v.want && v.inside && v.huts === 2 && v.wellCol && v.npcs === 3, JSON.stringify(v));
+  // 近づく：案内役の前へ
+  await page.evaluate(`(()=>{ const G=${G}; const n=G.W3.npcs.find(x=>x.id==='guide'); n.wait=999; G.W3.pos={x:n.x+1.2, z:n.z}; })()`); await page.waitForTimeout(500);
+  const near = await page.evaluate(`({mode:document.getElementById('w3act').dataset.mode, txt:document.getElementById('w3act').textContent, label:!!document.querySelector('.w3lab[data-npc="guide"]'), wall:(()=>{ const n=${G}.W3.npcs.find(x=>x.id==='guide'); return !${G}.WORLD.free(${G}.S, n.x, n.z); })()})`);
+  ok('人に近づくと名札が出て、行動ボタンが「〜と話す」になる。人の位置には立てない（すり抜けない）', near.mode === 'talk' && /ミナと話す/.test(near.txt) && near.label && near.wall, JSON.stringify(near));
+  await page.keyboard.press('e'); await page.waitForTimeout(250);
+  const t1 = await page.evaluate(`({open:document.getElementById('modal').classList.contains('open'), name:(document.querySelector('#sheet .tname')||{}).textContent, line:(document.querySelector('#sheet .tline')||{}).textContent, talking:${G}.W3.npcs.find(x=>x.id==='guide').talking, active:${G}.fieldInputActive ? null : null, trade:/買う|売る|取引|交換/.test(document.getElementById('sheet').textContent)})`);
+  ok('E キーで会話が開く（名前・役割・セリフ）。取引のボタンや言葉はない', t1.open && /ミナ/.test(t1.name) && /案内役/.test(t1.name) && t1.line.length > 5 && t1.talking && !t1.trade, JSON.stringify(t1));
+  const p0 = await pos(page); await page.keyboard.down('ArrowUp'); await page.waitForTimeout(400); await page.keyboard.up('ArrowUp');
+  ok('会話中は移動入力を受け付けない', same(p0, await pos(page)));
+  let pages = 1; while (pages < 8 && await page.evaluate(`!!document.querySelector('#sheet [data-act="t-next"]')`)) { await page.click('#sheet [data-act="t-next"]'); await page.waitForTimeout(80); pages++; }
+  const lastLine = await page.evaluate(`document.querySelector('#sheet .tline').textContent`);
+  ok('「つぎへ」でセリフが進み、案内役は最後に今の目標を教えてくれる', pages >= 3 && /今の目標/.test(lastLine), JSON.stringify({ pages, lastLine }));
+  await page.click('#sheet .row [data-act="close"]'); await page.waitForTimeout(200);
+  const back = await page.evaluate(`({open:document.getElementById('modal').classList.contains('open'), talking:${G}.W3.npcs.find(x=>x.id==='guide').talking})`);
+  await page.keyboard.down('ArrowDown'); await page.waitForTimeout(400); await page.keyboard.up('ArrowDown');
+  ok('「とじる」で会話が終わり、操作に戻れる（また歩ける）', !back.open && !back.talking && !same(p0, await pos(page)), JSON.stringify(back));
+  // 人は集落の中を歩き回る（集落の外へ出ない）
+  const w0 = await page.evaluate(`${G}.W3.npcs.map(n=>({x:n.x,z:n.z}))`); await page.evaluate(`(()=>{ const G=${G}; G.W3.npcs.forEach(n=>{ n.wait=0; }); G.W3.pos={x:G.D.village.c.x-12, z:G.D.village.c.z-10}; })()`); await page.waitForTimeout(3500);
+  const w1 = await page.evaluate(`(()=>{ const G=${G}, V=G.D.village; return G.W3.npcs.map(n=>({x:n.x,z:n.z,inV:Math.hypot(n.x-V.c.x,n.z-V.c.z)<V.r})); })()`);
+  ok('人は集落の中を歩き回る（外へ出ない）', w1.some((p, i) => Math.hypot(p.x - w0[i].x, p.z - w0[i].z) > 0.5) && w1.every(p => p.inV), JSON.stringify(w1));
+  // 集落の中には建物を置けない
+  const vr = await page.evaluate(`(()=>{ const G=${G}, V=G.D.village; return G.WORLD.checkPlacement(G.S, {id:'t', type:'workbench', footprint:{shape:'rect',w:2.2,d:1.05}, x:V.c.x+2, z:V.c.z+5.5, rot:0}, {player:{x:-200,z:-200}, reserved:[{x:V.c.x,z:V.c.z,r:V.r,why:'集落の中（人の家や通り道）には置けない'}]}).reasons.join('/'); })()`);
+  ok('集落の中（人の家や通り道）には建物を置けない', /集落/.test(vr), vr);
+  ok('ページでエラーが起きていない（集落）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+
 /* ---------------- 建築モード（家・設備の自由設置） ---------------- */
 {
   const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
@@ -571,7 +607,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   ok('置ける所では緑の枠。回転は15度・90度の刻みで、向きが表示される', /置ける/.test(okst.msg) && !okst.dis && okst.poly === '#3fbf62' && /向き/.test(okst.title), JSON.stringify(okst));
   const seq0 = await page.evaluate(`${G}.S.seq`), inv0 = await page.evaluate(`JSON.stringify(${G}.S.inv)`);
   await page.evaluate(`(()=>{ const b=document.querySelector('#buildbar .bbok'); b.click(); b.click(); b.click(); })()`); await page.waitForTimeout(300);
-  const placed = await page.evaluate(`(()=>{ const G=${G}; const b=G.S.build['st-bench'], c=G.WORLD.structures().filter(t=>t.id==='struct:st-bench'); return {b, seq:G.S.seq, n:Object.keys(__FAKE.structures).filter(k=>k==='st-bench'||k.startsWith('ghost')).length, col:c.length, cx:c[0]&&c[0].x, inv:JSON.stringify(G.S.inv), place:!!G.W3.place}; })()`);
+  const placed = await page.evaluate(`(()=>{ const G=${G}; const b=G.S.build['st-bench'], c=G.WORLD.structures().filter(t=>t.id==='struct:st-bench'); return {b, seq:G.S.seq, n:Object.keys(__FAKE.structures).filter(k=>!/^v[hp]:/.test(k)).filter(k=>k==='st-bench'||k.startsWith('ghost')).length, col:c.length, cx:c[0]&&c[0].x, inv:JSON.stringify(G.S.inv), place:!!G.W3.place}; })()`);
   ok('「ここに置く」を連打しても、置くのは1回だけ（記録1つ・建物1つ・当たり判定1つ）。素材は変わらない', placed.b && Math.abs(placed.b.x + 10.26) < 1e-6 && placed.seq === seq0 + 1 && placed.n === 1 && placed.col === 1 && Math.abs(placed.cx + 10.26) < 1e-6 && placed.inv === inv0 && !placed.place, JSON.stringify(placed));
   // やめる：何も変わらない
   await page.click('#nav [data-tab="build"]'); await page.waitForTimeout(200); await page.click('#dockBody [data-act="b-start"][data-id="st-bench"]'); await page.waitForTimeout(200);
@@ -584,7 +620,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   ok('再読み込みしても、同じ場所・同じ向きで建ち、当たり判定も同じ場所', Math.abs(rl.fx + 10.26) < 1e-6 && Math.abs(rl.frot - rl.brot) < 1e-6 && Math.abs(rl.cx + 10.26) < 1e-6 && rl.wall, JSON.stringify(rl));
   // 撤去：見えない壁が残らない・持ち物に残る
   await page.click('#nav [data-tab="build"]'); await page.waitForTimeout(200); await page.click('#dockBody [data-act="b-remove"][data-id="st-bench"]'); await page.waitForTimeout(300);
-  const rm = await page.evaluate(`({b:${G}.S.build['st-bench'], shown:!!__FAKE.structures['st-bench'], col:${G}.WORLD.structures().length, free:${G}.WORLD.free(${G}.S,-10.5,21.5), own:${G}.S.inv.bench, btn:!!document.querySelector('#dockBody [data-act="b-start"][data-id="st-bench"]')})`);
+  const rm = await page.evaluate(`({b:${G}.S.build['st-bench'], shown:!!__FAKE.structures['st-bench'], col:${G}.WORLD.structures().filter(t=>!/^struct:v[hp]:/.test(t.id)).length, free:${G}.WORLD.free(${G}.S,-10.5,21.5), own:${G}.S.inv.bench, btn:!!document.querySelector('#dockBody [data-act="b-start"][data-id="st-bench"]')})`);
   ok('撤去すると建物も当たり判定も消え（見えない壁が残らない）、作業台は持ち物に残り、また「置く」ができる', rm.b.removed && !rm.shown && rm.col === 0 && rm.free && rm.own === 1 && rm.btn, JSON.stringify(rm));
   ok('ページでエラーが起きていない（建築モード）', errors.length === 0, errors.join('\n'));
   await ctx.close();
@@ -600,7 +636,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await page.evaluate(s => { localStorage.removeItem('zero-kagaku-verify'); localStorage.setItem('zero-kagaku-save', s); }, normalSave);
   await page.reload(); await page.waitForTimeout(900);
   const v0 = await page.evaluate(`(()=>{ const G=${G}; const c=G.verifyCatalog(); return {V:G.VERIFY, badge:!document.getElementById('vbadge').hidden, badgeText:document.getElementById('vbadge').textContent,
-    disc:Object.keys(G.S.disc).length, items:Object.keys(G.D.items).length, store:c.store.length, inv:Object.keys(G.S.inv).length, structs:Object.keys(__FAKE.structures).length,
+    disc:Object.keys(G.S.disc).length, items:Object.keys(G.D.items).length, store:c.store.length, inv:Object.keys(G.S.inv).length, structs:Object.keys(__FAKE.structures).filter(k=>!/^v[hp]:/.test(k)).length,
     normal:localStorage.getItem('zero-kagaku-save'), url:location.search}; })()`);
   ok('検証モード：「検証モード：全解放」の表示があり、全物質が図鑑に・保管できる全素材が在庫にある（件数はデータから）',
     v0.V && v0.badge && /検証モード：全解放/.test(v0.badgeText) && v0.disc === v0.items && v0.inv === v0.store, JSON.stringify(v0).slice(0, 300));
@@ -635,12 +671,12 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await page.click('#vbadge'); await page.waitForTimeout(300);
   await page.click('[data-act="v-place"][data-id="st-wheel"]'); await page.waitForTimeout(150);
   await page.click('[data-act="v-extra"][data-id="bridge"]'); await page.waitForTimeout(150);
-  const st1 = await page.evaluate(`Object.entries(__FAKE.structures).map(([k,v])=>k+':'+v.type)`);
+  const st1 = await page.evaluate(`Object.entries(__FAKE.structures).filter(([k])=>!/^v[hp]:/.test(k)).map(([k,v])=>k+':'+v.type)`);
   const col1 = await page.evaluate(`(()=>{ const G=${G}, t=G.WORLD.structures(); const w=t.find(o=>o.type==='waterwheel'); return {types:t.map(o=>o.type), wallAtCenter: w ? !G.WORLD.free(G.S,w.x,w.z) : null}; })()`);
   ok('置いた建物には structures.json の占有形状の当たり判定が付く（水車）。仕様のない橋は判定なし', col1.types.includes('waterwheel') && !col1.types.includes('bridge') && col1.wallAtCenter === true, JSON.stringify(col1));
   await page.click('[data-act="v-clearst"]'); await page.waitForTimeout(150);
-  const st2 = await page.evaluate(`Object.keys(__FAKE.structures).length`);
-  ok('建物を撤去すると、当たり判定も消える', await page.evaluate(`${G}.WORLD.structures().length===0`));
+  const st2 = await page.evaluate(`Object.keys(__FAKE.structures).filter(k=>!/^v[hp]:/.test(k)).length`);
+  ok('建物を撤去すると、当たり判定も消える', await page.evaluate(`${G}.WORLD.structures().filter(t=>!/^struct:v[hp]:/.test(t.id)).length===0`));
   ok('検証メニュー：建物を選んで置き（決まりにない橋も足もとに置ける）、全部撤去できる', st1.includes('st-wheel:waterwheel') && st1.some(x => /:bridge$/.test(x)) && st2 === 0, JSON.stringify(st1));
   await page.evaluate(`(()=>{ const G=${G}; const o=G.WORLD.objects.find(o=>o.kind==='twig'); G.S.nature[o.id]={u:1,t:Date.now()}; window.__tw=o.id; })()`);
   await page.evaluate(`${G}.render()`); await page.waitForTimeout(150);       // 検証パネルは開いたまま（全高なのでバッジは隠れている）

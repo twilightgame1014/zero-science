@@ -792,8 +792,9 @@ function structAdd(id, type, at, rot){
   W3.gfx.addStructureVisual(id, type, at, rot||0); W3.structs.add(id);
   /* Muse の GLB（assets/buildings-3d）。読み終えたら、その種類の建物を置き直して GLB の見た目にする（それまでは従来の手続きモデル） */
   const H=window.HD2D;
-  if(H && H.ensureBuildingModel && ASSETS.buildings && ASSETS.buildings[type]){
-    H.ensureBuildingModel(W3.gfx, type, ASSETS.buildings[type]).then(ok=>{ const done=(W3.modelReady||(W3.modelReady=new Set()));
+  const glb = (ASSETS.buildings && ASSETS.buildings[type]) || (ASSETS.props && ASSETS.props[type]);
+  if(H && H.ensureBuildingModel && glb){
+    H.ensureBuildingModel(W3.gfx, type, glb).then(ok=>{ const done=(W3.modelReady||(W3.modelReady=new Set()));
       if(!ok || done.has(type)) return; done.add(type);
       W3.structInfo.forEach((v,k)=>{ if(v.type===type && W3.structs.has(k)){ W3.gfx.removeStructureVisual(k); W3.gfx.addStructureVisual(k, v.type, {x:v.x, z:v.z}, v.rot); } }); });
   }
@@ -802,7 +803,7 @@ function structRemove(id){ W3.gfx.removeStructureVisual(id); W3.structs.delete(i
 /* 当たり判定：建物の占有形状（structures.json の footprint）を自然物の世界へ渡す。プレビュー（vps:）は判定なし */
 function syncStructColliders(){
   if(!world()) return;
-  const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:") || id.startsWith("ghost:")) return; const sp=ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type];
+  const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:") || id.startsWith("ghost:")) return; const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[v.type]);
     if(sp && sp.footprint) list.push({id, type:v.type, x:v.x, z:v.z, rot:v.rot, footprint:sp.footprint}); });
   const sig=JSON.stringify(list); if(sig===W3.colSig) return; W3.colSig=sig;
   WORLD.setStructures(list);
@@ -831,6 +832,7 @@ function syncStructures(){
   const extra = (S.verify && S.verify.extra) || [], ids = new Set(extra.map(x=>x.id));
   extra.forEach(x=>{ if(!W3.structs.has(x.id)) structAdd(x.id, x.type, {x:x.x, z:x.z}, x.rot||0); });
   [...W3.structs].forEach(id=>{ if(id.startsWith("vx:") && !ids.has(id)) structRemove(id); });
+  syncVillage();
   syncStructColliders();
 }
 function syncAll3D(){ if(!NODES) buildNodes(); NODES.forEach(n=>syncNode(n,true)); syncNature(true); syncStructures(); }
@@ -875,7 +877,7 @@ async function start3D(){
     W3.pos = spawnPos();
     syncAll3D();
     W3.state = "ready";
-    camInit();
+    camInit(); npcInit();
     { const g=gfxStatus(); if(g.ok===false) console.warn("木の枝葉カードのテクスチャを "+g.branch+"/"+g.want+" しか読み込めなかった（描画モジュールが旧来の球体の樹冠に戻っている可能性）"); }
     W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false}));
     renderField(); updateFieldActivity();
@@ -1025,7 +1027,7 @@ function loop3D(ts){
   if(!tSame(near,W3.near) || (!near && W3.near)){ const old=W3.near; W3.near=near; if(old&&old.n) syncNode(old.n); if(near&&near.n) syncNode(near.n); syncNature(); updateAction3D(); }
   // 資源の再生・表示範囲
   if(++W3.tick%20===0){ NODES.forEach(n=>syncNode(n)); syncNature(); updateAction3D(); }
-  updateLabels3D();
+  updateLabels3D(); npcUpdate(dt); npcLabels();
   if(ts-W3.lastSave>2000 && (!S.pos || Math.abs(S.pos.x-W3.pos.x)>0.01 || Math.abs(S.pos.z-W3.pos.z)>0.01 || S.pos.dir!==W3.dir)){ W3.lastSave=ts; S.pos={x:+W3.pos.x.toFixed(2), z:+W3.pos.z.toFixed(2), dir:W3.dir}; save(); }
 }
 /* 歩き始め：毎秒0.9マス以上。止まる：毎秒0.35マス未満が0.12秒続く（小さな揺れでちらつかない）。
@@ -1112,18 +1114,20 @@ function updateAction3D(){
   const t=W3.near, pc=uiMode()==="pc";
   let mode, html;
   if(W3.work){ const inf=tInfo(W3.work.t); mode="work"; html=`<span class="ai">${inf.icon}</span><span>${inf.name}を${inf.verb==="採る"?"採って":inf.verb.replace(/る$/,"って")}いる…</span>`; }
+  else if(W3.npcNear && (!t || Math.hypot(W3.npcNear.x-W3.pos.x, W3.npcNear.z-W3.pos.z) < 1.4)){ const n=W3.npcNear; mode="talk"; html=`${pc?'<span class="kbd">E</span>':""}<span class="ai">💬</span><span>${n.def.name}と話す</span>`; }
   else if(!t){ const sel=W3.sel; mode="look"; html = pc ? "" : `<span class="ai">🔍</span><span>調べる</span>`;
     if(sel && W3.path){ const inf=tInfo(sel); mode="go"; html=`<span class="ai">${inf.icon}</span><span>${inf.name}へ移動中</span>`; } }
   else { const inf=tInfo(t);
     if(!inf.ok){ mode="lock"; html=`<span class="ai">${inf.kind==="tool"?"🔒":inf.kind==="empty"?"⏳":"🔒"}</span><span>${inf.name}：${inf.reason}</span>`; }
     else { mode="gather"; html=`${pc?'<span class="kbd">E</span>':""}<span class="ai">${inf.icon}</span><span>${inf.name}を${inf.verb} <small>→ ${yieldText(inf.yields)}</small></span>`; } }
   const sig=mode+"|"+html; if(b._sig===sig && !b.hidden) return; b._sig=sig;
-  b.hidden=false; b.dataset.mode=mode; b.className="w3act"+(mode==="look"?" idle":mode==="gather"?"":mode==="work"||mode==="go"?" busy":" lock"); b.innerHTML=html;
+  b.hidden=false; b.dataset.mode=mode; b.className="w3act"+(mode==="look"?" idle":mode==="gather"||mode==="talk"?"":mode==="work"||mode==="go"?" busy":" lock"); b.innerHTML=html;
   b.title = mode==="gather" ? "採取する（E キーかスペース）" : mode==="look" ? "近くを調べる" : "";
 }
 /* 行動ボタン・E キー */
 function pressAction(){
   if(!fieldInputActive() || W3.work) return;
+  if(W3.npcNear && (!W3.near || Math.hypot(W3.npcNear.x-W3.pos.x, W3.npcNear.z-W3.pos.z) < 1.4)){ openTalk(W3.npcNear); return; }
   const t=W3.near;
   if(!t){ banner("🔍 手の届く所に採れるものはない。木や石を選んで近づこう"); return; }
   startWork(t);
@@ -1215,6 +1219,9 @@ function bind3DInput(){
   w.addEventListener("pointerup", e=>{ const down=W3.down; if(!down || down.id!==e.pointerId || !fieldInputActive()) return; const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y); const quick=Date.now()-down.t<450; W3.down=null;
     if(moved>10||!quick) return;
     if(W3.place){ const h=screenToGround(e.clientX,e.clientY); if(h) placeMoveTo(h.x,h.z); return; }
+    /* 人をタップ（クリック）したら、近づいて話す */
+    if(W3.npcs){ const rect=$("#w3").getBoundingClientRect(); const hit=W3.npcs.find(n=>{ const sc=toScreen(n.x, groundY(n.x,n.z)+0.9, n.z); return sc.ok && Math.hypot(sc.x-(e.clientX-rect.left), sc.y-(e.clientY-rect.top)) < 34; });
+      if(hit){ talkTo(hit.id); return; } }
     const t = pickAt(e.clientX, e.clientY);
     if(t){ selectAndGo(t); W3.gfx.playVisualEffect("sparkle", tPos(t)); return; }
     const hit=screenToGround(e.clientX,e.clientY); if(!hit) return;
@@ -1471,6 +1478,7 @@ function openModal(focusEl){
 }
 function closeModal(){
   if(!modalOpen()) return;
+  endTalk();
   $("#modal").classList.remove("open"); $("#app").inert = false;
   const o = modalOpener; modalOpener = null;
   if(o && o.isConnected && !o.closest("[inert],[hidden]")) o.focus({preventScroll:true});
@@ -1536,12 +1544,94 @@ document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.
 document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="camZoom") camSet({zoom:+ev.target.value}, true); });
 document.addEventListener("change", ev=>{ if(ev.target && ev.target.id==="camZoom") save(); });
 
+/* ===================== 小さな集落と人（NPC。2026-11-07、Muse 第17ラウンドの素材） =====================
+   データは data.js の village。小屋は建物と同じ GLB（hut）、小物は Muse の集落小物（prop-<名前>）。当たり判定は建物と同じ WORLD.setStructures。
+   人は主人公と同じ当たり判定の円（WORLD.setNpcs）。近くの人だけ毎フレーム動かし、遠い人は間引く（0.5秒ごと）。
+   会話中は移動入力を止め（案内の枠＝openModal）、人はその場で主人公のほうを向く。売り買いの仕組みはまだないので、取引のボタンは出さない。 */
+const VIL = D.village;
+const vAbs = p=>({x:VIL.c.x+p.x, z:VIL.c.z+p.z});
+function villageStructs(){ if(!VIL) return [];
+  return VIL.huts.map(h=>Object.assign({}, h, vAbs(h))).concat(VIL.props.map(p=>Object.assign({}, p, vAbs(p), {type:"prop-"+p.type}))); }
+function syncVillage(){
+  if(!W3.gfx || !VIL) return;
+  villageStructs().forEach(v=>{ if(!W3.structs.has(v.id)) structAdd(v.id, v.type, {x:v.x, z:v.z}, v.rot); });
+}
+/* 世界の向き（描画モジュールの軸：down＝+Z・right＝+X）を、歩く向きから決める */
+function axisDir(dx, dz){ return Math.abs(dx) > Math.abs(dz) ? (dx>0?"right":"left") : (dz>0?"down":"up"); }
+function npcInit(){
+  if(W3.npcs || !VIL) return;
+  W3.npcs = VIL.npcs.map((n,i)=>{ const h=vAbs(n.home); return {def:n, id:n.id, x:h.x, z:h.z, dir:"down", moving:false, wp:0, wait:1+i, acc:0, talking:false}; });
+}
+const NPC_SPEED = 1.1, NPC_NEAR = 1.9, NPC_FAR = 30;
+function npcUpdate(dt){
+  if(!W3.npcs || !W3.pos || !WORLD) return;
+  const now=Date.now();
+  W3.npcs.forEach(n=>{
+    const dp=Math.hypot(n.x-W3.pos.x, n.z-W3.pos.z);
+    n.acc += dt; const step = dp > NPC_FAR ? 0.5 : 0;                 // 遠い人は 0.5 秒ごとにまとめて動かす
+    if(n.acc < step) return; const d=n.acc; n.acc=0;
+    if(n.talking){ n.moving=false; n.dir=axisDir(W3.pos.x-n.x, W3.pos.z-n.z); return; }
+    if(n.wait>0){ n.wait-=d; n.moving=false; return; }
+    const tgt=vAbs(n.def.wander[n.wp]), dx=tgt.x-n.x, dz=tgt.z-n.z, L=Math.hypot(dx,dz);
+    if(L<0.15){ n.wp=(n.wp+1)%n.def.wander.length; n.wait=2+((n.wp*7+n.id.length)%4); n.moving=false; return; }
+    /* 主人公の前では立ち止まって道をゆずる */
+    if(dp < 1.0){ n.moving=false; return; }
+    const s=Math.min(L, NPC_SPEED*d), mx=dx/L*s, mz=dz/L*s;
+    const r=WORLD.move(S, {x:n.x, z:n.z}, mx, mz, now, "npc:"+n.id);
+    const got=Math.hypot(r.x-n.x, r.z-n.z);
+    if(got < s*0.2){ n.blocked=(n.blocked||0)+d; if(n.blocked>1.5){ n.blocked=0; n.wp=(n.wp+1)%n.def.wander.length; } n.moving=false; return; }
+    n.blocked=0; n.x=r.x; n.z=r.z; n.moving=true; n.dir=axisDir(mx, mz);
+  });
+  WORLD.setNpcs(W3.npcs.map(n=>({id:n.id, x:n.x, z:n.z})));
+  W3.npcList = W3.npcs.map(n=>({x:n.x, z:n.z, r:0.35}));
+  /* 近くの人（話せる相手） */
+  let best=null, bd=NPC_NEAR; W3.npcs.forEach(n=>{ const dd=Math.hypot(n.x-W3.pos.x, n.z-W3.pos.z); if(dd<bd){ bd=dd; best=n; } });
+  if(best!==W3.npcNear){ W3.npcNear=best; updateAction3D(); }
+  if(W3.talkTo){ const n=W3.npcs.find(x=>x.id===W3.talkTo); if(n && Math.hypot(n.x-W3.pos.x, n.z-W3.pos.z) < NPC_NEAR){ W3.talkTo=null; openTalk(n); } }
+  /* 描画（Muse の NPC シートを主人公と同じ仕組みで。描画モジュール側に API はないので、ゲーム側の入口 HD2D.npcSet を使う） */
+  const H=window.HD2D;
+  if(H && H.npcSet && W3.gfx) W3.npcs.forEach(n=>{ const far = Math.hypot(n.x-W3.pos.x, n.z-W3.pos.z) > NAT_HIDE_R;
+    if(far){ if(n.shown){ H.npcRemove(W3.gfx, n.id); n.shown=false; } return; }
+    n.shown=true; H.npcSet(W3.gfx, n.id, (ASSETS.npc||{})[n.def.sheet], ASSETS.shadow, {position:{x:n.x, z:n.z}, direction:n.dir, moving:n.moving}); });
+  if(H && H.npcTick && W3.gfx) H.npcTick(W3.gfx, dt);
+}
+/* 名札：近くの人（8マス以内）にだけ名前を出す。押すと近づいて話す */
+function npcLabels(){
+  if(!W3.npcs) return; const want=new Set();
+  W3.npcs.forEach(n=>{ if(Math.hypot(n.x-W3.pos.x, n.z-W3.pos.z) > 8) return; const key="npc:"+n.id; want.add(key);
+    labelFor(key, "w3npc", {npc:n.id}, n.x, groundY(n.x,n.z)+2.05, n.z, `<span>💬</span>${n.def.name}<small style="font-weight:700;margin-left:4px">${n.def.role}</small>`,
+      W3.npcNear===n ? " near" : "", n.def.name+"（"+n.def.role+"）と話す"); });
+  Object.keys(W3.labelEls).forEach(k=>{ if(k.startsWith("npc:") && !want.has(k)){ W3.labelEls[k].remove(); delete W3.labelEls[k]; } });
+}
+function talkTo(id){
+  const n=W3.npcs && W3.npcs.find(x=>x.id===id); if(!n) return;
+  if(Math.hypot(n.x-W3.pos.x, n.z-W3.pos.z) < NPC_NEAR){ openTalk(n); return; }
+  const a=Math.atan2(W3.pos.z-n.z, W3.pos.x-n.x); W3.talkTo=id; goTo3D(n.x+Math.cos(a)*1.2, n.z+Math.sin(a)*1.2, null); W3.talkTo=id;
+}
+function openTalk(n){
+  haltField(); n.talking=true; W3.talking=n; W3.talkLine=0; renderTalk();
+}
+function renderTalk(){
+  const n=W3.talking; if(!n) return;
+  const lines = n.def.talk.slice(); if(n.def.hint){ const m=D.missions[E.missionIndex(S)]; if(m) lines.push("今の目標は「"+m.t+"」だね。"+(m.how?m.how:"")); }
+  const i=Math.min(W3.talkLine, lines.length-1), last = i>=lines.length-1;
+  $("#sheet").innerHTML = `<button class="close" data-act="close">とじる</button>
+    <div class="talk"><div class="tname">💬 ${n.def.name}<small>（${n.def.role}）</small></div><p class="tline" aria-live="polite">${lines[i]}</p>
+    <div class="row mt">${last ? `<button class="btn" data-act="close">とじる</button>` : `<button class="btn" data-act="t-next">つぎへ</button><button class="btn sub" data-act="close">とじる</button>`}<span class="desc" style="margin-left:auto">${i+1}/${lines.length}</span></div></div>`;
+  openModal($("#sheet").querySelector(last?".row .btn":"[data-act='t-next']"));
+}
+function endTalk(){ if(W3.talking){ W3.talking.talking=false; W3.talking=null; } }
+document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.closest("[data-act='t-next'],[data-act='w3npc']"); if(!b) return; ev.preventDefault();
+  if(b.dataset.act==="t-next"){ W3.talkLine++; renderTalk(); }
+  else if(fieldInputActive()) talkTo(b.dataset.npc); });
+
 /* ===================== 建築モード（家・設備の自由設置。2026-11-07） =====================
    建築一覧 → 建物を選ぶ → 置き場所の候補（地面の枠：置ければ緑・置けなければ赤と理由）→ 移動・回転 → 「ここに置く」。
    置くのは工作で作った家・設備（作った時点で素材は使っている）。置く・動かす・撤去で素材は増えも減りもしない。
    判定と確定は nature.js（checkPlacement・commitPlacement。二重の確定は S.seq のトークンで防ぐ）。 */
 const ROT_STEP = 15, GRID = 0.5;
-const PLACE_RESERVED = ()=>[{x:D.base.x, z:D.base.z, r:1.3, why:"拠点の真ん中（はじめの場所）はあけておく"}].concat(W3.reserved||[]);
+const PLACE_RESERVED = ()=>[{x:D.base.x, z:D.base.z, r:1.3, why:"拠点の真ん中（はじめの場所）はあけておく"}]
+  .concat(D.village ? [{x:D.village.c.x, z:D.village.c.z, r:D.village.r, why:"集落の中（人の家や通り道）には置けない"}] : []).concat(W3.reserved||[]);
 function planSpec(p){ const sp=(ASSETS.buildingSpecs||{})[p.type]||{}; return {id:p.id, type:p.type, footprint:sp.footprint||{shape:"circle", r:1}, entrance:sp.entrance, operate:sp.operate, rule:p.rule||null}; }
 /* 建物ごとの「作った設備」（表示用。条件の正本は STRUCT_PLAN の when） */
 const STRUCT_FAC = {"st-bench":["bench"],"st-fire":["campfire"],"st-kiln":["kiln"],"st-hut1":["storehouse"],"st-smelter":["furnace","blastfurnace"],"st-lab":["still"],

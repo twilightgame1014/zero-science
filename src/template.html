@@ -43,6 +43,9 @@ button{font:inherit;color:inherit}
 .camzoom{display:flex;align-items:center;gap:4px;width:100%;font-size:.72rem;font-weight:800;background:rgba(255,255,255,.92);border-radius:10px;padding:2px 6px}
 .camzoom input{flex:1;min-width:0;touch-action:pan-x}
 [data-ui="touch"] .camctl{top:auto;bottom:calc(var(--navh,64px) + 150px)}
+/* 集落の人との会話 */
+.talk .tname{font-weight:900;font-size:1.1rem}.talk .tname small{font-weight:700;color:var(--muted);margin-left:4px}
+.talk .tline{font-size:1.02rem;line-height:1.8;margin:10px 0 4px;min-height:3.6em}
 /* 建築モード（置き場所を決める帯と、地面の枠） */
 .buildbar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--navh,64px) + 12px);z-index:6;background:rgba(255,255,255,.96);border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.28);padding:8px 10px;width:min(94vw,520px);pointer-events:auto}
 .buildbar[hidden]{display:none}
