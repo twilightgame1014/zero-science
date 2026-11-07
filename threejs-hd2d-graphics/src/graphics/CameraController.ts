@@ -66,6 +66,7 @@ export class CameraController {
    * exploration range so the ground plane never flips.
    */
   setOrientation(yawDegrees?: number, pitchDegrees?: number): void {
+    this.transition = null;
     if (yawDegrees !== undefined && Number.isFinite(yawDegrees)) {
       this.yawDegrees = ((yawDegrees % 360) + 360) % 360;
     }
@@ -86,8 +87,69 @@ export class CameraController {
     return this.pitchDegrees;
   }
 
+  /** Current zoom (base viewSize, before the portrait boost). */
+  getViewSize(): number {
+    return this.viewSize;
+  }
+
+  /** An in-flight view transition (setCameraView with transition). */
+  private transition: {
+    fromYaw: number; toYaw: number;
+    fromPitch: number; toPitch: number;
+    fromSize: number; toSize: number;
+    t: number; duration: number;
+  } | null = null;
+
+  /**
+   * Move to a new view, optionally over `transitionSeconds`. Yaw
+   * travels the short way around the circle. A direct setOrientation
+   * / setViewSize call cancels any in-flight transition.
+   */
+  transitionTo(view: { yawDegrees?: number; pitchDegrees?: number; viewSize?: number }, transitionSeconds: number): void {
+    const toYaw = view.yawDegrees !== undefined
+      ? ((view.yawDegrees % 360) + 360) % 360
+      : this.yawDegrees;
+    const toPitch = view.pitchDegrees !== undefined
+      ? THREE.MathUtils.clamp(view.pitchDegrees, 12, 72)
+      : this.pitchDegrees;
+    const toSize = view.viewSize !== undefined
+      ? THREE.MathUtils.clamp(view.viewSize, 4, 60)
+      : this.viewSize;
+    if (!(transitionSeconds > 0)) {
+      this.transition = null;
+      this.setOrientation(toYaw, toPitch);
+      this.setViewSize(toSize);
+      return;
+    }
+    this.transition = {
+      fromYaw: this.yawDegrees, toYaw,
+      fromPitch: this.pitchDegrees, toPitch,
+      fromSize: this.viewSize, toSize,
+      t: 0, duration: transitionSeconds,
+    };
+  }
+
+  private stepTransition(dt: number): void {
+    const tr = this.transition;
+    if (!tr) return;
+    tr.t += dt / tr.duration;
+    const t = Math.min(tr.t, 1);
+    const e = t * t * (3 - 2 * t);
+    let dy = tr.toYaw - tr.fromYaw;
+    if (dy > 180) dy -= 360;
+    if (dy < -180) dy += 360;
+    this.yawDegrees = ((tr.fromYaw + dy * e) % 360 + 360) % 360;
+    this.pitchDegrees = tr.fromPitch + (tr.toPitch - tr.fromPitch) * e;
+    this.viewSize = tr.fromSize + (tr.toSize - tr.fromSize) * e;
+    this.applyOrientation();
+    this.applyFrustum();
+    this.updateCameraTransform();
+    if (t >= 1) this.transition = null;
+  }
+
   /** Zoom: with an orthographic camera this is the frustum height. */
   setViewSize(viewSize: number): void {
+    this.transition = null;
     if (!Number.isFinite(viewSize) || viewSize <= 0) return;
     this.viewSize = THREE.MathUtils.clamp(viewSize, 4, 60);
     this.applyFrustum();
@@ -96,6 +158,7 @@ export class CameraController {
 
   /** Set the point the camera should look at (scene coordinates). */
   setTarget(x: number, z: number, groundY = 0): void {
+    if (!Number.isFinite(x) || !Number.isFinite(z) || !Number.isFinite(groundY)) return;
     this.target.set(x, groundY, z);
   }
 
@@ -105,6 +168,7 @@ export class CameraController {
   }
 
   update(dt: number): void {
+    this.stepTransition(dt);
     const k = dampFactor(this.cfg.followDamping, dt);
     this.current.lerp(this.target, k);
     this.updateCameraTransform();

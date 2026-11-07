@@ -113,6 +113,71 @@ export class StructureRenderer {
     });
   }
 
+  /* ---------------- placement preview (spec §4) ---------------- */
+
+  private previewGroup: THREE.Group | null = null;
+  private previewType: string | null = null;
+  private previewValid = true;
+  private previewGhostTime = 0;
+  // Standard material, not Basic: the ghost must keep the model's
+  // lit form (walls vs roof readable) — a flat Basic tint merges
+  // overlapping parts into an unreadable slab.
+  private ghostValid = new THREE.MeshStandardMaterial({
+    color: 0x51ff7a, emissive: 0x1d5c2e, transparent: true, opacity: 0.55,
+    depthWrite: false, roughness: 0.85, metalness: 0,
+  });
+  private ghostInvalid = new THREE.MeshStandardMaterial({
+    color: 0xff5147, emissive: 0x5c1d18, transparent: true, opacity: 0.55,
+    depthWrite: false, roughness: 0.85, metalness: 0,
+  });
+
+  /**
+   * The building-placement ghost: the candidate model drawn
+   * translucent and tinted by validity. It casts no shadow, is not
+   * registered for the occlusion fade or part animation, and never
+   * touches placement rules (the game decides `valid`). Rebuilt only
+   * when the type changes; position/rotation/validity update live.
+   * Ghosting is re-applied periodically so models whose factory
+   * fills the group asynchronously (GLB) end up ghosted too.
+   */
+  setPreview(state: { type: StructureType; position: Vec3Like; rotationY?: number; valid: boolean } | null): void {
+    if (state === null) {
+      if (this.previewGroup) {
+        this.group.remove(this.previewGroup);
+        // Geometries are not disposed: a factory's output can share
+        // them with live structures (host-side GLB caches).
+        this.previewGroup = null;
+        this.previewType = null;
+      }
+      return;
+    }
+    if (!this.previewGroup || this.previewType !== state.type) {
+      if (this.previewGroup) this.group.remove(this.previewGroup);
+      const factory = this.factories.get(state.type) ?? (() => this.makeMarker());
+      this.previewGroup = factory();
+      this.previewType = state.type;
+      this.group.add(this.previewGroup);
+      this.applyGhost(state.valid);
+    }
+    const y = state.position.y ?? this.groundHeightAt(state.position.x, state.position.z);
+    this.previewGroup.position.set(state.position.x, y, state.position.z);
+    this.previewGroup.rotation.y = state.rotationY ?? 0;
+    this.applyGhost(state.valid);
+  }
+
+  private applyGhost(valid: boolean): void {
+    if (!this.previewGroup) return;
+    this.previewValid = valid;
+    const ghost = valid ? this.ghostValid : this.ghostInvalid;
+    this.previewGroup.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      if (mesh.material !== ghost) mesh.material = ghost;
+    });
+  }
+
   remove(id: string): void {
     const obj = this.instances.get(id);
     if (!obj) return;
@@ -150,11 +215,31 @@ export class StructureRenderer {
     }
   }
 
+  /** Blockage probe for OTHER subjects (NPCs), mirroring the
+   *  player fade's segment test against every structure. */
+  occlusionAt(cameraPos: THREE.Vector3, point: THREE.Vector3): number {
+    for (const st of this.fadeState.values()) {
+      const d = segmentPointDistance(
+        cameraPos.x, cameraPos.y, cameraPos.z,
+        point.x, point.y, point.z,
+        st.center.x, st.center.y, st.center.z,
+      );
+      if (d < st.radius) return 1;
+    }
+    return 0;
+  }
+
   has(id: string): boolean {
     return this.instances.has(id);
   }
 
   update(time: number): void {
+    // Keep the preview ghosted even when its factory streams meshes
+    // in after the initial build (async GLB factories).
+    if (this.previewGroup && time - this.previewGhostTime > 0.5) {
+      this.previewGhostTime = time;
+      this.applyGhost(this.previewValid);
+    }
     for (const flame of this.flames) {
       const s = 0.9 + Math.sin(time * 11 + flame.id) * 0.12 + Math.sin(time * 23 + flame.id * 2) * 0.06;
       flame.scale.set(s, 1.1 + Math.sin(time * 9 + flame.id) * 0.22, s);

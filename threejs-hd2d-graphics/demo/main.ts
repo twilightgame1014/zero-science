@@ -7,7 +7,9 @@
  * from its own state instead.
  */
 import {
+  areaWeights,
   initializeGraphics,
+  resolveConfig,
   type Direction,
   type GraphicsEngine,
   type PlayerVisualState,
@@ -15,6 +17,9 @@ import {
 import { buildVillage } from './village';
 import boySpriteUrl from '../assets/characters/player-spritesheet-boy.png?url';
 import girlSpriteUrl from '../assets/characters/player-spritesheet-girl.png?url';
+import npcGuideUrl from '../../assets/gpt-expansion/npc/guide.png?url';
+import npcResidentUrl from '../../assets/gpt-expansion/npc/resident.png?url';
+import npcCraftsmanUrl from '../../assets/gpt-expansion/npc/craftsman.png?url';
 import grassDetailUrl from '../assets/textures/grass-detail.png?url';
 import particleUrl from '../assets/textures/particle-dot.png?url';
 import shadowUrl from '../assets/textures/shadow-blob.png?url';
@@ -258,6 +263,137 @@ document.getElementById('btn-orbit')!.addEventListener('click', (e) => {
   orbitYaw = (orbitYaw + 90) % 360;
   gfx.setCameraOrbit({ yawDegrees: orbitYaw });
   (e.target as HTMLButtonElement).textContent = `カメラを90°回す（現在${orbitYaw}°）`;
+});
+
+/* -------- world-expansion areas (2026-11-07, spec §1/§3/§4/§5) --------
+ * Area tour: move the demo player to a stand point in each new area
+ * and frame its landmark. A few area-appropriate harvest nodes are
+ * placed with the tour so the §6 visuals read in context. The
+ * environment blend follows the player automatically (interval
+ * below), exactly as the game will drive it from its own loop. */
+const demoCfg = resolveConfig();
+const AREA_TOURS: Record<string, { x: number; z: number; yaw: number; nodes: Array<[string, object]> }> = {
+  lakeside: {
+    x: 82, z: 2, yaw: 270,
+    nodes: [
+      ['demo-tour-reed', { position: { x: 86.5, z: -1 }, type: 'grass', scale: 1.15, natural: { kind: 'grass', variant: 'reed' } }],
+      ['demo-tour-lily', { position: { x: 94, z: -4 }, type: 'lily', scale: 1.1, natural: { kind: 'lily' } }],
+    ],
+  },
+  coast: {
+    // Stand picked from a terrainHeight probe (2026-11-07): the
+    // dry sand band is narrow — (136,14) is h≈0.54, coast-weight
+    // dominant, with the sea in frame looking east (yaw 270).
+    x: 136, z: 14, yaw: 270,
+    nodes: [
+      ['demo-tour-drift', { position: { x: 142, z: 16 }, type: 'branch', scale: 1.1, natural: { kind: 'branch', variant: 'driftwood' } }],
+    ],
+  },
+  volcano: {
+    // (-100,-92): h≈6.7 and volcano weight 0.94 (the old stand at
+    // (-92,-84) probed forest-dominant 0.58 — wrong light entirely).
+    x: -100, z: -92, yaw: 45,
+    nodes: [
+      ['demo-tour-vrock', { position: { x: -103.5, z: -95.5 }, type: 'rock', scale: 1.2, natural: { kind: 'rock', variant: 'volcanic' } }],
+      ['demo-tour-lava', { position: { x: -97, z: -89 }, type: 'lava', scale: 1.3, natural: { kind: 'lava' } }],
+    ],
+  },
+  snow: {
+    x: 92, z: -98, yaw: 45,
+    nodes: [
+      ['demo-tour-snowconifer', { position: { x: 88.5, z: -101.5 }, type: 'tree', scale: 1.1, natural: { kind: 'tree', variant: 'conifer-snow' } }],
+      ['demo-tour-winter', { position: { x: 95.5, z: -95 }, type: 'tree', scale: 1, natural: { kind: 'tree', variant: 'winter' } }],
+    ],
+  },
+  desert: {
+    x: -100, z: 106, yaw: 45,
+    nodes: [
+      ['demo-tour-drygrass', { position: { x: -97.5, z: 103.5 }, type: 'grass', scale: 1.1, natural: { kind: 'grass', variant: 'dry' } }],
+      ['demo-tour-drybush', { position: { x: -103, z: 109 }, type: 'bush', scale: 1.05, natural: { kind: 'bush', variant: 'dry' } }],
+    ],
+  },
+  town: { x: 100, z: 100, yaw: 45, nodes: [] },
+};
+const tourNodeIds = new Set<string>();
+for (const area of ['lakeside', 'coast', 'volcano', 'snow', 'desert', 'town']) {
+  document.getElementById(`btn-tour-${area}`)!.addEventListener('click', () => {
+    const tour = AREA_TOURS[area];
+    for (const id of tourNodeIds) gfx.updateResourceVisual(id, null);
+    tourNodeIds.clear();
+    for (const [id, st] of tour.nodes) {
+      gfx.updateResourceVisual(id, st as never);
+      tourNodeIds.add(id);
+    }
+    player.x = tour.x;
+    player.z = tour.z;
+    player.moving = false;
+    orbitYaw = tour.yaw;
+    gfx.setCameraView({ yawDegrees: tour.yaw, pitchDegrees: 32, viewSize: 16 }, { transition: 0.8 });
+  });
+}
+// The environment follows the player's area weights (spec §5).
+setInterval(() => {
+  gfx.setEnvironment({ weights: areaWeights(player.x, player.z, demoCfg) });
+}, 600);
+
+/* NPCs (spec §3): the guide idles by the village, the resident walks
+ * a small loop (demo-driven; real movement logic is the game's), the
+ * craftsman stands at his work spot. */
+let npcsShown = false;
+let residentT = 0;
+document.getElementById('btn-npcs')!.addEventListener('click', (e) => {
+  npcsShown = !npcsShown;
+  if (npcsShown) {
+    gfx.setNpcVisualState('demo-npc-guide', {
+      position: { x: -16.5, z: 24.5 }, direction: 'down', moving: false, spriteUrl: npcGuideUrl,
+    });
+    gfx.setNpcVisualState('demo-npc-craftsman', {
+      position: { x: -29.5, z: 17.5 }, direction: 'left', moving: false, spriteUrl: npcCraftsmanUrl,
+    });
+    gfx.setNpcVisualState('demo-npc-resident', {
+      position: { x: -24, z: 14 }, direction: 'right', moving: true, spriteUrl: npcResidentUrl,
+    });
+  } else {
+    for (const id of ['demo-npc-guide', 'demo-npc-craftsman', 'demo-npc-resident']) {
+      gfx.setNpcVisualState(id, null);
+    }
+  }
+  (e.target as HTMLButtonElement).textContent = npcsShown ? 'NPCを消す' : 'NPCを出す';
+});
+// Resident's demo patrol: a slow rectangle south of the plateau.
+setInterval(() => {
+  if (!npcsShown) return;
+  residentT += 0.12;
+  const path: Array<[number, number, Direction]> = [
+    [-24, 14, 'right'], [-19, 14, 'down'], [-19, 18.5, 'left'], [-24, 18.5, 'up'],
+  ];
+  const seg = Math.floor(residentT) % 4;
+  const f = residentT - Math.floor(residentT);
+  const [ax, az, dir] = path[seg];
+  const [bx, bz] = path[(seg + 1) % 4];
+  gfx.setNpcVisualState('demo-npc-resident', {
+    position: { x: ax + (bx - ax) * f, z: az + (bz - az) * f },
+    direction: dir, moving: true, spriteUrl: npcResidentUrl,
+  });
+}, 120);
+
+/* Building preview ghost (spec §4): cycles off → valid → invalid. */
+let previewStage = 0;
+document.getElementById('btn-preview')!.addEventListener('click', (e) => {
+  previewStage = (previewStage + 1) % 3;
+  if (previewStage === 0) {
+    gfx.setStructurePreview(null);
+    (e.target as HTMLButtonElement).textContent = '建築プレビュー（オフ）';
+  } else {
+    gfx.setStructurePreview({
+      type: 'hut',
+      position: { x: player.x + 3, z: player.z + 1 },
+      rotationY: 0.4,
+      valid: previewStage === 1,
+    });
+    (e.target as HTMLButtonElement).textContent =
+      previewStage === 1 ? '建築プレビュー（有効・緑）' : '建築プレビュー（無効・赤）';
+  }
 });
 document.getElementById('tod')!.addEventListener('input', (e) => {
   const v = Number((e.target as HTMLInputElement).value) / 100;

@@ -11,6 +11,7 @@ import {
   segmentPointDistance,
   smoothstep,
   terrainHeight,
+  areaWeights,
 } from './utils';
 
 interface WindMaterial {
@@ -411,6 +412,16 @@ export class EnvironmentRenderer {
   }
 
   /* ---------------- placement helpers ---------------- */
+  /** Green scenery (tufts, flowers, herbs) never grows where the
+   * area blend says volcanic or deep snow — Claude 2026-11-07 §16
+   * reported module grass standing on lava. The legacy-centre
+   * scenery never reaches those weights today; the predicate keeps
+   * it true wherever the scenery domain grows. */
+  private hostileToPlants(x: number, z: number): boolean {
+    const w = areaWeights(x, z, this.cfg);
+    return (w.volcano ?? 0) > 0.12 || (w.snow ?? 0) > 0.62;
+  }
+
   private scatter(
     count: number,
     accept: (x: number, z: number) => boolean,
@@ -803,6 +814,7 @@ export class EnvironmentRenderer {
     const tuftGeo = this.crossPlanes(1.05, 0.62);
     const count = Math.round(4200 * scale);
     const spots = this.scatter(count, (x, z) =>
+      !this.hostileToPlants(x, z) &&
       !isInRiver(x, z, 4.4) &&
       this.groundY(x, z) > 0.42 &&
       distanceToPath(x, z) > 1.35 &&
@@ -859,6 +871,7 @@ export class EnvironmentRenderer {
     // Wildflowers as sprite tufts (GPT sheet E: white/yellow/purple).
     const fCount = Math.round(240 * scale);
     const fSpots = this.scatter(fCount, (x, z) =>
+      !this.hostileToPlants(x, z) &&
       !isInRiver(x, z, 6) &&
       this.groundY(x, z) > 0.45 &&
       this.groundY(x, z) < 1.8 &&
@@ -1315,18 +1328,17 @@ export class EnvironmentRenderer {
       flatShading: true,
     });
     // Ring placement MUST keep every cone base fully outside the
-    // terrain square (±60, corners at radius ≈84.9): with the old
-    // 112–142 distance and 38–58 base radii, the fattest cones reached
-    // radius ≈57 — inside the terrain edge — and loomed into the
-    // foreground at map-edge locations (oil field report, 2026-11-07).
-    // Placement rng draws differ between hosts (scenery options change
-    // how many draws precede this builder), so the guarantee is made
-    // structural: dist − rad ≥ 92 for every peak, by construction.
+    // terrain field. In the 120-world era the guarantee was
+    // dist − rad ≥ 92 (oil-field intrusion report, 2026-11-07); the
+    // expanded field is ±180 (corners at radius ≈254.6), so the ring
+    // moved out and the guarantee is now dist − rad ≥ 262, again
+    // structural — placement rng draws differ between hosts, so no
+    // layout luck is involved on either side.
     for (let i = 0; i < 13; i++) {
       const ang = (i / 13) * Math.PI * 2 + this.rng() * 0.25;
-      const dist = 132 + this.rng() * 28;
-      const hgt = 46 + this.rng() * 28;
-      const rad = Math.min(26 + this.rng() * 14, dist - 92);
+      const dist = 300 + this.rng() * 40;
+      const hgt = 90 + this.rng() * 50;
+      const rad = Math.min(36 + this.rng() * 24, dist - 262);
       const x = Math.cos(ang) * dist;
       const z = Math.sin(ang) * dist;
       const col = rockA.clone().lerp(rockB, this.rng());

@@ -36,7 +36,11 @@ sprays = [(k, (ROOT / "sprays" / f"{k}.png", 512)) for k in [
 sprays = [(k.replace("-", "_"), v) for k, v in sprays]
 ground = [(k, (ROOT / "ground" / f"{f}.png", 512)) for k, f in [
     ("forest", "ground-forest"), ("mud", "ground-mud"),
-    ("sand", "ground-sand-dry"), ("path", "ground-path-plain")]]
+    ("sand", "ground-sand-dry"), ("path", "ground-path-plain"),
+    # Area tiles: delivered as files in round 17, bundled now that
+    # the world-expansion areas have terrain to wear them.
+    ("volcanic", "ground-volcanic"), ("snow", "ground-snow-clean"),
+    ("desert", "ground-desert"), ("sandWet", "ground-sand-wet")]]
 lava = [(k, (ROOT / "ground" / f, 512)) for k, f in [
     ("albedo", "lava-albedo.png"), ("emissive", "lava-emissive.png")]]
 
