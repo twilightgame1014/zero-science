@@ -36,6 +36,9 @@ body{background:#1f2d24;color:var(--ink);font-family:"Zen Maru Gothic","Hiragino
   font-weight:500;line-height:1.7;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
 button{font:inherit;color:inherit}
 /* カメラの操作（描画モジュールに setCameraView があるときだけ出す） */
+.wmapbox{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin:4px 0 10px}
+#wmap{width:240px;height:240px;max-width:100%;border-radius:10px;border:2px solid rgba(0,0,0,.25);image-rendering:auto;background:#5a8a4a}
+.wmapkey{list-style:none;margin:0;padding:0;font-size:12px;line-height:1.7}.wmapkey i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
 .camctl{position:absolute;right:calc(var(--sar,0px) + 10px);top:calc(var(--sat,0px) + 70px);z-index:4;display:flex;flex-wrap:wrap;gap:4px;width:132px;pointer-events:auto}
 .camctl[hidden]{display:none}
 .camctl button{width:40px;height:40px;border-radius:10px;border:1.5px solid var(--line);background:rgba(255,255,255,.92);font:inherit;font-weight:900;cursor:pointer}

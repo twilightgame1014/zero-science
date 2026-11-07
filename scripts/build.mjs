@@ -5,6 +5,7 @@ import { build } from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { worldTerrainPlugin } from './world-plugin.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rd = (p) => fs.readFileSync(path.join(root, p), 'utf8');
@@ -13,6 +14,7 @@ const gfx = await build({
   entryPoints: [path.join(root, 'src/graphics-entry.ts')],
   bundle: true, format: 'esm', target: 'es2020', write: false,
   external: ['three', 'three/addons/*'], logLevel: 'warning',
+  plugins: [worldTerrainPlugin(root)],   // モジュールの地形を広い世界の正本へ（src/graphics は変更しない）
 });
 const gfxCode = gfx.outputFiles[0].text;
 // 地形関数（three に依存しない）を、ゲームのロジック用に別にまとめる
@@ -29,6 +31,8 @@ const ASSETS = {
   grass: dataUrl('assets/textures/grass-detail.png', 'image/png'),
   rock: dataUrl('assets/textures/rock-detail.png', 'image/png'),
   particle: dataUrl('assets/textures/particle-dot.png', 'image/png'),
+  // 広い世界の地面（GPT 拡張素材の濡れた砂・雪。assets/gpt-expansion/ground から軽量版を assets/build/ground に作った）
+  ground: { sandWet: dataUrl('assets/build/ground/sand-wet.webp', 'image/webp'), snow: dataUrl('assets/build/ground/snow-clean.webp', 'image/webp') },
   shadow: dataUrl('assets/textures/shadow-blob.png', 'image/png'),
 };
 

@@ -5,6 +5,7 @@ import { initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, RESOU
 // 検証モードのアセット一覧用（登録済みのテクスチャ。すでに同梱されているものを参照するだけ）
 import { GPT_TEXTURES } from './graphics/gptTextures';
 import { BRANCH_TEXTURES } from './graphics/branchTextures';
+import { attachWorld } from './world/render';
 /* ---------- 建物の3Dモデル（Muse の GLB。assets/buildings-3d、2026-11-07） ----------
    描画モジュールは StructureRenderer.registerFactory で建物の作り方を差し替えられる（呼び出し側はそのまま）。
    add() はファクトリが返した物をその場でたどって炎・車輪・フェード用の材質を登録するので、
@@ -93,6 +94,6 @@ function npcRemove(gfx: any, id: string): void { const e = npcs.get(id); if (!e)
 function npcTick(gfx: any, dt: number): void { const cam = gfx.getCamera(); npcs.forEach((e) => { if (e.r) e.r.update(dt, cam); }); }
 const npcStatus = () => [...npcs.entries()].map(([id, e]) => ({ id, ready: !!e.r, x: e.r ? e.r.getRenderedPosition().x : null }));
 const buildingModelStatus = () => ({ ready: [...templates.keys()], failed: [...failed], loading: [...loading.keys()].filter((k) => !templates.has(k) && !failed.has(k)) });
-(window as any).HD2D = { initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, THREE, RESOURCE_VISUAL_SPECS, GPT_TEXTURES, BRANCH_TEXTURES,
+(window as any).HD2D = { attachWorld, initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, THREE, RESOURCE_VISUAL_SPECS, GPT_TEXTURES, BRANCH_TEXTURES,
   ensureBuildingModel, tickBuildingParts, buildingModelStatus, npcSet, npcRemove, npcTick, npcStatus };
 window.dispatchEvent(new Event('hd2d-ready'));

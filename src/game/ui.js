@@ -197,7 +197,7 @@ function renderPanel(){
   else if(U.tab==="log") body.innerHTML = viewLog();
   else if(U.tab==="verify") body.innerHTML = viewVerify();
   else if(U.tab==="build") body.innerHTML = viewBuild();
-  else if(U.tab==="world"){ body.innerHTML = viewWorld(); drawRegion(); }
+  else if(U.tab==="world"){ body.innerHTML = viewWorld(); drawRegion(); drawWorldMap(); }
   else if(U.tab==="menu") body.innerHTML = viewMenu();
   else if(U.tab==="settings") body.innerHTML = viewSettings();
 }
@@ -237,8 +237,11 @@ function travelChips(){
 }
 function viewWorld(){
   const st=stage(), r=D.regions.find(x=>x.id===U.region)||D.regions[0];
-  if(in3D()) return `<div class="sec">地域を選んで移動 <small>選ぶと、その地域まで歩いて行く</small></div>
-    <div class="row"><button class="btn small sub" data-act="home">🏠 拠点へ戻る</button></div>
+  if(in3D()) return `<div class="sec">世界の地図 <small>山・海岸・滝・湖（●が今いる所）</small></div>
+    <div class="wmapbox"><canvas id="wmap" width="240" height="240" aria-label="世界の地図"></canvas>
+      <ul class="wmapkey"><li><i style="background:#3f88b8"></i>海・湖（深い所は入れない）</li><li><i style="background:#9c8f7e"></i>山の岩場・崖（登れない）</li><li><i style="background:#c9a25a"></i>登山道・滝の道</li><li><i style="background:#e4d4a5"></i>砂浜</li><li><i style="background:#ffffff;border:1px solid #888"></i>旧世界（拠点のある所）</li></ul></div>
+    <div class="sec">地域を選んで移動 <small>選ぶと、その地域まで歩いて行く</small></div>
+    <div class="row"><button class="btn small sub" data-act="home">🏠 拠点へ戻る</button><button class="btn small sub" data-act="rescue" title="動けなくなったときに使う">🛟 拠点へ瞬間移動</button></div>
     <div class="travel">${travelChips()}</div><div id="regionBox"></div>`;
   return `<div class="sec">地域を選んで移動 <small>地図のピンを選ぶと、その地域へ移動する</small></div>
     <div class="field" id="field">${fieldSVG(st)}
@@ -615,11 +618,57 @@ function renderExplore2D(v){
   updateLoc(); updateAction3D();
 }
 function in3D(){ return S.flags.view!=="2d" && W3.state!=="failed"; }
+/* ---------- 世界の地図（広い世界。地形関数から一度だけ描いて覚える。今いる所・地域・登山道を重ねる） ---------- */
+let WMAP = null;
+function worldMapImage(){
+  if(WMAP) return WMAP; if(!window.TERRAIN || !TERRAIN.waterAt) return null;
+  const N=240, R=180, c=document.createElement("canvas"); c.width=N; c.height=N; const g=c.getContext("2d"), img=g.createImageData(N,N), cfg=TERRAIN.DEFAULT_CONFIG;
+  const H=(x,z)=>TERRAIN.terrainHeight(x,z,cfg);
+  for(let j=0;j<N;j++) for(let i=0;i<N;i++){
+    const x=-R+(i+0.5)*2*R/N, z=-R+(j+0.5)*2*R/N, h=H(x,z), w=TERRAIN.waterAt(x,z,h), k=(j*N+i)*4;
+    const sl=Math.max(Math.abs(H(x+0.75,z)-H(x-0.75,z)), Math.abs(H(x,z+0.75)-H(x,z-0.75)))/1.5, shade=0.82+Math.max(-0.2,Math.min(0.2,(H(x-1,z-1)-h)*0.25));
+    let col;
+    if(w.kind && w.kind!=="river" && w.depth > TERRAIN.WADE_DEPTH) col=[46,108,150];
+    else if(w.kind) col=[96,170,200];
+    else if(TERRAIN.seaDist(x,z) > -8 && h < 1.6) col=[228,212,165];
+    else if(sl > TERRAIN.WALK_SLOPE) col=[132,122,110];
+    else if(h > 30) col=[232,236,240];
+    else if(h > 16) col=[150,150,128];
+    else col=[110+Math.min(40,h*3),160-Math.min(30,h*1.5),90];
+    if(x < TERRAIN.WALK.minX || x > TERRAIN.WALK.maxX || z < TERRAIN.WALK.minZ || z > TERRAIN.WALK.maxZ) col=col.map(v=>v*0.62+70);
+    img.data[k]=col[0]*shade; img.data[k+1]=col[1]*shade; img.data[k+2]=col[2]*shade; img.data[k+3]=255;
+  }
+  g.putImageData(img,0,0);
+  const P=(x,z)=>[(x+R)/(2*R)*N, (z+R)/(2*R)*N];
+  g.strokeStyle="#c9a25a"; g.lineWidth=1.6; Object.values(TERRAIN.TRAILS).forEach(t=>{ g.beginPath(); t.pts.forEach((p,i)=>{ const q=P(p.x,p.z); i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]); }); g.stroke(); });
+  g.strokeStyle="rgba(255,255,255,.85)"; g.lineWidth=1; const a=P(-60,-60), b=P(60,60); g.strokeRect(a[0],a[1],b[0]-a[0],b[1]-a[1]);
+  WMAP={canvas:c, P, N}; return WMAP;
+}
+function drawWorldMap(){
+  const cv=$("#wmap"); if(!cv) return; const m=worldMapImage(); if(!m) return; const g=cv.getContext("2d");
+  g.drawImage(m.canvas,0,0);
+  g.font="bold 10px sans-serif"; g.textAlign="center";
+  const lab=(x,z,t)=>{ const q=m.P(x,z); g.fillStyle="rgba(0,0,0,.55)"; g.fillText(t,q[0]+0.8,q[1]+0.8); g.fillStyle="#fff"; g.fillText(t,q[0],q[1]); };
+  lab(TERRAIN.PEAK.x, TERRAIN.PEAK.z-6, "⛰ 山"); lab(TERRAIN.FALL.pool.x+4, TERRAIN.FALL.pool.z+10, "滝"); lab(TERRAIN.LAKE.x, TERRAIN.LAKE.z+3, "湖"); lab(150, 30, "海岸"); lab(60, 150, "海岸"); lab(D.base.x, D.base.z-5, "拠点");
+  if(W3.pos){ const q=m.P(W3.pos.x,W3.pos.z); g.fillStyle="#e0434f"; g.strokeStyle="#fff"; g.lineWidth=2; g.beginPath(); g.arc(q[0],q[1],4.5,0,Math.PI*2); g.fill(); g.stroke(); }
+}
+/* 動けなくなったとき：拠点（安全な場所）へ瞬間移動する */
+function rescue(){
+  if(!world() || !W3.gfx) return;
+  haltField();
+  const q = WORLD.safeSpawn(S, {x:D.base.x, z:D.base.z});
+  W3.pos = {x:q.x, z:q.z}; S.pos = {x:+q.x.toFixed(2), z:+q.z.toFixed(2), dir:W3.dir}; save();
+  W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false}));
+  try{ if(W3.gfx.cameraRig && W3.gfx.cameraRig.snapToTarget) W3.gfx.cameraRig.snapToTarget(); }catch(e){}
+  syncAll3D(); banner("🛟 拠点へ瞬間移動した");
+}
+/* 広い世界の地名（山麓・中腹・海岸・滝つぼ など。旧世界の中は null） */
+function placeHere(){ if(!W3.pos || !window.TERRAIN || !TERRAIN.placeName) return null; return TERRAIN.placeName(W3.pos.x, W3.pos.z, groundY(W3.pos.x, W3.pos.z)); }
 function updateLoc(){
   const el=$("#hudLoc"); if(!el) return;
   const r = in3D() ? W3.region : D.regions.find(x=>x.id===U.region);
   el.innerHTML = r ? `${r.icon} <b>${r.name}</b><small>探索Lv${E.exploreLv(S,r.id)}</small>`
-    : in3D() && W3.state!=="ready" ? `🌄 <b>準備中</b>` : in3D() && W3.moving ? `🧭 <b>移動中</b><small>地域の外</small>` : `🧭 <b>地域の外</b><small>野原</small>`;
+    : in3D() && W3.state!=="ready" ? `🌄 <b>準備中</b>` : in3D() && W3.moving ? `🧭 <b>移動中</b><small>${placeHere()||"地域の外"}</small>` : `🧭 <b>地域の外</b><small>${placeHere()||"野原"}</small>`;
 }
 function drawRegion(){
   const r = (in3D() && W3.region) || D.regions.find(x=>x.id===U.region); const box=$("#regionBox"); if(!box || !r) return;
@@ -722,8 +771,9 @@ function syncNode(n, force){
 /* ---------- フィールドの自然物（正本は nature.js。描画には状態だけを渡す） ---------- */
 let WORLD = null;
 function world(){
-  if(!WORLD && window.TERRAIN && window.NATURE) WORLD = NATURE.create(D, E, {terrainHeight:TERRAIN.terrainHeight, distanceToRiver:TERRAIN.distanceToRiver, cfg:TERRAIN.DEFAULT_CONFIG,
-    riverCenterX: TERRAIN.riverCenterX ? (z=>TERRAIN.riverCenterX(z, TERRAIN.DEFAULT_CONFIG)) : null});
+  /* 広い世界（2026-11-07）：地形・水・歩ける範囲・地方の性格・登山道は TERRAIN（src/world/shape.ts。描画と同じ関数） */
+  if(!WORLD && window.TERRAIN && window.NATURE) WORLD = NATURE.create(D, E, Object.assign({}, TERRAIN, {cfg:TERRAIN.DEFAULT_CONFIG,
+    riverCenterX: TERRAIN.riverCenterX ? (z=>TERRAIN.riverCenterX(z, TERRAIN.DEFAULT_CONFIG)) : null}));
   return WORLD;
 }
 /* 描画モジュールの資源タイプ（INTEGRATION.md §13）。落ち枝は branch、小石は pebble。
@@ -874,6 +924,9 @@ async function start3D(){
       viewportInsets: hudInsets(),
       onContextLost: ()=>{ W3.lost=true; }, onContextRestored: ()=>{ W3.lost=false; } });
     W3.gfx.setWorldVisualState({timeOfDay:0.44, weather:"clear", ambientParticles:true});
+    /* 広い世界の外側（地形の区画・海・湖・山の川・滝）を、モジュールのシーンに足して描く（src/world/render.ts） */
+    if(HD2D.attachWorld){ try{ W3.world = HD2D.attachWorld(W3.gfx, {cfg:W3.cfg, quality: MOBILE ? "low" : "high",
+      images:{sandWet:(ASSETS.ground||{}).sandWet, snow:(ASSETS.ground||{}).snow, rock:ASSETS.rock, particle:ASSETS.particle}}); }catch(e){ console.error("広い世界の描画を始められなかった", e); } }
     W3.pos = spawnPos();
     syncAll3D();
     W3.state = "ready";
@@ -888,8 +941,12 @@ function spawnPos(){
   const p = (S.pos && isFinite(S.pos.x) && isFinite(S.pos.z)) ? {x:S.pos.x, z:S.pos.z} : {x:D.base.x, z:D.base.z};
   if(S.pos && ["down","up","left","right"].includes(S.pos.dir)) W3.dir = S.pos.dir;      // 向きも元どおりに
   if(!world()) return p;
+  /* 地形の版が古いセーブ（広い世界より前）：旧世界の地形は変わっていないので位置も建物もそのまま。
+     念のため、位置が崖・深い水・木や岩の中なら近くの安全な場所へ移す（建物は消さない）。版を記録して保存する */
+  const oldWorld = window.TERRAIN && TERRAIN.WORLD_VERSION && (S.worldVer||1) < TERRAIN.WORLD_VERSION;
   const q = WORLD.safeSpawn(S, p);
-  if(q.moved){ S.pos={x:+q.x.toFixed(2), z:+q.z.toFixed(2), dir:W3.dir}; save(); setTimeout(()=>banner("🧭 木や岩と重ならない場所へ移動した"), 600); }
+  if(q.moved){ S.pos={x:+q.x.toFixed(2), z:+q.z.toFixed(2), dir:W3.dir}; save(); setTimeout(()=>banner("🧭 歩ける安全な場所へ移動した（木や岩・崖・深い水と重ならない所）"), 600); }
+  if(oldWorld){ S.worldVer = TERRAIN.WORLD_VERSION; save(); setTimeout(()=>banner("🗺️ 世界が広くなった！ 北東の山・東と南の海岸・山の滝へ行ける（地図で見られる）"), q.moved ? 3600 : 900); }
   return {x:q.x, z:q.z};
 }
 function applySavedPos(){
@@ -950,7 +1007,9 @@ function toScreen(x,y,z){
    水面は今は描かれていない（Muse に修正依頼中）ため、水面の高さでは判定しない。 */
 function screenToGround(cx, cy){
   const rect=$("#w3").getBoundingClientRect();
-  if(typeof W3.gfx.pickGround==="function"){ try{ const g=W3.gfx.pickGround(cx-rect.left, cy-rect.top); return g ? {x:g.x, z:g.z} : null; }catch(e){} }
+  /* 広い世界（2026-11-07）：モジュールの pickGround は旧世界の地形の形しか知らないので、旧世界の中で当たったときだけ使う。
+     それ以外は、世界の地形関数（描画と同じ）を光線でたどる */
+  if(typeof W3.gfx.pickGround==="function"){ try{ const g=W3.gfx.pickGround(cx-rect.left, cy-rect.top); if(g && Math.abs(g.x)<58 && Math.abs(g.z)<58 && Math.abs(W3.pos.x)<50 && Math.abs(W3.pos.z)<50) return {x:g.x, z:g.z}; }catch(e){} }
   const T=HD2D.THREE, cam=W3.gfx.getCamera();
   const ndc=new T.Vector2((cx-rect.left)/rect.width*2-1, -((cy-rect.top)/rect.height)*2+1);
   const rc=new T.Raycaster(); rc.setFromCamera(ndc, cam);
@@ -985,6 +1044,10 @@ function loop3D(ts){
   if(W3.place || $("#buildov")) drawPlaceOverlay();
   /* 大きなフレーム間隔でも進む距離を保つ（すり抜けは nature.move が細かく分けて防ぐ） */
   const dt = W3.lastTs ? Math.min(0.1,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
+  if(W3.world && W3.pos) W3.world.update(dt, W3.pos, W3.gfx.getCamera());   // 外側の地形の区画（近いほど細かく・少しずつ作る）と水・滝の動き
+  camClearance(dt);
+  /* 地名（山麓・海岸など）が変わったら左上の表示を更新（0.5秒ごとに確かめる） */
+  W3.plT=(W3.plT||0)+dt; if(W3.plT>0.5 && W3.pos){ W3.plT=0; const pn=placeHere(); if(pn!==W3.placeName){ W3.placeName=pn; updateLoc(); } }
   let ix=0, iy=0;
   const active = fieldInputActive();
   if(!active && (W3.path || W3.joy || W3.work || Object.keys(W3.keys).length)) haltField();
@@ -1445,6 +1508,7 @@ document.addEventListener("click", ev=>{
     case "travel": { const r=D.regions.find(x=>x.id===id); if(!E.regionOpen(S,r)) break; /* 理由はボタンに表示済み */
       setTab("explore"); if(W3.state==="ready"){ goTo3D(r.w.x,r.w.z+REGION_R*0.2,null); banner(r.icon+" "+r.name+"へ向かう"); } break; }
     case "home": setTab("explore"); if(W3.state==="ready"){ goTo3D(D.base.x,D.base.z,null); banner("🏠 拠点へ戻る"); } break;
+    case "rescue": setTab("explore"); if(W3.state==="ready") rescue(); break;
     case "hero": { S.flags.hero = S.flags.hero==="girl"?"boy":"girl"; save(); if(W3.gfx) W3.gfx.setPlayerSpriteSheet(heroUrl()); banner(S.flags.hero==="girl"?"👧 女の子に交代！":"👦 男の子に交代！"); break; }
     case "pickhero": S.flags.hero=id; save(); if(W3.gfx) W3.gfx.setPlayerSpriteSheet(heroUrl()); document.querySelectorAll(".heropick").forEach(x=>x.setAttribute("aria-pressed",x.dataset.id===id)); const av=$("#avatar"); if(av) av.style.backgroundImage=`url(${heroUrl()})`; break;
     case "view2d": S.flags.view="2d"; pause3D(); save(); fieldSig=""; renderField(); renderPanel(); break;
@@ -1530,12 +1594,28 @@ function camDefaults(){ const c=(W3.cfg && W3.cfg.camera)||{}; return {yaw:c.yaw
 function camUser(){ const d=camDefaults(), u=S.camera||{}; return {yaw:isFinite(u.yaw)?u.yaw:d.yaw, pitch:isFinite(u.pitch)?u.pitch:d.pitch, zoom:isFinite(u.zoom)?u.zoom:d.zoom}; }
 function camZoomLim(){ const z=camDefaults().zoom; return [+(z*CAM_ZOOM[0]).toFixed(2), +(z*CAM_ZOOM[1]).toFixed(2)]; }
 function camNorm(v){ const zl=camZoomLim(); return {yaw:((v.yaw%360)+360)%360, pitch:clampN(v.pitch, CAM_PITCH[0], CAM_PITCH[1]), zoom:clampN(v.zoom, zl[0], zl[1])}; }
-function camApply(v){ if(!camSupported()) return; v=camNorm(v); try{ W3.gfx.setCameraOrbit({yawDegrees:v.yaw, pitchDegrees:v.pitch, viewSize:v.zoom}); }catch(e){} W3.camView=v; }
+function camApply(v){ if(!camSupported()) return; v=camNorm(v); try{ W3.gfx.setCameraOrbit({yawDegrees:v.yaw, pitchDegrees:v.pitch, viewSize:v.zoom}); }catch(e){} W3.camView=v; W3.camPitchNow=v.pitch; }
 function camSet(ch, keep){ const v=camNorm(Object.assign(camUser(), ch)); S.camera={yaw:+v.yaw.toFixed(2), pitch:+v.pitch.toFixed(2), zoom:+v.zoom.toFixed(2)}; camApply(S.camera); if(!keep) save(); camUI(); }
 function camReset(){ S.camera={}; camApply(camDefaults()); save(); camUI(); banner("🎥 カメラを標準の角度と距離に戻した"); }
 function camUI(){ const box=$("#camctl"); if(!box) return; box.hidden = !camSupported(); const z=$("#camZoom");
   if(z && camSupported()){ const zl=camZoomLim(); z.min=zl[0]; z.max=zl[1]; z.step=0.25; z.value = camNorm(camUser()).zoom; } }
 function camInit(){ camUI(); if(camSupported()) camApply(camUser()); }
+/* 山の斜面がカメラと主人公の間に入るときは、その間だけカメラを上から見る角度へ上げる（地形の中にカメラが入らない・主人公が隠れない）。
+   ユーザーの設定（S.camera）は変えない。斜面から離れたら元の角度へ戻す */
+function camClearance(dt){
+  if(!camSupported() || !W3.pos || !W3.camView) return;
+  W3.clrT = (W3.clrT||0) + dt; if(W3.clrT < 0.2) return; W3.clrT = 0;
+  const v = W3.camView, yaw = v.yaw*Math.PI/180, bx = Math.sin(yaw), bz = Math.cos(yaw), py = groundY(W3.pos.x, W3.pos.z);
+  let need = 0;
+  for(let d=2; d<=70; d+=2){ const h = groundY(W3.pos.x + bx*d, W3.pos.z + bz*d); const a = Math.atan2(h + 1.7 - py, d)*180/Math.PI + 4; if(a > need) need = a; }
+  const want = Math.min(70, Math.max(v.pitch, need));
+  const cur = W3.camPitchNow || v.pitch;
+  const next = Math.abs(want - cur) < 0.3 ? want : cur + (want - cur) * (want > cur ? 0.6 : 0.25);
+  if(Math.abs(next - cur) > 0.05){
+    W3.camPitchNow = next; try{ W3.gfx.setCameraOrbit({yawDegrees:v.yaw, pitchDegrees:next, viewSize:v.zoom}); }catch(e){}
+  }
+  W3.camRaised = next > v.pitch + 0.5;
+}
 document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.closest("[data-act='cam']"); if(!b) return; ev.preventDefault();
   const u=camUser(), id=b.dataset.id;
   if(id==="left") camSet({yaw:u.yaw-30}); else if(id==="right") camSet({yaw:u.yaw+30});

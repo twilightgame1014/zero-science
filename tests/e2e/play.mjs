@@ -294,17 +294,18 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   const midClick = (await track()).slice(-3).every(r => r.m);
   await page.waitForFunction(`!${G}.W3.path`, null, { timeout: 15000 }); await since(); await page.waitForTimeout(300);
   ok('歩行（クリック移動）：移動中は歩き、到着すると止まる', midClick && (await track()).every(r => !r.m) && !(await page.evaluate(`${G}.W3.target`)));
-  // 角に押し付けて進めない：歩かない（キー・クリック移動の両方）
-  await page.evaluate(`${G}.W3.pos={x:56,z:56}`); await page.waitForTimeout(200);
-  const kc = await keyToward(1, 1); await since(); await page.keyboard.down(kc); await page.waitForTimeout(700); await page.keyboard.up(kc);
+  // 角に押し付けて進めない：歩かない（キー・クリック移動の両方）。広い世界（2026-11-07）では北西の角（歩ける範囲の端）
+  const WB = await page.evaluate(`${G}.WORLD.bounds`), CX = WB.minX, CZ = WB.minZ;
+  await page.evaluate(`${G}.W3.pos={x:${CX},z:${CZ}}`); await page.waitForTimeout(200);
+  const kc = await keyToward(-1, -1); await since(); await page.keyboard.down(kc); await page.waitForTimeout(700); await page.keyboard.up(kc);
   const corner = await track();
-  ok('歩行：壁（世界の角）に向かって入力しても、進めなければ歩かない', corner.length > 10 && corner.every(r => !r.m) && corner.every(r => Math.hypot(r.x - 56, r.z - 56) < 0.01), JSON.stringify(corner.filter(r => r.m).slice(0, 3)));
-  await page.evaluate(`${G}.W3.pos={x:54.5,z:54.5}`); await page.waitForTimeout(200);
+  ok('歩行：壁（世界の角）に向かって入力しても、進めなければ歩かない', corner.length > 10 && corner.every(r => !r.m) && corner.every(r => Math.hypot(r.x - CX, r.z - CZ) < 0.01), JSON.stringify(corner.filter(r => r.m).slice(0, 3)));
+  await page.evaluate(`${G}.W3.pos={x:${CX + 1.5},z:${CZ + 1.5}}`); await page.waitForTimeout(200);
   await since(); await page.keyboard.down(kc); await page.waitForTimeout(900); await page.keyboard.up(kc);
-  const hit = await track(); const atWall = hit.findIndex(r => Math.hypot(r.x - 56, r.z - 56) < 0.01);
+  const hit = await track(); const atWall = hit.findIndex(r => Math.hypot(r.x - CX, r.z - CZ) < 0.01);
   const lastWalk = hit.reduce((a, r, i) => r.m ? i : a, -1);
   ok('歩行：歩いて壁に着いたら、押し続けていても0.15秒以内に止まる', atWall > 0 && hit[atWall - 1].m && lastWalk >= 0 && hit[lastWalk].t - hit[atWall].t <= 150 && hit.slice(-5).every(r => !r.m), JSON.stringify({ atWall, lastWalk, dt: lastWalk >= 0 && atWall >= 0 ? hit[lastWalk].t - hit[atWall].t : null }));
-  await since(); await page.evaluate(`(()=>{ ${G}.W3.path=[{x:59,z:59}]; })()`); await page.waitForTimeout(700);
+  await since(); await page.evaluate(`(()=>{ ${G}.W3.path=[{x:${CX - 3},z:${CZ - 3}}]; })()`); await page.waitForTimeout(700);
   ok('歩行（移動予約）：予約があっても進めなければ歩かない', (await track()).every(r => !r.m));
   await page.evaluate(`(()=>{ ${G}.W3.path=null; ${G}.W3.target=null; })()`);
   // 木の幹にかすめるように当たって外周を滑っているときは歩き続ける（キーの実際の向きの線上に幹を置く）
@@ -538,7 +539,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await page.addInitScript(s => { if (!sessionStorage.getItem('seed-v2')) { localStorage.clear(); localStorage.setItem('zero-kagaku-save', s); sessionStorage.setItem('seed-v2', '1'); } }, v2);
   await page.reload(); await page.waitForTimeout(900);
   const r = await page.evaluate(`({bk:localStorage.getItem('zero-kagaku-save-backup-v2'), v:${G}.S.v, twig:${G}.S.inv.twig, build:JSON.stringify(${G}.S.build), pos:${G}.W3.pos, dir:${G}.W3.dir, player:__FAKE.player&&__FAKE.player.direction})`);
-  ok('古い形式（v2）のセーブは、移行する前に元のまま別のキーへ控える。移行後も持ち物・位置は同じ', r.bk === v2 && r.v === 3 && r.twig === 4 && r.build === '{}' && Math.abs(r.pos.x + 14) < 0.05 && Math.abs(r.pos.z - 25) < 0.05, JSON.stringify(r).slice(0, 200));
+  ok('古い形式（v2）のセーブは、移行する前に元のまま別のキーへ控える。移行後も持ち物・位置は同じ', r.bk === v2 && r.v === 4 && r.twig === 4 && r.build === '{}' && Math.abs(r.pos.x + 14) < 0.05 && Math.abs(r.pos.z - 25) < 0.05, JSON.stringify(r).slice(0, 200));
   ok('保存した向き（左）で復元される', r.dir === 'left' && r.player === 'left', JSON.stringify({ dir: r.dir, player: r.player }));
   ok('ページでエラーが起きていない（v2 の移行）', errors.length === 0, errors.join('\n'));
   await ctx.close();
@@ -577,6 +578,39 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   const vr = await page.evaluate(`(()=>{ const G=${G}, V=G.D.village; return G.WORLD.checkPlacement(G.S, {id:'t', type:'workbench', footprint:{shape:'rect',w:2.2,d:1.05}, x:V.c.x+2, z:V.c.z+5.5, rot:0}, {player:{x:-200,z:-200}, reserved:[{x:V.c.x,z:V.c.z,r:V.r,why:'集落の中（人の家や通り道）には置けない'}]}).reasons.join('/'); })()`);
   ok('集落の中（人の家や通り道）には建物を置けない', /集落/.test(vr), vr);
   ok('ページでエラーが起きていない（集落）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+
+/* ---------------- 広い世界（山・海岸・滝・地図・瞬間移動） ---------------- */
+{
+  const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
+  await page.click('#introGo'); await page.waitForTimeout(700);
+  const W0 = await page.evaluate(`(()=>{ const G=${G}; return {b:G.WORLD.bounds, wide:G.WORLD.wide, ver:G.S.worldVer, tver:TERRAIN.WORLD_VERSION}; })()`);
+  ok('広い世界：歩ける範囲が旧世界（±56）の3倍の辺になり、セーブに地形の版がある', W0.wide && W0.b.maxX - W0.b.minX > 330 && W0.ver === W0.tver, JSON.stringify(W0));
+  // 海岸：地名が出る。海へ歩いても深い所の手前で止まる
+  await page.evaluate(`${G}.W3.pos={x:140,z:40}`); await page.waitForTimeout(1100);
+  const loc = await page.evaluate(`document.getElementById('hudLoc').textContent`);
+  ok('海岸に立つと、左上に地名（海岸）が出る', /海岸/.test(loc), loc);
+  const kc = await page.evaluate(`(()=>{ const T=HD2D.THREE, cam=${G}.W3.gfx.getCamera(), v=new T.Vector3(); cam.getWorldDirection(v); let fx=v.x,fz=v.z; const l=Math.hypot(fx,fz); fx/=l; fz/=l;
+    const r={x:-fz,z:fx}; const c=[['ArrowRight',r.x],['ArrowLeft',-r.x],['ArrowUp',fx],['ArrowDown',-fx]]; c.sort((a,b)=>b[1]-a[1]); return c[0][0]; })()`);
+  await page.keyboard.down(kc); await page.waitForTimeout(6000); await page.keyboard.up(kc); await page.waitForTimeout(200);
+  const sea = await page.evaluate(`(()=>{ const p=${G}.W3.pos, h=TERRAIN.terrainHeight(p.x,p.z,TERRAIN.DEFAULT_CONFIG), w=TERRAIN.waterAt(p.x,p.z,h); return {p, w, moved:p.x-140}; })()`);
+  ok('海へ向かって歩くと浅瀬までは進み、深い所（泳ぐ機能はない）の手前で止まる', sea.moved > 3 && (!sea.w.kind || sea.w.depth <= 0.6), JSON.stringify(sea));
+  // 地図：世界全体が描かれ、今いる所の印がある
+  await page.click('[data-tab="world"]'); await page.waitForTimeout(400);
+  const map = await page.evaluate(`(()=>{ const c=document.getElementById('wmap'); if(!c) return null; const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data; let blue=0, red=0; for(let i=0;i<d.length;i+=4){ if(d[i+2]>120 && d[i]<90) blue++; if(d[i]>200 && d[i+1]<90 && d[i+2]<100) red++; } return {w:c.width, blue, red}; })()`);
+  ok('地図（世界）に山・海・湖と今いる所が描かれる', map && map.blue > 2000 && map.red > 5, JSON.stringify(map));
+  // 瞬間移動で拠点へ戻る（動けなくなったとき用）
+  await page.click('[data-act="rescue"]'); await page.waitForTimeout(400);
+  const back = await page.evaluate(`({p:${G}.W3.pos, s:${G}.S.pos, base:${G}.D.base})`);
+  ok('「拠点へ瞬間移動」で拠点の近くの安全な場所へ戻り、保存される', Math.hypot(back.p.x - back.base.x, back.p.z - back.base.z) < 4 && Math.abs(back.s.x - back.p.x) < 0.05, JSON.stringify(back));
+  // 滝つぼへタップ移動しても崖を直進しない（経路は崖を避ける）
+  const path = await page.evaluate(`(()=>{ const G=${G}, F=TERRAIN.FALL; const from=G.WORLD.nearestFree(G.S,{x:F.pool.x+6,z:F.pool.z+5},0,6); const to={x:F.lip.x-2,z:F.lip.z-1.5};
+    const p=G.WORLD.findPath(G.S, from, to); if(!p) return {none:true}; const pts=[from].concat(p); let bad=0;
+    for(let k=0;k<pts.length-1;k++){ const n=Math.ceil(Math.hypot(pts[k+1].x-pts[k].x, pts[k+1].z-pts[k].z)/0.25); for(let q=0;q<=n;q++){ const x=pts[k].x+(pts[k+1].x-pts[k].x)*q/n, z=pts[k].z+(pts[k+1].z-pts[k].z)*q/n; if(G.WORLD.terrainBlocked(x,z)) bad++; } }
+    return {n:pts.length, bad, len:pts.reduce((a,p,i)=>i?a+Math.hypot(p.x-pts[i-1].x,p.z-pts[i-1].z):0,0)}; })()`);
+  ok('滝つぼから落ち口の上へのタップ移動は、崖をまっすぐ登らず道を回る', !path.none && path.bad === 0 && path.len > 20, JSON.stringify(path));
+  ok('ページでエラーが起きていない（広い世界）', errors.length === 0, errors.join('\n'));
   await ctx.close();
 }
 

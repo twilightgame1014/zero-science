@@ -4,7 +4,7 @@ import { loadTerrain } from './helpers/terrain.mjs';
 const require = createRequire(import.meta.url);
 const D = require('../src/game/data.js'), E = require('../src/game/engine.js'), N = require('../src/game/nature.js');
 const T = await loadTerrain();
-const env = { terrainHeight: T.terrainHeight, distanceToRiver: T.distanceToRiver, cfg: T.DEFAULT_CONFIG };
+const env = Object.assign({}, T, { cfg: T.DEFAULT_CONFIG });   // 広い世界の関数（歩ける範囲・水・崖）も渡す（ゲームと同じ）
 const W = N.create(D, E, env);
 let fail = 0, total = 0;
 const ok = (name, cond, detail = '') => { total++; console.log(`${cond ? '✅' : '❌'} ${name}${cond ? '' : '：' + detail}`); if (!cond) fail++; };
@@ -211,7 +211,7 @@ ok('最初の目標（木の枝）と2番目（丸い石・火打ち石）を新
   const conif = W.objects.find(o => o.variant === 'conifer'), reed = W.objects.find(o => o.variant === 'reed');
   ok('見た目が違っても得られる素材は基本の種類と同じ（針葉樹→丸太、葦→草）。名前は見た目に合わせる', JSON.stringify(W.yieldsOf(conif)) === JSON.stringify(N.KINDS.tree.yields) && JSON.stringify(W.yieldsOf(reed)) === JSON.stringify(N.KINDS.grass.yields) && W.nameOf(conif) === '針葉樹' && W.nameOf(reed) === '葦の茂み');
   const conifRiver = W.objects.filter(o => o.variant === 'conifer' && T.distanceToRiver(o.x, o.z, T.DEFAULT_CONFIG) < 5.6);
-  ok('葦は川岸だけ、針葉樹は川の中にない', W.objects.filter(o => o.variant === 'reed').every(o => T.distanceToRiver(o.x, o.z, T.DEFAULT_CONFIG) < 8.5) && conifRiver.length === 0);
+  ok('葦は川岸だけ、針葉樹は川の中にない（旧世界の第1・2層。新しい陸地の葦は湖・山の川のそば）', W.objects.filter(o => o.variant === 'reed' && !o.layer).every(o => T.distanceToRiver(o.x, o.z, T.DEFAULT_CONFIG) < 8.5) && conifRiver.length === 0);
   const logs = W.objects.filter(o => o.kind === 'twig' && o.variant === 'log');
   ok('倒木（branch:log）が森にあり、得られる素材は落ち枝と同じ・木や岩と重ならない', logs.length >= 5 && logs.every(o => JSON.stringify(W.yieldsOf(o)) === JSON.stringify(N.KINDS.twig.yields) && W.nameOf(o) === '倒木' && W.objects.every(q => q === o || ['grass', 'twig', 'pebble'].includes(q.kind) || Math.hypot(q.x - o.x, q.z - o.z) >= 0.85 + q.r + 0.35 - 1e-6)), logs.length + '');
   const lavas = W.decos.filter(d => d.kind === 'lava'), lilies = W.decos.filter(d => d.kind === 'lily');

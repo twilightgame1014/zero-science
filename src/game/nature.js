@@ -9,8 +9,8 @@
 var NATURE = (function(){
   const SEED = 20261106;
   const PLAYER_R = 0.35;          // 主人公の当たり判定の半径
-  const WORLD_R = 56;             // 歩ける範囲：-56〜56 の正方形（地形は120×120。端の丘の手前まで）
-  const inWorld = (x,z,m)=> Math.abs(x) <= WORLD_R-(m||0) && Math.abs(z) <= WORLD_R-(m||0);
+  const WORLD_R = 56;             // 旧世界の歩ける範囲：-56〜56 の正方形（第1層・第2層の自然物はこの中。位置と ID を変えないため、この値のまま）
+  const inOld = (x,z,m)=> Math.abs(x) <= WORLD_R-(m||0) && Math.abs(z) <= WORLD_R-(m||0);
   const REGION_R = 9;             // 地域の半径（ゲーム側の取り決め）
   /* 拠点の外に建てる建物の場所（ui.js の STRUCT_PLAN と一致させる）。ここには自然物を置かない */
   const SITES = [{id:"st-wheel", x:15.2, z:3.8, r:2.4}];   // 水車は水ぎわ（車輪の半分が川にかかる）。車軸は川を横切る向き（ui.js の rot）
@@ -48,6 +48,10 @@ var NATURE = (function(){
     "grass:reed":   {name:"葦の茂み"},
     "bush:dry":     {name:"乾いたやぶ"},
     "twig:log":     {name:"倒木"},
+    /* 広い世界の海岸（2026-11-07）。素材は既存のもの（貝殻・木の枝・草） */
+    "pebble:shell":   {name:"貝殻", icon:"🐚", yields:{shell:1}},
+    "twig:driftwood": {name:"流木"},
+    "grass:dry":      {name:"浜の草"},
   };
 
   /* 地域の採取地点の姿（描画モジュールの資源タイプ）と、当たり判定の半径（0 は歩行を妨げない）。
@@ -70,6 +74,11 @@ var NATURE = (function(){
   function create(D, E, T){
     const cfg = T.cfg, wl = cfg.world.waterLevel;
     const H = (x,z)=>T.terrainHeight(x,z,cfg);
+    /* 広い世界（2026-11-07）：歩ける範囲は T.WALK（長方形）。崖（急な斜面）と深い水（海・湖・池・滝つぼ）は地形から止める。
+       T に広い世界の関数がない（古い呼び方）ときは、旧世界の範囲と決まりのまま */
+    const WIDE = !!(T.WALK && T.waterAt);
+    const WB = WIDE ? T.WALK : {minX:-WORLD_R, maxX:WORLD_R, minZ:-WORLD_R, maxZ:WORLD_R};
+    const inWorld = (x,z,m)=>{ m=m||0; return x >= WB.minX+m && x <= WB.maxX-m && z >= WB.minZ+m && z <= WB.maxZ-m; };
     const rng = mulberry32(SEED);
     const objs = [];
     const deps = [];
@@ -83,7 +92,7 @@ var NATURE = (function(){
     /* 置ける場所か */
     function fits(kind, x, z, s){
       const K = KINDS[kind], rr = K.r*s;
-      if(!inWorld(x,z,3)) return false;
+      if(!inOld(x,z,3)) return false;
       const dr = T.distanceToRiver(x,z);
       if(kind==="pebble" ? dr < 4.0 : dr < 5.6) return false;
       if(H(x,z) < wl + 0.15) return false;
@@ -181,7 +190,7 @@ var NATURE = (function(){
     /* 第2層の置ける場所：第1層の規則に加えて、通り道を空ける。鍵のかかった地域の中にも置く（開放後に森や岩場がある） */
     function fits2(kind, x, z, s){
       const K = KINDS[kind], rr = K.r*s;
-      if(!inWorld(x,z,3)) return false;
+      if(!inOld(x,z,3)) return false;
       const dr = T.distanceToRiver(x,z);
       if(kind==="pebble" ? dr < 4.0 : dr < 5.6) return false;
       if(slope(x,z) > (K.block ? 0.55 : 0.9)) return false;
@@ -245,7 +254,7 @@ var NATURE = (function(){
        溶岩：火山地帯の中心のまわりに数か所。見た目は描画、通れない決まりはゲーム（固定の障害物にする。建物も置けない）。 */
     const decos = [];
     for(let k=0, n=0; k<400 && n<16; k++){ const z=-50+vhash(k,3,91)*100, side=vhash(k,5,92)<0.5?-1:1, off=2.3+vhash(k,7,93)*1.2;
-      const x = riverX(z) + side*off; if(!inWorld(x,z,3) || H(x,z) > wl-0.05) continue;
+      const x = riverX(z) + side*off; if(!inOld(x,z,3) || H(x,z) > wl-0.05) continue;
       if(decos.some(d=>Math.hypot(d.x-x,d.z-z) < 5)) continue;
       decos.push({id:"lily:"+Math.round(x*10)+","+Math.round(z*10), kind:"lily", type:"lily", x:+x.toFixed(2), z:+z.toFixed(2), rot:+(vhash(k,9,94)*6.28).toFixed(3), scale:+(0.8+vhash(k,11,95)*0.5).toFixed(2)}); n++; }
     const lavas = [];
@@ -260,6 +269,10 @@ var NATURE = (function(){
     lavas.forEach(l=>decos.push(l));
 
     const byId = new Map(objs.map(o=>[o.id,o]));
+    /* 近くの自然物を引くための 8マスの格子（第3層は作ったときに足す） */
+    const AG = 8, agrid = new Map(); objs.forEach(o=>{ const k=Math.floor(o.x/AG)+","+Math.floor(o.z/AG); if(!agrid.has(k)) agrid.set(k,[]); agrid.get(k).push(o); });
+    /* 旧世界（第1層・第2層）の自然物で (x,z) の近くのもの（第3層の重なりの判定用） */
+    function oldNear(x, z, rad){ const out=[]; for(let i=Math.floor((x-rad)/AG); i<=Math.floor((x+rad)/AG); i++) for(let j=Math.floor((z-rad)/AG); j<=Math.floor((z+rad)/AG); j++){ const c=agrid.get(i+","+j); if(c) for(const o of c) if(!o.layer) out.push(o); } return out; }
     /* 地域の採取地点のうち、木・岩・鉱石の姿のものは固定の障害物（見た目の幹・占有範囲に合わせる） */
     const statics = [];
     D.regions.forEach(r=>{ if(r.w) r.res.forEach(res=>{ const sh=DEPOSIT_SHAPE[res.id]; if(!sh || !sh.r) return; const p=E.depositPos(r,res);
@@ -317,6 +330,8 @@ var NATURE = (function(){
       const diag = t.shape==="rect" ? Math.hypot(t.w,t.d) : t.r*2;          // 大きい建物ほど端と端の高さの差は大きくてよい（なだらかなら置ける）
       if(hmax-hmin > Math.max(0.8, 0.3*diag) || pts.some(q=>slope(q.x,q.z) > 0.6)) why.add("地面が傾きすぎている（平らな所へ）");
       const dr = pts.map(q=>T.distanceToRiver(q.x,q.z));
+      if(WIDE && pts.some(q=>{ const w=T.waterAt(q.x,q.z,H(q.x,q.z)); return w.kind && w.kind!=="river"; })) why.add("海・湖・池・川の中には置けない");
+      if(WIDE && p.rule!=="waterside" && pts.some(q=>terrainBlocked(q.x,q.z))) why.add("崖や深い水にかかっている");
       if(p.rule==="waterside"){        // 水車：川の水ぎわ（一部が水にかかり、中心は岸の上）
         const dc = T.distanceToRiver(t.x,t.z);
         if(!(dc > 3.4 && dc < 6.4 && Math.min(...dr) < 4.6)) why.add("水車は川の水ぎわ（半分が水にかかる所）に置く");
@@ -398,11 +413,157 @@ var NATURE = (function(){
     /* 対象の外周までの距離 */
     function reachGap(o, p){ return Math.max(0, Math.hypot(p.x-o.x, p.z-o.z) - o.r); }
 
+    /* ---------- 地形で歩けない所（崖・深い水）：0.5マスの格子を16マスの区画ごとに一度だけ計算して覚える ---------- */
+    const TG = 0.5, TT = 32, ttiles = new Map();
+    function terrainTile(ti, tj){
+      const k = ti+","+tj; let t = ttiles.get(k); if(t) return t;
+      t = new Uint8Array(TT*TT);
+      const n = TT+2, hs = new Float32Array(n*n), x0 = ti*TT*TG, z0 = tj*TT*TG;
+      for(let j=0;j<n;j++) for(let i=0;i<n;i++) hs[j*n+i] = H(x0+(i-0.5)*TG, z0+(j-0.5)*TG);
+      for(let j=0;j<TT;j++) for(let i=0;i<TT;i++){
+        const x = x0+(i+0.5)*TG, z = z0+(j+0.5)*TG, h = hs[(j+1)*n+i+1];
+        const sl = Math.max(Math.abs(hs[(j+1)*n+i+2]-hs[(j+1)*n+i]), Math.abs(hs[(j+2)*n+i+1]-hs[j*n+i+1]))/(2*TG);
+        let bad = sl > T.WALK_SLOPE;
+        // 0.5マスの格子の中心で判定するので、格子の中でも深さの上限を超えないよう少し手前（0.08）で止める
+        if(!bad){ const w = T.waterAt(x,z,h); if(w.kind && w.kind!=="river" && w.depth > T.WADE_DEPTH - 0.08) bad = true; }
+        t[j*TT+i] = bad ? 1 : 0;
+      }
+      ttiles.set(k, t); return t;
+    }
+    /* その点の地形が歩けないか（崖・深い水）。旧世界の決まりだけのときは常に歩ける */
+    function terrainBlocked(x, z){
+      if(!WIDE) return false;
+      const cx = Math.floor(x/TG), cz = Math.floor(z/TG), ti = Math.floor(cx/TT), tj = Math.floor(cz/TT);
+      return terrainTile(ti,tj)[(cz-tj*TT)*TT + (cx-ti*TT)] === 1;
+    }
+
+    /* ---------- 第3層：広い世界の新しい陸地の自然物（2026-11-07） ----------
+       旧世界の外（|x| か |z| が 53.5 以上）だけ。主人公の近くの 32マスの区画ごとに、必要になったときに作る。
+       候補は「種類ごとの揺らぎのある格子のマス」から、位置と大きさと順位をハッシュで決める（乱数の順番に依らない）。
+       重なる候補どうしは順位の高い方を残す（判定は候補の場所だけで決まる）ので、どの順番で区画を作っても同じ位置・同じ ID になる。
+       旧世界の自然物・採取地点とは重ならない。登山道・川・滝つぼ・池・見晴らし台・急な斜面・水の中には置かない。 */
+    const L3 = { tree:{cell:3.1, rank:6}, rock:{cell:7.0, rank:5}, bush:{cell:4.6, rank:4}, grass:{cell:3.7, rank:3}, twig:{cell:5.2, rank:2}, pebble:{cell:6.2, rank:1} };
+    const hsh = (i,j,k)=>{ let h = (i*374761393 + j*668265263 + k*1442695041) | 0; h = (h ^ (h>>>13)) * 1274126177 | 0; return ((h ^ (h>>>16)) >>> 0) / 4294967296; };
+    const vn3 = (x,z,c,k)=>{ const fx=x/c, fz=z/c, i=Math.floor(fx), j=Math.floor(fz), u=smooth(0,1,fx-i), v=smooth(0,1,fz-j);
+      const a=hsh(i,j,k), b=hsh(i+1,j,k), cc=hsh(i,j+1,k), d=hsh(i+1,j+1,k); return a+(b-a)*u+(cc-a)*v+(a-b-cc+d)*u*v; };
+    const KIDX = {tree:1, rock:2, bush:3, grass:4, twig:5, pebble:6};
+    const trailD = (x,z)=> WIDE && T.TRAILS ? Math.min(trailNear(T.TRAILS.main,x,z), trailNear(T.TRAILS.falls,x,z)) : 99;
+    function trailNear(P, x, z){ let best=99; for(let i=0;i<P.pts.length-1;i++){ const a=P.pts[i], b=P.pts[i+1];
+      if(Math.min(a.x,b.x)-6>x || Math.max(a.x,b.x)+6<x || Math.min(a.z,b.z)-6>z || Math.max(a.z,b.z)+6<z) continue;
+      const dx=b.x-a.x, dz=b.z-a.z, L=dx*dx+dz*dz, t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/L)); best=Math.min(best, Math.hypot(x-(a.x+dx*t), z-(a.z+dz*t))); } return best; }
+    const cand3 = new Map();
+    /* 種類 kind のマス (ci,cj) の候補：{kind,x,z,s,pri,valid,variant} か null（置かない） */
+    function candidate(kind, ci, cj){
+      const key = kind+":"+ci+","+cj; if(cand3.has(key)) return cand3.get(key);
+      const spec = L3[kind], kk = KIDX[kind]*7;
+      const x = (ci + hsh(ci,cj,kk+1))*spec.cell, z = (cj + hsh(ci,cj,kk+2))*spec.cell;
+      let c = null;
+      if(Math.max(Math.abs(x),Math.abs(z)) >= 53.5 && inWorld(x,z,3)){
+        const roll = hsh(ci,cj,kk+3), s = 0.75 + hsh(ci,cj,kk+4)*0.7;
+        const dens = density3(kind, x, z);
+        if(roll < dens.p){
+          const K = KINDS[kind], sc = kind==="rock" ? 0.6+hsh(ci,cj,kk+4)*0.75 : kind==="tree" ? 0.75+hsh(ci,cj,kk+4)*0.7 : 0.85+hsh(ci,cj,kk+4)*0.45;
+          if(valid3(kind, x, z, sc, dens)) c = {kind, x:+x.toFixed(2), z:+z.toFixed(2), s:sc, r:K.r*sc, block:K.block, pri:spec.rank + hsh(ci,cj,kk+5), variant:dens.variant, rot:hsh(ci,cj,kk+6)*Math.PI*2};
+          void s;
+        }
+      }
+      cand3.set(key, c); return c;
+    }
+    /* 場所ごとの置きやすさ（0〜1）と見た目の違い。地形の性格は T.biome（描画と同じ関数） */
+    function density3(kind, x, z){
+      const h = H(x,z), b = T.biome(x,z,h), clumpV = 0.65*vn3(x,z,9,KIDX[kind]) + 0.35*vn3(x,z,4,KIDX[kind]+7);
+      const wetNear = (T.streamAt(x,z).d < 4.5) || b.lake > 0.3;
+      const lowMountain = b.mountain > 0.05 && h < 22 ? 1 : 0;
+      const hv = vhash(Math.round(x*10), Math.round(z*10), 131);
+      let p = 0, variant = null;
+      if(kind==="tree"){
+        p = (0.08 + 0.85*b.west*(clumpV<0.3?0.15:0.6+clumpV) + 0.4*lowMountain*(0.4+clumpV) + 0.2*(1-b.plains)*clumpV) * (1-b.beach) * (1-b.alpine*0.85) * (1-b.rockyShore);
+        if(b.coast > 0.55 && h < 2.6 && b.rockyShore < 0.3){ p = 0.05; variant = "palm"; }
+        else if((b.mountain > 0.15 && h > 7.5) || h > 13) variant = "conifer";
+      } else if(kind==="rock"){
+        p = 0.05 + 0.55*b.mountain*sm01(4,12,h) + 0.6*b.rockyShore + 0.35*b.northWest + 0.12*clumpV;
+        variant = (b.mountain > 0.35 && h > 14 && hv < 0.6) || b.northWest > 0.5 && hv < 0.4 ? "basalt" : b.west > 0.5 && hv < 0.6 ? "mossy" : null;
+      } else if(kind==="bush"){
+        p = (0.05 + 0.45*b.west*clumpV*1.4 + 0.3*(wetNear?1:0) + 0.15*lowMountain) * (1-b.beach) * (1-b.alpine*0.7);
+        if(b.northWest > 0.5) variant = "dry";
+      } else if(kind==="grass"){
+        p = (0.12 + 0.45*b.plains + 0.25*(1-b.west) + 0.3*b.alpine) * (0.35 + clumpV) * (1 - b.beach*0.6);
+        if(wetNear) variant = "reed"; else if(b.beach > 0.4) variant = "dry";
+      } else if(kind==="twig"){
+        p = 0.04 + 0.4*b.west + 0.15*lowMountain + 0.3*b.beach;
+        if(b.beach > 0.5) variant = "driftwood";
+      } else if(kind==="pebble"){
+        p = 0.05 + 0.5*b.beach + 0.22*b.mountain + 0.15*b.rockyShore;
+        if(b.beach > 0.5 && hv < 0.6) variant = "shell"; else if(b.mountain > 0.3 && hv < 0.3) variant = "flint";
+      }
+      return {p: Math.max(0, Math.min(1, p)), variant, h, b};
+    }
+    function sm01(a,b,v){ const t=Math.max(0,Math.min(1,(v-a)/(b-a))); return t*t*(3-2*t); }
+    function valid3(kind, x, z, sc, dens){
+      const K = KINDS[kind], h = dens.h;
+      const dr = T.distanceToRiver(x,z); if(kind==="pebble" ? dr < 4.0 : dr < 5.6) return false;
+      if(slope(x,z) > (K.block ? 0.55 : 0.9)) return false;
+      const w = T.waterAt(x,z,h); if(w.kind) return false;
+      if(dens.b.beach < 0.3 && h < wl + 0.12) return false;
+      const td = trailD(x,z); if(td < (K.block ? 2.9 + K.r*sc : 1.1)) return false;
+      if(Math.hypot(x-T.LOOKOUT.x, z-T.LOOKOUT.z) < T.LOOKOUT.r + (K.block ? 1.5 : 0)) return false;
+      if(Math.hypot(x-T.FALL.pool.x, z-T.FALL.pool.z) < T.FALL.poolR + 2.4 || Math.hypot(x-T.TARN.x, z-T.TARN.z) < T.TARN.r + 1.6) return false;
+      const st = T.streamAt(x,z); if(st.which && st.d < (K.block ? 3.6 : 2.3)) return false;
+      if(terrainBlocked(x,z)) return false;
+      return true;
+    }
+    const gapOf = (a, b)=> (a.block && b.block) ? a.r + b.r + 1.4 : (a.block || b.block) ? a.r + b.r + 0.5 : 0.8;
+    /* 順位の高い候補・旧世界の自然物・採取地点と重ならないか */
+    function survives(c){
+      for(const k2 of Object.keys(L3)){
+        const cell = L3[k2].cell, R = 4.4, i0 = Math.floor((c.x-R)/cell)-1, i1 = Math.floor((c.x+R)/cell)+1, j0 = Math.floor((c.z-R)/cell)-1, j1 = Math.floor((c.z+R)/cell)+1;
+        for(let i=i0;i<=i1;i++) for(let j=j0;j<=j1;j++){ const o = candidate(k2,i,j); if(!o || o===c || o.pri <= c.pri) continue;
+          if(Math.hypot(o.x-c.x, o.z-c.z) < gapOf(c,o)) return false; }
+      }
+      if(Math.max(Math.abs(c.x),Math.abs(c.z)) < 62){
+        for(const o of oldNear(c.x, c.z, 5)) if(Math.hypot(o.x-c.x, o.z-c.z) < gapOf(c,o)) return false;
+        if(deps.some(p=>near(c.x,c.z,p.x,p.z) < 2.4)) return false;
+      }
+      return true;
+    }
+    const BS = 32, blocks3 = new Set();
+    let gen3 = 0;
+    function genBlock(bi, bj){
+      const bk = bi+","+bj; if(blocks3.has(bk)) return; blocks3.add(bk);
+      if(!WIDE) return;
+      const x0 = bi*BS, z0 = bj*BS;
+      if(x0+BS < WB.minX || x0 > WB.maxX || z0+BS < WB.minZ || z0 > WB.maxZ) return;
+      if(x0 >= -53.5 && x0+BS <= 53.5 && z0 >= -53.5 && z0+BS <= 53.5) return;    // 旧世界の中
+      for(const kind of Object.keys(L3)){
+        const cell = L3[kind].cell;
+        for(let i=Math.floor(x0/cell)-1; i<=Math.floor((x0+BS)/cell)+1; i++) for(let j=Math.floor(z0/cell)-1; j<=Math.floor((z0+BS)/cell)+1; j++){
+          const c = candidate(kind,i,j); if(!c || c.x < x0 || c.x >= x0+BS || c.z < z0 || c.z >= z0+BS) continue;
+          if(!survives(c)) continue;
+          const K = KINDS[kind], id = kind+":"+Math.round(c.x*10)+","+Math.round(c.z*10);
+          if(byId.has(id)) continue;
+          const reg = regionAt(c.x,c.z);
+          const o = {id, kind, variant:c.variant||null, x:c.x, z:c.z, rot:+c.rot.toFixed(3), scale:+c.s.toFixed(2), r:+(K.r*c.s).toFixed(3), block:K.block, region: reg ? reg.id : null, layer:3};
+          objs.push(o); byId.set(id,o); gen3++;
+          const ak = Math.floor(o.x/AG)+","+Math.floor(o.z/AG); if(!agrid.has(ak)) agrid.set(ak,[]); agrid.get(ak).push(o);
+          if(o.block){ const ck2 = ck(Math.floor(o.x/CELL), Math.floor(o.z/CELL)); if(!cells.has(ck2)) cells.set(ck2,[]); cells.get(ck2).push(o); }
+        }
+      }
+      gridCache = null;
+    }
+    /* (x,z) のまわり rad マスの区画を用意する */
+    function ensure(x, z, rad){
+      if(!WIDE) return;
+      const i0 = Math.floor((x-rad)/BS), i1 = Math.floor((x+rad)/BS), j0 = Math.floor((z-rad)/BS), j1 = Math.floor((z+rad)/BS);
+      for(let i=i0;i<=i1;i++) for(let j=j0;j<=j1;j++) if(!blocks3.has(i+","+j)) genBlock(i,j);
+    }
+    function ensureAll(){ if(!WIDE) return; for(let i=Math.floor(WB.minX/BS); i<=Math.floor(WB.maxX/BS); i++) for(let j=Math.floor(WB.minZ/BS); j<=Math.floor(WB.maxZ/BS); j++) genBlock(i,j); }
+
     /* ---------- 当たり判定（地面上の円と空間分割） ---------- */
     const CELL = 4, cells = new Map();
     const ck = (cx,cz)=>cx+","+cz;
     objs.concat(statics).forEach(o=>{ if(!o.block) return; const cx=Math.floor(o.x/CELL), cz=Math.floor(o.z/CELL); const k=ck(cx,cz); if(!cells.has(k)) cells.set(k,[]); cells.get(k).push(o); });
     function nearbySolids(S, x, z, now){
+      ensure(x, z, 6);
       const out=[]; const cx=Math.floor(x/CELL), cz=Math.floor(z/CELL);
       for(let i=-1;i<=1;i++) for(let j=-1;j<=1;j++){ const a=cells.get(ck(cx+i,cz+j)); if(a) a.forEach(o=>{ if(solid(S,o,now)) out.push(o); }); }
       for(const t of structs) if(Math.abs(t.x-x) < t.r+CELL && Math.abs(t.z-z) < t.r+CELL) out.push(t);
@@ -413,6 +574,7 @@ var NATURE = (function(){
     /* その場所に主人公が立てるか */
     function free(S, x, z, now){
       if(!inWorld(x,z)) return false;
+      if(terrainBlocked(x,z)) return false;
       for(const r of lockedNow(S)) if(Math.hypot(x-r.w.x,z-r.w.z) < REGION_R) return false;
       for(const o of nearbySolids(S,x,z,now)) if(sdist(o,x,z) < PLAYER_R) return false;
       return true;
@@ -427,17 +589,18 @@ var NATURE = (function(){
         }
         if(!moved) break;
       }
-      p.x=Math.max(-WORLD_R,Math.min(WORLD_R,p.x)); p.z=Math.max(-WORLD_R,Math.min(WORLD_R,p.z));
+      p.x=Math.max(WB.minX,Math.min(WB.maxX,p.x)); p.z=Math.max(WB.minZ,Math.min(WB.maxZ,p.z));
       return p;
     }
     /* 移動（キー・スティック・クリック移動で共通）。大きな移動は細かく分けて、すり抜けない。
-       障害物に向かって進むと、外周に沿って滑る。戻り値：{x,z,blocked:locked地域の場合その地域} */
+       障害物に向かって進むと、外周に沿って滑る。崖・深い水の手前では止まり、横方向に動けるならそちらへ滑る。
+       戻り値：{x,z,hit,locked,cliff} */
     let moveIgnore = null;
     function move(S, from, dx, dz, now, ignore){
       if(ignore){ moveIgnore=ignore; try{ return move(S, from, dx, dz, now); } finally { moveIgnore=null; } }
       const len = Math.hypot(dx,dz); if(len<1e-9) return {x:from.x, z:from.z, hit:false};
       const steps = Math.max(1, Math.ceil(len/0.15));
-      let p = {x:from.x, z:from.z}, hit=false, lockedHit=null;
+      let p = {x:from.x, z:from.z}, hit=false, lockedHit=null, cliff=false;
       const sx=dx/steps, sz=dz/steps;
       for(let i=0;i<steps;i++){
         let vx=sx, vz=sz;
@@ -452,78 +615,101 @@ var NATURE = (function(){
             }
           }
         }
-        const q = {x:p.x+vx, z:p.z+vz};
+        let q = {x:p.x+vx, z:p.z+vz};
+        if(terrainBlocked(q.x,q.z) && !terrainBlocked(p.x,p.z)){
+          // 崖・深い水：そのままは進めない。片方の向きだけなら進めるなら、そちらへ滑る
+          cliff=true; hit=true;
+          if(Math.abs(vx) > 1e-6 && !terrainBlocked(p.x+vx, p.z)) q = {x:p.x+vx, z:p.z};
+          else if(Math.abs(vz) > 1e-6 && !terrainBlocked(p.x, p.z+vz)) q = {x:p.x, z:p.z+vz};
+          else break;
+        }
         const lk = lockedNow(S).find(r=>Math.hypot(q.x-r.w.x,q.z-r.w.z) < REGION_R);
         if(lk){ lockedHit=lk; hit=true; break; }
         depenetrate(S,q,now);
+        if(terrainBlocked(q.x,q.z) && !terrainBlocked(p.x,p.z)) break;       // 押し出された先が崖なら、その場にとどまる
         p=q;
       }
-      return {x:p.x, z:p.z, hit, locked:lockedHit};
+      return {x:p.x, z:p.z, hit, locked:lockedHit, cliff};
     }
 
-    /* ---------- 経路探索（クリック移動・採取対象への移動） ---------- */
-    const GRID = 0.5, GN = Math.ceil(WORLD_R*2/GRID)+1;
-    const gi = v=>Math.round((v+WORLD_R)/GRID), gv = i=>i*GRID-WORLD_R;
+    /* ---------- 経路探索（クリック移動・採取対象への移動） ----------
+       広い世界では、出発点と目的地を囲む範囲（まわりに余白）だけの格子で探す */
+    const GRID = 0.5;
     let gridCache=null, gridSig="";
-    function blockGrid(S, now){
-      const sig = lockedNow(S).map(r=>r.id).join(",")+"|"+objs.filter(o=>o.block && !present(S,o,now)).map(o=>o.id).join(",")+"|"+structSig;
-      if(gridCache && sig===gridSig) return gridCache;
-      const g = new Uint8Array(GN*GN);
-      for(let i=0;i<GN;i++) for(let j=0;j<GN;j++){ if(!inWorld(gv(i),gv(j),0.2)) g[i*GN+j]=1; }
-      const mark=(cx,cz,r)=>{ const a=gi(cx-r), b=gi(cx+r), c=gi(cz-r), d=gi(cz+r);
-        for(let i=Math.max(0,a);i<=Math.min(GN-1,b);i++) for(let j=Math.max(0,c);j<=Math.min(GN-1,d);j++){ if(Math.hypot(gv(i)-cx,gv(j)-cz) < r) g[i*GN+j]=1; } };
-      objs.concat(statics).forEach(o=>{ if(solid(S,o,now)) mark(o.x,o.z,o.r+PLAYER_R+0.08); });
-      structs.forEach(t=>{ const R=t.r+PLAYER_R+0.1, a=gi(t.x-R), b=gi(t.x+R), c=gi(t.z-R), d=gi(t.z+R);
-        for(let i=Math.max(0,a);i<=Math.min(GN-1,b);i++) for(let j=Math.max(0,c);j<=Math.min(GN-1,d);j++){ if(sdist(t,gv(i),gv(j)) < PLAYER_R+0.08) g[i*GN+j]=1; } });
-      lockedNow(S).forEach(r=>mark(r.w.x,r.w.z,REGION_R+0.2));
-      gridCache=g; gridSig=sig; return g;
+    function windowFor(a, b, margin){
+      const x0 = Math.max(WB.minX, Math.min(a.x,b.x)-margin), x1 = Math.min(WB.maxX, Math.max(a.x,b.x)+margin);
+      const z0 = Math.max(WB.minZ, Math.min(a.z,b.z)-margin), z1 = Math.min(WB.maxZ, Math.max(a.z,b.z)+margin);
+      const ox = Math.floor(x0/GRID)*GRID, oz = Math.floor(z0/GRID)*GRID;
+      return {ox, oz, nx: Math.ceil((x1-ox)/GRID)+1, nz: Math.ceil((z1-oz)/GRID)+1};
     }
-    const cellFree = (g,i,j)=> i>=0 && j>=0 && i<GN && j<GN && !g[i*GN+j];
+    function blockGrid(S, now, win){
+      ensure((win.ox + win.ox + win.nx*GRID)/2, (win.oz + win.oz + win.nz*GRID)/2, Math.max(win.nx, win.nz)*GRID/2 + 2);
+      const sig = win.ox+","+win.oz+","+win.nx+","+win.nz+"|"+lockedNow(S).map(r=>r.id).join(",")+"|"+gen3+"|"+objs.filter(o=>o.block && !present(S,o,now)).map(o=>o.id).join(",")+"|"+structSig+"|"+npcCols.length;
+      if(gridCache && sig===gridSig) return gridCache;
+      const {ox, oz, nx, nz} = win, g = new Uint8Array(nx*nz);
+      const gi = v=>Math.round((v-ox)/GRID), gj = v=>Math.round((v-oz)/GRID), gx = i=>ox+i*GRID, gz = j=>oz+j*GRID;
+      // 崖・深い水のまわり 0.25 マスもふさぐ（経路の直線が崖のふちをかすめないように）
+      for(let i=0;i<nx;i++) for(let j=0;j<nz;j++){ const x=gx(i), z=gz(j); if(!inWorld(x,z,0.2) || terrainBlocked(x,z) || terrainBlocked(x-0.25,z-0.25) || terrainBlocked(x+0.25,z-0.25) || terrainBlocked(x-0.25,z+0.25) || terrainBlocked(x+0.25,z+0.25)) g[i*nz+j]=1; }
+      const mark=(cx,cz,r)=>{ const a=gi(cx-r), b=gi(cx+r), c=gj(cz-r), d=gj(cz+r);
+        for(let i=Math.max(0,a);i<=Math.min(nx-1,b);i++) for(let j=Math.max(0,c);j<=Math.min(nz-1,d);j++){ if(Math.hypot(gx(i)-cx,gz(j)-cz) < r) g[i*nz+j]=1; } };
+      const inWin = o=> o.x > ox-3 && o.x < ox+nx*GRID+3 && o.z > oz-3 && o.z < oz+nz*GRID+3;
+      objs.forEach(o=>{ if(inWin(o) && solid(S,o,now)) mark(o.x,o.z,o.r+PLAYER_R+0.08); });
+      statics.forEach(o=>{ if(inWin(o)) mark(o.x,o.z,o.r+PLAYER_R+0.08); });
+      structs.forEach(t=>{ if(!inWin(t)) return; const R=t.r+PLAYER_R+0.1, a=gi(t.x-R), b=gi(t.x+R), c=gj(t.z-R), d=gj(t.z+R);
+        for(let i=Math.max(0,a);i<=Math.min(nx-1,b);i++) for(let j=Math.max(0,c);j<=Math.min(nz-1,d);j++){ if(sdist(t,gx(i),gz(j)) < PLAYER_R+0.08) g[i*nz+j]=1; } });
+      lockedNow(S).forEach(r=>mark(r.w.x,r.w.z,REGION_R+0.2));
+      gridCache={g, win, gi, gj, gx, gz}; gridSig=sig; return gridCache;
+    }
+    const cellFree = (G,i,j)=> i>=0 && j>=0 && i<G.win.nx && j<G.win.nz && !G.g[i*G.win.nz+j];
     /* 目的地が障害物の中なら、近くの立てる場所へ */
     function nearestFree(S, p, now, maxR){
-      const g=blockGrid(S,now); const ci=gi(p.x), cj=gi(p.z);
-      if(cellFree(g,ci,cj) && free(S,p.x,p.z,now)) return {x:p.x, z:p.z};
       const lim = Math.ceil((maxR||8)/GRID);
+      const G = blockGrid(S, now, windowFor(p, p, (maxR||8)+1)); const ci=G.gi(p.x), cj=G.gj(p.z);
+      if(cellFree(G,ci,cj) && free(S,p.x,p.z,now)) return {x:p.x, z:p.z};
       for(let r=1;r<=lim;r++){ let best=null, bd=1e9;
-        for(let i=ci-r;i<=ci+r;i++) for(let j=cj-r;j<=cj+r;j++){ if(Math.max(Math.abs(i-ci),Math.abs(j-cj))!==r || !cellFree(g,i,j)) continue;
-          const x=gv(i), z=gv(j), d=Math.hypot(x-p.x,z-p.z); if(d<bd && free(S,x,z,now)){ bd=d; best={x,z}; } }
+        for(let i=ci-r;i<=ci+r;i++) for(let j=cj-r;j<=cj+r;j++){ if(Math.max(Math.abs(i-ci),Math.abs(j-cj))!==r || !cellFree(G,i,j)) continue;
+          const x=G.gx(i), z=G.gz(j), d=Math.hypot(x-p.x,z-p.z); if(d<bd && free(S,x,z,now)){ bd=d; best={x,z}; } }
         if(best) return best; }
       return null;
     }
     /* 直線で歩けるか（経路の間引き用） */
-    function clearLine(g, a, b){
+    function clearLine(G, a, b){
       const d=Math.hypot(b.x-a.x,b.z-a.z), n=Math.ceil(d/(GRID*0.5));
-      for(let k=0;k<=n;k++){ const t=n?k/n:0; if(!cellFree(g,gi(a.x+(b.x-a.x)*t), gi(a.z+(b.z-a.z)*t))) return false; }
+      for(let k=0;k<=n;k++){ const t=n?k/n:0; if(!cellFree(G,G.gi(a.x+(b.x-a.x)*t), G.gj(a.z+(b.z-a.z)*t))) return false; }
       return true;
     }
     /* A*。戻り値：経由点の配列（最初の点は含まない）。行けなければ null */
     function findPath(S, from, to, now){
-      const g=blockGrid(S,now);
       const goal = nearestFree(S,to,now,6); if(!goal) return null;
-      const si=gi(from.x), sj=gi(from.z), ti=gi(goal.x), tj=gi(goal.z);
-      if(clearLine(g, from, goal)) return [goal];
-      const N=GN*GN, gS=new Float32Array(N).fill(Infinity), came=new Int32Array(N).fill(-1), closed=new Uint8Array(N);
+      const dist = Math.hypot(goal.x-from.x, goal.z-from.z);
+      // 範囲：出発点と目的地のまわりに余白（遠いほど広く。山道のように回り道が要る所でも見つかるように）
+      const G = blockGrid(S, now, windowFor(from, goal, Math.min(60, 16 + dist*0.35)));
+      const GN = G.win.nz, NX = G.win.nx;
+      const si=G.gi(from.x), sj=G.gj(from.z), ti=G.gi(goal.x), tj=G.gj(goal.z);
+      if(clearLine(G, from, goal)) return [goal];
+      const N=NX*GN, gS=new Float32Array(N).fill(Infinity), came=new Int32Array(N).fill(-1), closed=new Uint8Array(N);
       const heap=[]; const push=(f,k)=>{ heap.push([f,k]); let i=heap.length-1; while(i>0){ const p=(i-1)>>1; if(heap[p][0]<=heap[i][0]) break; [heap[p],heap[i]]=[heap[i],heap[p]]; i=p; } };
       const pop=()=>{ const top=heap[0], last=heap.pop(); if(heap.length){ heap[0]=last; let i=0; for(;;){ const l=2*i+1, r=l+1; let m=i; if(l<heap.length&&heap[l][0]<heap[m][0]) m=l; if(r<heap.length&&heap[r][0]<heap[m][0]) m=r; if(m===i) break; [heap[m],heap[i]]=[heap[i],heap[m]]; i=m; } } return top; };
       const start = si*GN+sj, target = ti*GN+tj;
+      if(si<0||sj<0||si>=NX||sj>=GN) return null;
       gS[start]=0; push(Math.hypot(ti-si,tj-sj), start);
-      let found=false, expanded=0;
-      while(heap.length && expanded<60000){
+      let found=false, expanded=0; const LIMIT = Math.min(N, 350000);
+      while(heap.length && expanded<LIMIT){
         const [,k]=pop(); if(closed[k]) continue; closed[k]=1; expanded++;
         if(k===target){ found=true; break; }
         const i=Math.floor(k/GN), j=k%GN;
         for(let di=-1;di<=1;di++) for(let dj=-1;dj<=1;dj++){ if(!di&&!dj) continue;
-          const ni=i+di, nj=j+dj; if(!cellFree(g,ni,nj) && !(ni*GN+nj===start)) continue;
-          if(di&&dj && (!cellFree(g,i+di,j) || !cellFree(g,i,j+dj))) continue;   // 角を斜めにすり抜けない
+          const ni=i+di, nj=j+dj; if(!cellFree(G,ni,nj) && !(ni*GN+nj===start)) continue;
+          if(di&&dj && (!cellFree(G,i+di,j) || !cellFree(G,i,j+dj))) continue;   // 角を斜めにすり抜けない
           const nk=ni*GN+nj, cost=gS[k]+(di&&dj?1.4142:1);
           if(cost<gS[nk]){ gS[nk]=cost; came[nk]=k; push(cost+Math.hypot(ti-ni,tj-nj), nk); } }
       }
       if(!found) return null;
-      const pts=[]; for(let k=target; k!==-1 && k!==start; k=came[k]) pts.push({x:gv(Math.floor(k/GN)), z:gv(k%GN)});
+      const pts=[]; for(let k=target; k!==-1 && k!==start; k=came[k]) pts.push({x:G.gx(Math.floor(k/GN)), z:G.gz(k%GN)});
       pts.reverse(); pts[pts.length-1]={x:goal.x, z:goal.z};
       // 見通しのきく点まで間引く
       const out=[]; let a=from, i=0;
-      while(i<pts.length){ let j=pts.length-1; while(j>i && !clearLine(g,a,pts[j])) j--; out.push(pts[j]); a=pts[j]; i=j+1; }
+      while(i<pts.length){ let j=pts.length-1; while(j>i && !clearLine(G,a,pts[j])) j--; out.push(pts[j]); a=pts[j]; i=j+1; }
       return out;
     }
     /* 採取対象のまわりで、主人公が立てる外周の位置（主人公に近い側） */
@@ -542,14 +728,14 @@ var NATURE = (function(){
     }
     /* 近くの自然物（半径 rad 以内） */
     /* 近くの自然物だけを引く（8マスの格子。毎フレームの近接判定・表示の同期で全件を走査しない） */
-    const AG = 8, agrid = new Map(); objs.forEach(o=>{ const k=Math.floor(o.x/AG)+","+Math.floor(o.z/AG); if(!agrid.has(k)) agrid.set(k,[]); agrid.get(k).push(o); });
-    function around(x, z, rad){ const out=[]; const x0=Math.floor((x-rad)/AG), x1=Math.floor((x+rad)/AG), z0=Math.floor((z-rad)/AG), z1=Math.floor((z+rad)/AG);
+    function around(x, z, rad){ ensure(x, z, rad+2); const out=[]; const x0=Math.floor((x-rad)/AG), x1=Math.floor((x+rad)/AG), z0=Math.floor((z-rad)/AG), z1=Math.floor((z+rad)/AG);
       for(let i=x0;i<=x1;i++) for(let j=z0;j<=z1;j++){ const c=agrid.get(i+","+j); if(c) for(const o of c) if(Math.abs(o.x-x)<=rad && Math.abs(o.z-z)<=rad && Math.hypot(o.x-x,o.z-z)<=rad) out.push(o); }
       return out; }
 
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
             free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids, layer2:L2N,
-            setStructures, structures:()=>structs.slice(), sdist, covered, checkPlacement, commitPlacement, removePlacement, toWorld, decos, setNpcs};
+            setStructures, structures:()=>structs.slice(), sdist, covered, checkPlacement, commitPlacement, removePlacement, toWorld, decos, setNpcs,
+            terrainBlocked, ensure, ensureAll, wide:WIDE, bounds:WB, layer3:()=>gen3};
   }
   return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, SITES, FORMER_STONEWORK};
 })();

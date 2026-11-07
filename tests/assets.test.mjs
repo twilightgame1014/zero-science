@@ -38,7 +38,7 @@ ok('軽量 GLB にも可動部（Flame・Wheel・Piston・DrillPipe・Winch・Be
 
 /* ---------- 全部建てたときの配置と当たり判定 ---------- */
 const T = await loadTerrain();
-const W = N.create(D, E, { terrainHeight: T.terrainHeight, distanceToRiver: T.distanceToRiver, cfg: T.DEFAULT_CONFIG });
+const W = N.create(D, E, Object.assign({}, T, { cfg: T.DEFAULT_CONFIG }));
 const SV = E.makeVerifyState();
 W.setStructures(rows.map(r => ({ ...r, footprint: spec[r.type].footprint })));
 const st = W.structures();
@@ -109,7 +109,7 @@ ok('建物の下になった自然物は、見えない・壁にならない・�
   const abs = p => ({ x: V.c.x + p.x, z: V.c.z + p.z });
   const items = V.huts.map(h => ({ id: h.id, type: 'hut', ...abs(h), rot: h.rot, footprint: spec.hut.footprint })).concat(V.props.map(p => ({ id: p.id, type: 'prop-' + p.type, ...abs(p), rot: p.rot, footprint: pspec[p.type] })));
   ok('集落の小物はすべて Muse の props.json にある種類（11種のうち使うもの）', V.props.every(p => pspec[p.type]) && new Set(V.props.map(p => p.type)).size >= 10);
-  const W5 = N.create(D, E, { terrainHeight: T.terrainHeight, distanceToRiver: T.distanceToRiver, cfg: T.DEFAULT_CONFIG });
+  const W5 = N.create(D, E, Object.assign({}, T, { cfg: T.DEFAULT_CONFIG }));
   W5.setStructures(items); const st5 = W5.structures(), S5 = E.newState();
   const tight5 = []; for (const a of st5) for (const b of st5) if (a.id < b.id) { const g = Math.min(...corners(a).map(p => W5.sdist(b, p.x, p.z)), ...corners(b).map(p => W5.sdist(a, p.x, p.z))); if (g < 0.3) tight5.push(a.id + '/' + b.id + ':' + g.toFixed(2)); }
   ok('集落の小屋・小物は重ならない（0.3マス以上あく）', tight5.length === 0, tight5.join(' '));

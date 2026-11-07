@@ -1,13 +1,15 @@
 /* ===================== ゲームエンジン（UIから独立） ===================== */
 var ENGINE = (function(D){
-  const SCHEMA = 3;
+  const SCHEMA = 4;
+  /* 地形の版（広い世界の形。src/world/shape.ts の WORLD_VERSION と同じ値。テストで検査）。セーブの worldVer がこれより古ければ、UI が位置を確かめて直す */
+  const WORLD_VER = 2;
   const IT = D.items;
   const BASKET_RES = ["twig","leaves","vine","seed","grass","grape","shell","seaweed","cobble","sand","clay"];
   const AIR = ["O","N","C","H"]; // 空気中の酸素・窒素・二酸化炭素・水蒸気
 
   /* nature：変化した自然物・採取地点の状態だけを保存する（{id:{u:使った回数, t:取り尽くした時刻}}） */
   /* build：建物の置き場所 {建物ID:{x,z,rot}}（撤去したものは {removed:true}。記録がなければ決まった場所）。camera：カメラのユーザー設定（v3〜） */
-  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, build:{}, camera:{}, created:Date.now()}; }
+  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, build:{}, camera:{}, worldVer:WORLD_VER, created:Date.now()}; }
   const cnt = (S,id)=> S.inv[id]||0;
   const has = (S,id)=> cnt(S,id)>0;
   /* 検証モード（S.verify。通常のセーブには存在しない）の条件バイパス。
@@ -304,7 +306,8 @@ var ENGINE = (function(D){
       return n;
     },
     1: s => { s.nature = {}; return s; },  // v1→v2：自然物・採取地点の状態（最初は何も変化していない）
-    2: s => { s.build = {}; s.camera = {}; return s; }  // v2→v3：建物の自由設置・カメラの設定（これまでの建物は決まった場所のまま）
+    2: s => { s.build = {}; s.camera = {}; return s; },  // v2→v3：建物の自由設置・カメラの設定（これまでの建物は決まった場所のまま）
+    3: s => { s.worldVer = 1; return s; }  // v3→v4：地形の版を記録（これまでのセーブは旧世界＝版1。位置の確認は読み込み後に UI が地形関数で行う）
   };
   const ALIASES = {}; // 名称変更したIDの対応表（例：{"oldId":"newId"}）
   function migrate(raw){
@@ -319,6 +322,7 @@ var ENGINE = (function(D){
     if(!n.build || typeof n.build!=="object" || Array.isArray(n.build)) n.build={};
     for(const k of Object.keys(n.build)){ const b=n.build[k]; if(!b || typeof b!=="object" || !(b.removed===true || (isFinite(b.x) && isFinite(b.z) && isFinite(b.rot)))) delete n.build[k]; }
     if(!n.camera || typeof n.camera!=="object" || Array.isArray(n.camera)) n.camera={};
+    if(!(typeof n.worldVer==="number" && isFinite(n.worldVer))) n.worldVer = 1;
     for(const k of Object.keys(n.nature)){ const x=n.nature[k]; if(!x || typeof x!=="object" || !(x.u>0) || !isFinite(x.u)) delete n.nature[k]; else { x.u=Math.floor(x.u); if(x.t!==undefined && !isFinite(x.t)) delete x.t; } }
     return n;
   }
@@ -403,9 +407,12 @@ var ENGINE = (function(D){
     const neg = deserialize(JSON.stringify({v:1, inv:{twig:-5, ash:2.7}}));
     ok("壊れた数量（負の数・小数）を修正する", !neg.inv.twig && neg.inv.ash===2);
     const v1 = deserialize(JSON.stringify({v:1, inv:{twig:2}, disc:{twig:{first:1,made:1,total:2,routes:[],best:0}}, pos:{x:-20,z:20}}));
-    ok("スキーマv1のセーブを最新（v3）へ移行できる（自然物の状態は空・座標は残る・建物は決まった場所のまま）", v1.v===SCHEMA && v1.inv.twig===2 && v1.pos.x===-20 && JSON.stringify(v1.nature)==="{}" && JSON.stringify(v1.build)==="{}");
+    ok("スキーマv1のセーブを最新へ移行できる（自然物の状態は空・座標は残る・建物は決まった場所のまま）", v1.v===SCHEMA && v1.inv.twig===2 && v1.pos.x===-20 && JSON.stringify(v1.nature)==="{}" && JSON.stringify(v1.build)==="{}");
     const v2 = deserialize(JSON.stringify({v:2, inv:{bench:1}, disc:{}, pos:{x:-18,z:21}, nature:{"twig:1,2":{u:1,t:5}}}));
-    ok("スキーマv2のセーブをv3へ移行できる（採取状態・座標はそのまま、置き場所とカメラは空）", v2.v===3 && v2.nature["twig:1,2"].u===1 && v2.pos.z===21 && JSON.stringify(v2.build)==="{}" && JSON.stringify(v2.camera)==="{}");
+    ok("スキーマv2のセーブを最新へ移行できる（採取状態・座標はそのまま、置き場所とカメラは空）", v2.v===SCHEMA && v2.nature["twig:1,2"].u===1 && v2.pos.z===21 && JSON.stringify(v2.build)==="{}" && JSON.stringify(v2.camera)==="{}");
+    const v3 = deserialize(JSON.stringify({v:3, inv:{bench:1}, disc:{}, pos:{x:-18,z:21,dir:"up"}, nature:{"tree:1,2":{u:1}}, build:{"st-bench":{x:1,z:2,rot:0.5}}, camera:{yaw:90}}));
+    ok("スキーマv3のセーブをv4へ移行できる（地形の版は旧世界=1、位置・建物・採取状態・カメラはそのまま）", v3.v===SCHEMA && v3.worldVer===1 && v3.pos.x===-18 && v3.pos.dir==="up" && v3.build["st-bench"].rot===0.5 && v3.nature["tree:1,2"].u===1 && v3.camera.yaw===90);
+    ok("新しいゲームは今の地形の版", newState().worldVer===WORLD_VER);
     const badB = deserialize(JSON.stringify({v:3, build:{"st-bench":{x:1,z:2,rot:0.5}, "st-fire":{removed:true}, "st-kiln":{x:"a"}, "st-x":null}}));
     ok("壊れた置き場所の記録は捨てる（正しいものは残す）", badB.build["st-bench"].rot===0.5 && badB.build["st-fire"].removed===true && !badB.build["st-kiln"] && !("st-x" in badB.build));
     const badN = deserialize(JSON.stringify({v:2, nature:{"t:1,2":{u:-1}, "d:river:cobble":{u:2.5,t:"x"}}}));
@@ -424,7 +431,7 @@ var ENGINE = (function(D){
     return R;
   }
 
-  return {addItem, hasTool, vflag, makeVerifyState, fillStorable, VERIFY_DEFAULTS, SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, collect, stockOf, useStock, harvestDeposit, depositInfo, depositRule, depositId, depositPos, REACH, regionOpen, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
+  return {WORLD_VER, addItem, hasTool, vflag, makeVerifyState, fillStorable, VERIFY_DEFAULTS, SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, collect, stockOf, useStock, harvestDeposit, depositInfo, depositRule, depositId, depositPos, REACH, regionOpen, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
           planCraft, runCraft, producers, usesOf, status, hint, suggest, stageOf, missionIndex, tagProgress, serialize, deserialize, runTests};
 })(typeof DATA!=="undefined"?DATA:require("./data.js"));
 if (typeof module!=="undefined") module.exports = ENGINE;
