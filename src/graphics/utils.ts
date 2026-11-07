@@ -273,6 +273,17 @@ function areaHeight(id: AreaId, x: number, z: number, cfg: GraphicsConfig): numb
  * everywhere). Inside the legacy square every falloff is zero and
  * the result equals the legacy function exactly.
  */
+/**
+ * The module's single height inlet (round 22): the host's
+ * config.world.heightAt when supplied, else the built-in
+ * terrainHeight. All renderer height queries route through
+ * here so an externally-owned world shape applies everywhere
+ * at once (terrain, grounding, water depth).
+ */
+export function heightAt(x: number, z: number, cfg: GraphicsConfig): number {
+  return cfg.world.heightAt ? cfg.world.heightAt(x, z) : terrainHeight(x, z, cfg);
+}
+
 export function terrainHeight(x: number, z: number, cfg: GraphicsConfig): number {
   let h = terrainHeightLegacy(x, z, cfg);
   const order: AreaId[] = ['lakeside', 'coast', 'desert', 'town', 'snow', 'volcano'];

@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import type { ResourceVisualState } from './types';
 import { disposeObject } from './StructureRenderer';
 import { AssetManager } from './AssetManager';
-import { segmentPointDistance } from './utils';
+import { mulberry32, segmentPointDistance } from './utils';
+import { fracturedRockGeometry } from './WaterfallKit';
 
 interface SlotRef {
   pool: InstancedPool;
@@ -59,6 +60,23 @@ function jitterRock(geo: THREE.BufferGeometry, amount = 0.16): void {
     pos.setXYZ(i, v.x, v.y, v.z);
   }
   geo.computeVertexNormals();
+}
+
+/**
+ * FNV-1a hash of the node id (round 22): the old char-code SUM
+ * collided constantly ("rock:120,340" vs "rock:210,430" style
+ * ids summed alike), so whole fields of nodes grew the identical
+ * tree / rock. The hash spreads ids across the full 32-bit range;
+ * every per-instance variation below derives from it, and the
+ * same id always yields the same individual.
+ */
+function hashIdSeed(id: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
 }
 
 /**
@@ -282,7 +300,7 @@ export class ResourceRenderer {
     const y = state.position.y ?? this.groundHeightAt(state.position.x, state.position.z);
     if (needsRebuild) {
       this.removeResource(id);
-      const seed = [...id].reduce((a, c) => a + c.charCodeAt(0), 0);
+      const seed = hashIdSeed(id);
       const s = state.scale ?? 1;
       const inst = state.depleted
         ? this.buildInstancedDepleted(state, seed)
@@ -1010,11 +1028,17 @@ export class ResourceRenderer {
           break;
         }
         const arch = Math.floor(sr(1) * 3); // 0 wide, 1 tall, 2 young
-        const trunkH = arch === 1 ? 2.25 : arch === 2 ? 1.45 : 1.8;
+        // Round 22 individuality: a slight trunk lean with the
+        // crown biased the same way, and per-tree height jitter —
+        // two trees of one archetype no longer stand as twins.
+        const leanX = (sr(500) - 0.5) * 0.24;
+        const leanZ = (sr(501) - 0.5) * 0.24;
+        const trunkH = (arch === 1 ? 2.25 : arch === 2 ? 1.45 : 1.8) * (0.92 + sr(502) * 0.16);
         const trunk = add(new THREE.Mesh(
           this.geo('trunk', () => new THREE.CylinderGeometry(0.14, 0.26, 1.8, 7)), wood));
         trunk.scale.set(arch === 2 ? 0.8 : 1, trunkH / 1.8, arch === 2 ? 0.8 : 1);
         trunk.position.y = trunkH / 2;
+        trunk.rotation.set(leanZ * 0.4, 0, -leanX * 0.4);
         {
           const crownY = arch === 1 ? 2.85 : arch === 2 ? 1.95 : 2.45;
           const clusters = arch === 1 ? 6 : arch === 2 ? 5 : 8;
@@ -1059,8 +1083,8 @@ export class ResourceRenderer {
           for (let c = 0; c < clusters; c++) {
             const az = baseAz + (c / clusters) * Math.PI * 2 + (sr(10 + c) - 0.5) * 0.6;
             const rr = spreadR * (0.5 + sr(30 + c) * 0.55);
-            const cx = Math.cos(az) * rr;
-            const cz = Math.sin(az) * rr;
+            const cx = Math.cos(az) * rr + leanX;
+            const cz = Math.sin(az) * rr + leanZ;
             const cy = crownY + (sr(40 + c) - 0.5) * 0.6;
             for (let p = 0; p < 2; p++) {
               const tex = c === clusters - 1 && p === 1 && this.branch.branch_3
@@ -1077,22 +1101,54 @@ export class ResourceRenderer {
           // crown read thin and yellow-green; more cards and a
           // calmer, deeper green).
           sprayCard(sprays[Math.floor(sr(3) * sprays.length) % sprays.length],
-            0, crownY - 0.25, 0, sr(4) * Math.PI, -0.2, 0, cardW * 1.05, 0.36);
+            leanX, crownY - 0.25, leanZ, sr(4) * Math.PI, -0.2, 0, cardW * 1.05, 0.36);
           sprayCard(sprays[Math.floor(sr(6) * sprays.length) % sprays.length],
-            0.3, crownY - 0.05, -0.24, sr(5) * Math.PI, -0.1, 0.15, cardW * 0.9, 0.48);
+            0.3 + leanX, crownY - 0.05, -0.24 + leanZ, sr(5) * Math.PI, -0.1, 0.15, cardW * 0.9, 0.48);
           sprayCard(sprays[Math.floor(sr(8) * sprays.length) % sprays.length],
-            -0.3, crownY - 0.12, 0.26, sr(7) * Math.PI, -0.15, -0.1, cardW * 0.95, 0.6);
+            -0.3 + leanX, crownY - 0.12, 0.26 + leanZ, sr(7) * Math.PI, -0.15, -0.1, cardW * 0.95, 0.6);
         }
         break;
       }
       case 'rock': {
         // Plain rock: no crystal (Claude 2026-11-06 — the crystal made
         // every rock read as an ore deposit). Crystals live on 'ore'.
+        // Round 22: the ONE shared jittered icosahedron is retired —
+        // six plane-cut family geometries (the environment set's
+        // fractured-rock recipe) are picked by the id hash, then a
+        // per-instance stream varies proportions, tilt and embed,
+        // and a cluster recipe sets child rocks + rubble at the
+        // base. Silhouettes differ; colour is never the only
+        // variation. Footprint (SPECS) is untouched.
+        const rr = mulberry32(seed ^ 0x51ab32);
+        const fam = Math.abs(seed) % 6;
         const rock = add(new THREE.Mesh(
-          this.geo('rockJit', () => { const geo = new THREE.IcosahedronGeometry(0.85, 1); jitterRock(geo); return geo; }),
+          this.geo(`rockFam${fam}`, () => fracturedRockGeometry(0.85, 4100 + fam * 137)),
           rockM));
-        rock.position.y = 0.45;
-        rock.scale.set(1.15, 0.8, 1);
+        const embed = rr() * 0.12;
+        rock.position.y = 0.45 - embed;
+        rock.scale.set(1.15 * (0.88 + rr() * 0.3), 0.8 * (0.8 + rr() * 0.35), 1.0 * (0.88 + rr() * 0.3));
+        rock.rotation.set((rr() - 0.5) * 0.14, rr() * Math.PI * 2, (rr() - 0.5) * 0.14);
+        const children = 1 + Math.floor(rr() * 2);
+        for (let ci = 0; ci < children; ci++) {
+          const cf = (fam + 1 + ci) % 6;
+          const child = add(new THREE.Mesh(
+            this.geo(`rockFam${cf}`, () => fracturedRockGeometry(0.85, 4100 + cf * 137)),
+            rockM));
+          const ca = rr() * Math.PI * 2;
+          const cd = 0.78 + rr() * 0.3;
+          const cs = 0.3 + rr() * 0.22;
+          child.position.set(Math.cos(ca) * cd, 0.1 + rr() * 0.05, Math.sin(ca) * cd);
+          child.scale.set(cs, cs * (0.65 + rr() * 0.3), cs);
+          child.rotation.set((rr() - 0.5) * 0.3, rr() * Math.PI * 2, (rr() - 0.5) * 0.3);
+        }
+        for (let pi = 0; pi < 2; pi++) {
+          const peb = add(new THREE.Mesh(
+            this.geo('rubbleJit', () => { const geo = new THREE.IcosahedronGeometry(0.22, 0); jitterRock(geo); return geo; }),
+            rockM));
+          const pa = rr() * Math.PI * 2;
+          peb.position.set(Math.cos(pa) * (0.7 + rr() * 0.35), 0.07, Math.sin(pa) * (0.7 + rr() * 0.35));
+          peb.scale.setScalar(0.5 + rr() * 0.5);
+        }
         if (variant === 'mossy') {
           // Mossy rock (world expansion, 2026-11-07): flattened moss
           // pads settled on the top and shoulders — colour and a
@@ -1107,9 +1163,9 @@ export class ResourceRenderer {
               this.geo(`mossPad${i % 2}`, () => new THREE.IcosahedronGeometry(0.3, 0)), mossM));
             b.scale.set(1, 0.3, 0.8);
             b.position.set(
-              (mr(i * 3) - 0.5) * 0.9,
-              0.92 + mr(i * 3 + 1) * 0.14,
-              (mr(i * 3 + 2) - 0.5) * 0.7);
+              (mr(i * 3) - 0.5) * 0.9 * rock.scale.x,
+              rock.position.y + (0.47 + mr(i * 3 + 1) * 0.14) * (rock.scale.y / 0.8),
+              (mr(i * 3 + 2) - 0.5) * 0.7 * rock.scale.z);
           }
         }
         break;
@@ -1117,11 +1173,14 @@ export class ResourceRenderer {
       case 'ore': {
         // Ore-bearing rock: the host rock plus a small crystal cluster
         // (quartz white + amber) so the deposit reads at a glance.
+        const orr = mulberry32(seed ^ 0x77cd19);
+        const ofam = Math.abs(seed) % 6;
         const rock = add(new THREE.Mesh(
-          this.geo('rockJit', () => { const geo = new THREE.IcosahedronGeometry(0.85, 1); jitterRock(geo); return geo; }),
+          this.geo(`rockFam${ofam}`, () => fracturedRockGeometry(0.85, 4100 + ofam * 137)),
           rockM));
-        rock.position.y = 0.45;
-        rock.scale.set(1.15, 0.8, 1);
+        rock.position.y = 0.45 - orr() * 0.08;
+        rock.scale.set(1.15 * (0.92 + orr() * 0.2), 0.8 * (0.85 + orr() * 0.25), 1.0 * (0.92 + orr() * 0.2));
+        rock.rotation.set((orr() - 0.5) * 0.07, orr() * Math.PI * 2, (orr() - 0.5) * 0.07);
         const quartz = std(0xf3ead8, 0.25);
         const amber = std(0xd9a441, 0.35);
         const crystals: Array<[number, number, number, number, THREE.MeshStandardMaterial]> = [

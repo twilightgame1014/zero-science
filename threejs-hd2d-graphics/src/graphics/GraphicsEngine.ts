@@ -32,6 +32,7 @@ import { AreaParticles } from './AreaParticles';
 import type { ParticleKind } from './AreaParticles';
 import { GPT_TEXTURES } from './gptTextures';
 import { BRANCH_TEXTURES } from './branchTextures';
+import { ENV_TEXTURES } from './envTextures';
 import { EXPANSION_TEXTURES, GROUND_TEXTURES, LAVA_TEXTURES } from './expansionTextures';
 import { DQ3_TEXTURES } from './dq3Textures';
 import { PostEffects } from './PostEffects';
@@ -275,6 +276,19 @@ export class GraphicsEngine {
         }
       }),
     );
+    const env: Record<string, THREE.Texture> = {};
+    await Promise.all(
+      Object.entries(ENV_TEXTURES).map(async ([key, uri]) => {
+        try {
+          env[key] = await assets.loadTexture(uri, {
+            repeat: key === 'streaks' || key === 'groundScree' || key === 'shoreFoam',
+          });
+        } catch {
+          /* kit falls back to procedural art */
+        }
+      }),
+    );
+    if (env['groundScree']) groundTex['scree'] = env['groundScree'];
     if (dq3['town-cobble']) groundTex['cobble'] = dq3['town-cobble'];
     if (dq3['town-dirt-plain']) groundTex['dirtPlain'] = dq3['town-dirt-plain'];
 
@@ -312,6 +326,7 @@ export class GraphicsEngine {
       ground: groundTex,
       lava: { albedo: dq3['lava-flow'] ?? expansion['lava_albedo'], emissive: dq3['lava-flow-emissive'] ?? expansion['lava_emissive'] },
       decor: options.decor,
+      env,
     });
     const groundAt = (x: number, z: number) => world.getGroundHeight(x, z);
     const character = new CharacterRenderer(
@@ -528,6 +543,17 @@ export class GraphicsEngine {
    * pixel ratio, shadow resolution and the post chain follow the
    * tier. The game's settings screen can call this at any time.
    */
+  /**
+   * Build the terrain around (x, z) immediately at near detail
+   * (round 22, Claude §18): call right after a teleport so the
+   * destination renders complete on the first frame instead of
+   * streaming in. Synchronous — call it during a fade or a
+   * loading beat. Radius defaults to 90 m.
+   */
+  prepareTerrainAt(x: number, z: number, radiusM = 90): void {
+    this.world.prepareTerrainAt(x, z, radiusM);
+  }
+
   setQuality(tier: QualityTier): void {
     if (tier === this.quality) return;
     this.quality = tier;

@@ -682,6 +682,53 @@ export class AssetManager {
     return tex;
   }
 
+  /** Foam alpha textures for the waterfall kit (procedural —
+   *  soft overlapping blobs; 'ring' concentrates them on an
+   *  annulus for the plunge foam, 'cluster' fills the centre for
+   *  mist and splash backing). White RGB, alpha from the blobs. */
+  createFoamTexture(kind: 'ring' | 'cluster'): THREE.CanvasTexture {
+    const S = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = S;
+    canvas.height = S;
+    const ctx = canvas.getContext('2d')!;
+    let seed = kind === 'ring' ? 1234567 : 7654321;
+    const rnd = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    ctx.globalCompositeOperation = 'lighter';
+    const blob = (x: number, y: number, r: number, a: number) => {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(255,255,255,${a})`);
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    };
+    if (kind === 'ring') {
+      for (let i = 0; i < 110; i++) {
+        const ang = rnd() * Math.PI * 2;
+        const rr = S * (0.30 + rnd() * 0.13);
+        blob(S / 2 + Math.cos(ang) * rr, S / 2 + Math.sin(ang) * rr,
+          8 + rnd() * 22, 0.25 + rnd() * 0.4);
+      }
+      for (let i = 0; i < 26; i++) {
+        blob(S / 2 + (rnd() - 0.5) * S * 0.4, S / 2 + (rnd() - 0.5) * S * 0.4,
+          5 + rnd() * 12, 0.12 + rnd() * 0.2);
+      }
+    } else {
+      for (let i = 0; i < 90; i++) {
+        const ang = rnd() * Math.PI * 2;
+        const rr = Math.sqrt(rnd()) * S * 0.34;
+        blob(S / 2 + Math.cos(ang) * rr, S / 2 + Math.sin(ang) * rr * 0.8,
+          10 + rnd() * 30, 0.16 + rnd() * 0.3);
+      }
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    this.disposables.push(tex);
+    return tex;
+  }
+
   /** Tiny placeholder explorer drawn on canvas, used until a real sprite
    *  sheet is supplied via GraphicsOptions.playerSpriteUrl. Same 4x4
    *  layout as the real sheet: rows down/left/right/up, 4 walk frames. */

@@ -24,6 +24,7 @@ export class WorldRenderer {
       branch?: Record<string, THREE.Texture>;
       ground?: Record<string, THREE.Texture>;
       lava?: { albedo?: THREE.Texture; emissive?: THREE.Texture };
+      env?: Record<string, THREE.Texture>;
       detailBrightness?: number;
       decor?: DecorOptions;
     },
@@ -36,10 +37,17 @@ export class WorldRenderer {
       assets.createRiverbedTexture(),
       textures.ground,
       textures.lava,
+      textures.decor?.river !== false,
+      textures.decor?.openWater !== false,
     );
-    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, textures.decor ?? {}, textures.branch ?? {});
+    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, textures.decor ?? {}, textures.branch ?? {}, textures.env ?? {});
     this.group.add(this.terrain.group);
     this.group.add(this.environment.group);
+  }
+
+  /** Build the terrain around a point immediately (teleports). */
+  prepareTerrainAt(x: number, z: number, radiusM = 90): void {
+    this.terrain.prepareAround(x, z, radiusM);
   }
 
   /** Ground height in scene coordinates (used for grounding sprites

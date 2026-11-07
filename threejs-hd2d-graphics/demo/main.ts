@@ -6,10 +6,12 @@
  * the real game logic (Claude's side) will call the same public API
  * from its own state instead.
  */
+import * as THREE from 'three';
 import {
   areaWeights,
   initializeGraphics,
   resolveConfig,
+  terrainHeight,
   type Direction,
   type GraphicsEngine,
   type PlayerVisualState,
@@ -21,6 +23,7 @@ import npcGuideUrl from '../../assets/gpt-expansion/npc/guide.png?url';
 import npcResidentUrl from '../../assets/gpt-expansion/npc/resident.png?url';
 import npcCraftsmanUrl from '../../assets/gpt-expansion/npc/craftsman.png?url';
 import grassDetailUrl from '../assets/textures/grass-detail.png?url';
+import shoreFoamUrl from '../../assets/gpt-env/shore-foam.png?url';
 import particleUrl from '../assets/textures/particle-dot.png?url';
 import shadowUrl from '../assets/textures/shadow-blob.png?url';
 
@@ -272,7 +275,7 @@ document.getElementById('btn-orbit')!.addEventListener('click', (e) => {
  * environment blend follows the player automatically (interval
  * below), exactly as the game will drive it from its own loop. */
 const demoCfg = resolveConfig();
-const AREA_TOURS: Record<string, { x: number; z: number; yaw: number; nodes: Array<[string, object]> }> = {
+const AREA_TOURS: Record<string, { x: number; z: number; yaw: number; viewSize?: number; nodes: Array<[string, object]> }> = {
   lakeside: {
     x: 82, z: 2, yaw: 270,
     nodes: [
@@ -313,9 +316,13 @@ const AREA_TOURS: Record<string, { x: number; z: number; yaw: number; nodes: Arr
     ],
   },
   town: { x: 100, z: 100, yaw: 45, nodes: [] },
+  // Round 20: the rebuilt waterfall kit at the legacy highland
+  // (base (26.5,-15.5), lip toward (30.5,-20.5)). Stand is on the
+  // downstream bank looking back NE at the fall.
+  waterfall: { x: 24.2, z: -12.2, yaw: 315, viewSize: 11, nodes: [] },
 };
 const tourNodeIds = new Set<string>();
-for (const area of ['lakeside', 'coast', 'volcano', 'snow', 'desert', 'town']) {
+for (const area of ['lakeside', 'coast', 'volcano', 'snow', 'desert', 'town', 'waterfall']) {
   document.getElementById(`btn-tour-${area}`)!.addEventListener('click', () => {
     const tour = AREA_TOURS[area];
     for (const id of tourNodeIds) gfx.updateResourceVisual(id, null);
@@ -328,7 +335,7 @@ for (const area of ['lakeside', 'coast', 'volcano', 'snow', 'desert', 'town']) {
     player.z = tour.z;
     player.moving = false;
     orbitYaw = tour.yaw;
-    gfx.setCameraView({ yawDegrees: tour.yaw, pitchDegrees: 32, viewSize: 16 }, { transition: 0.8 });
+    gfx.setCameraView({ yawDegrees: tour.yaw, pitchDegrees: 32, viewSize: tour.viewSize ?? 16 }, { transition: 0.8 });
   });
 }
 // The environment follows the player's area weights (spec §5).
@@ -405,3 +412,29 @@ document.getElementById('weather')!.addEventListener('change', (e) => {
 });
 
 status.textContent = '描画モジュール初期化OK — 地形・川・森林・キャラクター表示中';
+
+/* Shore foam (round 22): the module builder (src/graphics/
+ * ShoreFoam.ts) — the same code Claude's chunk shorelines use.
+ * u = arc length / 3 m world-anchored; phase from a shared
+ * clock (performance.now here; the engine clock in-game). */
+import { createShoreFoam, sampleWaterline } from '../src/graphics/ShoreFoam';
+let shoreFoamShown = false;
+let shoreFoam: ReturnType<typeof createShoreFoam> | null = null;
+document.getElementById('btn-shore-foam')!.addEventListener('click', (e) => {
+  shoreFoamShown = !shoreFoamShown;
+  if (shoreFoamShown && !shoreFoam) {
+    const wl = demoCfg.world.waterLevel;
+    const tex = new THREE.TextureLoader().load(shoreFoamUrl);
+    const line = sampleWaterline(
+      (x, z) => terrainHeight(x, z, demoCfg), wl, 78, 122, -14, 4);
+    shoreFoam = createShoreFoam(
+      (x, z) => terrainHeight(x, z, demoCfg), wl, line, { texture: tex });
+    gfx.getScene().add(shoreFoam.group);
+    (window as any).__shoreFoam = shoreFoam.group;
+  }
+  if (shoreFoam) shoreFoam.group.visible = shoreFoamShown;
+  (e.target as HTMLButtonElement).textContent = shoreFoamShown ? '水際の泡を消す' : '水際の泡を出す';
+});
+setInterval(() => {
+  if (shoreFoamShown && shoreFoam) shoreFoam.update(performance.now() / 1000);
+}, 60);
