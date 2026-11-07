@@ -1,0 +1,437 @@
+{
+ "cutouts": {
+  "sheet-03-broadleaf.jpg": {
+   "seg_gated_px": 38976,
+   "despill_px": 12804,
+   "items": {
+    "broadleaf-bright": {
+     "bbox": [
+      13,
+      23,
+      623,
+      569
+     ],
+     "px": 187751
+    },
+    "broadleaf-droop": {
+     "bbox": [
+      684,
+      24,
+      1234,
+      564
+     ],
+     "px": 120540
+    },
+    "broadleaf-deep": {
+     "bbox": [
+      13,
+      643,
+      598,
+      1214
+     ],
+     "px": 201163
+    },
+    "broadleaf-light": {
+     "bbox": [
+      648,
+      675,
+      1237,
+      1158
+     ],
+     "px": 52771
+    }
+   }
+  },
+  "sheet-04-flowers-vines.jpg": {
+   "seg_gated_px": 53626,
+   "despill_px": 23794,
+   "items": {
+    "flower-branch": {
+     "bbox": [
+      17,
+      21,
+      598,
+      558
+     ],
+     "px": 158933
+    },
+    "berry-branch": {
+     "bbox": [
+      648,
+      19,
+      1235,
+      558
+     ],
+     "px": 133219
+    },
+    "vine": {
+     "bbox": [
+      20,
+      623,
+      606,
+      1235
+     ],
+     "px": 77073
+    },
+    "roundleaf-bush": {
+     "bbox": [
+      639,
+      625,
+      1243,
+      1171
+     ],
+     "px": 202950
+    }
+   }
+  },
+  "sheet-08-waterside.jpg": {
+   "seg_gated_px": 25989,
+   "despill_px": 13304,
+   "items": {
+    "lily-flower": {
+     "bbox": [
+      36,
+      197,
+      580,
+      511
+     ],
+     "px": 98666
+    },
+    "reed-cattail": {
+     "bbox": [
+      641,
+      14,
+      1218,
+      581
+     ],
+     "px": 117203
+    },
+    "floating-plants": {
+     "bbox": [
+      47,
+      779,
+      559,
+      1079
+     ],
+     "px": 70149
+    },
+    "waterside-bush": {
+     "bbox": [
+      623,
+      709,
+      1224,
+      1123
+     ],
+     "px": 136938
+    }
+   }
+  },
+  "sheet-05-scatter.jpg": {
+   "seg_gated_px": 41900,
+   "despill_px": 8719,
+   "items": {
+    "grass-wide": {
+     "bbox": [
+      423,
+      101,
+      805,
+      339
+     ],
+     "px": 40456
+    },
+    "grass-pampas": {
+     "bbox": [
+      837,
+      76,
+      1185,
+      347
+     ],
+     "px": 36914
+    },
+    "flower-white": {
+     "bbox": [
+      115,
+      419,
+      372,
+      626
+     ],
+     "px": 22629
+    },
+    "flower-yellow": {
+     "bbox": [
+      488,
+      418,
+      755,
+      626
+     ],
+     "px": 25158
+    },
+    "flower-pink": {
+     "bbox": [
+      871,
+      418,
+      1139,
+      625
+     ],
+     "px": 25252
+    },
+    "pebbles": {
+     "bbox": [
+      242,
+      703,
+      504,
+      836
+     ],
+     "px": 19364
+    },
+    "leaf-pile": {
+     "bbox": [
+      668,
+      692,
+      1042,
+      850
+     ],
+     "px": 28485
+    },
+    "stump": {
+     "bbox": [
+      53,
+      921,
+      404,
+      1144
+     ],
+     "px": 44590
+    },
+    "log-fallen": {
+     "bbox": [
+      456,
+      940,
+      810,
+      1142
+     ],
+     "px": 45337
+    },
+    "moss-rock": {
+     "bbox": [
+      863,
+      934,
+      1195,
+      1142
+     ],
+     "px": 46603
+    },
+    "_components": 11,
+    "grass-tall": {
+     "bbox": [
+      136,
+      66,
+      337,
+      345
+     ],
+     "px": 24663
+    }
+   }
+  },
+  "sheet-06-town-props.jpg": {
+   "seg_gated_px": 5093,
+   "despill_px": 8769,
+   "items": {
+    "banner-red": {
+     "bbox": [
+      61,
+      19,
+      296,
+      459
+     ],
+     "px": 50358
+    },
+    "banner-green": {
+     "bbox": [
+      362,
+      19,
+      596,
+      459
+     ],
+     "px": 50229
+    },
+    "planter-large": {
+     "bbox": [
+      611,
+      45,
+      978,
+      452
+     ],
+     "px": 83290
+    },
+    "planter-small": {
+     "bbox": [
+      989,
+      193,
+      1206,
+      451
+     ],
+     "px": 30378
+    },
+    "fruit-basket": {
+     "bbox": [
+      48,
+      522,
+      357,
+      773
+     ],
+     "px": 52336
+    },
+    "crates": {
+     "bbox": [
+      406,
+      475,
+      744,
+      785
+     ],
+     "px": 75912
+    },
+    "canopy-cloth": {
+     "bbox": [
+      772,
+      539,
+      1237,
+      756
+     ],
+     "px": 57568
+    },
+    "stone-lantern": {
+     "bbox": [
+      124,
+      790,
+      272,
+      1217
+     ],
+     "px": 32530
+    },
+    "barrel": {
+     "bbox": [
+      430,
+      890,
+      680,
+      1209
+     ],
+     "px": 64884
+    },
+    "bucket-rope": {
+     "bbox": [
+      811,
+      883,
+      1160,
+      1194
+     ],
+     "px": 52851
+    },
+    "_components": 10
+   }
+  }
+ },
+ "smoke": {
+  "smoke-1": {
+   "bbox": [
+    27,
+    648,
+    296,
+    956
+   ],
+   "px": 46345
+  },
+  "smoke-2": {
+   "bbox": [
+    174,
+    936,
+    456,
+    1212
+   ],
+   "px": 41320
+  },
+  "smoke-3": {
+   "bbox": [
+    392,
+    705,
+    600,
+    944
+   ],
+   "px": 27123
+  }
+ },
+ "basalt": {
+  "basalt-1": {
+   "bbox": [
+    642,
+    661,
+    956,
+    942
+   ],
+   "px": 54553
+  },
+  "basalt-2": {
+   "bbox": [
+    987,
+    745,
+    1239,
+    952
+   ],
+   "px": 32114
+  },
+  "basalt-3": {
+   "bbox": [
+    758,
+    970,
+    1047,
+    1223
+   ],
+   "px": 44602
+  }
+ },
+ "tiles": {
+  "town-cobble": {
+   "seam": 4.34
+  },
+  "town-grass": {
+   "seam": 3.91
+  },
+  "town-dirt": {
+   "seam": 3.57
+  },
+  "town-dirt-plain": {
+   "seam": 3.59,
+   "rut_px": 3669
+  },
+  "town-plaza-strip": {
+   "seam_x": 4.57
+  },
+  "roof-orange": {
+   "seam": 5.55,
+   "row_period_px": 103
+  },
+  "wall-plaster-timber": {
+   "seam": 3.43
+  },
+  "wall-plaster": {
+   "seam": 12.63,
+   "cell": [
+    115,
+    316,
+    292,
+    549
+   ]
+  },
+  "stone-wall": {
+   "seam": 7.91
+  },
+  "plank": {
+   "seam": 3.72
+  },
+  "ash": {
+   "seam": 2.6
+  },
+  "lava-flow": {
+   "core_coverage": 0.058
+  }
+ }
+}
