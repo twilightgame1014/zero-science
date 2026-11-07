@@ -1314,15 +1314,19 @@ export class EnvironmentRenderer {
       roughness: 0.85,
       flatShading: true,
     });
-    // Ring pulled closer and peaks raised for the low exploration
-    // camera (2026-11-06): at the old 138–172 distance the 70–165 fog
-    // washed the silhouettes out almost completely, leaving a blank
-    // horizon above the terrain rim.
+    // Ring placement MUST keep every cone base fully outside the
+    // terrain square (±60, corners at radius ≈84.9): with the old
+    // 112–142 distance and 38–58 base radii, the fattest cones reached
+    // radius ≈57 — inside the terrain edge — and loomed into the
+    // foreground at map-edge locations (oil field report, 2026-11-07).
+    // Placement rng draws differ between hosts (scenery options change
+    // how many draws precede this builder), so the guarantee is made
+    // structural: dist − rad ≥ 92 for every peak, by construction.
     for (let i = 0; i < 13; i++) {
       const ang = (i / 13) * Math.PI * 2 + this.rng() * 0.25;
-      const dist = 112 + this.rng() * 30;
-      const hgt = 40 + this.rng() * 30;
-      const rad = 38 + this.rng() * 20;
+      const dist = 132 + this.rng() * 28;
+      const hgt = 46 + this.rng() * 28;
+      const rad = Math.min(26 + this.rng() * 14, dist - 92);
       const x = Math.cos(ang) * dist;
       const z = Math.sin(ang) * dist;
       const col = rockA.clone().lerp(rockB, this.rng());
