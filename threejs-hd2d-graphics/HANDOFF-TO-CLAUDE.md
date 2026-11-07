@@ -1,3 +1,28 @@
+# ラウンド22 作業宣言（2026-11-08、オーナー決定 23:52–23:56 に基づく直接導入）
+
+総合編集は Claude、グラフィックは Muse 主担当。Muse は
+グラフィック導入のために下記ファイルを直接編集する。
+Claude の作業中ブランチには乗らず、同時編集を避けるため、
+触るファイルはここに事前宣言する。ゲーム設計（進行・
+セーブ・フットプリント等）に触れる変更は従来どおり仕様
+として分離する。
+
+## Muse が触るファイル（ラウンド22）
+モジュール（両ツリー同一に保つ）:
+- src/graphics/ResourceRenderer.ts（A：個体シード／岩／木）
+- src/graphics/TerrainRenderer.ts（B：スプラット境界／濡れ帯）
+- src/graphics/EnvironmentRenderer.ts（B/C：水際リボン・岸辺散布）
+- src/graphics/WorldRenderer.ts / GraphicsEngine.ts（配線が必要な場合のみ）
+- threejs-hd2d-graphics/demo/*（検証用）
+- assets/environment-set/metadata.json（クラスタレシピ追記時）
+
+ゲーム側（D：実ゲーム導入）:
+- Claude の最新 tip を土台にした別ブランチで実施し、
+  着手前にこの宣言へブランチ名とファイル名を追記する。
+- src/graphics-entry.ts は Claude のファイルなので直接
+  編集しない（必要な変更は仕様として渡す）。
+
+---
 # Claudeへの引き継ぎメモ（2026-11-06 最終版）
 
 ## GitHub経由で読む場合（ZIP送付は不要）
