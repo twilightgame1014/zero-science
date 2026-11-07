@@ -24,6 +24,7 @@ import type { ResourceVisualSpec } from './ResourceRenderer';
 import { EffectsManager } from './EffectsManager';
 import { GPT_TEXTURES } from './gptTextures';
 import { BRANCH_TEXTURES } from './branchTextures';
+import { EXPANSION_TEXTURES, GROUND_TEXTURES, LAVA_TEXTURES } from './expansionTextures';
 import { PostEffects } from './PostEffects';
 import { toScenePosition } from './utils';
 
@@ -211,6 +212,39 @@ export class GraphicsEngine {
         }
       }),
     );
+    // World-expansion sheets (assets/gpt-expansion/): conifer / snow /
+    // shore sprays for the resource renderer, tiling ground textures
+    // for the terrain splat, and the lava albedo + emissive pair.
+    // Same failure contract: a failed decode just loses that asset.
+    const expansion: Record<string, THREE.Texture> = {};
+    await Promise.all(
+      Object.entries(EXPANSION_TEXTURES).map(async ([key, uri]) => {
+        try {
+          expansion[key] = await assets.loadTexture(uri);
+        } catch {
+          /* fallback art */
+        }
+      }),
+    );
+    const groundTex: Record<string, THREE.Texture> = {};
+    await Promise.all(
+      Object.entries(GROUND_TEXTURES).map(async ([key, uri]) => {
+        try {
+          groundTex[key] = await assets.loadTexture(uri, { repeat: true });
+        } catch {
+          /* terrain keeps vertex colours only */
+        }
+      }),
+    );
+    await Promise.all(
+      Object.entries(LAVA_TEXTURES).map(async ([key, uri]) => {
+        try {
+          expansion[`lava_${key}`] = await assets.loadTexture(uri, { repeat: true });
+        } catch {
+          /* lava node falls back to plain dark disc */
+        }
+      }),
+    );
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -243,6 +277,7 @@ export class GraphicsEngine {
       particle: particleTexture,
       gpt,
       branch,
+      ground: groundTex,
       decor: options.decor,
     });
     const groundAt = (x: number, z: number) => world.getGroundHeight(x, z);
@@ -253,7 +288,7 @@ export class GraphicsEngine {
       groundAt,
     );
     const structures = new StructureRenderer(groundAt);
-    const resources = new ResourceRenderer(groundAt, gpt, cfg.camera.yawDegrees, branch);
+    const resources = new ResourceRenderer(groundAt, gpt, cfg.camera.yawDegrees, branch, expansion, cfg.world.waterLevel);
     const effects = new EffectsManager(particleTexture, groundAt);
     scene.add(world.group, character.group, structures.group, resources.group, effects.group);
 

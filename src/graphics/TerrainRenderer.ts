@@ -31,11 +31,12 @@ export class TerrainRenderer {
     detailBrightness = 1,
     quality: QualityTier = 'high',
     riverbedTexture?: THREE.Texture,
+    groundTextures?: Record<string, THREE.Texture>,
   ) {
     this.detailBrightness = detailBrightness;
     this.cfg = cfg;
     this.quality = quality;
-    this.terrainMesh = this.buildTerrain(detailTexture);
+    this.terrainMesh = this.buildTerrain(detailTexture, groundTextures);
     this.waterMesh = this.buildWater();
     this.group.add(this.terrainMesh);
     this.group.add(this.buildRiverbed(riverbedTexture));
@@ -83,12 +84,20 @@ export class TerrainRenderer {
   }
 
   /* ------------------------------------------------------------ */
-  private buildTerrain(detailTexture: THREE.Texture): THREE.Mesh {
+  private buildTerrain(
+    detailTexture: THREE.Texture,
+    groundTextures?: Record<string, THREE.Texture>,
+  ): THREE.Mesh {
     const { size, terrainSegments } = this.cfg.world;
     const geo = new THREE.PlaneGeometry(size, size, terrainSegments, terrainSegments);
     geo.rotateX(-Math.PI / 2);
     const pos = geo.attributes.position as THREE.BufferAttribute;
     const colors = new Float32Array(pos.count * 3);
+    // Per-vertex weights for the tiling ground-texture splat
+    // (forest floor / wet mud / sand / worn path), derived from the
+    // same masks that drive the vertex colours below so the two can
+    // never disagree about where a shore or the path runs.
+    const splat = new Float32Array(pos.count * 4);
 
     const cGrass = new THREE.Color(0x69a34b);
     const cGrassDry = new THREE.Color(0x9db45e);
@@ -160,8 +169,17 @@ export class TerrainRenderer {
       colors[i * 3] = tmp.r * ao;
       colors[i * 3 + 1] = tmp.g * ao;
       colors[i * 3 + 2] = tmp.b * ao;
+      // Splat weights (see buildTerrain head). Suppressed under
+      // water (the riverbed ribbon owns the bed) and on rock.
+      const aboveWater = smoothstep(this.cfg.world.waterLevel - 0.02, this.cfg.world.waterLevel + 0.3, h);
+      const rockSuppress = 1 - clamp(rockiness, 0, 1) * 0.9;
+      splat[i * 4] = clamp(forestMask * 0.95 + smoothstep(0.6, 0.85, mottle) * 0.4, 0, 0.95) * aboveWater * rockSuppress;
+      splat[i * 4 + 1] = clamp(wet * 1.0 + clayMask * 0.8, 0, 0.95) * rockSuppress;
+      splat[i * 4 + 2] = clamp(bank * 0.92, 0, 0.95) * aboveWater * rockSuppress;
+      splat[i * 4 + 3] = clamp(pathMask * 1.1, 0, 0.96) * aboveWater;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('splat', new THREE.BufferAttribute(splat, 4));
     geo.computeVertexNormals();
 
     detailTexture.repeat.set(46, 46);
@@ -173,6 +191,59 @@ export class TerrainRenderer {
       roughness: 0.96,
       metalness: 0,
     });
+    // Tiling ground textures (assets/gpt-expansion/): the painterly
+    // forest floor / mud / sand / path tiles are mixed over the
+    // vertex colours by the per-vertex splat weights, so material
+    // boundaries follow the terrain masks (shores, moisture, the
+    // path) instead of square texture borders. Each tile is scaled
+    // toward the local vertex-colour luminance so the blend keeps
+    // the scene's overall light. Missing textures = plain vertex
+    // colour terrain, exactly as before.
+    const gt = groundTextures ?? {};
+    if (gt.forest && gt.mud && gt.sand && gt.path) {
+      mat.onBeforeCompile = (shader) => {
+        shader.uniforms.uGroundForest = { value: gt.forest };
+        shader.uniforms.uGroundMud = { value: gt.mud };
+        shader.uniforms.uGroundSand = { value: gt.sand };
+        shader.uniforms.uGroundPath = { value: gt.path };
+        shader.vertexShader = shader.vertexShader
+          .replace(
+            '#include <common>',
+            '#include <common>\nattribute vec4 splat;\nvarying vec4 vSplat;\nvarying vec2 vWPos;',
+          )
+          .replace(
+            '#include <begin_vertex>',
+            '#include <begin_vertex>\nvSplat = splat;\nvWPos = position.xz;',
+          );
+        shader.fragmentShader = shader.fragmentShader
+          .replace(
+            '#include <common>',
+            [
+              '#include <common>',
+              'uniform sampler2D uGroundForest;',
+              'uniform sampler2D uGroundMud;',
+              'uniform sampler2D uGroundSand;',
+              'uniform sampler2D uGroundPath;',
+              'varying vec4 vSplat;',
+              'varying vec2 vWPos;',
+            ].join('\n'),
+          )
+          .replace(
+            '#include <map_fragment>',
+            [
+              '#include <map_fragment>',
+              '{',
+              '  float lum = dot(diffuseColor.rgb, vec3(0.3333));',
+              '  float tintF = clamp(0.45 + 1.1 * lum, 0.6, 1.25);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundForest, vWPos / 7.0).rgb * tintF, vSplat.x * 0.88);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundMud, vWPos / 5.0).rgb * tintF, vSplat.y * 0.9);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSand, vWPos / 6.0).rgb * tintF, vSplat.z * 0.92);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundPath, vWPos / 5.0).rgb * tintF, vSplat.w * 0.94);',
+              '}',
+            ].join('\n'),
+          );
+      };
+    }
     const mesh = new THREE.Mesh(geo, mat);
     mesh.receiveShadow = true;
     mesh.name = 'Terrain';

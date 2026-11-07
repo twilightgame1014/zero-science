@@ -221,6 +221,38 @@ document.getElementById('btn-forest-kit')!.addEventListener('click', (e) => {
   }
   (e.target as HTMLButtonElement).textContent = kitPlaced ? '森林キットを消す' : '森林キットを置く';
 });
+// GPT expansion kit (2026-11-07 round 17): conifer species, snow
+// set, palm, shore plants and the lava pool, placed around the
+// forest-kit plot and the river sample for inspection.
+let expKitPlaced = false;
+const EXP_KIT_IDS = [
+  'demo-exp-cedar', 'demo-exp-pine', 'demo-exp-young', 'demo-exp-snowconifer',
+  'demo-exp-winter', 'demo-exp-palm', 'demo-exp-snowbush', 'demo-exp-drybush',
+  'demo-exp-lava', 'demo-exp-reed', 'demo-exp-lily',
+];
+document.getElementById('btn-expansion-kit')!.addEventListener('click', (e) => {
+  expKitPlaced = !expKitPlaced;
+  const put = (id: string, st: object | null) => gfx.updateResourceVisual(id, st as never);
+  if (expKitPlaced) {
+    put('demo-exp-cedar', { position: { x: -30.5, z: 28.5 }, type: 'tree', scale: 1.05, natural: { kind: 'tree', variant: 'conifer' } });
+    put('demo-exp-pine', { position: { x: -33.5, z: 25.5 }, type: 'tree', scale: 1.1, natural: { kind: 'tree', variant: 'conifer' } });
+    put('demo-exp-young', { position: { x: -28.2, z: 30.5 }, type: 'tree', scale: 0.9, natural: { kind: 'tree', variant: 'conifer' } });
+    put('demo-exp-snowconifer', { position: { x: -35.5, z: 29 }, type: 'tree', scale: 1.05, natural: { kind: 'tree', variant: 'conifer-snow' } });
+    put('demo-exp-winter', { position: { x: -31, z: 32.5 }, type: 'tree', scale: 1, natural: { kind: 'tree', variant: 'winter' } });
+    put('demo-exp-palm', { position: { x: -25.5, z: 31 }, type: 'tree', scale: 1, natural: { kind: 'tree', variant: 'palm' } });
+    put('demo-exp-snowbush', { position: { x: -33.8, z: 31.8 }, type: 'bush', scale: 1.1, natural: { kind: 'bush', variant: 'snow' } });
+    put('demo-exp-drybush', { position: { x: -27, z: 33.2 }, type: 'bush', scale: 1, natural: { kind: 'bush', variant: 'dry' } });
+    put('demo-exp-lava', { position: { x: -36.5, z: 24 }, type: 'lava', scale: 1.2, natural: { kind: 'lava' } });
+    put('demo-exp-reed', { position: { x: 14.9, z: 4.6 }, type: 'grass', scale: 1.1, natural: { kind: 'grass', variant: 'reed' } });
+    put('demo-exp-lily', { position: { x: 18.6, z: 6.4 }, type: 'lily', scale: 1, natural: { kind: 'lily' } });
+    player.x = -30;
+    player.z = 34.5;
+    player.moving = false;
+  } else {
+    for (const id of EXP_KIT_IDS) put(id, null);
+  }
+  (e.target as HTMLButtonElement).textContent = expKitPlaced ? '拡張キットを消す' : '拡張キットを置く';
+});
 let orbitYaw = 45;
 document.getElementById('btn-orbit')!.addEventListener('click', (e) => {
   orbitYaw = (orbitYaw + 90) % 360;
