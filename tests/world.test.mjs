@@ -93,7 +93,7 @@ function polyAt(P, s) { let i = 0; while (i < P.pts.length - 2 && P.cum[i + 1] <
 /* ---------- 経路：拠点 → 山麓 → 中腹 → 高所 → 滝の上流 → 滝つぼ → 海岸 → 拠点（往復） ---------- */
 { const fa = (a, l) => ({ x: T.FALL.lip.x + T.FALL.pool.x * 0 + ((T.FALL.pool.x - T.FALL.lip.x) / 3.3) * a - ((T.FALL.pool.z - T.FALL.lip.z) / 3.3) * l, z: T.FALL.lip.z + ((T.FALL.pool.z - T.FALL.lip.z) / 3.3) * a + ((T.FALL.pool.x - T.FALL.lip.x) / 3.3) * l });
   const stops = [['拠点', { x: D.base.x, z: D.base.z }], ['山麓', { x: 50, z: -58 }], ['中腹', { x: 80, z: -88 }], ['高所（見晴らし台）', { x: T.LOOKOUT.x, z: T.LOOKOUT.z }],
-    ['滝の上流', fa(-10, 4.0)], ['滝つぼの岸', fa(5.2, 3.9)], ['海岸', { x: 147, z: -40 }], ['拠点', { x: D.base.x, z: D.base.z }]];
+    ['滝の上流', fa(-10, 4.0)], ['滝つぼの岸', fa(5.4, 4.2)], ['海岸', { x: 147, z: -40 }], ['拠点', { x: D.base.x, z: D.base.z }]];
   const legs = [], t0 = Date.now();
   for (let i = 0; i < stops.length - 1; i++) {
     const a = W.nearestFree(SU, stops[i][1], 0, 8), b = W.nearestFree(SU, stops[i + 1][1], 0, 8);

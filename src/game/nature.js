@@ -447,7 +447,7 @@ var NATURE = (function(){
     const vn3 = (x,z,c,k)=>{ const fx=x/c, fz=z/c, i=Math.floor(fx), j=Math.floor(fz), u=smooth(0,1,fx-i), v=smooth(0,1,fz-j);
       const a=hsh(i,j,k), b=hsh(i+1,j,k), cc=hsh(i,j+1,k), d=hsh(i+1,j+1,k); return a+(b-a)*u+(cc-a)*v+(a-b-cc+d)*u*v; };
     const KIDX = {tree:1, rock:2, bush:3, grass:4, twig:5, pebble:6};
-    const trailD = (x,z)=> WIDE && T.TRAILS ? Math.min(trailNear(T.TRAILS.main,x,z), trailNear(T.TRAILS.falls,x,z)) : 99;
+    const trailD = (x,z)=> WIDE && T.TRAILS ? Math.min(...Object.values(T.TRAILS).map(P=>trailNear(P,x,z))) : 99;
     function trailNear(P, x, z){ let best=99; for(let i=0;i<P.pts.length-1;i++){ const a=P.pts[i], b=P.pts[i+1];
       if(Math.min(a.x,b.x)-6>x || Math.max(a.x,b.x)+6<x || Math.min(a.z,b.z)-6>z || Math.max(a.z,b.z)+6<z) continue;
       const dx=b.x-a.x, dz=b.z-a.z, L=dx*dx+dz*dz, t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/L)); best=Math.min(best, Math.hypot(x-(a.x+dx*t), z-(a.z+dz*t))); } return best; }
@@ -635,7 +635,7 @@ var NATURE = (function(){
     /* ---------- 経路探索（クリック移動・採取対象への移動） ----------
        広い世界では、出発点と目的地を囲む範囲（まわりに余白）だけの格子で探す */
     const GRID = 0.5;
-    let gridCache=null, gridSig="";
+    let gridCache=null, gridSig="", lastPath=null;
     function windowFor(a, b, margin){
       const x0 = Math.max(WB.minX, Math.min(a.x,b.x)-margin), x1 = Math.min(WB.maxX, Math.max(a.x,b.x)+margin);
       const z0 = Math.max(WB.minZ, Math.min(a.z,b.z)-margin), z1 = Math.min(WB.maxZ, Math.max(a.z,b.z)+margin);
@@ -704,6 +704,7 @@ var NATURE = (function(){
           const nk=ni*GN+nj, cost=gS[k]+(di&&dj?1.4142:1);
           if(cost<gS[nk]){ gS[nk]=cost; came[nk]=k; push(cost+Math.hypot(ti-ni,tj-nj), nk); } }
       }
+      lastPath = {found, expanded, startFree: cellFree(G,si,sj), targetFree: cellFree(G,ti,tj), win: G.win, si, sj, ti, tj};
       if(!found) return null;
       const pts=[]; for(let k=target; k!==-1 && k!==start; k=came[k]) pts.push({x:G.gx(Math.floor(k/GN)), z:G.gz(k%GN)});
       pts.reverse(); pts[pts.length-1]={x:goal.x, z:goal.z};
@@ -735,7 +736,7 @@ var NATURE = (function(){
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
             free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids, layer2:L2N,
             setStructures, structures:()=>structs.slice(), sdist, covered, checkPlacement, commitPlacement, removePlacement, toWorld, decos, setNpcs,
-            terrainBlocked, ensure, ensureAll, wide:WIDE, bounds:WB, layer3:()=>gen3};
+            terrainBlocked, ensure, ensureAll, wide:WIDE, bounds:WB, layer3:()=>gen3, lastPath:()=>lastPath};
   }
   return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, SITES, FORMER_STONEWORK};
 })();

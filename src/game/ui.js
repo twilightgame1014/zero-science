@@ -1607,7 +1607,8 @@ function camClearance(dt){
   W3.clrT = (W3.clrT||0) + dt; if(W3.clrT < 0.2) return; W3.clrT = 0;
   const v = W3.camView, yaw = v.yaw*Math.PI/180, bx = Math.sin(yaw), bz = Math.cos(yaw), py = groundY(W3.pos.x, W3.pos.z);
   let need = 0;
-  for(let d=2; d<=70; d+=2){ const h = groundY(W3.pos.x + bx*d, W3.pos.z + bz*d); const a = Math.atan2(h + 1.7 - py, d)*180/Math.PI + 4; if(a > need) need = a; }
+  // 主人公の頭（足もと＋1.5）への見通しの線が、地形（＋0.3の余裕）より上を通る角度。ふつうの起伏では動かない（目の高さより低いので）
+  for(let d=1; d<=70; d+=(d<8?1:2)){ const h = groundY(W3.pos.x + bx*d, W3.pos.z + bz*d); const a = Math.atan2(h + 0.3 - (py + 1.5), d)*180/Math.PI + 3; if(a > need) need = a; }
   const want = Math.min(70, Math.max(v.pitch, need));
   const cur = W3.camPitchNow || v.pitch;
   const next = Math.abs(want - cur) < 0.3 ? want : cur + (want - cur) * (want > cur ? 0.6 : 0.25);

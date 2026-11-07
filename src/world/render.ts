@@ -92,10 +92,10 @@ function outerColor(x: number, z: number, h: number, slope: number, wl: number, 
   // 浜：乾いた砂（陸）→ 濡れた砂（波打ち際）→ 海底
   const sd = WS.seaDist(x, z);
   const dry = bio.beach * sm(WS.SEA_LEVEL + 0.25, WS.SEA_LEVEL + 0.55, h);
-  const wetBand = sm(-6, -0.5, sd) * sm(WS.SEA_LEVEL + 0.32, WS.SEA_LEVEL + 0.06, h) * (1 - bio.rockyShore * 0.6);   // 濡れた砂は波打ち際の細い帯だけ
+  // 濡れた砂の帯は、画面の点ごとに地面の高さから決める（形の細かさに依らず波打ち際に沿う）。ここでは「浜の近く」という広い印だけ
+  const wetBand = sm(-14, -2, sd) * (1 - bio.rockyShore * 0.6);
   out.lerp(cBeach, dry * 0.95);
-  out.lerp(cBeachWet, wetBand * 0.8);
-  if (sd > 0 && h < wl) out.lerp(cSeaBed, clamp(0.6 + sd * 0.02, 0, 0.85));
+  if (sd > -2 && h < wl) out.lerp(cSeaBed, clamp(0.6 + sd * 0.02, 0, 0.85));
   // 湖・池・川・滝つぼの岸の湿った帯と水の中
   const lv = nearbyLevel(x, z);
   let wet = 0;
@@ -110,7 +110,7 @@ function outerColor(x: number, z: number, h: number, slope: number, wl: number, 
   if (bank > 0) { out.lerp(h < 0.55 ? cWetSand : cSand, bank * 0.85); if (h < wl + 0.05) out.lerp(cUnderwater, 0.7); }
   // 登山道（踏み固めた土）
   let trail = 0;
-  for (const P of [WS.TRAILS.main, WS.TRAILS.falls]) { const t = WS.polyNear(P, x, z, 3); trail = Math.max(trail, sm(1.7, 0.7, t.d)); }
+  for (const P of Object.values(WS.TRAILS)) { const t = WS.polyNear(P, x, z, 3); trail = Math.max(trail, sm(1.7, 0.7, t.d)); }
   out.lerp(cTrail, trail * 0.6 * (1 - snow));
   // 滝のまわりの濡れた岩
   const dp = Math.hypot(x - WS.FALL.pool.x, z - WS.FALL.pool.z);
@@ -123,7 +123,7 @@ function outerColor(x: number, z: number, h: number, slope: number, wl: number, 
   sp[1] = clamp(wet + 0.0, 0, 0.9) * rockSup;
   sp[2] = clamp(bank * 0.92, 0, 0.95) * above * rockSup;
   sp[3] = clamp(trail * 0.55, 0, 0.6) * above * (1 - snow);
-  sp2[0] = clamp(wetBand * 0.9, 0, 0.9) * rockSup;
+  sp2[0] = clamp(wetBand, 0, 1) * rockSup;
   sp2[1] = clamp(dry * 0.95, 0, 0.95) * rockSup;
   sp2[2] = clamp(snow * 0.95, 0, 0.95);
   sp2[3] = rock;
@@ -135,20 +135,21 @@ function makeTerrainMaterial(base: THREE.MeshStandardMaterial, tex: Record<strin
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, {
       uGroundForest: { value: tex.forest }, uGroundMud: { value: tex.mud }, uGroundSand: { value: tex.sand }, uGroundPath: { value: tex.path },
-      uSandWet: { value: tex.sandWet }, uSnow: { value: tex.snow }, uRock: { value: tex.rock },
+      uSandWet: { value: tex.sandWet }, uSnow: { value: tex.snow }, uRock: { value: tex.rock }, uSea: { value: WS.SEA_LEVEL },
     });
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec4 splat;\nattribute vec4 splat2;\nvarying vec4 vSplat;\nvarying vec4 vSplat2;\nvarying vec3 vWPos3;\nvarying vec3 vWNrm;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSplat = splat;\nvSplat2 = splat2;\nvWPos3 = position;\nvWNrm = normal;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', ['#include <common>', 'uniform sampler2D uGroundForest;', 'uniform sampler2D uGroundMud;', 'uniform sampler2D uGroundSand;',
-        'uniform sampler2D uGroundPath;', 'uniform sampler2D uSandWet;', 'uniform sampler2D uSnow;', 'uniform sampler2D uRock;',
+        'uniform sampler2D uGroundPath;', 'uniform sampler2D uSandWet;', 'uniform float uSea;', 'uniform sampler2D uSnow;', 'uniform sampler2D uRock;',
         'varying vec4 vSplat;', 'varying vec4 vSplat2;', 'varying vec3 vWPos3;', 'varying vec3 vWNrm;'].join('\n'))
       .replace('#include <map_fragment>', [
         // 草の細かい模様（旧世界と同じ）は、砂・雪・岩の所では使わない（そこでは各地面の模様を使い、草の模様が伸びたり透けたりしない）
         '#ifdef USE_MAP',
         '  vec4 texelColor = texture2D( map, vMapUv );',
-        '  float neutralW = clamp(vSplat2.w * 1.25 + vSplat2.y * 1.4 + vSplat2.x * 1.4 + vSplat2.z * 1.3, 0.0, 1.0);',
+        '  float wetPx = vSplat2.x * (1.0 - smoothstep(uSea + 0.05, uSea + 0.34, vWPos3.y));',
+        '  float neutralW = clamp(vSplat2.w * 1.25 + vSplat2.y * 1.4 + wetPx * 1.4 + vSplat2.z * 1.3, 0.0, 1.0);',
         '  diffuseColor.rgb *= mix(texelColor.rgb, vec3(0.36), neutralW);',
         '#endif',
         '{',
@@ -159,8 +160,11 @@ function makeTerrainMaterial(base: THREE.MeshStandardMaterial, tex: Record<strin
         '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundMud, wp / 5.0).rgb * tintF, vSplat.y * 0.9);',
         '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSand, wp / 6.0).rgb * tintF, vSplat.z * 0.92);',
         '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundPath, wp / 5.0).rgb * tintF, vSplat.w * 0.94);',
-        '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSand, wp / 7.5 + 0.37).rgb * 1.02, vSplat2.y);',
-        '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uSandWet, wp / 6.0).rgb * 0.95, vSplat2.x);',
+        // 砂浜：GPT の砂の模様を少し落ち着いた色に（真っ赤なオレンジにしない）。濡れた砂は高さで細い帯に
+        '  vec3 sd0 = texture2D(uGroundSand, wp / 7.5 + 0.37).rgb; sd0 = mix(vec3(dot(sd0, vec3(0.3333))), sd0, 0.6) * 1.18;',
+        '  diffuseColor.rgb = mix(diffuseColor.rgb, sd0, vSplat2.y);',
+        '  vec3 sw0 = texture2D(uSandWet, wp / 6.0).rgb; sw0 = mix(vec3(dot(sw0, vec3(0.3333))), sw0, 0.65) * 1.05;',
+        '  diffuseColor.rgb = mix(diffuseColor.rgb, sw0, wetPx * 0.9);',
         '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uSnow, wp / 8.0).rgb * clamp(0.6 + 0.5 * lum, 0.8, 1.15), vSplat2.z * 0.92);',
         // 岩肌：三方向から貼る（急な崖でも模様が縦に伸びない）
         '  vec3 an = abs(normalize(vWNrm)); an = pow(an, vec3(4.0)); an /= (an.x + an.y + an.z);',
@@ -182,6 +186,7 @@ export interface WorldView {
   update(dt: number, focus: { x: number; z: number }, camera: THREE.Camera): void;
   status(): Record<string, unknown>;
   setQuality(q: Quality): void;
+  prebuild(r?: number): void;
   dispose(): void;
   readonly group: THREE.Group;
 }
@@ -305,7 +310,7 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
       sea: { shallow: 0x7fd8cf, deep: 0x1f6a90, sa: 0.32, da: 0.95, dd: 3.0, rip: 0.06, swellAmp: 1, foamD: 0.16, line: 1 },
       calm: { shallow: 0x8fd2c6, deep: 0x2f7d99, sa: 0.16, da: 0.88, dd: 1.6, rip: 0.05, swellAmp: 0, foamD: 0.07, line: 1 },
       stream: { shallow: 0x9adbd0, deep: 0x3b8ca3, sa: 0.22, da: 0.82, dd: 0.6, rip: 0.12, swellAmp: 0, foamD: 0.1, line: 0 },
-      pool: { shallow: 0x96d8cc, deep: 0x2c7a95, sa: 0.18, da: 0.9, dd: 1.3, rip: 0.06, swellAmp: 0, foamD: 0.1, line: 1 },
+      pool: { shallow: 0x8fd0c8, deep: 0x2a7290, sa: 0.12, da: 0.9, dd: 1.3, rip: 0.06, swellAmp: 0, foamD: 0.05, line: 0 },
     }[kind];
     return new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, fog: true,
@@ -493,14 +498,14 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
   riverRibbon(-WS.OLD_HALF, -WS.DRAW_HALF);
 
   /* ---------- 山の池・滝つぼ（小さな面。0.33m の格子） ---------- */
-  function basin(name: string, cx: number, cz: number, R: number, level: number, mat: THREE.ShaderMaterial, keep: (x: number, z: number) => boolean) {
+  function basin(name: string, cx: number, cz: number, R: number, level: number, mat: THREE.ShaderMaterial, keep: (x: number, z: number) => boolean, fadeAt?: (x: number, z: number) => number) {
     const g = 0.33, n = Math.ceil((2 * R) / g);
     const pos: number[] = [], dep: number[] = [], flow: number[] = [], fade: number[] = [], idx: number[] = [], map = new Int32Array((n + 1) * (n + 1)).fill(-1);
     for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) {
       const x = cx - R + i * g, z = cz - R + j * g;
       if (Math.hypot(x - cx, z - cz) > R || !keep(x, z)) continue;
       map[j * (n + 1) + i] = pos.length / 3;
-      pos.push(x, level, z); dep.push(Math.max(0, level - H(x, z))); flow.push(0, 1); fade.push(1 - sm(R - 1.3, R - 0.05, Math.hypot(x - cx, z - cz)));   // 縁は少しずつ消す（出口の川と重なる所に硬い端を作らない）
+      pos.push(x, level, z); dep.push(Math.max(0, level - H(x, z))); flow.push(0, 1); fade.push((1 - sm(R - 1.3, R - 0.05, Math.hypot(x - cx, z - cz))) * (fadeAt ? fadeAt(x, z) : 1));   // 縁は少しずつ消す（出口の川と重なる所に硬い端を作らない）
     }
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
       const a = map[j * (n + 1) + i], b = map[j * (n + 1) + i + 1], d = map[(j + 1) * (n + 1) + i], e = map[(j + 1) * (n + 1) + i + 1];
@@ -514,7 +519,10 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
   }
   const cliffSide = (x: number, z: number) => WS.cliffSigned(x, z);
   basin('Tarn', WS.TARN.x, WS.TARN.z, WS.TARN.r + 1.6, WS.TARN.level, matTarn, () => true);
-  basin('PlungePool', WS.FALL.pool.x, WS.FALL.pool.z, WS.FALL.poolR + 1.9, WS.FALL.poolLevel, matPool, (x, z) => cliffSide(x, z) < 0.25);
+  // 滝つぼ：崖の下の側だけ。下流側は出口（POOL_OUT_A）で川へ引き継ぐ（そこで少しずつ消え、川が同じ高さで続く）
+  basin('PlungePool', WS.FALL.pool.x, WS.FALL.pool.z, WS.FALL.poolR + 1.9, WS.FALL.poolLevel, matPool,
+    (x, z) => cliffSide(x, z) < 0.25 && WS.fallFrame(x, z).a < WS.POOL_OUT_A + 0.35,
+    (x, z) => 1 - sm(WS.POOL_OUT_A - 0.35, WS.POOL_OUT_A + 0.3, WS.fallFrame(x, z).a));
 
   /* ---------- 山の川（上流・下流）と滝：1つの続いた形 ---------- */
   function streamRibbon(P: WS.Poly, levelAt: (s: number) => number, W: number, s0: number, s1: number, fadeIn: number, fadeOut: number, name: string, endSea: boolean) {
@@ -547,7 +555,7 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
     const sJoin = up.len - 1.0;
     streamRibbon(up, WS.upstreamLevel, 1.95, 0, up.len, 1.6, 0.6, 'StreamUp', false);
     // 下流：滝つぼの中から海まで（滝つぼ・海と重なる所は薄く）
-    streamRibbon(dn, WS.downstreamLevel, 2.1, 0, dn.len, 2.4, 0, 'StreamDown', true);
+    streamRibbon(dn, WS.downstreamLevel, 2.1, WS.POOL_OUT_S - 0.65, dn.len, 0.65, 0, 'StreamDown', true);
 
     /* 滝の形：断面（流れの横方向 u）×道のり（v）で掃いた閉じた薄い形。
        上流の水面（sJoin）→ 落ち口の丸み → 放物線で落ちる → 滝つぼの水面の下 0.4m まで */
@@ -567,7 +575,7 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
       const t = (i / nFall) ** 1.15 * T, hx = v0 * t, hy = 0.5 * g * t * t;
       const vx = v0, vy = g * t, vl = Math.hypot(vx, vy);
       path.push({ x: lip.x + dir.x * hx, y: lipLv - hy, z: lip.z + dir.z * hx, tx: dir.x * vx / vl, ty: -vy / vl, tz: dir.z * vx / vl,
-        w: 1.6 + 0.55 * (i / nFall), th: 0.05 + 0.32 * sm(0, 0.35, i / nFall), fall: sm(0, 0.12, i / nFall) });
+        w: (1.6 + 0.55 * (i / nFall)) * (1 + 0.05 * Math.sin(i * 0.9) * sm(0, 0.3, i / nFall)), th: 0.05 + 0.32 * sm(0, 0.35, i / nFall), fall: sm(0, 0.12, i / nFall) });
     }
     const last = path[path.length - 1];
     IMPACT.x = last.x; IMPACT.y = poolLv; IMPACT.z = last.z;
@@ -592,7 +600,8 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
           // 縁は丸く細く（長方形の端が見えないように）
           const edgeK = Math.sqrt(Math.max(0, 1 - u * u * 0.85));
           const off = (face === 0 ? 0.5 : -0.5) * p.th * edgeK;
-          const wob = p.fall > 0.5 ? Math.sin(r * 0.9 + u * 3.0) * 0.04 : 0;
+          // 落ちる水は真ん中が少しふくらむ（平らな板にしない）
+          const wob = p.fall > 0.5 ? Math.sin(r * 0.9 + u * 3.0) * 0.04 + 0.16 * (1 - u * u) * p.fall : 0;
           const x = p.x + side.x * u * p.w + ox * (off + wob), y = p.y + oy * (off + wob) + (p.fall < 0.5 ? 0.0 : 0), z = p.z + side.z * u * p.w + oz * (off + wob);
           pos.push(x, y, z); uvs.push(j / across, vRow[r]); fallA.push(p.fall);
           const s = face === 0 ? 1 : -1; nrm.push(ox * s, oy * s, oz * s);
@@ -661,8 +670,10 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
           vec3 sunD = normalize(vec3(0.55, 0.75, 0.3));
           float lam = clamp(dot(normalize(vN), sunD), 0.0, 1.0);
           col *= 0.62 + 0.38 * lam;
-          float edgeN = noise(vec2(sv * 2.0, u * 3.0 + 9.0));
-          float edge = smoothstep(0.0, 0.16 + 0.12 * edgeN, u) * smoothstep(1.0, 0.84 - 0.12 * edgeN, u);
+          // 横の縁：流れと一緒に動く大きめのでこぼこで削る（まっすぐな縦の線を見せない）
+          float edgeN = noise(vec2(sv * 1.3, 4.0)) * 0.6 + noise(vec2(sv * 4.0, 9.0)) * 0.4;
+          float edgeM = noise(vec2(sv * 1.1, 17.0)) * 0.6 + noise(vec2(sv * 3.6, 23.0)) * 0.4;
+          float edge = smoothstep(0.02, 0.12 + 0.22 * edgeN, u) * smoothstep(0.98, 0.88 - 0.22 * edgeM, u);
           float alpha = mix(0.5, 0.42 + strand * 0.4, vFall) * edge;
           alpha = max(alpha, bottom * 0.75 * edge);
           alpha *= smoothstep(0.0, 0.7, v);
@@ -776,6 +787,15 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
       const by = [0, 0, 0, 0]; let pending = 0, verts = 0;
       for (const c of chunks.values()) { if (c.lod >= 0) by[c.lod]++; if (c.want !== c.lod) pending++; if (c.mesh) verts += c.mesh.geometry.attributes.position.count; }
       return { chunks: chunks.size, lod: by, pending, verts, builtTotal, syncBuilt, lastBuildMs: +lastBuildMs.toFixed(2), hidden: hidden.map((o) => o.name), river: riverParts.length, quality };
+    },
+    /** 確認用：主人公のまわり r マスの区画を、今すぐ必要な細かさまで作り終える（遅い環境での撮影・計測用。ゲームの流れでは使わない） */
+    prebuild(r = 60) {
+      for (const c of chunks.values()) {
+        const x0 = c.ci * CH, z0 = c.cj * CH;
+        const d = Math.hypot(Math.max(x0 - focus.x, 0, focus.x - (x0 + CH)), Math.max(z0 - focus.z, 0, focus.z - (z0 + CH)));
+        if (d > r) continue; c.want = lodFor(c);
+        if (c.want !== c.lod) { const j = startJob(c, c.want); stepJob(c, j, Infinity); finishJob(c, j); c.job = null; builtTotal++; }
+      }
     },
     setQuality(q: Quality) { if (q === quality) return; quality = q; for (const c of chunks.values()) { c.lod = -2; c.job = null; } },
     dispose() {

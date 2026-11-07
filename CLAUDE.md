@@ -18,7 +18,7 @@
    - モジュールは描画専用。座標・採取状態・建物・進行の正本はゲーム側。結果だけを `setPlayerVisualState` / `updateResourceVisual` / `addStructureVisual` / `playVisualEffect` で渡す。
    - API の正本は `src/graphics/types.ts`、連携仕様は `docs/handoff/INTEGRATION.md`。
    - `threejs-hd2d-graphics/`・`references/`・`assets/lab-stages*/` は Muse から受け取った素材（原本）。ゲームのビルドでは使わず、参照用として改変しない。
-3. **座標系**：ゲーム座標＝シーン座標（右手系・Y上・1単位＝1マス）。地形の高さは描画モジュールの `terrainHeight` を正とする。
+3. **座標系**：ゲーム座標＝シーン座標（右手系・Y上・1単位＝1マス）。地形の高さの正本は `src/world/shape.ts` の `worldHeight`（旧世界 |x|,|z|≤60 の中は描画モジュールの `terrainHeight` とまったく同じ値。テストで検査）。ビルドで描画モジュール内の `./utils` だけを `src/world/terrain-shim.ts` へ向け、モジュールの描画・足もとも同じ地形にしている（`src/graphics` のファイルは変えない）。
 4. **科学的な正しさ**：根拠のない反応を作らない。登録されていない組み合わせは「何も起きない（材料も減らない）」。危険な物質や医薬品の具体的な製造手順は扱わない。
 5. **説明の徹底**：すべての物質・道具・設備に `kid`（やさしい説明）と `more`（くわしく）、すべての反応に `why`（何が起きたの？）、すべての工作に `how` を書く。欠けると `npm test` が失敗する。
 6. **文章**：漢字を使った普通の日本語（小学生にわかる言葉づかい）。ひらがなだけの分かち書きにはしない。
@@ -77,7 +77,13 @@
 - カメラの API は Muse の `setCameraOrbit({yawDegrees,pitchDegrees,viewSize})`・`getCameraYawDegrees()`（第17ラウンド）。モジュールは絵の行をカメラ基準で選ぶので、ゲームは画面基準の向きを `worldFacing()` で世界の向きに変換して `setPlayerVisualState` に渡す。
 - 自然物の見た目の違い（`variant`：針葉樹・ヤシ・葦・乾いたやぶ・苔むした岩・倒木。採れる物は元の種類のまま）と飾り（`WORLD.decos`：睡蓮・溶岩）は `nature.js` が生成後に割り当てる。溶岩は通れない円（`kind:"lava"`）で、上とすぐそばに建物を置けない。
 - 集落と人（`data.js` の `village`、`ui.js` の集落セクション）：小屋は hut の GLB、小物は Muse の `assets/gpt-expansion/props.json`（軽量版 `assets/build/props`）。人は `WORLD.setNpcs` の円で当たり判定、絵は `graphics-entry.ts` の `HD2D.npcSet`（`CharacterRenderer` を人数分。シートは `scripts/make-npc-sprites.py` で `assets/build/npc/*.webp`）。会話は案内の枠。売り買いの仕組みがないので取引のボタンは出さない。集落の中は建物を置けない。
-- 広い世界（7エリア・地形9倍・区画読み込み・エリア別の環境）は、描画側の作業を Muse に依頼中（`docs/handoff/WORLD-EXPANSION-GRAPHICS-SPEC.md`）。オーナー決定（2026-11-07）：描画は Muse、ゲーム側は Claude で分担。
+- **広い世界（2026-11-07〜、`docs/world/WIDE-WORLD.md`）**：歩ける範囲は `TERRAIN.WALK`（-172〜172）。探索できる陸地は改修前（±56）の約9.1倍（`tests/world.test.mjs` が毎回計測）。
+  北東に山（尾根・岩壁・登山道 `TRAILS.main`・休み場・見晴らし台）、山の池→上流→滝（落ち口・高さ7mの崖・滝つぼ）→谷→浜（`TRAILS.falls`・`TRAILS.gorge`）、東と南に海岸（入り江・岬・浅瀬の棚）、西に湖、本流は北の谷と南の河口まで。
+  崖（傾き `WALK_SLOPE` 0.85 超）と深い水（`WADE_DEPTH` 0.55 超。本流は以前どおり歩いて渡れる）は `nature.js` の `terrainBlocked`（0.5マス格子・16マスの区画ごとに一度だけ計算）で止める。経路探索は出発点と目的地を囲む範囲だけ。
+  新しい陸地の自然物は第3層（32マスの区画ごとに近づいたら作る。候補はハッシュで決め、重なりは順位で決めるので、作る順番に依らず同じ位置・同じ ID）。海岸には貝殻（`pebble:shell`→貝殻）・流木（`twig:driftwood`）・浜の草（`grass:dry`）。
+  描画は `src/world/render.ts`（外側の地形の区画・海・湖・山の川・作り直した滝）。モジュールの遠景の山（`BackdropMountains`）と旧い滝（`Waterfall`）は表示しない。セーブ v4（`worldVer`。古いセーブは控えを取ってから移行し、位置が崖・深い水なら近くの安全な場所へ）。
+  地図（世界タブの `#wmap`）・地名（左上）・「拠点へ瞬間移動」・斜面でカメラの角度を一時的に上げる処理（`camClearance`。ユーザー設定は変えない）。
+- 7エリア（ラウンド18）・エリア別の環境は Muse の作業待ち。届いたら `src/world/shape.ts` の配置とすり合わせる（`docs/handoff/CLAUDE-TO-MUSE-2026-11-06.md` §18）（`docs/handoff/WORLD-EXPANSION-GRAPHICS-SPEC.md`）。オーナー決定（2026-11-07）：描画は Muse、ゲーム側は Claude で分担。
 
 ## 開始時の景観と文明の痕跡（2026-11-06〜）
 - 開始時のフィールドは手つかずの自然。人工物（石の階段・石積みの壁・舗装・柵・橋・建物など）を初期配置しない。「遺跡」などの理由を付けて残さない。

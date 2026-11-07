@@ -182,7 +182,10 @@ export const UPSTREAM = poly([[at(-16.6, 0.6).x, at(-16.6, 0.6).z], [at(-12, -0.
 export const DOWNSTREAM = poly([[at(4.6, 0).x, at(4.6, 0).z], [at(9, 0.5).x, at(9, 0.5).z], [at(14, -0.6).x, at(14, -0.6).z], [at(19, 0.4).x, at(19, 0.4).z], [at(24, -0.3).x, at(24, -0.3).z], [at(32, 0.2).x, at(32, 0.2).z]]);
 const UP_W = 1.55, DOWN_W = 1.7;
 export function upstreamLevel(s: number): number { return lerp(TARN.level - 0.05, FALL.lipLevel, clamp(s / UPSTREAM.len, 0, 1)); }
-export function downstreamLevel(s: number): number { return Math.max(SEA_LEVEL, lerp(FALL.poolLevel - 0.04, SEA_LEVEL, clamp(s / 21, 0, 1))); }
+/** 滝つぼの出口：下流の川の道のり POOL_OUT_S までは滝つぼと同じ水面（段差を作らない）。そこから海へ下がる */
+export const POOL_OUT_S = 2.4;
+export const POOL_OUT_A = 4.6 + POOL_OUT_S;   // 出口の位置（落ち口からの距離 a）
+export function downstreamLevel(s: number): number { return Math.max(SEA_LEVEL, lerp(FALL.poolLevel, SEA_LEVEL, clamp((s - POOL_OUT_S) / (21 - POOL_OUT_S), 0, 1))); }
 /** 崖の線：滝つぼを U 字形に囲む（落ち口の幅 2×CLIFF_W、下流へ行くほど広がる谷）。正＝崖の上（上の段）、負＝崖の下（滝つぼ・谷底） */
 export const CLIFF_A0 = 0.25, CLIFF_W = 2.4, CLIFF_K = 0.55;
 export const CLIFF = { ...at(CLIFF_A0, 0), w: CLIFF_W, k: CLIFF_K };
@@ -195,7 +198,7 @@ export function cliffSigned(x: number, z: number): number {
 export function cliffWallPoint(a: number, sgn: number): { x: number; z: number } { return at(a, sgn * (CLIFF_W + Math.max(0, a - CLIFF_A0) * CLIFF_K + 0.15)); }
 const UPPER_BENCH = FALL.lipLevel + 0.9, LOWER_BENCH = FALL.poolLevel + 0.5;
 function upperSurf(a: number, l: number): number { return UPPER_BENCH - Math.max(0, a) * 0.55 + Math.max(0, -a) * 0.13 + Math.max(0, Math.abs(l) - 4) * 0.22; }
-function lowerSurf(a: number, l: number): number { return LOWER_BENCH - Math.max(0, a - 3.3) * 0.235 + Math.max(0, Math.abs(l) - 2.5) * 0.08; }
+function lowerSurf(a: number, l: number): number { return LOWER_BENCH - Math.max(0, a - 7.0) * 0.26 + Math.max(0, Math.abs(l) - 2.5) * 0.08; }
 /* ---------------- 登山道（往復できる道。傾きを 0.3 以下に抑えて彫る） ---------------- */
 /** 山麓（旧世界の北東の端）→ 中腹 → 休み場 → 見晴らし台。くねらせて傾きをゆるくする */
 export const TRAIL_MAIN = poly([
@@ -207,15 +210,16 @@ export const TRAIL_MAIN = poly([
 const fa = (a: number, l: number): [number, number] => { const p = at(a, l); return [+p.x.toFixed(2), +p.z.toFixed(2)]; };
 export const TRAIL_FALLS = poly([
   [92.2, -100.3], [99, -96], [104, -94.6], fa(-17, 4.6), fa(-10, 4.0), fa(-4, 4.1),
-  fa(-1.5, 9.0), fa(9, 13.0), fa(4.5, 17.0), fa(15.5, 20.0), fa(21, 13.5), fa(18.5, 5.4), fa(11, 4.3), fa(5.2, 3.9),
-  fa(11, 3.8), fa(19, 3.6), fa(26, 3.4), fa(31, 4.5),
+  fa(-1.5, 9.0), fa(9, 13.0), fa(4.5, 17.0), fa(15.5, 20.0), fa(22.5, 13.5), fa(20.5, 5.0), fa(12, 4.6), fa(5.4, 4.2),
 ]);
+/** 谷の道：谷の入口（滝の道が谷底へ下りた所）→ 川の岸を下る → 浜 */
+export const TRAIL_GORGE = poly([fa(20.5, 5.0), fa(26, 4.6), fa(31, 5.2), fa(35, 7.0)]);
 /** 休み場（小さな平地）と見晴らし台（道のりの位置と半径） */
 export const RESTS: Array<{ trail: 'main' | 'falls'; s: number; r: number; name: string }> = [
   { trail: 'main', s: 36, r: 3.6, name: '山麓の休み場' }, { trail: 'main', s: 78, r: 3.6, name: '中腹の休み場' },
 ];
 export const LOOKOUT = { x: 104, z: -118, r: 7.5 };
-export const TRAILS = { main: TRAIL_MAIN, falls: TRAIL_FALLS };
+export const TRAILS = { main: TRAIL_MAIN, falls: TRAIL_FALLS, gorge: TRAIL_GORGE };
 
 /* 道の高さ：自然の地形を道に沿って測り、上り下りの傾きを抑えて、なめらかにした値（起動時に一度だけ計算） */
 const TRAIL_STEP = 0.75, TRAIL_GRADE = 0.27;
@@ -250,6 +254,8 @@ function profileAt(p: Profile, s: number): number {
   const f = clamp(s / TRAIL_STEP, 0, p.h.length - 1), i = Math.floor(f), t = f - i;
   return i + 1 < p.h.length ? lerp(p.h[i], p.h[i + 1], t) : p.h[i];
 }
+/** 谷底の川の岸の高さ（落ち口から a の所。川の水面＋0.55、海の近くでは浜の高さ以上） */
+function bankAt(a: number): number { const p = at(a, 0); return Math.max(SEA_LEVEL + 0.6, downstreamLevel(polyNear(DOWNSTREAM, p.x, p.z).s) + 0.55); }
 function ensureProfiles(): Profile[] {
   if (profiles) return profiles;
   const pre = (x: number, z: number) => outerBeforeTrails(x, z);
@@ -270,11 +276,14 @@ function ensureProfiles(): Profile[] {
     { s: 0, h: profileAt(main, polyNear(TRAIL_MAIN, 92.2, -100.3).s) },
     { s: P(-17, 4.6), h: TARN.level + 0.7 },
     { s: P(-4, 4.1), h: upperSurf(-4, 4.1) },
-    { s: P(18.5, 5.4), h: lowerSurf(18.5, 5.4) },
-    { s: P(5.2, 3.9), h: lowerSurf(5.2, 3.9) + 0.05 },
-    { s: P(26, 3.4), h: lowerSurf(26, 3.4) },
+    { s: P(20.5, 5.0), h: bankAt(20.5) },
+    // 谷底の道：川の水面より少し高い所（岸の高さ）に合わせる（道と川の間に段差を作らない）
+    { s: P(12, 4.6), h: bankAt(12) },
+    { s: P(5.4, 4.2), h: Math.max(bankAt(7), lowerSurf(5.4, 4.2) + 0.05) },
   ], pre, true);
-  profiles = [main, falls];
+  const nG = (a: number, l: number) => { const p = at(a, l); return polyNear(TRAIL_GORGE, p.x, p.z).s; };
+  const gorge = buildProfile(TRAIL_GORGE, [{ s: 0, h: bankAt(20.5) }, { s: nG(26, 4.6), h: bankAt(26) }, { s: nG(31, 5.2), h: bankAt(31) }], pre, true);
+  profiles = [main, falls, gorge];
   return profiles;
 }
 
@@ -327,9 +336,11 @@ function fallsZone(x: number, z: number, h: number): number {
   let site = lerp(inside, outside, sm(-0.35, 0.45, sd));
   // 滝つぼ：崖の下の側だけ、中心で深さ約1.7
   const dp = Math.hypot(x - FALL.pool.x, z - FALL.pool.z);
-  if (sd < 0 && dp < FALL.poolR + 1.4) {
-    const bed = FALL.poolLevel - 1.75 * (1 - sm(0, FALL.poolR + 0.4, dp) ** 1.6) + 0.1;
-    site = lerp(site, Math.min(site, bed), sm(FALL.poolR + 1.4, FALL.poolR - 0.3, dp) * sm(0, -0.5, sd));
+  // 岸の形は円にしない（角度で半径を少し変える）
+  const th = Math.atan2(z - FALL.pool.z, x - FALL.pool.x), rr = FALL.poolR * (1 + 0.13 * Math.sin(th * 3 + 1.1) + 0.08 * Math.sin(th * 5 + 2.3));
+  if (sd < 0 && dp < rr + 1.4) {
+    const bed = FALL.poolLevel - 1.75 * (1 - sm(0, rr + 0.4, dp) ** 1.6) + 0.1;
+    site = lerp(site, Math.min(site, bed), sm(rr + 1.4, rr - 0.3, dp) * sm(0, -0.5, sd));
   }
   return site;
 }
@@ -381,7 +392,7 @@ function carveTrails(x: number, z: number, h: number): number {
     if (nr.d >= 5.2) continue;
     if (!best || nr.d < best.d) best = { d: nr.d, ph: profileAt(p, nr.s) };
   }
-  if (best) out = lerp(out, best.ph, sm(5.2, 1.9, best.d));
+  if (best) out = lerp(out, best.ph, sm(5.4, 2.4, best.d));
   // 見晴らし台：平らに
   const dl = Math.hypot(x - LOOKOUT.x, z - LOOKOUT.z);
   if (dl < LOOKOUT.r + 1.6) out = lerp(out, lookoutH, sm(LOOKOUT.r + 1.6, LOOKOUT.r, dl));
@@ -458,10 +469,14 @@ export function waterAt(x: number, z: number, h: number): WaterInfo {
 /* ---------------- 地名（HUD と地図） ---------------- */
 export function placeName(x: number, z: number, h: number): string | null {
   if (Math.abs(x) <= 58 && Math.abs(z) <= 58) return null;
+  // 滝・池・見晴らし台など、近くの目印を先に（滝の谷は海に近いが「海岸」とは呼ばない）
+  const ff = fallFrame(x, z);
+  if (Math.hypot(x - FALL.pool.x, z - FALL.pool.z) < 10) return '滝つぼ';
+  if (ff.a > -24 && ff.a < 0.5 && Math.abs(ff.l) < 9) return Math.hypot(x - TARN.x, z - TARN.z) < 10 ? '山の池' : '滝の上流';
+  if (ff.a >= 0.5 && ff.a < 24 && Math.abs(ff.l) < 9) return '滝の谷';
+  if (Math.hypot(x - TARN.x, z - TARN.z) < 12) return '山の池';
   const sd = seaDist(x, z);
   if (sd > -16) return sd > 0 ? '沖の浅瀬' : '海岸';
-  if (Math.hypot(x - FALL.pool.x, z - FALL.pool.z) < 14) return '滝つぼ';
-  if (Math.hypot(x - TARN.x, z - TARN.z) < 12) return '山の池';
   if (Math.hypot(x - LOOKOUT.x, z - LOOKOUT.z) < 12) return '見晴らし台';
   const m = mountainRaw(x, z);
   if (m > 0.5 || h > 9) return h > 18 ? '山の高所' : h > 9 ? '山の中腹' : '山麓';
