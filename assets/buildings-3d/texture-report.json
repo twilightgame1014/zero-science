@@ -1,0 +1,50 @@
+{
+ "planks": {
+  "tile_m": 1.1,
+  "seam_ratio": 3.477
+ },
+ "thatch": {
+  "tile_m": 1.2,
+  "seam_ratio": 4.265
+ },
+ "earth": {
+  "tile_m": 1.6,
+  "seam_ratio": 1.085
+ },
+ "bark": {
+  "tile_m": 0.9,
+  "seam_ratio": 0.986
+ },
+ "stone": {
+  "tile_m": 1.6,
+  "seam_ratio": 1.209
+ },
+ "clay": {
+  "tile_m": 1.4,
+  "seam_ratio": 1.001
+ },
+ "brick": {
+  "tile_m": 1.0,
+  "seam_ratio": 4.193
+ },
+ "tile": {
+  "tile_m": 1.0,
+  "seam_ratio": 4.359
+ },
+ "iron": {
+  "tile_m": 1.4,
+  "seam_ratio": 0.997
+ },
+ "copper": {
+  "tile_m": 1.2,
+  "seam_ratio": 1.053
+ },
+ "metalroof": {
+  "tile_m": 1.2,
+  "seam_ratio": 2.38
+ },
+ "plaster": {
+  "tile_m": 1.8,
+  "seam_ratio": 1.062
+ }
+}
