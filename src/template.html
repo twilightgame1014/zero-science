@@ -39,13 +39,14 @@ button{font:inherit;color:inherit}
 .wmapbox{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin:4px 0 10px}
 #wmap{width:240px;height:240px;max-width:100%;border-radius:10px;border:2px solid rgba(0,0,0,.25);image-rendering:auto;background:#5a8a4a}
 .wmapkey{list-style:none;margin:0;padding:0;font-size:12px;line-height:1.7}.wmapkey i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
-.camctl{position:absolute;right:calc(var(--sar,0px) + 10px);top:calc(var(--sat,0px) + 70px);z-index:4;display:flex;flex-wrap:wrap;gap:4px;width:132px;pointer-events:auto}
+.camctl{position:absolute;right:calc(var(--sar,0px) + 10px);top:calc(var(--sat,0px) + 70px);z-index:4;pointer-events:auto}
 .camctl[hidden]{display:none}
-.camctl button{width:40px;height:40px;border-radius:10px;border:1.5px solid var(--line);background:rgba(255,255,255,.92);font:inherit;font-weight:900;cursor:pointer}
-.camctl button[data-id="reset"]{width:auto;flex:1;font-size:.8rem}
-.camzoom{display:flex;align-items:center;gap:4px;width:100%;font-size:.72rem;font-weight:800;background:rgba(255,255,255,.92);border-radius:10px;padding:2px 6px}
-.camzoom input{flex:1;min-width:0;touch-action:pan-x}
+.camctl button{height:32px;padding:0 9px;border-radius:16px;border:1.5px solid var(--line);background:rgba(255,255,255,.88);font:inherit;font-size:.74rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:4px;touch-action:manipulation}
 [data-ui="touch"] .camctl{top:auto;bottom:calc(var(--navh,64px) + 150px)}
+[data-ui="touch"] .camctl button span{display:none}
+[data-ui="touch"] .camctl button{width:38px;height:38px;padding:0;justify-content:center;font-size:1rem}
+.camsens{display:grid;grid-template-columns:auto 1fr 2.4em;gap:6px 10px;align-items:center;max-width:420px}
+.camsens input{width:100%;touch-action:pan-x}.camsens output{font-weight:800;text-align:right}
 /* 集落の人との会話 */
 .talk .tname{font-weight:900;font-size:1.1rem}.talk .tname small{font-weight:700;color:var(--muted);margin-left:4px}
 .talk .tline{font-size:1.02rem;line-height:1.8;margin:10px 0 4px;min-height:3.6em}
@@ -534,13 +535,7 @@ textarea{width:100%;min-height:90px;font:inherit;font-size:.75rem;border:1.5px s
     <div class="combo" id="combo"></div><div class="banner" id="banner" role="status"></div>
     <div class="joy" id="joy" aria-label="移動スティック"><div class="knob"></div></div>
     <button class="w3act idle" id="w3act" data-act="g3" hidden></button>
-    <div class="camctl" id="camctl" hidden role="group" aria-label="カメラ（向き・角度・距離）">
-      <button data-act="cam" data-id="left" title="カメラを左へ回す">⟲</button><button data-act="cam" data-id="right" title="カメラを右へ回す">⟳</button>
-      <button data-act="cam" data-id="up" title="上から見る">⤒</button><button data-act="cam" data-id="down" title="横から見る">⤓</button>
-      <button data-act="cam" data-id="in" title="近づく">＋</button><button data-act="cam" data-id="out" title="離れる">－</button>
-      <label class="camzoom" title="カメラの距離"><span>距離</span><input type="range" id="camZoom" aria-label="カメラの距離"></label>
-      <button data-act="cam" data-id="reset" title="標準の角度と距離に戻す">標準</button>
-    </div>
+    <div class="camctl" id="camctl" hidden><button data-act="cam" data-id="reset" title="視点を標準の角度と距離に戻す（ドラッグで回転・ホイール／2本指で距離）" aria-label="視点を戻す">🎥<span>視点を戻す</span></button></div>
     <div class="buildbar" id="buildbar" hidden role="group" aria-label="建物の置き場所を決める">
       <div class="bbtitle" id="bbTitle"></div><div class="bbmsg" id="bbMsg" role="status"></div>
       <div class="bbrow"><button data-act="b-rot" data-id="-90" title="左へ90度（Shift+R）">⟲90°</button><button data-act="b-rot" data-id="-15" title="左へ15度">⟲15°</button><button data-act="b-rot" data-id="15" title="右へ15度（R）">⟳15°</button><button data-act="b-rot" data-id="90" title="右へ90度">⟳90°</button>

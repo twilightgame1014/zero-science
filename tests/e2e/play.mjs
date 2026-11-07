@@ -459,68 +459,200 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await ctx.close();
 }
 
-/* ---------------- カメラ（回転・上下角・ズーム。描画側の setCameraView がある版） ---------------- */
+/* ---------------- カメラ（ドラッグで回転・上下、ホイール／ピンチで距離。2026-11-08） ---------------- */
+const camState = page => page.evaluate(`(()=>{ const c=${G}.W3.cam; return c ? {yaw:c.yaw, pitch:c.pitch, zoom:c.zoom, cy:c.cy, cp:c.cp, cz:c.cz, sent:${G}.W3.camSent, ptrs:${G}.W3.ptrs?${G}.W3.ptrs.size:-1, pinch:!!${G}.W3.pinch, target:!!${G}.W3.target, saved:${G}.S.camera} : null; })()`);
+const settle = page => page.waitForTimeout(450);
+/* マップの何もない所（名札・ボタンの上ではない点）を (x,y) の近くで探す */
+const empty = (page, x, y) => page.evaluate(([x, y]) => { for (let r = 0; r < 200; r += 12) for (let a = 0; a < 6.28; a += 0.5) { const px = Math.round(x + r * Math.cos(a)), py = Math.round(y + r * Math.sin(a)); const e = document.elementFromPoint(px, py); if (e && e.tagName === 'CANVAS') return { x: px, y: py }; } return { x, y }; }, [x, y]);
+const mdrag = async (page, x0, y0, dx, dy, opts = {}) => { const p = await empty(page, x0, y0); await page.mouse.move(p.x, p.y); await page.mouse.down(opts); await page.mouse.move(p.x + dx, p.y + dy, { steps: opts.steps || 8 }); await page.mouse.up(opts); };
+/* 画面上で「主人公の手前（カメラ側）5マスの地面」がどこに見えるか（回転の向きの確認用） */
+const frontPoint = page => page.evaluate(`(()=>{ const G=${G}, c=G.W3.cam, y=c.cy*Math.PI/180; return {x:G.W3.pos.x+Math.sin(y)*5+Math.cos(y)*0.01, z:G.W3.pos.z+Math.cos(y)*5}; })()`);
+const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__; return G.toScreen(q.x, HD2D.terrainHeight(q.x, q.z, G.W3.cfg), q.z); }, [q]);
 {
   const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
   await page.click('#introGo'); await page.waitForTimeout(700);
   await page.evaluate(`(()=>{ ${G}.W3.pos={x:-12,z:24}; })()`); await page.waitForTimeout(300);
-  const vis = await page.evaluate(`!document.getElementById('camctl').hidden`);
-  ok('カメラの部品（回転・上下・近づく・離れる・距離・標準）が出る', vis);
-  const yaw0 = await page.evaluate(`${G}.W3.camView ? ${G}.W3.camView.yaw : null`);
-  // 右ドラッグで回す（移動クリックにならない）
-  await page.mouse.move(700, 400); await page.mouse.down({ button: 'right' }); await page.mouse.move(820, 400, { steps: 6 }); await page.mouse.up({ button: 'right' }); await page.waitForTimeout(150);
-  const r1 = await page.evaluate(`({yaw:${G}.W3.camView.yaw, saved:${G}.S.camera.yaw, target:!!${G}.W3.target, last:(__FAKE.camCalls||[]).slice(-1)[0]})`);
-  ok('右ドラッグでカメラが回り（設定に保存）、移動先は決まらない', Math.abs(((r1.yaw - yaw0 + 540) % 360) - 180) > 20 && r1.saved === r1.yaw && !r1.target && r1.last.v.yawDegrees === r1.yaw, JSON.stringify({ yaw0, r1 }));
-  // ホイールでズーム
-  const z0 = await page.evaluate(`${G}.W3.camView.zoom`); await page.mouse.move(700, 400); await page.mouse.wheel(0, -300); await page.waitForTimeout(450);
-  const z1 = await page.evaluate(`({z:${G}.W3.camView.zoom, saved:${G}.S.camera.zoom, slider:+document.getElementById('camZoom').value})`);
-  ok('ホイールでズーム（正投影の表示範囲）。距離スライダーにも反映され、保存される', z1.z < z0 && z1.saved === z1.z && Math.abs(z1.slider - z1.z) < 0.26, JSON.stringify({ z0, z1 }));
-  // 90度回したあとも、↑キーは画面の奥へ、主人公の絵は「上（後ろ向き）」
-  await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.waitForTimeout(100);
+  const ui = await page.evaluate(`({hidden:document.getElementById('camctl').hidden, btns:[...document.querySelectorAll('#camctl button')].map(b=>b.dataset.id), slider:!!document.getElementById('camZoom')})`);
+  ok('カメラの操作ボタン（上下左右・近づく・離れる・距離）は撤去し、「視点を戻す」だけを小さく残す', !ui.hidden && ui.btns.length === 1 && ui.btns[0] === 'reset' && !ui.slider, JSON.stringify(ui));
+  ok('初回だけ「ドラッグで視点変更／ホイールでズーム」の案内を出す（出したことを保存）', await page.evaluate(`${G}.S.flags.camHint===1`));
+  const c0 = await camState(page), fp = await frontPoint(page), f0 = await screenOf(page, fp);
+  // 左ボタンで右へドラッグ：回転（移動先は決まらない）。景色を引っ張る向き＝主人公の手前の地面が右へ動く
+  await mdrag(page, 700, 420, 120, 0); await settle(page);
+  const c1 = await camState(page), f1 = await screenOf(page, fp);
+  ok('PC：左ボタンのドラッグで回る（クリック移動にならない）', Math.abs(c1.cy - c0.cy) > 10 && !c1.target && c1.ptrs === 0, JSON.stringify({ c0, c1 }));
+  ok('右へドラッグすると、景色が指（マウス）に付いて右へ回る（主人公の手前の地面が右へ動く）', f1.x > f0.x + 20, JSON.stringify({ f0, f1 }));
+  ok('ドラッグを離したら回り続けない（慣性なし。希望の角度に追いついて止まる）', Math.abs(c1.cy - c1.yaw) < 0.05 && c1.sent && Math.abs(c1.sent.y - ((c1.yaw % 360) + 360) % 360) < 0.05);
+  // 7px は動いてもタップ（クリック移動）。8px 以上はドラッグ
+  await page.evaluate(`document.getElementById('toasts').innerHTML=''`);
+  const goal = await page.evaluate(`(()=>{ const G=${G}; let g=null; for(const [ox,oz] of [[3,-2],[-3,2],[3,2],[-3,-2],[4,0],[0,4],[-4,0],[0,-4]]){ const c={x:G.W3.pos.x+ox, z:G.W3.pos.z+oz}; if(G.WORLD.free(G.S,c.x,c.z) && !G.WORLD.around(c.x,c.z,1.6).length){ const s=G.toScreen(c.x, HD2D.terrainHeight(c.x,c.z,G.W3.cfg), c.z), r=document.getElementById('w3').getBoundingClientRect(), e=document.elementFromPoint(r.left+s.x, r.top+s.y); if(e && e.tagName==='CANVAS'){ g={c, sx:r.left+s.x, sy:r.top+s.y}; break; } } } return g; })()`);
+  await page.mouse.move(goal.sx, goal.sy); await page.mouse.down(); await page.mouse.move(goal.sx + 6, goal.sy + 2); await page.mouse.up(); await page.waitForTimeout(120);
+  const tapped = await camState(page);
+  const tgt = await page.evaluate(`${G}.W3.target`);
+  ok('PC：短いクリック（判定距離8px未満の小さなぶれ）は今までどおり移動先になる（回したあとでもクリックした地面の座標）', tapped.target && tgt && Math.hypot(tgt.x - goal.c.x, tgt.z - goal.c.z) < 0.9, JSON.stringify({ tgt, goal }));
+  await page.evaluate(`${G}.W3.target=null; ${G}.W3.path=null;`);
+  // 右ボタンのドラッグも回転
+  const c2 = await camState(page);
+  await mdrag(page, 700, 420, -60, 0, { button: 'right', steps: 6 }); await settle(page);
+  const c3 = await camState(page);
+  ok('PC：右ボタンのドラッグでも回り、移動・採取は起きない', c3.cy - c2.cy > 10 && !c3.target, JSON.stringify({ c2, c3 }));
+  // 何周しても連続：大きく右へ4周ぶんドラッグし、モジュールへ渡した角度が毎回同じ向きに少しずつ変わる（359→0 で逆回りしない）
+  const n0 = await page.evaluate(`(__FAKE.camCalls||[]).length`);
+  for (let i = 0; i < 12; i++) { await mdrag(page, 300, 420, 800, 0, { steps: 10 }); await page.waitForTimeout(60); }
+  await settle(page);
+  const seq = await page.evaluate(`(__FAKE.camCalls||[]).slice(${n0}).map(c=>c.v.yawDegrees).filter(v=>v!=null)`);
+  const steps = seq.slice(1).map((v, i) => ((v - seq[i] + 540) % 360) - 180);
+  const c4 = await camState(page);
+  ok('左右に何周も回せて、どの1歩も同じ向き・大回りしない（0°/360°を何度もまたぐ）', steps.length > 20 && steps.every(s => s <= 0.001 && s > -60) && (c2.cy - c4.cy) > 720, JSON.stringify({ n: steps.length, min: Math.min(...steps), max: Math.max(...steps), turns: (c2.cy - c4.cy) / 360 }));
+  // 上下：下へ大きくドラッグ → 70°で止まる。上へ → 下限で止まる。限界で行き過ぎない
+  await mdrag(page, 700, 200, 0, 560, { steps: 12 }); await settle(page);
+  const top = await camState(page);
+  await mdrag(page, 700, 740, 0, -730, { steps: 16 }); await settle(page);
+  const low = await camState(page);
+  const lim = await page.evaluate(`[${G}.W3.camPitchMin||0, 70]`);
+  ok('下へドラッグで上から見る（見下ろし角は70°で止まる）。上へドラッグで水平に近づく（下限で止まる）。行き過ぎ・跳ね返りなし', Math.abs(top.pitch - 70) < 1e-6 && Math.abs(top.cp - 70) < 0.05 && Math.abs(low.pitch - lim[0]) < 1e-6 && low.cp >= lim[0] - 1e-6, JSON.stringify({ top, low, lim }));
+  // ホイールでズーム（近づく・離れる）。範囲で止まる
+  const z0 = (await camState(page)).zoom; await page.mouse.move(700, 400); await page.mouse.wheel(0, -300); await page.waitForTimeout(500);
+  const z1 = await camState(page);
+  for (let i = 0; i < 20; i++) await page.mouse.wheel(0, 400); await page.waitForTimeout(500);
+  const z2 = await camState(page), zl = await page.evaluate(`(()=>{ const z=${G}.W3.cfg.camera.viewSize; return [z*0.55, z*1.9]; })()`);
+  ok('ホイールで近づく・離れる（最大距離で止まる）。設定に保存される', z1.zoom < z0 && Math.abs(z2.zoom - +zl[1].toFixed(2)) < 0.02 && Math.abs(z2.saved.zoom - z2.zoom) < 0.01, JSON.stringify({ z0, z1: z1.zoom, z2: z2.zoom, zl }));
+  // 主人公の向き：回したあとも ↑キーで画面の奥へ進み、絵は背中（行2）。カメラを回しても主人公のワールドの向きは変わらない
+  await page.evaluate(`(()=>{ const c=${G}.W3.cam; c.pitch=40; c.yaw=c.cy+90; })()`); await settle(page);
   const p0 = await pos(page);
   await page.keyboard.down('ArrowUp'); await page.waitForTimeout(600); await page.keyboard.up('ArrowUp'); await page.waitForTimeout(200);
-  const mv = await page.evaluate(`(()=>{ const G=${G}, T=HD2D.THREE, v=new T.Vector3(); G.W3.gfx.getCamera().getWorldDirection(v); const l=Math.hypot(v.x,v.z); return {fx:v.x/l, fz:v.z/l, dir:G.W3.dir, x:G.W3.pos.x, z:G.W3.pos.z}; })()`);
+  const mv = await page.evaluate(`(()=>{ const G=${G}, T=HD2D.THREE, v=new T.Vector3(); G.W3.gfx.getCamera().getWorldDirection(v); const l=Math.hypot(v.x,v.z); return {fx:v.x/l, fz:v.z/l, sec:G.W3.faceSec, dir:G.W3.dir, face:G.W3.face, x:G.W3.pos.x, z:G.W3.pos.z}; })()`);
   const dx = mv.x - p0.x, dz = mv.z - p0.z, dl = Math.hypot(dx, dz);
-  ok('カメラを回したあとも、↑キーで画面の奥へ進み、主人公は後ろ向き（上）の絵になる', dl > 0.5 && (dx * mv.fx + dz * mv.fz) / dl > 0.9 && mv.dir === 'up', JSON.stringify({ dx, dz, mv }));
-  // 描画モジュールは受け取った向きをワールドの軸として扱い、カメラから見た行を選ぶ（第17ラウンド）。180度回してカメラのほうへ歩くと、渡す向きは「up」（＝正面の絵）
-  await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.waitForTimeout(100);
-  await page.keyboard.down('ArrowDown'); await page.waitForTimeout(500); await page.keyboard.up('ArrowDown'); await page.waitForTimeout(150);
-  const face = await page.evaluate(`({yaw:${G}.W3.camView.yaw, dir:${G}.W3.dir, sent:__FAKE.player.direction})`);
-  ok('カメラをおよそ180度回してカメラのほうへ歩くと、画面基準は「down」、描画へは正面の絵になる向き（up）を渡す', face.yaw > 160 && face.yaw < 250 && face.dir === 'down' && face.sent === 'up', JSON.stringify(face));
-  // タップ（クリック）地点への移動も、回した後の画面から正しい地面の座標へ
-  const goal = await page.evaluate(`(()=>{ const G=${G}; let g=null; for(const [ox,oz] of [[3,-2],[-3,2],[3,2],[-3,-2],[4,0],[0,4],[-4,0],[0,-4]]){ const c={x:G.W3.pos.x+ox, z:G.W3.pos.z+oz}; if(G.WORLD.free(G.S,c.x,c.z) && !G.WORLD.around(c.x,c.z,1.6).length){ g=c; break; } } g=g||{x:G.W3.pos.x+3, z:G.W3.pos.z-2}; const s=G.toScreen(g.x, HD2D.terrainHeight(g.x,g.z,G.W3.cfg), g.z), r=document.getElementById('w3').getBoundingClientRect(); return {g, sx:r.left+s.x, sy:r.top+s.y}; })()`);
-  await page.evaluate(`document.getElementById('toasts').innerHTML=''`); await page.mouse.click(goal.sx, goal.sy); await page.waitForTimeout(80);
-  const tgt = await page.evaluate(`${G}.W3.target`);
-  ok('回したあとでも、クリックした地点が正しい地面の座標になる', tgt && Math.hypot(tgt.x - goal.g.x, tgt.z - goal.g.z) < 0.6, JSON.stringify({ tgt, goal: goal.g }));
-  // 標準に戻す・再読み込みで設定が復元
-  await page.click('#camctl [data-act="cam"][data-id="left"]'); await page.waitForTimeout(100);
-  const saved = await page.evaluate(`JSON.stringify(${G}.S.camera)`);
-  await page.waitForTimeout(400); await page.reload(); await page.waitForTimeout(900);
-  const after = await page.evaluate(`({cam:JSON.stringify(${G}.S.camera), view:${G}.W3.camView, first:(__FAKE.camCalls||[])[0]})`);
-  ok('カメラの設定は保存され、再読み込みしても同じ向き・角度・距離になる', after.cam === saved && Math.abs(after.view.yaw - JSON.parse(saved).yaw) < 1e-6 && after.first && Math.abs(after.first.v.yawDegrees - JSON.parse(saved).yaw) < 1e-6, JSON.stringify({ saved, after }));
-  await page.click('#camctl [data-act="cam"][data-id="reset"]'); await page.waitForTimeout(100);
-  ok('「標準」で標準の角度と距離に戻る（保存した設定も消える）', await page.evaluate(`JSON.stringify(${G}.S.camera)==='{}' && ${G}.W3.camView.yaw===${G}.W3.cfg.camera.yawDegrees && ${G}.W3.camView.zoom===${G}.W3.cfg.camera.viewSize`));
+  ok('カメラを回したあとも、↑キーで画面の奥へ進み、主人公は背中の絵（行：up）になる', dl > 0.5 && (dx * mv.fx + dz * mv.fz) / dl > 0.9 && mv.sec === 2 && mv.dir === 'up', JSON.stringify({ dx, dz, mv }));
+  /* 描画モジュールが選ぶ行（CharacterRenderer.rowForDirection と同じ計算）を、渡した向きと今のカメラから求める */
+  const rowSeen = () => page.evaluate(`(()=>{ const A={down:0,right:Math.PI/2,up:Math.PI,left:-Math.PI/2}, T=HD2D.THREE, v=new T.Vector3(); ${G}.W3.gfx.getCamera().getWorldDirection(v);
+    const sd=Math.atan2(-v.x,-v.z); let rel=(A[__FAKE.player.direction]-sd)%(Math.PI*2); if(rel<0) rel+=Math.PI*2; return Math.round(rel/(Math.PI/2))%4; })()`);
+  ok('描画モジュールが選ぶ絵の行も背中（セクター2）', (await rowSeen()) === 2);
+  // 静止したままカメラを180°回す：ワールドの向きは変わらず、カメラから見える絵が正面に変わる
+  await page.evaluate(`(()=>{ const c=${G}.W3.cam; c.yaw=c.cy+180; })()`); await page.waitForTimeout(700);
+  const st = await page.evaluate(`({face:${G}.W3.face, sec:${G}.W3.faceSec, moving:__FAKE.player.moving})`);
+  ok('静止中にカメラを180°回すと、主人公のワールドの向きは変わらず、絵は正面（セクター0）に切り替わる', Math.abs(st.face - mv.face) < 1e-9 && st.sec === 0 && (await rowSeen()) === 0 && !st.moving, JSON.stringify({ st, face0: mv.face }));
+  // 境界での行き来：相対角が境界（45°）の±5°で揺れても、絵の行は変わらない
+  const hy = await page.evaluate(`(()=>{ const G=${G}, c=G.W3.cam, base=c.cy, out=[]; G.W3.faceSec=null;
+    const sd=()=>{ const T=HD2D.THREE, v=new T.Vector3(); G.W3.gfx.getCamera().getWorldDirection(v); return Math.atan2(-v.x,-v.z); };
+    G.W3.face = sd() + 40*Math.PI/180; G.W3.gfx.setCameraOrbit({yawDegrees:((base%360)+360)%360}); out.push(G.cam.faceSector());
+    for(const d of [50,40,52,44,53,41]){ G.W3.face = sd() + d*Math.PI/180; out.push(G.cam.faceSector()); }
+    G.W3.face = sd() + 58*Math.PI/180; out.push(G.cam.faceSector()); return out; })()`).catch(e => String(e));
+  ok('方向の境界（45°）の前後で絵が細かく入れ替わらない（±10°のヒステリシス。境界を十分越えたら切り替わる）', Array.isArray(hy) && hy.slice(0, 7).every(v => v === 0) && hy[7] === 1, JSON.stringify(hy));
+  // 視点を戻す：なめらかに標準へ（途中の値がある）。感度は残る
+  await page.evaluate(`${G}.S.camera.sx=1.7; ${G}.save();`);
+  await page.click('#camctl [data-id="reset"]'); await page.waitForTimeout(120);
+  const r1 = await camState(page); await page.waitForTimeout(1500); const r2 = await camState(page);
+  const d = await page.evaluate(`({yaw:${G}.W3.cfg.camera.yawDegrees, pitch:${G}.W3.cfg.camera.pitchDegrees, zoom:${G}.W3.cfg.camera.viewSize})`);
+  const ang = v => ((v % 360) + 360) % 360;
+  ok('「視点を戻す」で標準の角度と距離へなめらかに戻る（途中を通り、短い向きに回る）。感度の設定は残る', Math.abs(r1.cp - d.pitch) > 0.5 && Math.abs(ang(r2.cy) - d.yaw) < 0.05 && Math.abs(r2.cp - d.pitch) < 0.05 && Math.abs(r2.cz - d.zoom) < 0.01 && Math.abs(r2.yaw - r1.cy) <= 180.01 && r2.saved.sx === 1.7 && r2.saved.yaw === undefined, JSON.stringify({ r1, r2, d }));
+  // 保存と復元
+  await mdrag(page, 700, 420, 60, 50, { steps: 6 }); await page.waitForTimeout(600);
+  const before = await camState(page); await page.reload(); await page.waitForTimeout(900);
+  const after = await camState(page);
+  ok('視点（角度・見下ろし角・距離）と感度は保存され、再読み込みで同じになる', Math.abs(ang(after.cy) - before.saved.yaw) < 0.01 && Math.abs(after.cp - before.saved.pitch) < 0.01 && Math.abs(after.cz - before.saved.zoom) < 0.01 && after.saved.sx === 1.7, JSON.stringify({ saved: before.saved, after }));
+  // 不正な保存値は安全な範囲へ
+  await page.evaluate(`(()=>{ ${G}.S.camera={yaw:"abc", pitch:999, zoom:-5, sx:99, sy:null}; ${G}.save(); })()`);
+  await page.reload(); await page.waitForTimeout(900);
+  const bad = await camState(page), u = await page.evaluate(`${G}.cam.user()`).catch(() => null);
+  ok('壊れた保存値（文字・範囲外・負の距離・極端な感度）は安全な範囲に補正される', bad && Math.abs(ang(bad.cy) - d.yaw) < 0.01 && bad.cp === 70 && Math.abs(bad.cz - +(d.zoom * 0.55).toFixed(2)) < 0.01 && (!u || (u.sx === 2.5 && u.sy === 1)), JSON.stringify({ bad, u }));
+  // 設定画面の感度
+  await page.click('[data-tab="settings"]'); await page.waitForTimeout(250);
+  const sens = await page.evaluate(`(()=>{ const a=document.getElementById('camSens-sx'), b=document.getElementById('camSens-sy'); if(!a||!b) return null; a.value='0.6'; a.dispatchEvent(new Event('input',{bubbles:true})); a.dispatchEvent(new Event('change',{bubbles:true})); return {sx:${G}.S.camera.sx, out:document.getElementById('camSensOut-sx').textContent, min:a.min, max:a.max}; })()`);
+  ok('設定画面に横・縦の感度があり、変えると保存される', sens && sens.sx === 0.6 && sens.out === '0.6' && sens.min === '0.3' && sens.max === '2.5', JSON.stringify(sens));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  // パネル表示中はマップをドラッグしても回らない
+  await page.click('[data-tab="lab"]'); await page.waitForTimeout(250);
+  const l0 = await camState(page); await page.mouse.move(300, 420); await page.mouse.down(); await page.mouse.move(500, 420, { steps: 6 }); await page.mouse.up(); await settle(page);
+  const l1 = await camState(page);
+  ok('研究室などのパネルを開いている間は、ドラッグしてもカメラは動かない', Math.abs(l1.cy - l0.cy) < 1e-6 && l1.ptrs === 0, JSON.stringify({ l0: l0.cy, l1: l1.cy }));
+  // 建物の陰：主人公とカメラの間に小屋（高さ3.16）を置き、低い角度にすると、一時的に角度を上げる（希望の角度は変えない）。どけると戻る
+  const bh = await page.evaluate(`(async()=>{ const G=${G}, c=G.W3.cam; c.pitch=G.W3.camPitchMin||0; c.yaw=c.cy; const y=c.cy*Math.PI/180, p=G.W3.pos;
+    const prev=G.WORLD.structures(); G.WORLD.setStructures(prev.concat([{id:'t-hut', type:'hut', x:p.x+Math.sin(y)*4, z:p.z+Math.cos(y)*4, rot:0, footprint:{shape:'rect', w:3.8, d:3.4}}]));
+    await new Promise(r=>setTimeout(r,900)); const a={need:c.need, sent:G.W3.camSent.p, pitch:c.pitch};
+    G.WORLD.setStructures(prev); await new Promise(r=>setTimeout(r,2500)); const b={need:c.need, sent:G.W3.camSent.p, pitch:c.pitch}; return {a,b}; })()`);
+  ok('主人公とカメラの間に建物が入ると、見下ろし角を一時的に上げて主人公を見せる（希望の角度は変えず、建物が無くなるとなめらかに戻る）', bh.a.need > 25 && bh.a.sent > 20 && bh.a.pitch === bh.b.pitch && bh.b.sent < bh.a.sent - 10, JSON.stringify(bh));
   ok('ページでエラーが起きていない（カメラ・PC）', errors.length === 0, errors.join('\n'));
   await ctx.close();
 }
 {
   const { page, errors, ctx } = await newPage({ width: 390, height: 844 }, true);
   await page.click('#introGo'); await page.waitForTimeout(700);
+  await page.evaluate(`(()=>{ ${G}.W3.pos={x:-12,z:24}; })()`); await page.waitForTimeout(200);
   const cdp = await ctx.newCDPSession(page); const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });
   const jr = await rect(page, '#joy'), jx = jr.l + jr.w / 2, jy = jr.t + jr.h / 2;
-  const yaw0 = await page.evaluate(`${G}.W3.camView.yaw`), zoom0 = await page.evaluate(`${G}.W3.camView.zoom`), p0 = await pos(page);
-  // 左の指でスティック、右の2本指で回転とピンチ（同時）
-  await touch('touchStart', [{ x: jx, y: jy, id: 1 }]); await touch('touchMove', [{ x: jx, y: jy - 40, id: 1 }]);
-  await touch('touchStart', [{ x: jx, y: jy - 40, id: 1 }, { x: 200, y: 300, id: 2 }]);
-  await touch('touchStart', [{ x: jx, y: jy - 40, id: 1 }, { x: 200, y: 300, id: 2 }, { x: 300, y: 300, id: 3 }]);
-  for (let i = 1; i <= 8; i++) { const a = i * 0.06; await touch('touchMove', [{ x: jx, y: jy - 40, id: 1 }, { x: 250 - 50 * Math.cos(a) * (1 + i * 0.05), y: 300 - 50 * Math.sin(a) * (1 + i * 0.05), id: 2 }, { x: 250 + 50 * Math.cos(a) * (1 + i * 0.05), y: 300 + 50 * Math.sin(a) * (1 + i * 0.05), id: 3 }]); await page.waitForTimeout(60); }
-  const mid = await page.evaluate(`({yaw:${G}.W3.camView.yaw, zoom:${G}.W3.camView.zoom, joy:!!${G}.W3.joy, target:!!${G}.W3.target})`);
-  await touch('touchEnd', [{ x: 250, y: 300, id: 3 }]); await touch('touchEnd', [{ x: 250, y: 300, id: 2 }]); await page.waitForTimeout(100);
-  const stillJoy = await page.evaluate(`!!${G}.W3.joy`); await touch('touchEnd', [{ x: jx, y: jy - 40, id: 1 }]); await page.waitForTimeout(200);
+  /* 名札（ボタン＝UI）の上で始まった指はカメラにならないので、このブロックでは名札を隠して地面の上の指だけを試す（UI 由来の指は下で別に確かめる） */
+  await page.addStyleTag({ content: '#w3labels{visibility:hidden}' });
+  // 1本指のドラッグで回転（タップにならない）
+  const a0 = await camState(page), A = await empty(page, 200, 330);
+  await touch('touchStart', [{ x: A.x, y: A.y, id: 1 }]); for (let i = 1; i <= 8; i++) { await touch('touchMove', [{ x: A.x + i * 12, y: A.y + i * 4, id: 1 }]); await page.waitForTimeout(20); }
+  await touch('touchEnd', [{ x: A.x + 96, y: A.y + 32, id: 1 }]); await settle(page);
+  const a1 = await camState(page);
+  ok('スマホ：マップを1本指でドラッグすると回転と見下ろし角が変わる（タップ移動・採取にならない）', a1.cy < a0.cy - 10 && a1.cp > a0.cp && !a1.target && a1.ptrs === 0, JSON.stringify({ a0, a1 }));
+  // 画面サイズで感度を決める（CSSピクセル基準。端末の解像度に依らない）：短い辺の長さのドラッグで 240°×感度
+  const k = (a0.cy - a1.cy) / 96;
+  ok('回転の速さは画面の短い辺（CSSピクセル）で決まる（390px幅で約0.6°/px）', Math.abs(k - 240 / 390) < 0.05, JSON.stringify({ k }));
+  // タップは今までどおり移動
+  const T = await empty(page, 230, 470); await touch('touchStart', [{ x: T.x, y: T.y, id: 2 }]); await touch('touchMove', [{ x: T.x + 3, y: T.y + 2, id: 2 }]); await touch('touchEnd', [{ x: T.x + 3, y: T.y + 2, id: 2 }]); await page.waitForTimeout(120);
+  ok('スマホ：短いタップは今までどおり移動先になる（判定距離8px未満のぶれは許す）', (await camState(page)).target);
+  await page.evaluate(`${G}.W3.target=null; ${G}.W3.path=null; ${G}.W3.sel=null;`);
+  // ピンチ：広げる＝近づく、すぼめる＝離れる。ピンチの指からタップは出ない
+  const b0 = await camState(page);
+  await touch('touchStart', [{ x: 160, y: 330, id: 3 }]); await touch('touchStart', [{ x: 160, y: 330, id: 3 }, { x: 240, y: 330, id: 4 }]);
+  for (let i = 1; i <= 6; i++) { await touch('touchMove', [{ x: 160 - i * 10, y: 330, id: 3 }, { x: 240 + i * 10, y: 330, id: 4 }]); await page.waitForTimeout(20); }
+  await page.waitForTimeout(300); const b1 = await camState(page);
+  for (let i = 1; i <= 12; i++) { await touch('touchMove', [{ x: 100 + i * 7, y: 330, id: 3 }, { x: 300 - i * 7, y: 330, id: 4 }]); await page.waitForTimeout(20); }
+  await page.waitForTimeout(300); const b2 = await camState(page);
+  // 2本→1本：残った指の基準を取り直す（離した瞬間に回らない）
+  await touch('touchEnd', [{ x: 216, y: 330, id: 4 }]); await page.waitForTimeout(80);
+  const b3 = await camState(page);
+  await touch('touchMove', [{ x: 154, y: 330, id: 3 }]); await page.waitForTimeout(80); const b4 = await camState(page);   // 残った指（x=184）を左へ30px
+  await touch('touchEnd', [{ x: 154, y: 330, id: 3 }]); await settle(page);
+  const b5 = await camState(page);
+  ok('ピンチアウトで近づき、ピンチインで離れる（表示範囲が小さく／大きくなる）', b1.zoom < b0.zoom && b2.zoom > b1.zoom && b1.pinch, JSON.stringify({ b0: b0.zoom, b1: b1.zoom, b2: b2.zoom }));
+  ok('2本指→1本指：指を1本離した瞬間は回らず（基準を取り直す）、残った指で続けて回せる。ピンチからタップは出ない', Math.abs(b3.yaw - b2.yaw) < 1e-6 && !b3.pinch && b4.yaw > b3.yaw + 10 && b4.yaw < b3.yaw + 25 && !b5.target && b5.ptrs === 0, JSON.stringify({ b2: b2.yaw, b3: b3.yaw, b4: b4.yaw }));
+  // 1本→2本→1本：途中でピンチに変わっても回転が飛ばない
+  const e0 = await camState(page);
+  await touch('touchStart', [{ x: 200, y: 400, id: 5 }]); await touch('touchMove', [{ x: 230, y: 400, id: 5 }]);
+  await touch('touchStart', [{ x: 230, y: 400, id: 5 }, { x: 300, y: 420, id: 6 }]); const e1 = await camState(page);
+  await touch('touchMove', [{ x: 230, y: 400, id: 5 }, { x: 320, y: 430, id: 6 }]);
+  await touch('touchEnd', [{ x: 320, y: 430, id: 6 }]); const e2 = await camState(page);
+  await touch('touchEnd', [{ x: 230, y: 400, id: 5 }]); await settle(page);
+  ok('1本指→2本指→1本指：切り替えで急に回らない（ピンチ中は回転しない）', Math.abs(e2.yaw - e1.yaw) < 1e-6 && e1.yaw < e0.yaw, JSON.stringify({ e0: e0.yaw, e1: e1.yaw, e2: e2.yaw }));
+  // 左手でスティック、右手でマップを回す（スティックの指とマップの指はピンチにならない）
+  const p0 = await pos(page), j0 = await camState(page);
+  await touch('touchStart', [{ x: jx, y: jy, id: 7 }]); await touch('touchMove', [{ x: jx, y: jy - 40, id: 7 }]);
+  await touch('touchStart', [{ x: jx, y: jy - 40, id: 7 }, { x: 250, y: 330, id: 8 }]);
+  let pinchSeen = false;
+  for (let i = 1; i <= 10; i++) { await touch('touchMove', [{ x: jx, y: jy - 40, id: 7 }, { x: 250 + i * 8, y: 330, id: 8 }]); await page.waitForTimeout(40); if ((await camState(page)).pinch) pinchSeen = true; }
+  const j1 = await camState(page), walking = await page.evaluate(`!!${G}.W3.joy`);
+  await touch('touchEnd', [{ x: 330, y: 330, id: 8 }]); await page.waitForTimeout(100);
+  const stillJoy = await page.evaluate(`!!${G}.W3.joy`); await touch('touchEnd', [{ x: jx, y: jy - 40, id: 7 }]); await page.waitForTimeout(200);
   const p1 = await pos(page);
-  ok('スマホ：スティックで歩きながら、別の2本指で回転とピンチズームができる（タップ移動にはならない）', Math.abs(mid.yaw - yaw0) > 5 && mid.zoom < zoom0 && mid.joy && !mid.target && stillJoy && Math.hypot(p1.x - p0.x, p1.z - p0.z) > 0.3, JSON.stringify({ yaw0, zoom0, mid, stillJoy }));
-  const sl = await rect(page, '#camZoom');
-  ok('スマホ：回転ボタンと距離スライダーもある（指が届く大きさ）', sl.shown && sl.w > 60 && (await rect(page, '#camctl [data-id="right"]')).w >= 40);
+  ok('左手のスティックで歩きながら、右手でマップをドラッグして回せる（ピンチ扱いにならない・右手を離しても歩き続ける）', j1.cy < j0.cy - 5 && walking && !pinchSeen && stillJoy && !j1.target && Math.hypot(p1.x - p0.x, p1.z - p0.z) > 0.3, JSON.stringify({ j0: j0.cy, j1: j1.cy, walking, pinchSeen, stillJoy }));
+  // UI から始まった指（下部のタブ・行動ボタン）がマップの上へ動いても、カメラは動かない
+  const navb = await rect(page, '#nav button'), u0 = await camState(page);
+  await touch('touchStart', [{ x: navb.l + 10, y: navb.t + 10, id: 9 }]); for (let i = 1; i <= 8; i++) await touch('touchMove', [{ x: navb.l + 10 + i * 6, y: navb.t + 10 - i * 40, id: 9 }]);
+  await touch('touchCancel', []); await page.waitForTimeout(100);
+  const u1 = await camState(page);
+  ok('UI（下部のタブ）から始まった指がマップの上へ動いても、カメラは動かない', Math.abs(u1.cy - u0.cy) < 1e-6 && Math.abs(u1.cp - u0.cp) < 1e-6 && u1.ptrs === 0, JSON.stringify({ u0: u0.cy, u1: u1.cy }));
+  // マップで始まった指は、途中で UI（右上のボタン）の上へ行ってもカメラの担当のまま。離してもボタンは押されない
+  const hb = await rect(page, '.hud-tr button'), m0 = await camState(page);
+  await touch('touchStart', [{ x: 150, y: 420, id: 10 }]); for (let i = 1; i <= 8; i++) await touch('touchMove', [{ x: 150 + (hb.l + 5 - 150) * i / 8, y: 420 + (hb.t + 5 - 420) * i / 8, id: 10 }]);
+  const m1 = await camState(page); await touch('touchEnd', [{ x: hb.l + 5, y: hb.t + 5, id: 10 }]); await page.waitForTimeout(200);
+  const tab = await page.evaluate(`${G}.U ? ${G}.U.tab : null`);
+  ok('マップで始まった指が UI の上へ移っても回転が続き、離してもその UI は押されない', Math.abs(m1.cy - m0.cy) > 5 && tab === 'explore', JSON.stringify({ m0: m0.cy, m1: m1.cy, tab }));
+  // 解除：pointercancel・フォーカス喪失・画面の非表示で指の状態を残さない
+  await touch('touchStart', [{ x: 200, y: 330, id: 11 }]); await touch('touchMove', [{ x: 240, y: 330, id: 11 }]);
+  await page.evaluate(`window.dispatchEvent(new Event('blur'))`); const h1 = await camState(page);
+  await touch('touchMove', [{ x: 300, y: 330, id: 11 }]); await page.waitForTimeout(100); const h2 = await camState(page);
+  await touch('touchEnd', [{ x: 300, y: 330, id: 11 }]); await settle(page); const h3 = await camState(page);
+  ok('フォーカスを失ったら指を手放し、その後の指の動き・離しでは回らない・移動しない', h1.ptrs === 0 && Math.abs(h2.yaw - h1.yaw) < 1e-6 && Math.abs(h3.yaw - h1.yaw) < 1e-6 && !h3.target, JSON.stringify({ h1, h2: h2.yaw, h3: h3.yaw }));
+  await touch('touchStart', [{ x: 200, y: 330, id: 12 }]); await touch('touchMove', [{ x: 240, y: 330, id: 12 }]); await touch('touchCancel', []); await page.waitForTimeout(80);
+  const cc = await camState(page);
+  ok('pointercancel（指の取り消し）で操作の状態が残らない', cc.ptrs === 0 && !cc.pinch && !cc.target, JSON.stringify(cc));
+  ok('スマホ：「視点を戻す」は小さなボタン1つ（指が届く大きさ）', (await rect(page, '#camctl [data-id="reset"]')).w >= 36 && (await page.evaluate(`document.querySelectorAll('#camctl button').length`)) === 1);
+  const ta = await page.evaluate(`({stage:getComputedStyle(document.getElementById('view')).touchAction, dock:getComputedStyle(document.getElementById('dock')).touchAction})`);
+  ok('マップの上はブラウザのスクロール・ピンチ拡大と競合しない（touch-action:none）。パネルはスクロールできるまま', ta.stage === 'none' && ta.dock !== 'none', JSON.stringify(ta));
   ok('ページでエラーが起きていない（カメラ・スマホ）', errors.length === 0, errors.join('\n'));
   await ctx.close();
 }

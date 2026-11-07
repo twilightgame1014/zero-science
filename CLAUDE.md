@@ -42,7 +42,7 @@
 - 文字選択・画像ドラッグ・長押しメニューは出さない：`body,body *` に `user-select:none`・`-webkit-touch-callout:none`、`img` に `-webkit-user-drag:none`。編集できる入力欄（`input`・`textarea`・`select`・contenteditable）だけ例外。`selectstart`・`dragstart`・`contextmenu` は入力欄の外だけ止め、残った選択は操作の開始（pointerdown）でだけ消す。
 - `touch-action` は領域ごと：マップ（`.stage`）とスティックは `none`、ボタン類は `manipulation`、パネル・案内は `pan-y`。ゲーム全体に `none` を付けない。touchstart/touchmove を一律に preventDefault しない。
 - 指の後片付け：スティックは pointerId を保持して setPointerCapture。pointerup/pointercancel/lostpointercapture（＋画面のどこで離れても同じ id なら止める保険）・blur・visibilitychange・pagehide・画面切り替えで `haltField()`。行動ボタンは指が外で離れたら押していないことにする。指・ペンの直後の click は時刻で見分けて二重に採取しない。
-- カメラの値は描画モジュールの既定値を使い、ゲーム側から上書きしない。確認用に限り URL の `?camera=俯角,viewSize` で `config.camera` を渡せる。
+- カメラの標準値は描画モジュールの既定値（「視点を戻す」で戻る先）。ゲーム側から初期値を上書きしない。確認用に限り URL の `?camera=俯角,viewSize` で `config.camera` を渡せる。
 
 ## フィールドの自然物（2026-11-06〜）
 - 木・岩・小石・落ち枝・草むら・やぶは `nature.js` が正本。描画モジュールと同じ地形関数と固定の種から生成し、ID は「種類:x,z」。契約は `docs/handoff/NATURAL-OBJECTS-CONTRACT.md`。
@@ -77,7 +77,11 @@
 - 建築モード（`ui.js` の建築セクション）：建築一覧 → 選ぶ → 候補（地面の枠 SVG：緑／赤と理由）→ 移動（マウス・タップ）・回転（15度・90度、R / Shift+R）・グリッド吸着（0.5マス）→「ここに置く」（Enter）／「やめる」（Esc）。
   判定と確定は `nature.js` の `checkPlacement`・`commitPlacement`（S.seq のトークンで一度だけ）・`removePlacement`。置く・動かす・撤去で素材は使わない・戻らない（設備は工作で作ったときに素材を使っている。撤去しても持ち物に残る）。
   建物の位置は `S.build[建物ID]`（`{x,z,rot}` か `{removed:true}`）を優先し、なければ `STRUCT_PLAN` の決まった場所。水車は `rule:"waterside"`（川の水ぎわだけ）。候補の 3D は `ghost:place`（当たり判定なし）。
-- カメラ：描画モジュールの `setCameraView`（Muse へ依頼中、`docs/handoff/WORLD-EXPANSION-GRAPHICS-SPEC.md` §2）があるときだけ、右ドラッグ・ホイール・2本指・画面のボタン・距離スライダー・「標準」を出す。設定は `S.camera`。ない版では部品を出さない。移動・絵の向き・クリック地点は実際のカメラから計算する（回しても画面基準）。
+- カメラ（2026-11-08〜 ドラッグ操作。`ui.js` の「探索カメラ」セクション）：マップの何もない所の1本指／左ボタンのドラッグで回転（左右＝360°連続、上下＝見下ろし角）、2本指のピンチ・ホイールで距離。短いタップ／クリックは今までどおり移動・採取（`tapAt`）。HUD は小さな「視点を戻す」だけ。感度は設定画面。
+  担当は pointerId ごと（`W3.ptrs`）：#w3 の地面で始まった指だけがカメラ・タップの担当（setPointerCapture で離すまで）。スティック・ボタン・名札・パネルで始まった指は担当外。ピンチはマップの2本指だけ。`CAM.tapSlop`（8px）を超えたらドラッグ、ドラッグ・ピンチをした操作からはタップを出さない。2本→1本は残った指の基準を取り直す。
+  角度：見下ろし角＝水平から下（0°水平〜70°）。モジュールの pitchDegrees も同じ定義（極角ではない）。モジュールは 12°〜72° に制限するので、使える下限は起動時に確かめた `W3.camPitchMin`。
+  適用は毎フレーム1か所（`camFrame`）：希望の値（`W3.cam` の yaw・pitch・zoom、yaw は連続値）へフレームレートに依存しない平滑化で近づけ、地形と建物の見通し（`camNeed`）で一時的に角度を上げ、`setCameraOrbit` で渡す。慣性なし。保存は `S.camera`（yaw・pitch・zoom・sx・sy。読み込み時に範囲へ補正）。
+  主人公の向きは `W3.face`（ワールドの角度。実際に進んだ向きだけで変わる。`S.pos.face`）。絵の行はカメラから見た相対角で選ぶ（4方向・±10°のヒステリシス。斜めの絵はまだない）。移動はカメラの水平の向きが基準（camBasis）。
 - セーブ v3：`build`・`camera` を追加（v2 からの移行あり）。形式の古いセーブは移行前に `<キー>-backup-v<版>` へ元のまま控える。主人公の向きは `S.pos.dir`。
 - カメラの API は Muse の `setCameraOrbit({yawDegrees,pitchDegrees,viewSize})`・`getCameraYawDegrees()`（第17ラウンド）。モジュールは絵の行をカメラ基準で選ぶので、ゲームは画面基準の向きを `worldFacing()` で世界の向きに変換して `setPlayerVisualState` に渡す。
 - 自然物の見た目の違い（`variant`：針葉樹・ヤシ・葦・乾いたやぶ・苔むした岩・倒木。採れる物は元の種類のまま）と飾り（`WORLD.decos`：睡蓮・溶岩）は `nature.js` が生成後に割り当てる。溶岩は通れない円（`kind:"lava"`）で、上とすぐそばに建物を置けない。

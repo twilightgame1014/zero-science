@@ -220,6 +220,10 @@ function viewSettings(){
   <div class="sec">🖥️ フィールドの表示</div>
   ${failed?`<p class="desc">3D表示が使えないため、2Dで表示しています。${W3.err||""}</p>`:
     `<div class="row"><button class="opt" data-act="view3d" aria-pressed="${S.flags.view!=="2d"}">🌄 3D</button><button class="opt" data-act="view2d" aria-pressed="${S.flags.view==="2d"}">🗺️ 2D（軽い）</button></div>`}
+  ${camSupported()?(()=>{ const u=camUser(); return `<div class="sec">🎥 カメラ（視点）</div>
+  <p class="desc" style="margin-top:0">${touch?"マップの何もない所を1本指でドラッグすると回る（左右で一周、上下で見下ろす角度）。2本指を広げると近づき、すぼめると離れる。":"マップを左ボタンでドラッグすると回る（左右で一周、上下で見下ろす角度）。ホイールで近づく・離れる。短いクリックは今までどおり移動・採取。"}</p>
+  <div class="camsens">${[["sx","横の感度（回転）"],["sy","縦の感度（見下ろす角度）"]].map(([k,l])=>`<label for="camSens-${k}">${l}</label><input type="range" id="camSens-${k}" data-camsens="${k}" min="${CAM.sens[0]}" max="${CAM.sens[1]}" step="0.1" value="${u[k]}"><output id="camSensOut-${k}">${u[k].toFixed(1)}</output>`).join("")}</div>
+  <div class="row mt"><button class="btn small sub" data-act="cam" data-id="reset">🎥 視点を標準に戻す</button></div>`; })():""}
   <div class="sec">🎮 遊び方</div>
   <ul class="helplist">${touch?
     `<li>左下のスティックで歩く。地面をタップすると、そこへ歩く</li><li>資源の名札をタップすると、歩いて行って採取する</li><li>近くに資源があると、右下のボタンが「採る」に変わる</li><li>地域の移動は右上の「地図」、研究と工作は下のボタンから</li>`:
@@ -938,10 +942,11 @@ async function start3D(){
     /* 広い世界の外側（地形の区画・海・湖・山の川・滝）を、モジュールのシーンに足して描く（src/world/render.ts） */
     if(HD2D.attachWorld){ try{ W3.world = HD2D.attachWorld(W3.gfx, {cfg:W3.cfg, quality: MOBILE ? "low" : "high",
       images:{particle:ASSETS.particle}}); }catch(e){ console.error("広い世界の描画を始められなかった", e); } }
+    camInit();      // 保存した視点を先に（古いセーブの画面基準の向きを、その視点でワールドの向きへ換算するため）
     W3.pos = spawnPos();
     syncAll3D();
     W3.state = "ready";
-    camInit(); npcInit();
+    npcInit();
     { const g=gfxStatus(); if(g.ok===false) console.warn("木の枝葉カードのテクスチャを "+g.branch+"/"+g.want+" しか読み込めなかった（描画モジュールが旧来の球体の樹冠に戻っている可能性）"); }
     W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false}));
     renderField(); updateFieldActivity();
@@ -951,6 +956,8 @@ async function start3D(){
 function spawnPos(){
   const p = (S.pos && isFinite(S.pos.x) && isFinite(S.pos.z)) ? {x:S.pos.x, z:S.pos.z} : {x:D.base.x, z:D.base.z};
   if(S.pos && ["down","up","left","right"].includes(S.pos.dir)) W3.dir = S.pos.dir;      // 向きも元どおりに
+  /* ワールドの向き（2026-11-08〜 S.pos.face）。古いセーブは画面基準の dir から今のカメラで換算する */
+  W3.face = (S.pos && finite(S.pos.face)) ? wrapPi(S.pos.face) : faceFromScreen(W3.dir||"down"); W3.faceSec = null;
   if(!world()) return p;
   /* 地形の版が古いセーブ（広い世界より前）：旧世界の地形は変わっていないので位置も建物もそのまま。
      念のため、位置が崖・深い水・木や岩の中なら近くの安全な場所へ移す（建物は消さない）。版を記録して保存する */
@@ -986,8 +993,8 @@ function haltField(){
   if(W3.work) cancelWork(null);
   if(W3.joyReset) W3.joyReset();
   if(W3.actReset) W3.actReset();
-  if(W3.camDrag || W3.pinch){ W3.camDrag=null; W3.pinch=null; }
-  if(W3.camTouches) W3.camTouches.clear();
+  if(W3.ptrReset) W3.ptrReset(); else W3.pinch=null;      // マップの指（カメラ・タップ候補）を手放す。カメラは今の希望の角度で止まる（慣性なし）
+  if(W3.cam){ W3.cam.yaw=W3.cam.cy; W3.cam.pitch=W3.cam.cp; W3.cam.zoom=W3.cam.cz; W3.cam.rate=CAM.smooth; }
   if(W3.walk){ W3.walk.on=false; W3.walk.slow=0; }
   if(W3.moving && W3.gfx && W3.pos){ W3.moving=false; W3.gfx.setPlayerVisualState(playerVisual({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving:false})); updateLoc(); }
 }
@@ -1057,7 +1064,7 @@ function loop3D(ts){
   /* 大きなフレーム間隔でも進む距離を保つ（すり抜けは nature.move が細かく分けて防ぐ） */
   const dt = W3.lastTs ? Math.min(0.1,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
   if(W3.world && W3.pos) W3.world.update(dt, W3.pos, W3.gfx.getCamera());   // 外側の地形の区画（近いほど細かく・少しずつ作る）と水・滝の動き
-  camClearance(dt);
+  camFrame(dt);
   /* 地名（山麓・海岸など）が変わったら左上の表示を更新、エリアの照明・空・霧・粒子を Muse の setEnvironment へ（0.5秒ごと） */
   W3.plT=(W3.plT||0)+dt; if(W3.plT>0.5 && W3.pos){ W3.plT=0; const pn=placeHere(); if(pn!==W3.placeName){ W3.placeName=pn; updateLoc(); }
     if(typeof W3.gfx.setEnvironment==="function" && TERRAIN.areaWeights){ try{ W3.gfx.setEnvironment({weights: TERRAIN.areaWeights(W3.pos.x, W3.pos.z, W3.cfg)}); }catch(e){} } }
@@ -1087,8 +1094,8 @@ function loop3D(ts){
     if(W3.path){ W3.stuck = got < step*0.2 ? (W3.stuck||0)+dt : 0;
       if(W3.stuck>0.5){ W3.stuck=0; const goal=W3.path[W3.path.length-1]; const p=(W3.repath=(W3.repath||0)+1)<=2 ? WORLD.findPath(S,W3.pos,goal) : null;
         if(p) W3.path=p; else { W3.path=null; W3.target=null; W3.intent=null; W3.repath=0; banner("🚫 ここから先へは進めない"); } } }
-    if(got>0.001){ const sx = (res.x-before.x)*B.r.x + (res.z-before.z)*B.r.z, sy = -((res.x-before.x)*B.f.x + (res.z-before.z)*B.f.z);
-      W3.dir = Math.abs(sx)>Math.abs(sy) ? (sx>0?"right":"left") : (sy>0?"down":"up"); }
+    /* 向き：実際に進んだワールドの向き（カメラを回しても変わらない）。絵の行は playerVisual がカメラから見て選ぶ */
+    if(got>0.001){ W3.face = Math.atan2(res.x-before.x, res.z-before.z); }
   }
   /* 歩行状態：入力や移動予約の有無ではなく、衝突処理のあとに実際に進んだ量と経過時間で決める。
      ワープ・ロード時の補正・初期配置は W3.pos を直接書くので、ここでは数えない（歩行にならない） */
@@ -1104,7 +1111,7 @@ function loop3D(ts){
   // 資源の再生・表示範囲
   if(++W3.tick%20===0){ NODES.forEach(n=>syncNode(n)); syncNature(); updateAction3D(); }
   updateLabels3D(); npcUpdate(dt); npcLabels();
-  if(ts-W3.lastSave>2000 && (!S.pos || Math.abs(S.pos.x-W3.pos.x)>0.01 || Math.abs(S.pos.z-W3.pos.z)>0.01 || S.pos.dir!==W3.dir)){ W3.lastSave=ts; S.pos={x:+W3.pos.x.toFixed(2), z:+W3.pos.z.toFixed(2), dir:W3.dir}; save(); }
+  if(ts-W3.lastSave>2000 && (!S.pos || Math.abs(S.pos.x-W3.pos.x)>0.01 || Math.abs(S.pos.z-W3.pos.z)>0.01 || Math.abs((S.pos.face||0)-(W3.face||0))>0.01)){ W3.lastSave=ts; S.pos={x:+W3.pos.x.toFixed(2), z:+W3.pos.z.toFixed(2), dir:W3.dir, face:+(W3.face||0).toFixed(3)}; save(); }
 }
 /* 歩き始め：毎秒0.9マス以上。止まる：毎秒0.35マス未満が0.12秒続く（小さな揺れでちらつかない）。
    入力も移動予約もなければ、その場で止まる。止まっても向き（W3.dir）は変えない */
@@ -1272,28 +1279,59 @@ function selectAndGo(t){
 /* ---------- 入力：タップ・クリックで選択と移動 ---------- */
 function bind3DInput(){
   const w=$("#w3"); if(!w || w._bound) return; w._bound=true;
-  w.addEventListener("pointerdown", e=>{ if(!fieldInputActive() || e.target.closest(".joy,.w3lab,button,.camctl,.buildbar") || (e.pointerType==="mouse" && e.button!==0) || W3.pinch) return; W3.down={x:e.clientX,y:e.clientY,t:Date.now(),id:e.pointerId}; });
-  w.addEventListener("pointercancel", ()=>{ W3.down=null; });
-  /* カメラ：右ドラッグで回転と上下角、ホイールでズーム（PC）。2本指で回転とピンチ（スマホ）。左クリック・1本指のタップは今までどおり移動・選択 */
-  const T2 = W3.camTouches = new Map();     // マップに触れている指（UI の上の指は数えない）
+  /* ---- 指・マウスの担当（pointerId ごと）。2026-11-08 ----
+     マップ（#w3）の何もない所で始まった指だけをカメラ・タップの担当にする。スティック・行動ボタン・パネル・名札などの UI で始まった指は
+     #w3 に届かないか、ここで除外するので、途中でマップの上へ動いてもカメラは動かない。マップで始まった指は捕捉（setPointerCapture）するので、
+     途中で UI の上へ動いても、離すまでカメラの担当のまま。スティックの指はここに入らないので、左手で歩きながら右手で回せる。
+     押した直後は「タップ候補」。CAM.tapSlop（CSSピクセル）以上動いたらドラッグ（回転）。ドラッグかピンチをした操作からはタップを出さない。
+     ピンチは、マップで始まった2本の指だけで判定する（3本目以降は無視）。2本→1本に戻ったら、残った指の基準位置を取り直す（急に回らない）。 */
+  const P = W3.ptrs = new Map();
+  let used = false;          // 今の一連の操作でドラッグかピンチをした（離し終わるまでタップにしない）
+  const UI_SEL = ".joy,.w3lab,button,a,input,select,textarea,label,.camctl,.buildbar,.w3act";
+  const perPx = ()=>{ const r=w.getBoundingClientRect(), sh=Math.max(240, Math.min(r.width, r.height)), u=camUser(); return {yaw:CAM.yawPerShort/sh*u.sx, pitch:CAM.pitchPerShort/sh*u.sy}; };
+  const pinchDist = ()=>{ const [a,b]=[...P.values()]; return Math.max(1, Math.hypot(b.x-a.x, b.y-a.y)); };
+  W3.ptrReset = ()=>{ for(const id of P.keys()){ try{ w.releasePointerCapture(id); }catch(err){} } P.clear(); W3.pinch=null; used=false; };
   w.addEventListener("pointerdown", e=>{
-    if(!camSupported() || !fieldInputActive()) return;
-    if(e.pointerType==="mouse" && e.button===2){ const u=camUser(); W3.camDrag={id:e.pointerId, x:e.clientX, y:e.clientY, yaw:u.yaw, pitch:u.pitch}; try{ w.setPointerCapture(e.pointerId); }catch(err){} e.preventDefault(); return; }
-    if(e.pointerType==="touch" && !e.target.closest(".joy,.w3lab,button,.camctl,.buildbar")){ T2.set(e.pointerId, {x:e.clientX, y:e.clientY});
-      if(T2.size===2){ const [a,b]=[...T2.values()], u=camUser(); W3.down=null; W3.pinch={ang:Math.atan2(b.y-a.y,b.x-a.x), dist:Math.hypot(b.x-a.x,b.y-a.y)||1, yaw:u.yaw, zoom:u.zoom}; } } }, true);
+    if(!fieldInputActive() || (e.target.closest && e.target.closest(UI_SEL))) return;
+    if(e.pointerType==="mouse" && e.button!==0 && e.button!==2) return;
+    if(P.size >= 2 || P.has(e.pointerId)) return;
+    const p = {id:e.pointerId, type:e.pointerType, btn:e.button, sx:e.clientX, sy:e.clientY, x:e.clientX, y:e.clientY, lx:e.clientX, ly:e.clientY, t:Date.now(), mode:"tap"};
+    if(e.pointerType==="mouse" && e.button===2){ p.mode="drag"; used=true; }      // 右ドラッグも回転（クリック操作にはしない）
+    P.set(e.pointerId, p);
+    try{ w.setPointerCapture(e.pointerId); }catch(err){}
+    if(e.pointerType==="mouse") e.preventDefault();      // 文字選択・フォーカス移動を起こさない
+    if(P.size===2){ if(camSupported()){ W3.pinch={d0:pinchDist(), z0:W3.cam?W3.cam.zoom:0}; } used=true; for(const q of P.values()) q.mode="pinch"; }
+  });
   w.addEventListener("pointermove", e=>{
-    const d=W3.camDrag; if(d && e.pointerId===d.id){ camSet({yaw:d.yaw-(e.clientX-d.x)*0.35, pitch:d.pitch+(e.clientY-d.y)*0.2}, true); return; }
-    if(T2.has(e.pointerId)){ T2.set(e.pointerId, {x:e.clientX, y:e.clientY}); const P=W3.pinch;
-      if(P && T2.size===2){ const [a,b]=[...T2.values()]; const ang=Math.atan2(b.y-a.y,b.x-a.x), dist=Math.hypot(b.x-a.x,b.y-a.y)||1;
-        camSet({yaw:P.yaw-(ang-P.ang)*180/Math.PI, zoom:P.zoom*P.dist/dist}, true); } } });
-  const camEnd = e=>{ if(W3.camDrag && e.pointerId===W3.camDrag.id){ W3.camDrag=null; save(); }
-    if(T2.delete(e.pointerId) && W3.pinch && T2.size<2){ W3.pinch=null; save(); } };
-  ["pointerup","pointercancel","lostpointercapture"].forEach(t=>w.addEventListener(t, camEnd));
-  w.addEventListener("wheel", e=>{ if(!camSupported() || !fieldInputActive()) return; e.preventDefault(); const u=camUser(); camSet({zoom:u.zoom*(e.deltaY>0?1.1:1/1.1)}, true); clearTimeout(W3.wheelT); W3.wheelT=setTimeout(save,300); }, {passive:false});
+    const p=P.get(e.pointerId); if(!p) return;
+    p.x=e.clientX; p.y=e.clientY;
+    if(!fieldInputActive()){ W3.ptrReset(); return; }
+    if(p.mode==="pinch"){ if(W3.pinch && P.size===2 && W3.cam) camZoomTo(W3.pinch.z0 * W3.pinch.d0 / pinchDist()); return; }   // 広げる＝近づく（表示範囲が小さくなる）
+    if(p.mode==="tap"){ if(Math.hypot(p.x-p.sx, p.y-p.sy) < CAM.tapSlop) return; p.mode="drag"; used=true; p.lx=p.sx; p.ly=p.sy; }
+    if(p.mode==="drag" && camSupported()){ const k=perPx(), dx=p.x-p.lx, dy=p.y-p.ly; p.lx=p.x; p.ly=p.y;
+      /* 景色を指で引っ張る向き：右へドラッグ→景色が右へ回る（カメラの水平角は減る）。下へドラッグ→上から見る（見下ろし角が増える） */
+      camRotate(-dx*k.yaw, dy*k.pitch); }
+  });
+  const ptrEnd = e=>{
+    const p=P.get(e.pointerId); if(!p) return;
+    P.delete(e.pointerId); try{ w.releasePointerCapture(e.pointerId); }catch(err){}
+    const tap = e.type==="pointerup" && p.mode==="tap" && !used && Date.now()-p.t < CAM.tapTime && (p.type!=="mouse" || p.btn===0);
+    if(W3.pinch && P.size<2){ W3.pinch=null; for(const q of P.values()){ q.mode="drag"; q.lx=q.x; q.ly=q.y; } }   // 残った指は今の位置から回す
+    if(P.size===0){ used=false; camStore(true); }
+    if(tap && fieldInputActive()) tapAt(e.clientX, e.clientY);
+  };
+  ["pointerup","pointercancel","lostpointercapture"].forEach(t=>w.addEventListener(t, ptrEnd));
+  w.addEventListener("wheel", e=>{ if(!camSupported() || !fieldInputActive() || !W3.cam) return; e.preventDefault();
+    const n = Math.max(-4, Math.min(4, (e.deltaMode===1 ? e.deltaY/3 : e.deltaY/100))) || Math.sign(e.deltaY);
+    camZoomTo(W3.cam.zoom * Math.pow(CAM.wheelStep, n)); clearTimeout(W3.wheelT); W3.wheelT=setTimeout(()=>camStore(true),300); }, {passive:false});
+  /* iOS Safari のページのピンチ拡大（gesture* イベント）をマップの上だけ止める */
+  ["gesturestart","gesturechange"].forEach(t=>w.addEventListener(t, e=>e.preventDefault()));
   /* 建築モード：マウスを動かすと候補が付いてくる（ボタンを押していないとき）。タップ・クリックはその場所へ候補を動かす（歩かない） */
   w.addEventListener("pointermove", e=>{ if(!W3.place || e.pointerType!=="mouse" || e.buttons || !fieldInputActive()) return; const h=screenToGround(e.clientX,e.clientY); if(h) placeMoveTo(h.x,h.z); });
-  w.addEventListener("pointerup", e=>{ const down=W3.down; if(!down || down.id!==e.pointerId || !fieldInputActive()) return; const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y); const quick=Date.now()-down.t<450; W3.down=null;
-    if(moved>10||!quick) return;
+}
+/* マップを短くタップ（クリック）した：建築の候補を動かす・人と話す・採取対象を選んで向かう・その地点へ歩く */
+function tapAt(cx, cy){
+  const e={clientX:cx, clientY:cy};
     if(W3.place){ const h=screenToGround(e.clientX,e.clientY); if(h) placeMoveTo(h.x,h.z); return; }
     /* 人をタップ（クリック）したら、近づいて話す */
     if(W3.npcs){ const rect=$("#w3").getBoundingClientRect(); const hit=W3.npcs.find(n=>{ const sc=toScreen(n.x, groundY(n.x,n.z)+0.9, n.z); return sc.ok && Math.hypot(sc.x-(e.clientX-rect.left), sc.y-(e.clientY-rect.top)) < 34; });
@@ -1302,7 +1340,7 @@ function bind3DInput(){
     if(t){ selectAndGo(t); W3.gfx.playVisualEffect("sparkle", tPos(t)); return; }
     const hit=screenToGround(e.clientX,e.clientY); if(!hit) return;
     W3.sel=null; syncNature();
-    if(goTo3D(hit.x,hit.z,null)) W3.gfx.playVisualEffect("sparkle", hit); });
+    if(goTo3D(hit.x,hit.z,null)) W3.gfx.playVisualEffect("sparkle", hit);
 }
 /* HUD のスティックと行動ボタン。指ごと（pointerId）に区別するので、歩きながら採取ボタンを押せる */
 function bindHudInput(){
@@ -1582,61 +1620,154 @@ function intro(){
   openModal($("#introGo")); S.flags.intro=1; save();
 }
 document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); applyIcons(); bindHudInput(); renderChrome(); render(); layout(); intro();
-/* 主人公の絵の向き：ゲームの W3.dir は画面基準（down＝カメラのほう）。第17ラウンドの描画モジュールは、受け取った向きを
-   ワールドの軸（down＝+Z・right＝+X）として扱い、カメラから見た向きで絵の行を選ぶ（CharacterRenderer の rowForDirection）。
-   そこで、モジュールが選ぶ行が画面基準の向きと一致するワールドの向きへ変換して渡す（4方向のうち必ず1つが一致する）。
-   古いモジュール（getCameraYawDegrees がない）にはそのまま渡す。 */
-const DIR_ANGLE = {down:0, right:Math.PI/2, up:Math.PI, left:-Math.PI/2}, SECTOR_OF = {down:0, right:1, up:2, left:3};
-function worldFacing(screenDir){
-  if(!W3.gfx || typeof W3.gfx.getCameraYawDegrees!=="function") return screenDir;
-  const T=HD2D.THREE, v=new T.Vector3(); W3.gfx.getCamera().getWorldDirection(v);
-  const sd=Math.atan2(-v.x,-v.z), want=SECTOR_OF[screenDir];
-  for(const d of ["down","right","up","left"]){ let rel=(DIR_ANGLE[d]-sd)%(Math.PI*2); if(rel<0) rel+=Math.PI*2; if(Math.round(rel/(Math.PI/2))%4===want) return d; }
-  return screenDir;
+/* ===================== 主人公の向き（ワールドの向き＋カメラから見た絵の行。2026-11-08） =====================
+   W3.face：主人公がワールドで向いている角度（atan2(x,z)。0＝+Z、π/2＝+X）。実際に進んだ向きでだけ変わり、カメラを回しても変わらない。
+   絵の行は「向き − カメラの画面下方向」の相対角で選ぶ（描画モジュールの絵は4方向：正面・右・背中・左。斜めの絵はまだない）。
+   境界の前後で絵が細かく入れ替わらないよう、今の行の中心から ±(45°＋FACE_HYST) を超えたときだけ行を変える。
+   描画モジュールは受け取ったワールドの4方向からカメラ基準で行を選ぶ（CharacterRenderer.rowForDirection）ので、
+   選びたい行になるワールドの向きを渡す（カメラの向きが決まれば、4方向のどれか1つが必ずその行になる）。 */
+const DIR_ANGLE = {down:0, right:Math.PI/2, up:Math.PI, left:-Math.PI/2}, SECTOR_OF = {down:0, right:1, up:2, left:3}, SECTOR_NAME = ["down","right","up","left"];
+const FACE_HYST = 10;   // 度
+const wrapPi = a => { a = (a + Math.PI) % (Math.PI*2); if(a < 0) a += Math.PI*2; return a - Math.PI; };
+function screenDownAngle(){ const T=HD2D.THREE, v=new T.Vector3(); W3.gfx.getCamera().getWorldDirection(v); return Math.atan2(-v.x, -v.z); }
+/* 画面基準の向き（古いセーブの dir）をワールドの向きへ */
+function faceFromScreen(screenDir){ try{ return wrapPi(screenDownAngle() + SECTOR_OF[screenDir]*Math.PI/2); }catch(e){ return DIR_ANGLE[screenDir]||0; } }
+/* 今の絵の行（0 正面・1 右・2 背中・3 左）。ヒステリシスつき */
+function faceSector(){
+  if(!W3.gfx || typeof W3.gfx.getCamera!=="function") return SECTOR_OF[W3.dir]||0;
+  const rel = wrapPi((W3.face||0) - screenDownAngle()), cur = W3.faceSec;
+  if(cur!=null && Math.abs(wrapPi(rel - cur*Math.PI/2)) < (45+FACE_HYST)*Math.PI/180) return cur;
+  return W3.faceSec = ((Math.round(rel/(Math.PI/2)) % 4) + 4) % 4;
 }
-function playerVisual(st){ return Object.assign({}, st, {direction: worldFacing(st.direction)}); }
+/* 描画モジュールへ渡すワールドの向き（モジュールがその行を選ぶもの） */
+function worldFacing(){
+  const want = faceSector();
+  if(!W3.gfx || typeof W3.gfx.getCameraYawDegrees!=="function") return SECTOR_NAME[want];
+  const sd = screenDownAngle();
+  for(const d of SECTOR_NAME){ let rel=(DIR_ANGLE[d]-sd)%(Math.PI*2); if(rel<0) rel+=Math.PI*2; if(Math.round(rel/(Math.PI/2))%4===want) return d; }
+  return SECTOR_NAME[want];
+}
+/* 画面基準の向き（W3.dir）も絵の行と同じにしておく（表示・保存の互換用） */
+function playerVisual(st){ const d=worldFacing(); W3.dir = SECTOR_NAME[W3.faceSec!=null?W3.faceSec:SECTOR_OF[W3.dir]||0]; return Object.assign({}, st, {direction:d}); }
 
-/* ===================== カメラ（回転・上下角・ズーム。2026-11-07） =====================
-   描画モジュールの setCameraOrbit（Muse 第17ラウンド前段 3b54b61、INTEGRATION §22。pitch 12〜72・viewSize 4〜60 はモジュール側でも制限）があるときだけ使い、操作部品を出す。
-   ない版では何も出さない（押しても動かないボタンを見せない）。ユーザーの設定は S.camera に保存し、演出の一時変更（temporary）とは分ける。
-   移動の向き・主人公の絵の向き・タップ地点は、いつも実際のカメラ（camBasis・screenToGround）から計算しているので、回しても画面基準のまま。 */
-const CAM_PITCH = [20,60], CAM_ZOOM = [0.6, 1.85];     // 上下角（度）・ズーム（標準の表示範囲に対する倍率）
+/* ===================== 探索カメラ（ドラッグで回転・上下、ピンチ／ホイールで距離。2026-11-08） =====================
+   角度の定義（ゲームとモジュールで同じ）：見下ろし角＝水平から下への角度。0°＝注視点と同じ高さの水平視点、70°＝上から70°。
+   モジュールの CameraController も pitchDegrees を「水平からの仰角」（offset.y＝sin(pitch)）で持つので換算はいらない（極角ではない）。
+   モジュールは見下ろし角を 12°〜72° に制限しているので、実際に使える下限は max(0, モジュールの下限)（起動時に確かめる。W3.camPitchMin）。
+   カメラは正投影（距離は表示範囲 viewSize。小さいほど近い）。注視点はモジュールが主人公の足もと（地形の高さ、歩行の上下動を含まない）へ
+   なめらかに追従させる。ゲームは向き・角度・距離だけを、毎フレーム1か所（camFrame）から setCameraOrbit で渡す（二重に適用しない）。
+   操作の値（S.camera）：yaw・pitch・zoom（ユーザーの希望）と sx・sy（感度）。地形を避けるための一時的な角度は保存しない。 */
+const CAM = {
+  tapSlop: 8,          // タップとドラッグの境（CSSピクセル）
+  tapTime: 450,        // これより長く押したままなら、動かさなくてもタップにしない（ミリ秒）
+  yawPerShort: 240,    // 画面の短い辺の長さだけ横へドラッグしたときの回転（度）×感度
+  pitchPerShort: 110,  // 同じく縦へドラッグしたときの見下ろし角の変化（度）×感度
+  smooth: 24,          // 手ぶれを抑える平滑化（毎秒。大きいほど速く追いつく。指を離すと約0.15秒で止まる＝慣性なし）
+  resetRate: 5,        // 「視点を戻す」で戻る速さ（毎秒）
+  pitch: [0, 70],      // 見下ろし角の範囲（度）
+  zoomMul: [0.55, 1.9],// 距離（表示範囲）の範囲：標準に対する倍率
+  wheelStep: 1.12,     // ホイール1段の倍率
+  sens: [0.3, 2.5],    // 感度の範囲（設定画面）
+  clearHead: 0.3,      // 見通しを確かめる高さ（足もと＋。足まで見えるように低め）
+  clearMargin: 0.6,    // 地形からの余裕（マス。地形メッシュの粗さの分も含む）
+  clearSide: 1.4,      // 線の左右にも同じ余裕を見る（マス）
+  clearRise: 30,       // 障害物で角度を上げる速さ（毎秒。速く＝斜面に主人公が隠れる時間を作らない）
+  clearFall: 2.2,      // 障害物を離れて希望の角度へ戻る速さ（毎秒）
+};
 const camSupported = ()=> !!(W3.gfx && typeof W3.gfx.setCameraOrbit==="function");
 const clampN = (v,a,b)=> Math.max(a, Math.min(b, v));
+const finite = v => typeof v==="number" && isFinite(v);
+const damp = (rate, dt)=> 1 - Math.exp(-rate*dt);    // フレームレートに依存しない平滑化の割合
 function camDefaults(){ const c=(W3.cfg && W3.cfg.camera)||{}; return {yaw:c.yawDegrees!=null?c.yawDegrees:45, pitch:c.pitchDegrees!=null?c.pitchDegrees:32, zoom:c.viewSize!=null?c.viewSize:13}; }
-function camUser(){ const d=camDefaults(), u=S.camera||{}; return {yaw:isFinite(u.yaw)?u.yaw:d.yaw, pitch:isFinite(u.pitch)?u.pitch:d.pitch, zoom:isFinite(u.zoom)?u.zoom:d.zoom}; }
-function camZoomLim(){ const z=camDefaults().zoom; return [+(z*CAM_ZOOM[0]).toFixed(2), +(z*CAM_ZOOM[1]).toFixed(2)]; }
-function camNorm(v){ const zl=camZoomLim(); return {yaw:((v.yaw%360)+360)%360, pitch:clampN(v.pitch, CAM_PITCH[0], CAM_PITCH[1]), zoom:clampN(v.zoom, zl[0], zl[1])}; }
-function camApply(v){ if(!camSupported()) return; v=camNorm(v); try{ W3.gfx.setCameraOrbit({yawDegrees:v.yaw, pitchDegrees:v.pitch, viewSize:v.zoom}); }catch(e){} W3.camView=v; W3.camPitchNow=v.pitch; }
-function camSet(ch, keep){ const v=camNorm(Object.assign(camUser(), ch)); S.camera={yaw:+v.yaw.toFixed(2), pitch:+v.pitch.toFixed(2), zoom:+v.zoom.toFixed(2)}; camApply(S.camera); if(!keep) save(); camUI(); }
-function camReset(){ S.camera={}; camApply(camDefaults()); save(); camUI(); banner("🎥 カメラを標準の角度と距離に戻した"); }
-function camUI(){ const box=$("#camctl"); if(!box) return; box.hidden = !camSupported(); const z=$("#camZoom");
-  if(z && camSupported()){ const zl=camZoomLim(); z.min=zl[0]; z.max=zl[1]; z.step=0.25; z.value = camNorm(camUser()).zoom; } }
-function camInit(){ camUI(); if(camSupported()) camApply(camUser()); }
-/* 山の斜面がカメラと主人公の間に入るときは、その間だけカメラを上から見る角度へ上げる（地形の中にカメラが入らない・主人公が隠れない）。
-   ユーザーの設定（S.camera）は変えない。斜面から離れたら元の角度へ戻す */
-function camClearance(dt){
-  if(!camSupported() || !W3.pos || !W3.camView) return;
-  W3.clrT = (W3.clrT||0) + dt; if(W3.clrT < 0.2) return; W3.clrT = 0;
-  const v = W3.camView, yaw = v.yaw*Math.PI/180, bx = Math.sin(yaw), bz = Math.cos(yaw), py = groundY(W3.pos.x, W3.pos.z);
-  let need = 0;
-  // 主人公の頭（足もと＋1.5）への見通しの線が、地形（＋0.3の余裕）より上を通る角度。ふつうの起伏では動かない（目の高さより低いので）
-  for(let d=1; d<=70; d+=(d<8?1:2)){ const h = groundY(W3.pos.x + bx*d, W3.pos.z + bz*d); const a = Math.atan2(h + 0.3 - (py + 1.5), d)*180/Math.PI + 3; if(a > need) need = a; }
-  const want = Math.min(70, Math.max(v.pitch, need));
-  const cur = W3.camPitchNow || v.pitch;
-  const next = Math.abs(want - cur) < 0.3 ? want : cur + (want - cur) * (want > cur ? 0.6 : 0.25);
-  if(Math.abs(next - cur) > 0.05){
-    W3.camPitchNow = next; try{ W3.gfx.setCameraOrbit({yawDegrees:v.yaw, pitchDegrees:next, viewSize:v.zoom}); }catch(e){}
-  }
-  W3.camRaised = next > v.pitch + 0.5;
+function camPitchLim(){ return [Math.max(CAM.pitch[0], W3.camPitchMin||0), CAM.pitch[1]]; }
+function camZoomLim(){ const z=camDefaults().zoom; return [+(z*CAM.zoomMul[0]).toFixed(2), +(z*CAM.zoomMul[1]).toFixed(2)]; }
+/* 保存された値を安全な範囲へ（壊れた値・古い版の値は標準へ） */
+function camUser(){
+  const d=camDefaults(), u=(S.camera && typeof S.camera==="object") ? S.camera : {}, pl=camPitchLim(), zl=camZoomLim();
+  return { yaw: finite(u.yaw) ? ((u.yaw%360)+360)%360 : d.yaw, pitch: clampN(finite(u.pitch)?u.pitch:d.pitch, pl[0], pl[1]), zoom: clampN(finite(u.zoom)?u.zoom:d.zoom, zl[0], zl[1]),
+    sx: clampN(finite(u.sx)?u.sx:1, CAM.sens[0], CAM.sens[1]), sy: clampN(finite(u.sy)?u.sy:1, CAM.sens[0], CAM.sens[1]) };
 }
-document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.closest("[data-act='cam']"); if(!b) return; ev.preventDefault();
-  const u=camUser(), id=b.dataset.id;
-  if(id==="left") camSet({yaw:u.yaw-30}); else if(id==="right") camSet({yaw:u.yaw+30});
-  else if(id==="up") camSet({pitch:u.pitch+6}); else if(id==="down") camSet({pitch:u.pitch-6});
-  else if(id==="in") camSet({zoom:u.zoom/1.15}); else if(id==="out") camSet({zoom:u.zoom*1.15}); else if(id==="reset") camReset(); });
-document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="camZoom") camSet({zoom:+ev.target.value}, true); });
-document.addEventListener("change", ev=>{ if(ev.target && ev.target.id==="camZoom") save(); });
+/* 希望の値（W3.cam の yaw・pitch・zoom）を S.camera へ。yaw は何周しても連続した値で持ち、保存と送信のときだけ 0〜360 にする */
+function camStore(persist){ const c=W3.cam; if(!c) return; const u=camUser();
+  S.camera = Object.assign({}, S.camera, {yaw:+(((c.yaw%360)+360)%360).toFixed(2), pitch:+c.pitch.toFixed(2), zoom:+c.zoom.toFixed(2), sx:u.sx, sy:u.sy});
+  if(persist){ clearTimeout(W3.camSaveT); W3.camSaveT=setTimeout(save, 250); } }
+function camSend(yaw, pitch, zoom){
+  const y=((yaw%360)+360)%360, L=W3.camSent;
+  if(L && Math.abs(L.y-y)<0.005 && Math.abs(L.p-pitch)<0.005 && Math.abs(L.z-zoom)<0.0005) return;
+  try{ W3.gfx.setCameraOrbit({yawDegrees:y, pitchDegrees:pitch, viewSize:zoom}); }catch(e){}
+  W3.camSent = {y, p:pitch, z:zoom};
+  W3.camView = {yaw:y, pitch, zoom}; W3.camPitchNow = pitch;
+}
+function camInit(){
+  if(!camSupported()){ camUI(); return; }
+  /* モジュールの見下ろし角の下限を確かめる（getCameraView があれば。今の版は 12°） */
+  W3.camPitchMin = 0;
+  if(typeof W3.gfx.getCameraView==="function"){ try{ W3.gfx.setCameraOrbit({pitchDegrees:0}); const v=W3.gfx.getCameraView(); if(v && finite(v.pitchDegrees)) W3.camPitchMin = Math.max(0, v.pitchDegrees); }catch(e){} }
+  const u=camUser();
+  W3.cam = {yaw:u.yaw, pitch:u.pitch, zoom:u.zoom, cy:u.yaw, cp:u.pitch, cz:u.zoom, rate:CAM.smooth, clr:0, need:0, clrT:1};
+  W3.camSent = null; camSend(u.yaw, u.pitch, u.zoom);
+  camUI(); camHint();
+}
+/* 回転（度）。何周しても連続。上下は範囲で止める（跳ね返らない） */
+function camRotate(dYaw, dPitch){ const c=W3.cam; if(!c) return; const pl=camPitchLim();
+  c.yaw += dYaw; c.pitch = clampN(c.pitch + dPitch, pl[0], pl[1]); c.rate = CAM.smooth; camStore(false); }
+function camZoomTo(z){ const c=W3.cam; if(!c) return; const zl=camZoomLim(); c.zoom = clampN(z, zl[0], zl[1]); c.rate = CAM.smooth; camStore(false); }
+/* 視点を戻す：標準の角度と距離へなめらかに（回る向きは近いほう）。感度はそのまま */
+function camReset(){
+  const c=W3.cam, d=camDefaults(); if(!c) return;
+  c.yaw = c.cy + (((d.yaw - c.cy) % 360 + 540) % 360 - 180); c.pitch = clampN(d.pitch, ...camPitchLim()); c.zoom = d.zoom; c.rate = CAM.resetRate;
+  const u=camUser(); S.camera = {sx:u.sx, sy:u.sy}; save(); banner("🎥 視点を標準の角度と距離に戻した");
+}
+/* 地形（山の斜面など）がカメラと主人公の間に入るときに必要な見下ろし角。注視点の少し上へ向かう線と、その左右（clearSide）を見て、
+   地形＋余裕（clearMargin）より上を通る角度を求める。正投影のカメラはモジュールの中で注視点から90マス離れているので、その距離まで見る。
+   木は描画モジュールの遮蔽フェード（updateOcclusion）で薄くなるので見ない。建物は高さも見る（下） */
+function camNeed(yawDeg, pitchDeg){
+  if(!W3.pos) return 0;
+  const yaw=yawDeg*Math.PI/180, bx=Math.sin(yaw), bz=Math.cos(yaw), rx=bz, rz=-bx, py=groundY(W3.pos.x, W3.pos.z) + CAM.clearHead;
+  const far = Math.max(8, 90*Math.cos(pitchDeg*Math.PI/180));
+  /* 建物（作った設備・集落の小屋）：占有範囲（footprint）の上は、地面＋建物の高さ（structures.json の size.h）として扱う。
+     描画モジュールの遮蔽フェードは建物を半透明にするだけで、低い角度では主人公が隠れたままになるため */
+  const bl = (world() && WORLD.structures ? WORLD.structures() : []).map(o=>{ const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[o.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[o.type]);
+      return {o, h: sp && sp.size && finite(sp.size.h) ? sp.size.h : 0}; })
+    .filter(b=>b.h>0.4 && Math.hypot(b.o.x-W3.pos.x, b.o.z-W3.pos.z) < far+6);
+  const hAt = (x,z)=>{ let h=groundY(x,z); for(const b of bl){ if(WORLD.sdist(b.o, x, z) < 0.3){ const top=groundY(b.o.x, b.o.z)+b.h; if(top>h) h=top; } } return h; };
+  let need = 0;
+  for(let d=0.8; d<=far; d+=(d<6?0.6:d<20?1.5:3)){
+    for(const s of [-CAM.clearSide, 0, CAM.clearSide]){ const h=hAt(W3.pos.x + bx*d + rx*s, W3.pos.z + bz*d + rz*s);
+      const a = Math.atan2(h + CAM.clearMargin - py, d)*180/Math.PI; if(a > need) need = a; } }
+  return need;
+}
+/* 毎フレーム1回だけ：希望の値へなめらかに近づけ、地形を避ける一時的な角度を足して、モジュールへ渡す */
+function camFrame(dt){
+  const c=W3.cam; if(!c || !camSupported() || !(dt>0)) return;
+  const k = damp(c.rate, dt);
+  c.cy += (c.yaw - c.cy) * k; c.cp += (c.pitch - c.cp) * k; c.cz += (c.zoom - c.cz) * k;
+  if(Math.abs(c.yaw-c.cy)<0.01 && Math.abs(c.pitch-c.cp)<0.01 && Math.abs(c.zoom-c.cz)<0.001){ c.cy=c.yaw; c.cp=c.pitch; c.cz=c.zoom; c.rate=CAM.smooth; }
+  /* 角度が大きく回る数値の誤差を避けるため、両方を同じだけ戻す（見た目は変わらない） */
+  if(Math.abs(c.cy) > 3600){ const s=Math.round(c.cy/360)*360; c.cy-=s; c.yaw-=s; }
+  c.clrT += dt; if(c.clrT >= 0.1){ c.clrT = 0; c.need = camNeed(c.cy, c.cp); }
+  const want = Math.max(0, Math.min(CAM.pitch[1], c.need) - c.cp);
+  c.clr += (want - c.clr) * damp(want > c.clr ? CAM.clearRise : CAM.clearFall, dt);
+  if(c.clr < 0.01) c.clr = 0;
+  W3.camRaised = c.clr > 0.5;
+  camSend(c.cy, Math.min(CAM.pitch[1], c.cp + c.clr), c.cz);
+}
+function camUI(){ const box=$("#camctl"); if(box) box.hidden = !camSupported(); }
+/* 初回だけ、操作の案内を出す */
+function camHint(){
+  if(!camSupported() || S.flags.camHint) return;
+  S.flags.camHint = 1; save();
+  setTimeout(()=>banner(uiMode()==="touch" ? "🎥 ドラッグで視点変更／2本指でズーム" : "🎥 ドラッグで視点変更／ホイールでズーム"), 1800);
+}
+/* 古い呼び出し（右クリックドラッグ等の互換）：希望の値を直接変える */
+function camSet(ch){ const c=W3.cam; if(!c) return; if(finite(ch.yaw)) c.yaw = c.cy + (((ch.yaw - c.cy) % 360 + 540) % 360 - 180);
+  if(finite(ch.pitch)) c.pitch = clampN(ch.pitch, ...camPitchLim()); if(finite(ch.zoom)) camZoomTo(ch.zoom); camStore(true); }
+document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.closest("[data-act='cam']"); if(!b) return; ev.preventDefault(); if(b.dataset.id==="reset") camReset(); });
+/* 設定画面の感度 */
+document.addEventListener("input", ev=>{ const t=ev.target; if(!t || !t.dataset || !t.dataset.camsens) return;
+  const v=clampN(+t.value, CAM.sens[0], CAM.sens[1]); S.camera=Object.assign({}, S.camera, {[t.dataset.camsens]:v});
+  const o=document.getElementById("camSensOut-"+t.dataset.camsens); if(o) o.textContent=v.toFixed(1); });
+document.addEventListener("change", ev=>{ const t=ev.target; if(t && t.dataset && t.dataset.camsens) save(); });
 
 /* ===================== 小さな集落と人（NPC。2026-11-07、Muse 第17ラウンドの素材） =====================
    データは data.js の village。小屋は建物と同じ GLB（hut）、小物は Muse の集落小物（prop-<名前>）。当たり判定は建物と同じ WORLD.setStructures。
@@ -1980,5 +2111,5 @@ document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.
 document.addEventListener("change", ev=>{ const b=ev.target; if(b && b.dataset && b.dataset.act==="v-flag") verifyAct("v-flag", b.dataset.id, b); });
 document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="vq"){ vQuery=ev.target.value; const r=$("#vres"); if(r) r.innerHTML=vResults(); } });
 
-window.__GAME__ = {get S(){return S;}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
+window.__GAME__ = {get S(){return S;}, save:()=>save(), cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);
