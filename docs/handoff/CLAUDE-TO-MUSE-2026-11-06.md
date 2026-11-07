@@ -244,3 +244,10 @@ pauseGraphics／resumeGraphics の両方を残して解消。2231183 は原本�
 3. 指定の4件は 3b54b61 に依存していた（統合の手順メモとして）。
 4. NPC 用の API（`setNpcVisualState` など）はないので、今はゲーム側の入口で `CharacterRenderer` を直接使っている。遮蔽フェードは NPC には効いていない（主人公だけ）。モジュール側に正式な API ができたら置き換える。
 5. 建築のプレビュー（半透明・緑／赤）・エリアごとの環境・地形の拡張（9倍・区画読み込み）は引き続きお願いしたい（`WORLD-EXPANSION-GRAPHICS-SPEC.md`）。
+
+## 17. Muse 側の納品で未導入のものの点検（2026-11-07）
+リモートの `feature/graphics-*` 18本を `git cherry`（変更内容の一致）で `feature/game-round17` と比べた。
+- コード（`src/graphics`）の未導入：**なし**。`feature/graphics-world-areas` の先頭 6e66417 は文書だけ（HANDOFF 追補15・INTEGRATION §24）。追補15 が書いている `setCameraView`・`setNpcVisualState`・`setStructurePreview`・`setEnvironment`・`setQuality`・`areaWeights`／`DEFAULT_AREAS`・`branch:driftwood` などは、リモートのどのブランチのソースにもまだない（ラウンド18は画面検証のあと push 予定と聞いている）。push されたら統合する。
+- `feature/graphics-ldtk-sample` a584f7e（LDtk の試作区画と変換ツールの提案）：ソースの変更はなく、ゲームでは使っていない（提案のまま。採否はオーナー判断）。
+- 見た目の違いで未使用だったもの：**`branch:log`（倒木、第16ラウンドの森林キット）を導入した**（森の落ち枝の一部。得られる素材は落ち枝と同じ。木・岩・やぶと重ならない所だけ。通行は妨げない）。`tree:conifer-snow`・`tree:winter`・`bush:snow` は雪山エリア（ラウンド18の地形）が入るまで未使用。
+- 素材で未使用：`assets/env-textures`（以前から）。

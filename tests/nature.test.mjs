@@ -212,6 +212,8 @@ ok('最初の目標（木の枝）と2番目（丸い石・火打ち石）を新
   ok('見た目が違っても得られる素材は基本の種類と同じ（針葉樹→丸太、葦→草）。名前は見た目に合わせる', JSON.stringify(W.yieldsOf(conif)) === JSON.stringify(N.KINDS.tree.yields) && JSON.stringify(W.yieldsOf(reed)) === JSON.stringify(N.KINDS.grass.yields) && W.nameOf(conif) === '針葉樹' && W.nameOf(reed) === '葦の茂み');
   const conifRiver = W.objects.filter(o => o.variant === 'conifer' && T.distanceToRiver(o.x, o.z, T.DEFAULT_CONFIG) < 5.6);
   ok('葦は川岸だけ、針葉樹は川の中にない', W.objects.filter(o => o.variant === 'reed').every(o => T.distanceToRiver(o.x, o.z, T.DEFAULT_CONFIG) < 8.5) && conifRiver.length === 0);
+  const logs = W.objects.filter(o => o.kind === 'twig' && o.variant === 'log');
+  ok('倒木（branch:log）が森にあり、得られる素材は落ち枝と同じ・木や岩と重ならない', logs.length >= 5 && logs.every(o => JSON.stringify(W.yieldsOf(o)) === JSON.stringify(N.KINDS.twig.yields) && W.nameOf(o) === '倒木' && W.objects.every(q => q === o || ['grass', 'twig', 'pebble'].includes(q.kind) || Math.hypot(q.x - o.x, q.z - o.z) >= 0.85 + q.r + 0.35 - 1e-6)), logs.length + '');
   const lavas = W.decos.filter(d => d.kind === 'lava'), lilies = W.decos.filter(d => d.kind === 'lily');
   const vol = D.regions.find(r => r.id === 'volcano');
   ok('溶岩は火山地帯の中にあり、通れない（固定の障害物）', lavas.length >= 3 && lavas.every(l => Math.hypot(l.x - vol.w.x, l.z - vol.w.z) < 9.5 && !W.free(SU, l.x, l.z) && W.statics.some(s => s.id === l.id && s.kind === 'lava')), lavas.length + '');

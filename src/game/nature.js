@@ -47,6 +47,7 @@ var NATURE = (function(){
     "rock:mossy":   {name:"苔むした岩"},
     "grass:reed":   {name:"葦の茂み"},
     "bush:dry":     {name:"乾いたやぶ"},
+    "twig:log":     {name:"倒木"},
   };
 
   /* 地域の採取地点の姿（描画モジュールの資源タイプ）と、当たり判定の半径（0 は歩行を妨げない）。
@@ -233,6 +234,11 @@ var NATURE = (function(){
       else if(o.kind==="grass"){ if(T.distanceToRiver(o.x,o.z) < 8.5) o.variant="reed"; }
       else if(o.kind==="bush"){ if(volcanic(o.x,o.z) > 0.2 || hl > 0.5) o.variant="dry"; }
       else if(o.kind==="rock"){ if(forestness(o.x,o.z) > 0.3 && h01 < 0.75) o.variant="mossy"; } });
+    /* 倒木（Muse 第16ラウンドの森林キット branch:log。見た目の半径 0.85）：森の落ち枝の一部。木・岩・やぶと重ならない所だけ */
+    objs.forEach(o=>{ if(o.kind!=="twig" || o.variant) return;
+      if(forestness(o.x,o.z) < 0.5 || vhash(Math.round(o.x*10), Math.round(o.z*10), 91) > 0.14) return;
+      if(objs.some(q=>q!==o && q.kind!=="grass" && q.kind!=="twig" && q.kind!=="pebble" && Math.abs(q.x-o.x)<3 && Math.abs(q.z-o.z)<3 && near(o.x,o.z,q.x,q.z) < 0.85+q.r+0.35)) return;
+      o.variant="log"; });
 
     /* ---------- 飾り（採れない・見た目だけ）と溶岩 ----------
        睡蓮：川の水面（川の中心から 2.3〜3.5。描画が水面に浮かべる）。歩行は妨げない。
