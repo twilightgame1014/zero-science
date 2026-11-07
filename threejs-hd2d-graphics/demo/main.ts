@@ -413,84 +413,28 @@ document.getElementById('weather')!.addEventListener('change', (e) => {
 
 status.textContent = '描画モジュール初期化OK — 地形・川・森林・キャラクター表示中';
 
-/* Shore foam ribbon (round 21): the gpt-env shore-foam strip on a
- * curved ribbon along the lake's west waterline — the same
- * construction the spec hands to Claude for chunk shorelines:
- * u = arc length / 3 m (world-anchored, so segments continue
- * across chunk borders), animation phase from a shared clock. */
+/* Shore foam (round 22): the module builder (src/graphics/
+ * ShoreFoam.ts) — the same code Claude's chunk shorelines use.
+ * u = arc length / 3 m world-anchored; phase from a shared
+ * clock (performance.now here; the engine clock in-game). */
+import { createShoreFoam, sampleWaterline } from '../src/graphics/ShoreFoam';
 let shoreFoamShown = false;
-let shoreFoamMat: THREE.MeshBasicMaterial | null = null;
-let shoreFoamTex: THREE.Texture | null = null;
-let shoreFoamMesh: THREE.Mesh | null = null;
+let shoreFoam: ReturnType<typeof createShoreFoam> | null = null;
 document.getElementById('btn-shore-foam')!.addEventListener('click', (e) => {
   shoreFoamShown = !shoreFoamShown;
-  if (shoreFoamShown && !shoreFoamMat) {
+  if (shoreFoamShown && !shoreFoam) {
     const wl = demoCfg.world.waterLevel;
-    shoreFoamTex = new THREE.TextureLoader().load(shoreFoamUrl);
-    shoreFoamTex.wrapS = THREE.RepeatWrapping;
-    shoreFoamMat = new THREE.MeshBasicMaterial({
-      map: shoreFoamTex, transparent: true, opacity: 0.75, depthWrite: false,
-    });
-    const line: Array<{ x: number; z: number }> = [];
-    for (let z = -14; z <= 4; z += 1.2) {
-      let prevX = 78;
-      let prevH = terrainHeight(78, z, demoCfg);
-      for (let x = 78.5; x <= 122; x += 0.5) {
-        const h = terrainHeight(x, z, demoCfg);
-        if (prevH > wl && h <= wl) {
-          const t = (prevH - wl) / Math.max(prevH - h, 1e-6);
-          line.push({ x: prevX + (x - prevX) * t, z });
-          break;
-        }
-        prevX = x; prevH = h;
-      }
-    }
-    const pos: number[] = [];
-    const uvA: number[] = [];
-    const idx: number[] = [];
-    let arc = 0;
-    for (let i = 0; i < line.length; i++) {
-      const p = line[i];
-      const q = line[Math.min(i + 1, line.length - 1)];
-      const p0 = line[Math.max(i - 1, 0)];
-      if (i > 0) arc += Math.hypot(p.x - p0.x, p.z - p0.z);
-      let dx = q.x - p0.x;
-      let dz = q.z - p0.z;
-      const dl = Math.hypot(dx, dz) || 1;
-      dx /= dl; dz /= dl;
-      let nx = -dz;
-      let nz = dx;
-      if (terrainHeight(p.x + nx, p.z + nz, demoCfg) > terrainHeight(p.x - nx, p.z - nz, demoCfg)) {
-        nx = -nx; nz = -nz;
-      }
-      const wx = p.x + nx * 1.15;
-      const wz = p.z + nz * 1.15;
-      const lx = p.x - nx * 0.45;
-      const lz = p.z - nz * 0.45;
-      pos.push(wx, wl + 0.04, wz, lx, Math.max(terrainHeight(lx, lz, demoCfg), wl) + 0.045, lz);
-      uvA.push(arc / 3, 0, arc / 3, 1);
-      if (i > 0) {
-        const a = (i - 1) * 2;
-        idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-      }
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvA, 2));
-    geo.setIndex(idx);
-    shoreFoamMesh = new THREE.Mesh(geo, shoreFoamMat);
-    shoreFoamMesh.name = 'DemoShoreFoam';
-    shoreFoamMesh.renderOrder = 4;
-    gfx.getScene().add(shoreFoamMesh);
-    (window as any).__shoreFoam = shoreFoamMesh;
+    const tex = new THREE.TextureLoader().load(shoreFoamUrl);
+    const line = sampleWaterline(
+      (x, z) => terrainHeight(x, z, demoCfg), wl, 78, 122, -14, 4);
+    shoreFoam = createShoreFoam(
+      (x, z) => terrainHeight(x, z, demoCfg), wl, line, { texture: tex });
+    gfx.getScene().add(shoreFoam.group);
+    (window as any).__shoreFoam = shoreFoam.group;
   }
-  if (shoreFoamMesh) shoreFoamMesh.visible = shoreFoamShown;
+  if (shoreFoam) shoreFoam.group.visible = shoreFoamShown;
   (e.target as HTMLButtonElement).textContent = shoreFoamShown ? '水際の泡を消す' : '水際の泡を出す';
 });
-let shorePhase = 0;
 setInterval(() => {
-  if (!shoreFoamShown || !shoreFoamMat || !shoreFoamTex) return;
-  shorePhase += 0.07;
-  shoreFoamMat.opacity = 0.62 + Math.sin(shorePhase) * 0.18;
-  shoreFoamTex.offset.x = Math.sin(shorePhase * 0.6) * 0.03;
+  if (shoreFoamShown && shoreFoam) shoreFoam.update(performance.now() / 1000);
 }, 60);
