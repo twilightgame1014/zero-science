@@ -1,0 +1,302 @@
+{
+ "tree-broadleaf-a1": {
+  "w": 5.09,
+  "d": 3.92,
+  "h": 4.61,
+  "tris": 467
+ },
+ "tree-broadleaf-a1_lod1": {
+  "w": 3.67,
+  "d": 4.87,
+  "h": 5.04,
+  "tris": 322
+ },
+ "tree-broadleaf-a2": {
+  "w": 5.12,
+  "d": 5.91,
+  "h": 4.87,
+  "tris": 467
+ },
+ "tree-broadleaf-a2_lod1": {
+  "w": 4.5,
+  "d": 3.85,
+  "h": 4.77,
+  "tris": 322
+ },
+ "tree-broadleaf-b1": {
+  "w": 3.5,
+  "d": 4.62,
+  "h": 5.36,
+  "tris": 467
+ },
+ "tree-broadleaf-b1_lod1": {
+  "w": 4.24,
+  "d": 3.06,
+  "h": 5.46,
+  "tris": 322
+ },
+ "tree-broadleaf-b2": {
+  "w": 3.91,
+  "d": 4.58,
+  "h": 4.81,
+  "tris": 467
+ },
+ "tree-broadleaf-b2_lod1": {
+  "w": 2.57,
+  "d": 3.0,
+  "h": 5.29,
+  "tris": 322
+ },
+ "tree-broadleaf-c1": {
+  "w": 2.49,
+  "d": 3.57,
+  "h": 3.93,
+  "tris": 467
+ },
+ "tree-broadleaf-c1_lod1": {
+  "w": 2.63,
+  "d": 2.87,
+  "h": 4.11,
+  "tris": 322
+ },
+ "tree-broadleaf-c2": {
+  "w": 3.21,
+  "d": 2.33,
+  "h": 3.88,
+  "tris": 467
+ },
+ "tree-broadleaf-c2_lod1": {
+  "w": 1.93,
+  "d": 2.75,
+  "h": 3.78,
+  "tris": 322
+ },
+ "tree-conifer-cedar": {
+  "w": 3.0,
+  "d": 2.76,
+  "h": 3.95,
+  "tris": 125
+ },
+ "tree-conifer-cedar_lod1": {
+  "w": 2.68,
+  "d": 2.47,
+  "h": 3.95,
+  "tris": 77
+ },
+ "tree-conifer-pine": {
+  "w": 2.22,
+  "d": 2.32,
+  "h": 4.53,
+  "tris": 141
+ },
+ "tree-conifer-pine_lod1": {
+  "w": 1.93,
+  "d": 2.31,
+  "h": 4.53,
+  "tris": 77
+ },
+ "shrub-round": {
+  "w": 0.93,
+  "d": 0.99,
+  "h": 1.11,
+  "tris": 91
+ },
+ "shrub-round_lod1": {
+  "w": 0.84,
+  "d": 0.95,
+  "h": 1.11,
+  "tris": 79
+ },
+ "shrub-flower": {
+  "w": 1.03,
+  "d": 1.11,
+  "h": 1.23,
+  "tris": 91
+ },
+ "shrub-flower_lod1": {
+  "w": 0.97,
+  "d": 1.04,
+  "h": 1.1,
+  "tris": 79
+ },
+ "shrub-berry": {
+  "w": 1.01,
+  "d": 0.97,
+  "h": 1.23,
+  "tris": 91
+ },
+ "shrub-berry_lod1": {
+  "w": 0.96,
+  "d": 0.78,
+  "h": 1.22,
+  "tris": 79
+ },
+ "rock-s-blocky": {
+  "w": 0.91,
+  "d": 0.99,
+  "h": 0.82,
+  "tris": 108
+ },
+ "rock-m-blocky": {
+  "w": 2.06,
+  "d": 2.13,
+  "h": 1.72,
+  "tris": 108
+ },
+ "rock-m-blocky_lod1": {
+  "w": 2.06,
+  "d": 2.13,
+  "h": 1.72,
+  "tris": 108
+ },
+ "rock-l-blocky": {
+  "w": 3.73,
+  "d": 3.52,
+  "h": 2.94,
+  "tris": 108
+ },
+ "rock-l-blocky_lod1": {
+  "w": 3.73,
+  "d": 3.52,
+  "h": 2.94,
+  "tris": 108
+ },
+ "rock-s-round": {
+  "w": 0.83,
+  "d": 0.83,
+  "h": 0.74,
+  "tris": 80
+ },
+ "rock-m-round": {
+  "w": 1.79,
+  "d": 1.9,
+  "h": 1.44,
+  "tris": 80
+ },
+ "rock-m-round_lod1": {
+  "w": 1.79,
+  "d": 1.9,
+  "h": 1.44,
+  "tris": 80
+ },
+ "rock-l-round": {
+  "w": 3.03,
+  "d": 3.53,
+  "h": 2.59,
+  "tris": 80
+ },
+ "rock-l-round_lod1": {
+  "w": 3.03,
+  "d": 3.53,
+  "h": 2.59,
+  "tris": 80
+ },
+ "rock-s-sharp": {
+  "w": 0.93,
+  "d": 0.88,
+  "h": 0.73,
+  "tris": 80
+ },
+ "rock-m-sharp": {
+  "w": 2.09,
+  "d": 1.78,
+  "h": 1.64,
+  "tris": 80
+ },
+ "rock-m-sharp_lod1": {
+  "w": 2.09,
+  "d": 1.78,
+  "h": 1.64,
+  "tris": 80
+ },
+ "rock-l-sharp": {
+  "w": 3.99,
+  "d": 3.22,
+  "h": 2.58,
+  "tris": 80
+ },
+ "rock-l-sharp_lod1": {
+  "w": 3.99,
+  "d": 3.22,
+  "h": 2.58,
+  "tris": 80
+ },
+ "rock-m-depleted": {
+  "w": 1.72,
+  "d": 1.8,
+  "h": 0.75,
+  "tris": 80
+ },
+ "rock-shore-1": {
+  "w": 1.98,
+  "d": 1.79,
+  "h": 1.55,
+  "tris": 80
+ },
+ "rock-shore-2": {
+  "w": 2.51,
+  "d": 2.17,
+  "h": 1.6,
+  "tris": 80
+ },
+ "cliff-straight": {
+  "w": 4.01,
+  "d": 1.41,
+  "h": 3.0,
+  "tris": 464
+ },
+ "cliff-concave": {
+  "w": 4.85,
+  "d": 1.84,
+  "h": 3.0,
+  "tris": 464
+ },
+ "cliff-convex": {
+  "w": 4.0,
+  "d": 1.64,
+  "h": 3.0,
+  "tris": 464
+ },
+ "cliff-top": {
+  "w": 4.01,
+  "d": 1.52,
+  "h": 1.21,
+  "tris": 464
+ },
+ "cliff-bottom": {
+  "w": 4.01,
+  "d": 2.05,
+  "h": 1.97,
+  "tris": 464
+ },
+ "pebble-cluster": {
+  "w": 0.45,
+  "d": 0.65,
+  "h": 0.21,
+  "tris": 400
+ },
+ "shell-scallop": {
+  "w": 0.33,
+  "d": 0.34,
+  "h": 0.07,
+  "tris": 52
+ },
+ "shell-conch": {
+  "w": 0.42,
+  "d": 0.37,
+  "h": 0.23,
+  "tris": 189
+ },
+ "driftwood": {
+  "w": 2.19,
+  "d": 0.41,
+  "h": 0.31,
+  "tris": 49
+ },
+ "waterfall-rock-frame": {
+  "w": 5.23,
+  "d": 2.18,
+  "h": 2.84,
+  "tris": 296
+ }
+}
