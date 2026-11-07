@@ -1212,7 +1212,11 @@ GPT-REQUEST-ENV-2026-11-07.md の6点が届いたので、検査→加工
 
 ## §29 ラウンド23：8方向スプライト（斜めシート追加）
 
-### 素材（女の子のみ到着・処理済み。男の子は未着）
+### 素材（男女とも到着・処理済み）
+- 男の子も同日到着し、同じスクリプトで処理済み：
+  `assets/characters/player-spritesheet-boy-8dir.png`（原画
+  `assets/characters/diagonal-source/boy-diagonal-source.jpg`）。
+  全32フレーム契約一致、透過・脚の交互とも女の子と同じ確認結果。
 - 拡張シート `assets/characters/player-spritesheet-girl-8dir.png`（1024×2048）。
   行 0–3 は既存4方向シートと同一、行 4–7 に斜めを追加：
   **行4=右手前（down-right）、行5=左手前（down-left）、行6=右奥（up-right）、行7=左奥（up-left）**。
@@ -1224,8 +1228,7 @@ GPT-REQUEST-ENV-2026-11-07.md の6点が届いたので、検査→加工
   白髪・白衣は保持（色キー不使用）、白フチ・囲み白ポケットなし（マゼンタ合成で確認）。
 - 脚の交互：原画の時点で 2 列目と 4 列目は別の脚が前（4方向とも脚部拡大で確認）。
   修正は不要だった。
-- 男の子の斜めシートが届いたら同じスクリプトで `player-spritesheet-boy-8dir.png`
-  を作る。届くまでは男の子は4方向のまま（下記の後方互換で問題なし）。
+- ゲーム側は主人公の性別に合わせて -8dir シートを渡すだけでよい。
 
 ### モジュール側の対応（CharacterRenderer / types）
 - `Direction` に `'down-right' | 'down-left' | 'up-right' | 'up-left'` を追加。
