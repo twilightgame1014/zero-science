@@ -53,7 +53,8 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
     return {state:${G}.W3.state, deps:${G}.NODES.every(n=>__FAKE.resources[n.vid]), nat:near.length, natSent:near.filter(o=>__FAKE.resources[o.id]&&__FAKE.resources[o.id].natural&&__FAKE.resources[o.id].natural.id===o.id).length, natView:near.filter(o=>${G}.onScreenish(o.x,o.z,o.kind==='tree'?2*o.scale:0.3,0.22)).length, natAll:Object.keys(__FAKE.resources).filter(k=>__FAKE.resources[k].natural).length,
       decor:JSON.stringify(__FAKE.opts.decor), girl:__FAKE.sprite===ASSETS.girl}; })()`);
   ok('3Dフィールドが初期化され、採取地点と、画面に入る自然物（ID・状態・当たり判定つき）だけが描画モジュールに渡る', init.state === 'ready' && init.deps && init.nat > 10 && init.natSent > 10 && init.natSent === init.natView, JSON.stringify(init));
-  ok('描画モジュールには、木・岩などを独自の装飾として描かないよう伝える（連携契約）', init.decor === '{"trees":false,"rocks":false,"logs":false,"pebbles":false,"shrubs":false,"stonework":false}', init.decor);
+  ok('描画モジュールには、木・岩などを独自の装飾として描かないよう伝える（連携契約）', init.decor === '{"trees":false,"rocks":false,"logs":false,"pebbles":false,"shrubs":false,"stonework":false,"waterfall":false}', init.decor);
+  ok('描画モジュールの開水面（湖・海・オアシスを描く）は切らない（統合後の世界。旧世界の低地は render.ts が深さ0にする）', !JSON.parse(init.decor).hasOwnProperty('openWater'), init.decor);
   const pre = await page.evaluate(`({stonework: __FAKE.opts.decor.stonework, structs: Object.keys(__FAKE.structures).filter(k=>!/^v[hp]:/.test(k))})`);
   ok('開始時の拠点まわりに人工物がない（石の階段・石積みの壁は decor.stonework:false で描かせず、プレイヤーの建物は1つもない。集落は別）', pre.stonework === false && pre.structs.length === 0, JSON.stringify(pre));
   ok('ボタン共通のスタイルが効いている', await page.evaluate(`getComputedStyle(document.querySelector('#nav button')).cursor==='pointer' && getComputedStyle(document.createElement('div')).color!==undefined`) && await page.evaluate(`(()=>{ const b=document.createElement('button'); b.className='btn'; document.body.appendChild(b); const c=getComputedStyle(b).backgroundColor; b.remove(); return c==='rgb(62, 107, 74)'; })()`));
@@ -331,7 +332,9 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   ok('歩行：ワープ（位置の書き換え）では歩かない', (await track()).every(r => !r.m));
   await page.keyboard.down('ArrowRight'); await page.waitForTimeout(400); const resumed = (await track()).slice(-4).every(r => r.m); await page.keyboard.up('ArrowRight');
   ok('歩行：移動を再開すると自然に歩行へ戻る', resumed);
-  ok('既定ではゲーム側からカメラ設定を渡さない（描画モジュールの既定値を使う）', await page.evaluate(`__FAKE.opts && __FAKE.opts.config === undefined`));
+  ok('既定ではゲーム側からカメラ設定を渡さない（描画モジュールの既定値を使う）', await page.evaluate(`__FAKE.opts && (!__FAKE.opts.config || __FAKE.opts.config.camera === undefined)`));
+  ok('地形の高さの公開口 config.world.heightAt にゲームの地形（worldHeight）を渡す', await page.evaluate(`(()=>{ const h=__FAKE.opts.config && __FAKE.opts.config.world && __FAKE.opts.config.world.heightAt; if(typeof h!=='function') return false;
+    return [[0,0],[-20,20],[100,-132],[120.5,-97],[-128,118],[150,40]].every(([x,z])=>Math.abs(h(x,z)-TERRAIN.terrainHeight(x,z,TERRAIN.DEFAULT_CONFIG))<1e-9); })()`));
   ok('ページでエラーが起きていない（PC）', errors.length === 0, errors.join('\n'));
   await ctx.close();
 }
@@ -769,7 +772,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   const c = await page.evaluate(`({opt:__FAKE.opts.config && __FAKE.opts.config.camera, cfg:${G}.W3.cfg.camera})`);
   ok('?camera=32,16 のときだけ確認用カメラを公開オプション config.camera で渡す', c.opt && c.opt.pitchDegrees === 32 && c.opt.viewSize === 16 && c.cfg.pitchDegrees === 32 && c.cfg.yawDegrees === 45, JSON.stringify(c));
   await page.goto(url + '?camera=90,2'); await page.waitForTimeout(800);
-  ok('範囲外の ?camera は無視する', await page.evaluate(`__FAKE.opts.config === undefined`));
+  ok('範囲外の ?camera は無視する', await page.evaluate(`!__FAKE.opts.config || __FAKE.opts.config.camera === undefined`));
   await ctx.close();
 }
 

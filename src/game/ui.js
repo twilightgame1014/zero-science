@@ -918,14 +918,20 @@ async function start3D(){
     W3.host = document.createElement("div"); W3.host.className="w3canvas";
     const slot=$("#w3slot"); if(slot) slot.appendChild(W3.host);
     const cam = cameraPreview();
-    W3.cfg = cam ? HD2D.resolveConfig({camera:cam}) : HD2D.resolveConfig();
-    W3.gfx = await HD2D.initializeGraphics(W3.host, { ...(cam?{config:{camera:cam}}:{}),
+    /* 地形の高さの公開口（Muse ラウンド22 config.world.heightAt）：モジュールの地形・接地・水深をゲームの worldHeight に従わせる。
+       ビルドの差し替え（terrain-shim）も残す：モジュールの EnvironmentRenderer はまだ import した terrainHeight を直接使うため（Muse §20） */
+    const hcfg = HD2D.resolveConfig(), heightAt = (x,z)=>TERRAIN.terrainHeight(x,z,hcfg);
+    const cover = {...(cam?{camera:cam}:{}), world:{heightAt}};
+    W3.cfg = HD2D.resolveConfig(cover);
+    W3.gfx = await HD2D.initializeGraphics(W3.host, { config:cover,
       playerSpriteUrl: heroUrl(), grassDetailUrl: ASSETS.grass, rockDetailUrl: ASSETS.rock,
       particleTextureUrl: ASSETS.particle, shadowTextureUrl: ASSETS.shadow,
       quality: MOBILE ? "low" : "high", postEffects: !MOBILE,
       /* 連携契約（docs/handoff/NATURAL-OBJECTS-CONTRACT.md）：木・岩・倒木・小石はゲーム側の自然物として渡すので、
          描画モジュール独自の装飾としては描かない。未対応の版では無視される */
-      decor: {trees:false, rocks:false, logs:false, pebbles:false, shrubs:false, stonework:false},
+      decor: {trees:false, rocks:false, logs:false, pebbles:false, shrubs:false, stonework:false, waterfall:false},
+      /* openWater は切らない（Muse 追補21 の openWater:false は統合前の世界での話）。統合後の世界では湖・海・オアシスの水面は
+         このプレーンだけが描く。旧世界の乾いた低地の水面は src/world/render.ts が深さ0にして見せない（docs/world/WIDE-WORLD.md §4） */
       viewportInsets: hudInsets(),
       onContextLost: ()=>{ W3.lost=true; }, onContextRestored: ()=>{ W3.lost=false; } });
     W3.gfx.setWorldVisualState({timeOfDay:0.44, weather:"clear", ambientParticles:true});

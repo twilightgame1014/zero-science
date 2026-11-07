@@ -40,7 +40,7 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
     if (o.name === 'RiverWater') modWater = o as THREE.Mesh;
     if (o.name === 'Riverbed') modBed = o as THREE.Mesh;
     if (o.name === 'OpenWater') openWater = o as THREE.Mesh;
-    if (o.name === 'Waterfall') { o.visible = false; hidden.push(o); }
+    if (o.name === 'Waterfall') { o.visible = false; hidden.push(o); } // 保険：decor.waterfall:false の版では元から無い
   });
   /* 全面の水面：旧世界の乾いた低地では見せない（深さ0）。本流の帯の近くと、旧世界の外はそのまま */
   let maskedOpen = 0;
@@ -437,7 +437,10 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
   /* ---------- 毎フレーム ---------- */
   let time = 0, focus = { x: 0, z: 0 };
   const terr = () => { try { return gfx.world && gfx.world.terrain; } catch (e) { return null; } };
-  const forceChunks = (x: number, z: number, n = 4) => { const t = terr(); if (t && typeof t.updateChunks === 'function') for (let i = 0; i < n; i++) { t.lastFocus = { x: Infinity, z: Infinity }; t.updateChunks(x, z, true); } };
+  /* 瞬間移動の準備：モジュールの公開 API prepareTerrainAt（ラウンド22）があればそれ、なければ区画作りを直接まとめて呼ぶ */
+  const forceChunks = (x: number, z: number, n = 4) => { const g = gfx as unknown as { prepareTerrainAt?: (x: number, z: number, r?: number) => void };
+    if (typeof g.prepareTerrainAt === 'function') { g.prepareTerrainAt(x, z, 90); return; }
+    const t = terr(); if (t && typeof t.updateChunks === 'function') for (let i = 0; i < n; i++) { t.lastFocus = { x: Infinity, z: Infinity }; t.updateChunks(x, z, true); } };
   return {
     group,
     update(dt: number, f: { x: number; z: number }, camera: THREE.Camera) {
