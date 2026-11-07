@@ -588,13 +588,13 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   const W0 = await page.evaluate(`(()=>{ const G=${G}; return {b:G.WORLD.bounds, wide:G.WORLD.wide, ver:G.S.worldVer, tver:TERRAIN.WORLD_VERSION}; })()`);
   ok('広い世界：歩ける範囲が旧世界（±56）の3倍の辺になり、セーブに地形の版がある', W0.wide && W0.b.maxX - W0.b.minX > 330 && W0.ver === W0.tver, JSON.stringify(W0));
   // 海岸：地名が出る。海へ歩いても深い所の手前で止まる
-  await page.evaluate(`${G}.W3.pos={x:140,z:40}`); await page.waitForTimeout(1100);
+  await page.evaluate(`${G}.W3.pos={x:134,z:24}`); await page.waitForTimeout(1100);
   const loc = await page.evaluate(`document.getElementById('hudLoc').textContent`);
   ok('海岸に立つと、左上に地名（海岸）が出る', /海岸/.test(loc), loc);
   const kc = await page.evaluate(`(()=>{ const T=HD2D.THREE, cam=${G}.W3.gfx.getCamera(), v=new T.Vector3(); cam.getWorldDirection(v); let fx=v.x,fz=v.z; const l=Math.hypot(fx,fz); fx/=l; fz/=l;
     const r={x:-fz,z:fx}; const c=[['ArrowRight',r.x],['ArrowLeft',-r.x],['ArrowUp',fx],['ArrowDown',-fx]]; c.sort((a,b)=>b[1]-a[1]); return c[0][0]; })()`);
   await page.keyboard.down(kc); await page.waitForTimeout(6000); await page.keyboard.up(kc); await page.waitForTimeout(200);
-  const sea = await page.evaluate(`(()=>{ const p=${G}.W3.pos, h=TERRAIN.terrainHeight(p.x,p.z,TERRAIN.DEFAULT_CONFIG), w=TERRAIN.waterAt(p.x,p.z,h); return {p, w, moved:p.x-140}; })()`);
+  const sea = await page.evaluate(`(()=>{ const p=${G}.W3.pos, h=TERRAIN.terrainHeight(p.x,p.z,TERRAIN.DEFAULT_CONFIG), w=TERRAIN.waterAt(p.x,p.z,h); return {p, w, moved:p.x-134}; })()`);
   ok('海へ向かって歩くと浅瀬までは進み、深い所（泳ぐ機能はない）の手前で止まる', sea.moved > 3 && (!sea.w.kind || sea.w.depth <= 0.6), JSON.stringify(sea));
   // 地図：世界全体が描かれ、今いる所の印がある
   await page.click('[data-tab="world"]'); await page.waitForTimeout(400);

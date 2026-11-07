@@ -2,7 +2,7 @@
 var ENGINE = (function(D){
   const SCHEMA = 4;
   /* 地形の版（広い世界の形。src/world/shape.ts の WORLD_VERSION と同じ値。テストで検査）。セーブの worldVer がこれより古ければ、UI が位置を確かめて直す */
-  const WORLD_VER = 2;
+  const WORLD_VER = 3;
   const IT = D.items;
   const BASKET_RES = ["twig","leaves","vine","seed","grass","grape","shell","seaweed","cobble","sand","clay"];
   const AIR = ["O","N","C","H"]; // 空気中の酸素・窒素・二酸化炭素・水蒸気

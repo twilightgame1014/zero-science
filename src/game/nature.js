@@ -476,25 +476,28 @@ var NATURE = (function(){
       const lowMountain = b.mountain > 0.05 && h < 22 ? 1 : 0;
       const hv = vhash(Math.round(x*10), Math.round(z*10), 131);
       let p = 0, variant = null;
+      /* Muse の7エリア（森林・湖畔・海岸・火山・雪山・砂漠・街の予定地）の重み b と、ゲームの山（b.mountain） */
+      const volc = b.volcano, sand = b.desert, snow = b.snow, town = b.town, forest = b.forest;
       if(kind==="tree"){
-        p = (0.08 + 0.85*b.west*(clumpV<0.3?0.15:0.6+clumpV) + 0.4*lowMountain*(0.4+clumpV) + 0.2*(1-b.plains)*clumpV) * (1-b.beach) * (1-b.alpine*0.85) * (1-b.rockyShore);
-        if(b.coast > 0.55 && h < 2.6 && b.rockyShore < 0.3){ p = 0.05; variant = "palm"; }
-        else if((b.mountain > 0.15 && h > 7.5) || h > 13) variant = "conifer";
+        p = (0.06 + 0.8*forest*(clumpV<0.3?0.12:0.55+clumpV) + 0.35*lowMountain*(0.4+clumpV) + 0.3*snow*(0.3+clumpV) + 0.15*b.lakeside*clumpV) * (1-b.beach) * (1-b.alpine*0.85) * (1-volc*0.95) * (1-sand*0.92) * (1-town*0.85);
+        if(b.coast > 0.55 && h < 2.6){ p = 0.05; variant = "palm"; }
+        else if(sand > 0.5){ p = 0.012; variant = "palm"; }                          // 砂漠のオアシスのまわり
+        else if((b.mountain > 0.15 && h > 7.5) || h > 13 || snow > 0.4) variant = "conifer";
       } else if(kind==="rock"){
-        p = 0.05 + 0.55*b.mountain*sm01(4,12,h) + 0.6*b.rockyShore + 0.35*b.northWest + 0.12*clumpV;
-        variant = (b.mountain > 0.35 && h > 14 && hv < 0.6) || b.northWest > 0.5 && hv < 0.4 ? "basalt" : b.west > 0.5 && hv < 0.6 ? "mossy" : null;
+        p = 0.04 + 0.55*b.mountain*sm01(4,12,h) + 0.45*volc + 0.25*snow + 0.12*sand + 0.1*clumpV;
+        variant = (volc > 0.35 && hv < 0.75) || (b.mountain > 0.35 && h > 14 && hv < 0.5) ? "basalt" : forest > 0.6 && x < -60 && hv < 0.5 ? "mossy" : null;
       } else if(kind==="bush"){
-        p = (0.05 + 0.45*b.west*clumpV*1.4 + 0.3*(wetNear?1:0) + 0.15*lowMountain) * (1-b.beach) * (1-b.alpine*0.7);
-        if(b.northWest > 0.5) variant = "dry";
+        p = (0.05 + 0.4*forest*clumpV*1.4 + 0.3*(wetNear?1:0) + 0.15*lowMountain + 0.25*sand*clumpV) * (1-b.beach) * (1-b.alpine*0.7) * (1-volc*0.8) * (1-town*0.6);
+        if(sand > 0.4 || volc > 0.3) variant = "dry";
       } else if(kind==="grass"){
-        p = (0.12 + 0.45*b.plains + 0.25*(1-b.west) + 0.3*b.alpine) * (0.35 + clumpV) * (1 - b.beach*0.6);
-        if(wetNear) variant = "reed"; else if(b.beach > 0.4) variant = "dry";
+        p = (0.12 + 0.3*(1-forest) + 0.35*town + 0.25*b.alpine + 0.2*b.lakeside) * (0.35 + clumpV) * (1 - b.beach*0.6) * (1 - volc*0.85) * (1 - sand*0.5);
+        if(wetNear) variant = "reed"; else if(b.beach > 0.4 || sand > 0.4) variant = "dry";
       } else if(kind==="twig"){
-        p = 0.04 + 0.4*b.west + 0.15*lowMountain + 0.3*b.beach;
+        p = (0.04 + 0.35*forest + 0.15*lowMountain + 0.3*b.beach) * (1 - volc*0.9) * (1 - sand*0.7);
         if(b.beach > 0.5) variant = "driftwood";
       } else if(kind==="pebble"){
-        p = 0.05 + 0.5*b.beach + 0.22*b.mountain + 0.15*b.rockyShore;
-        if(b.beach > 0.5 && hv < 0.6) variant = "shell"; else if(b.mountain > 0.3 && hv < 0.3) variant = "flint";
+        p = 0.05 + 0.5*b.beach + 0.22*b.mountain + 0.25*volc + 0.15*sand;
+        if(b.beach > 0.5 && hv < 0.6) variant = "shell"; else if((b.mountain > 0.3 || volc > 0.3) && hv < 0.3) variant = "flint";
       }
       return {p: Math.max(0, Math.min(1, p)), variant, h, b};
     }
@@ -508,6 +511,9 @@ var NATURE = (function(){
       const td = trailD(x,z); if(td < (K.block ? 2.9 + K.r*sc : 1.1)) return false;
       if(Math.hypot(x-T.LOOKOUT.x, z-T.LOOKOUT.z) < T.LOOKOUT.r + (K.block ? 1.5 : 0)) return false;
       if(Math.hypot(x-T.FALL.pool.x, z-T.FALL.pool.z) < T.FALL.poolR + 2.4 || Math.hypot(x-T.TARN.x, z-T.TARN.z) < T.TARN.r + 1.6) return false;
+      // Muse の依頼：火口の溶岩湖（半径 8.2）のまわり ±10 には置かない。凍った池の氷の上にも置かない
+      if(T.LAVA_LAKE && Math.hypot(x-T.LAVA_LAKE.x, z-T.LAVA_LAKE.z) < 10 + K.r*sc) return false;
+      if(T.FROZEN_POND && Math.hypot(x-T.FROZEN_POND.x, z-T.FROZEN_POND.z) < T.FROZEN_POND.r + 1.2) return false;
       const st = T.streamAt(x,z); if(st.which && st.d < (K.block ? 3.6 : 2.3)) return false;
       if(terrainBlocked(x,z)) return false;
       return true;
@@ -679,11 +685,18 @@ var NATURE = (function(){
       return true;
     }
     /* A*。戻り値：経由点の配列（最初の点は含まない）。行けなければ null */
+    /* 範囲：出発点と目的地のまわりに余白。見つからなければ余白を広げてもう一度（山を回り込む道など） */
     function findPath(S, from, to, now){
       const goal = nearestFree(S,to,now,6); if(!goal) return null;
       const dist = Math.hypot(goal.x-from.x, goal.z-from.z);
-      // 範囲：出発点と目的地のまわりに余白（遠いほど広く。山道のように回り道が要る所でも見つかるように）
-      const G = blockGrid(S, now, windowFor(from, goal, Math.min(60, 16 + dist*0.35)));
+      for(const m of [Math.min(60, 16 + dist*0.35), 90, 150]){
+        const r = findPathIn(S, from, goal, now, m); if(r) return r;
+        if(m >= 16 + dist*0.35 && lastPath && lastPath.found===false && lastPath.expanded < 30) break;   // 出発点が囲まれている
+      }
+      return null;
+    }
+    function findPathIn(S, from, goal, now, margin){
+      const G = blockGrid(S, now, windowFor(from, goal, margin));
       const GN = G.win.nz, NX = G.win.nx;
       const si=G.gi(from.x), sj=G.gj(from.z), ti=G.gi(goal.x), tj=G.gj(goal.z);
       if(clearLine(G, from, goal)) return [goal];

@@ -45,10 +45,18 @@ ok('探索できる陸地の面積は改修前の約9倍（8.6〜9.6倍）', rat
 
 /* ---------- 山・海岸・湖・滝の形 ---------- */
 ok('山の頂は高く（30以上）、見晴らし台は中腹より高い（18以上）', H(T.PEAK.x, T.PEAK.z) > 30 && H(T.LOOKOUT.x, T.LOOKOUT.z) > 18, H(T.PEAK.x, T.PEAK.z).toFixed(1) + '/' + H(T.LOOKOUT.x, T.LOOKOUT.z).toFixed(1));
-{ const xs = []; for (let z = -150; z <= 140; z += 10) { let x = 120; while (x < 200 && T.seaDist(x, z) < 0) x += 0.5; xs.push(x); }
-  ok('海岸線は曲がっている（入り江と岬で 10 マス以上ずれる）', Math.max(...xs) - Math.min(...xs) > 10, xs.join(',')); }
+{ // Muse の7エリア（ラウンド18）が土台：エリアの中心の地形の性格
+  const A = id => T.DEFAULT_AREAS.find(a => a.id === id), hc = id => H(A(id).x, A(id).z);
+  ok('Muse の7エリアがある（火山は高い・湖畔と海岸は水・街の予定地は平ら・雪山は山の土台）', hc('volcano') > 15 && T.waterAt(A('lakeside').x, A('lakeside').z, hc('lakeside')).kind === 'lake' && T.waterAt(A('coast').x, A('coast').z, hc('coast')).kind === 'sea' && Math.abs(hc('town') - 0.58) < 0.3 && hc('snow') > 10,
+    JSON.stringify(['volcano', 'lakeside', 'coast', 'snow', 'desert', 'town'].map(id => id + ':' + hc(id).toFixed(1))));
+  const xs = []; for (let z = -20; z <= 40; z += 6) { let x = 110; while (x < 200 && T.waterAt(x, z, H(x, z)).kind !== 'sea') x += 0.5; xs.push(x); }
+  ok('海岸の岸の線は場所で変わる（曲がった海岸線）', Math.max(...xs) - Math.min(...xs) > 3, xs.join(',')); }
+{ // 旧世界の水位より低い乾いた低地は、以前どおり水にしない（Muse の全面の水面は旧世界の中では見せない）
+  let wet = 0, low = 0; for (let x = -56; x <= 56; x += 1) for (let z = -56; z <= 56; z += 1) { const h = H(x, z); if (h < T.SEA_LEVEL && T.distanceToRiver(x, z) > 5) { low++; if (T.waterAt(x, z, h).kind) wet++; } }
+  ok('旧世界の低地（水位より低い乾いた地面）は水にしない（以前どおり歩ける）', low > 1000 && wet === 0, low + '/' + wet); }
+ok('火口の溶岩湖は歩けない・凍った池（氷）は歩ける', W.terrainBlocked(T.LAVA_LAKE.x, T.LAVA_LAKE.z) && !W.terrainBlocked(T.FROZEN_POND.x, T.FROZEN_POND.z));
 { // 浜：乾いた砂（陸）→ 波打ち際 → 浅瀬 → 深い所
-  let found = false; for (let z = -40; z <= 120 && !found; z += 4) { const xs = []; for (let x = 120; x < 200; x += 0.25) xs.push([x, H(x, z), T.waterAt(x, z, H(x, z))]);
+  let found = false; for (let z = -10; z <= 40 && !found; z += 4) { const xs = []; for (let x = 120; x < 200; x += 0.25) xs.push([x, H(x, z), T.waterAt(x, z, H(x, z))]);
     const shore = xs.find(p => p[2].kind === 'sea'), shallow = xs.find(p => p[2].kind === 'sea' && p[2].depth > 0.2 && p[2].depth <= T.WADE_DEPTH), deep = xs.find(p => p[2].kind === 'sea' && p[2].depth > 1.5);
     if (shore && shallow && deep && shallow[0] - shore[0] > 2 && deep[0] > shallow[0]) found = true; }
   ok('海は岸から浅瀬（歩ける）→深い所（歩けない）へ少しずつ深くなる', found); }
@@ -79,7 +87,7 @@ function polyAt(P, s) { let i = 0; while (i < P.pts.length - 2 && P.cum[i + 1] <
   ok('滝の崖の面（落ち口のすぐ下）は歩けない', blocked >= n * 0.5, blocked + '/' + n);
   ok('滝つぼの深い所は歩けない', W.terrainBlocked(P.x, P.z)); }
 { // 海へまっすぐ歩くと、深い所の手前で止まる
-  const S0 = E.newState(); let p = { x: 138, z: 40 }; for (let i = 0; i < 400; i++) { const r = W.move(S0, p, 0.25, 0, 0); p = { x: r.x, z: r.z }; }
+  const S0 = E.newState(); let p = { x: 138, z: 20 }; for (let i = 0; i < 400; i++) { const r = W.move(S0, p, 0.25, 0, 0); p = { x: r.x, z: r.z }; }
   const w = T.waterAt(p.x, p.z, H(p.x, p.z));
   ok('海へ歩くと、深い所（' + T.WADE_DEPTH + '以上）の手前で止まる（水の上を歩かない）', !w.kind || w.depth <= T.WADE_DEPTH + 0.05, JSON.stringify({ p, w })); }
 { // 急な崖へ歩いても登らない：歩いた所はすべて歩ける地面（崖の判定の上限以下）で、崖の上へは出ない
@@ -88,12 +96,12 @@ function polyAt(P, s) { let i = 0; while (i < P.pts.length - 2 && P.cum[i + 1] <
   for (let i = 0; i < 200; i++) { const r = W.move(S0, p, dx * 0.12, dz * 0.12, 0); p = { x: r.x, z: r.z }; if (W.terrainBlocked(p.x, p.z)) bad++; maxH = Math.max(maxH, H(p.x, p.z)); }
   ok('滝つぼの岸から崖へ歩いても、崖を登らない（崖の上へ出ない・歩いた所はすべて歩ける地面）', bad === 0 && maxH < T.FALL.lipLevel - 3, JSON.stringify({ bad, maxH: +maxH.toFixed(2) }));
   // 山の急斜面でも同じ
-  let q = { x: 100, z: -96 }; let bad2 = 0; for (let i = 0; i < 300; i++) { const r = W.move(S0, q, -0.1, -0.25, 0); q = { x: r.x, z: r.z }; if (W.terrainBlocked(q.x, q.z)) bad2++; }
+  let q = W.nearestFree(S0, { x: 100, z: -96 }, 0, 10); let bad2 = 0; for (let i = 0; i < 300; i++) { const r = W.move(S0, q, -0.1, -0.25, 0); q = { x: r.x, z: r.z }; if (W.terrainBlocked(q.x, q.z)) bad2++; }
   ok('山の急な斜面へ歩いても、崖の中へは入らない', bad2 === 0, bad2 + ''); }
 /* ---------- 経路：拠点 → 山麓 → 中腹 → 高所 → 滝の上流 → 滝つぼ → 海岸 → 拠点（往復） ---------- */
 { const fa = (a, l) => ({ x: T.FALL.lip.x + T.FALL.pool.x * 0 + ((T.FALL.pool.x - T.FALL.lip.x) / 3.3) * a - ((T.FALL.pool.z - T.FALL.lip.z) / 3.3) * l, z: T.FALL.lip.z + ((T.FALL.pool.z - T.FALL.lip.z) / 3.3) * a + ((T.FALL.pool.x - T.FALL.lip.x) / 3.3) * l });
-  const stops = [['拠点', { x: D.base.x, z: D.base.z }], ['山麓', { x: 50, z: -58 }], ['中腹', { x: 80, z: -88 }], ['高所（見晴らし台）', { x: T.LOOKOUT.x, z: T.LOOKOUT.z }],
-    ['滝の上流', fa(-10, 4.0)], ['滝つぼの岸', fa(5.4, 4.2)], ['海岸', { x: 147, z: -40 }], ['拠点', { x: D.base.x, z: D.base.z }]];
+  const stops = [['拠点', { x: D.base.x, z: D.base.z }], ['山麓', { x: 50, z: -58 }], ['中腹', { x: 66, z: -104 }], ['高所（見晴らし台）', { x: T.LOOKOUT.x, z: T.LOOKOUT.z }],
+    ['滝の上流', fa(-9, -4.6)], ['滝つぼの岸', fa(5.4, -4.2)], ['海岸', { x: 142, z: 28 }], ['拠点', { x: D.base.x, z: D.base.z }]];
   const legs = [], t0 = Date.now();
   for (let i = 0; i < stops.length - 1; i++) {
     const a = W.nearestFree(SU, stops[i][1], 0, 8), b = W.nearestFree(SU, stops[i + 1][1], 0, 8);

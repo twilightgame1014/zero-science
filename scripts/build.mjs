@@ -31,8 +31,6 @@ const ASSETS = {
   grass: dataUrl('assets/textures/grass-detail.png', 'image/png'),
   rock: dataUrl('assets/textures/rock-detail.png', 'image/png'),
   particle: dataUrl('assets/textures/particle-dot.png', 'image/png'),
-  // 広い世界の地面（GPT 拡張素材の濡れた砂・雪。assets/gpt-expansion/ground から軽量版を assets/build/ground に作った）
-  ground: { sandWet: dataUrl('assets/build/ground/sand-wet.webp', 'image/webp'), snow: dataUrl('assets/build/ground/snow-clean.webp', 'image/webp') },
   shadow: dataUrl('assets/textures/shadow-blob.png', 'image/png'),
 };
 

@@ -630,7 +630,10 @@ function worldMapImage(){
     let col;
     if(w.kind && w.kind!=="river" && w.depth > TERRAIN.WADE_DEPTH) col=[46,108,150];
     else if(w.kind) col=[96,170,200];
-    else if(TERRAIN.seaDist(x,z) > -8 && h < 1.6) col=[228,212,165];
+    else if(TERRAIN.dominantArea(x,z)==="coast" && h < 2.2) col=[228,212,165];
+    else if(TERRAIN.dominantArea(x,z)==="desert") col=[214,186,128];
+    else if(TERRAIN.dominantArea(x,z)==="volcano") col=[120+Math.min(40,h*2),88,76];
+    else if(TERRAIN.dominantArea(x,z)==="snow" && h > 6) col=[228,232,238];
     else if(sl > TERRAIN.WALK_SLOPE) col=[132,122,110];
     else if(h > 30) col=[232,236,240];
     else if(h > 16) col=[150,150,128];
@@ -649,7 +652,8 @@ function drawWorldMap(){
   g.drawImage(m.canvas,0,0);
   g.font="bold 10px sans-serif"; g.textAlign="center";
   const lab=(x,z,t)=>{ const q=m.P(x,z); g.fillStyle="rgba(0,0,0,.55)"; g.fillText(t,q[0]+0.8,q[1]+0.8); g.fillStyle="#fff"; g.fillText(t,q[0],q[1]); };
-  lab(TERRAIN.PEAK.x, TERRAIN.PEAK.z-6, "⛰ 山"); lab(TERRAIN.FALL.pool.x+4, TERRAIN.FALL.pool.z+10, "滝"); lab(TERRAIN.LAKE.x, TERRAIN.LAKE.z+3, "湖"); lab(150, 30, "海岸"); lab(60, 150, "海岸"); lab(D.base.x, D.base.z-5, "拠点");
+  lab(TERRAIN.PEAK.x, TERRAIN.PEAK.z-6, "⛰ 雪山"); lab(TERRAIN.FALL.pool.x+7, TERRAIN.FALL.pool.z+4, "滝"); lab(TERRAIN.LAKE.x, TERRAIN.LAKE.z+3, "湖畔"); lab(166, 30, "海岸");
+  lab(-128, -110, "火山"); lab(-128, 125, "砂漠"); lab(108, 112, "平地"); lab(D.base.x, D.base.z-5, "拠点");
   if(W3.pos){ const q=m.P(W3.pos.x,W3.pos.z); g.fillStyle="#e0434f"; g.strokeStyle="#fff"; g.lineWidth=2; g.beginPath(); g.arc(q[0],q[1],4.5,0,Math.PI*2); g.fill(); g.stroke(); }
 }
 /* 動けなくなったとき：拠点（安全な場所）へ瞬間移動する */
@@ -660,6 +664,7 @@ function rescue(){
   W3.pos = {x:q.x, z:q.z}; S.pos = {x:+q.x.toFixed(2), z:+q.z.toFixed(2), dir:W3.dir}; save();
   W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false}));
   try{ if(W3.gfx.cameraRig && W3.gfx.cameraRig.snapToTarget) W3.gfx.cameraRig.snapToTarget(); }catch(e){}
+  if(W3.world && W3.world.afterWarp) W3.world.afterWarp(W3.pos.x, W3.pos.z);     // 足もとの地形の区画を今すぐ用意（読み込み待ちで地面が抜けないように）
   syncAll3D(); banner("🛟 拠点へ瞬間移動した");
 }
 /* 広い世界の地名（山麓・中腹・海岸・滝つぼ など。旧世界の中は null） */
@@ -926,7 +931,7 @@ async function start3D(){
     W3.gfx.setWorldVisualState({timeOfDay:0.44, weather:"clear", ambientParticles:true});
     /* 広い世界の外側（地形の区画・海・湖・山の川・滝）を、モジュールのシーンに足して描く（src/world/render.ts） */
     if(HD2D.attachWorld){ try{ W3.world = HD2D.attachWorld(W3.gfx, {cfg:W3.cfg, quality: MOBILE ? "low" : "high",
-      images:{sandWet:(ASSETS.ground||{}).sandWet, snow:(ASSETS.ground||{}).snow, rock:ASSETS.rock, particle:ASSETS.particle}}); }catch(e){ console.error("広い世界の描画を始められなかった", e); } }
+      images:{particle:ASSETS.particle}}); }catch(e){ console.error("広い世界の描画を始められなかった", e); } }
     W3.pos = spawnPos();
     syncAll3D();
     W3.state = "ready";
@@ -954,6 +959,7 @@ function applySavedPos(){
   W3.pos = spawnPos();
   haltField();
   if(W3.gfx) W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false}));
+  if(W3.world && W3.world.afterWarp) W3.world.afterWarp(W3.pos.x, W3.pos.z);
   if(W3.gfx) syncAll3D();
 }
 /* 描画の一時停止：Muse の公開API pauseGraphics / resumeGraphics があれば使い、なければ従来の内部メソッド */
