@@ -281,6 +281,108 @@ export class AssetManager {
     return tex;
   }
 
+  /**
+   * Procedural branch spray (transparent background): a curved stem
+   * with side twigs and olive leaf ellipses along them. This is the
+   * reserve canopy material — canvas textures cannot fail to decode,
+   * so when the bundled branch-sheet WebPs are unavailable (older
+   * browsers), the card-built canopies use these instead of falling
+   * back to solid leaf blobs. Coarser than the sheet art, but the
+   * same construction: leaf edges and real gaps, no solid mass.
+   * Variants: 0 rising right, 1 rising left, 2 upright fan,
+   * 3 drooping.
+   */
+  createSprayTexture(variant: number): THREE.CanvasTexture {
+    const W = 256;
+    const H = 192;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d')!;
+    const rnd = this.rand(211 + variant * 7);
+    // Main stem as a quadratic curve, base -> tip (canvas y is down,
+    // so the tip sits near the top of the canvas).
+    const shapes: Record<number, { p0: [number, number]; p1: [number, number]; p2: [number, number] }> = {
+      0: { p0: [38, 178], p1: [70, 60], p2: [218, 26] },
+      1: { p0: [218, 178], p1: [186, 60], p2: [38, 26] },
+      2: { p0: [128, 182], p1: [104, 80], p2: [150, 18] },
+      3: { p0: [30, 60], p1: [110, 30], p2: [228, 128] },
+    };
+    const { p0, p1, p2 } = shapes[variant % 4] ?? shapes[0];
+    const onCurve = (t: number): [number, number] => {
+      const u = 1 - t;
+      return [
+        u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0],
+        u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1],
+      ];
+    };
+    // Stem + twigs as tapering polylines.
+    const strokePath = (pts: Array<[number, number]>, w0: number) => {
+      ctx.strokeStyle = '#5d4630';
+      ctx.lineCap = 'round';
+      for (let i = 1; i < pts.length; i++) {
+        ctx.lineWidth = Math.max(1, w0 * (1 - i / pts.length));
+        ctx.beginPath();
+        ctx.moveTo(pts[i - 1][0], pts[i - 1][1]);
+        ctx.lineTo(pts[i][0], pts[i][1]);
+        ctx.stroke();
+      }
+    };
+    const main: Array<[number, number]> = [];
+    for (let i = 0; i <= 12; i++) main.push(onCurve(i / 12));
+    strokePath(main, 5);
+    // Side twigs at three points along the stem.
+    const twigs: Array<Array<[number, number]>> = [];
+    for (const t of [0.32, 0.58, 0.82]) {
+      const [bx, by] = onCurve(t);
+      const dir = variant === 1 ? -1 : 1;
+      const side = (rnd() < 0.5 ? 1 : -1) * dir;
+      const len = 34 + rnd() * 26;
+      const pts: Array<[number, number]> = [[bx, by]];
+      for (let i = 1; i <= 4; i++) {
+        pts.push([
+          bx + side * (len * i / 4) * (0.7 + rnd() * 0.4),
+          by - (14 * i / 4) + (rnd() - 0.5) * 10 + (variant === 3 ? 16 * i / 4 : 0),
+        ]);
+      }
+      twigs.push(pts);
+      strokePath(pts, 2.5);
+    }
+    // Leaves along the stem and twigs: darker near the base (depth),
+    // mid olives at the tips. Ellipses, never a filled silhouette.
+    const leaf = (cx: number, cy: number, len: number, ang: number, fill: string) => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(ang);
+      ctx.fillStyle = fill;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, len, len * 0.42, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+    const tones = ['#5c7a35', '#6b8a3e', '#7b9a4c', '#87a857'];
+    const darks = ['#42591f', '#4c6a2c'];
+    const scatter = (pts: Array<[number, number]>, density: number, spread: number) => {
+      for (let i = 0; i < pts.length; i++) {
+        const t = i / Math.max(1, pts.length - 1);
+        const n = Math.round(density * (0.5 + t));
+        for (let k = 0; k < n; k++) {
+          const x = pts[i][0] + (rnd() - 0.5) * spread * 2;
+          const y = pts[i][1] + (rnd() - 0.5) * spread * 1.6;
+          const pool = t < 0.3 && rnd() < 0.5 ? darks : tones;
+          leaf(x, y, 8 + rnd() * 8, rnd() * Math.PI, pool[Math.floor(rnd() * pool.length)]);
+        }
+      }
+    };
+    scatter(main, 7, 17);
+    for (const tw of twigs) scatter(tw, 5, 13);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    this.disposables.push(tex);
+    return tex;
+  }
+
   /** Ground patch: irregular soft-edged blob with leaf-fleck speckle.
    *  Bright base so instance colours can tint it (leaf litter, worn
    *  earth, dark soil rings under trees and rocks). */

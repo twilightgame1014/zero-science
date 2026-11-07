@@ -120,6 +120,10 @@ export class EnvironmentRenderer {
   /** Branch/leaf spray textures for the card-built canopies
    *  (assets/branch-cards/; may be empty -> procedural fallback). */
   private branch: Record<string, THREE.Texture> = {};
+  /** Procedural reserve sprays (canvas-drawn; cannot fail to
+   *  decode), one per spray set, used when a bundled spray WebP is
+   *  unavailable (Claude 2026-11-07 §12-4). */
+  private fallbackSprays: THREE.Texture[] = [];
   /** Full-detail spray card meshes + their base matrices, and the
    *  far-LOD cluster mesh, for the distance swap in updateTreeLOD. */
   private spraySets: Array<{ mesh: THREE.InstancedMesh; base: Float32Array }> = [];
@@ -205,6 +209,7 @@ export class EnvironmentRenderer {
     this.tuftTex = am.createGrassTuftTexture();
     this.fernTex = am.createFernTexture();
     this.leafCardTex = am.createLeafClusterTexture();
+    this.fallbackSprays = [0, 1, 2, 3].map((v) => am.createSprayTexture(v));
     this.patchTex = am.createGroundPatchTexture();
     this.patchAlpha = am.createPatchAlphaTexture();
 
@@ -539,11 +544,14 @@ export class EnvironmentRenderer {
       count: number;
     }
     const sprayCap = spots.length * 16;
-    const makeSpraySet = (tex: THREE.Texture | undefined): SpraySet => {
+    const makeSpraySet = (tex: THREE.Texture | undefined, setIdx: number): SpraySet => {
       const geo = new THREE.PlaneGeometry(1, 1);
       const wind = makeWindMaterial(
         new THREE.MeshStandardMaterial({
-          map: tex ?? this.leafCardTex,
+          // A missing bundled spray falls back to that set's
+          // procedural reserve spray (a branch-shaped card), not
+          // to a leaf-cluster blob card.
+          map: tex ?? this.fallbackSprays[setIdx] ?? this.leafCardTex,
           alphaTest: 0.45,
           side: THREE.DoubleSide,
           roughness: 0.95,
@@ -568,10 +576,10 @@ export class EnvironmentRenderer {
       };
     };
     const spraySets = [
-      makeSpraySet(this.branch.branch_1),
-      makeSpraySet(this.branch.branch_2),
-      makeSpraySet(this.branch.branch_3),
-      makeSpraySet(this.branch.branch_4),
+      makeSpraySet(this.branch.branch_1, 0),
+      makeSpraySet(this.branch.branch_2, 1),
+      makeSpraySet(this.branch.branch_3, 2),
+      makeSpraySet(this.branch.branch_4, 3),
     ];
     // Far LOD: a crossed pair of the composited cluster sprite stands
     // in for the whole crown beyond ~27 m (swapped by updateTreeLOD);
@@ -670,7 +678,7 @@ export class EnvironmentRenderer {
         const arch = slim ? 'tall' : size < 0.95 ? 'young' : 'wide';
         const refs: Array<{ set: number; index: number }> = [];
         const crownY = arch === 'tall' ? 3.35 : arch === 'young' ? 1.95 : 2.5;
-        const clusters = arch === 'tall' ? 6 : arch === 'young' ? 4 : 8;
+        const clusters = arch === 'tall' ? 6 : arch === 'young' ? 4 : 10;
         const spreadR = (arch === 'tall' ? 0.52 : arch === 'young' ? 0.48 : 0.95) * size;
         const cardW = (arch === 'tall' ? 1.6 : arch === 'young' ? 1.25 : 1.85) * size;
         const baseAz = this.rng() * Math.PI * 2;
@@ -685,29 +693,35 @@ export class EnvironmentRenderer {
             // The last cluster's second card is the drooping spray,
             // so the crown's lower rim hangs instead of rounding off.
             const texIdx = c === clusters - 1 && p === 1 ? 2 : cardCycle++ % 4;
-            cardTint.setRGB(0.84, 0.92, 0.78).multiplyScalar(0.88 + this.rng() * 0.16);
+            cardTint.setRGB(0.74, 0.87, 0.68).multiplyScalar(0.85 + this.rng() * 0.15);
             if (birch) cardTint.multiplyScalar(1.02);
             placeCard(texIdx, cx, cy, cz, yaw,
               -0.3 + this.rng() * 0.45, (this.rng() - 0.5) * 0.5,
               cardW * (0.85 + this.rng() * 0.35), cardTint, cardW * 0.55, refs);
           }
         }
-        // Inner depth sprays: dark olive, deep in the crown.
-        cardTint.setRGB(0.4, 0.45, 0.36).multiplyScalar(0.9 + this.rng() * 0.2);
+        // Inner depth sprays: dark olive, deep in the crown —
+        // three of them since 2026-11-07 (Claude §12-2: denser
+        // crowns in a calmer green).
+        cardTint.setRGB(0.34, 0.39, 0.3).multiplyScalar(0.9 + this.rng() * 0.2);
         if (birch) cardTint.multiplyScalar(1.02);
         placeCard(cardCycle++ % 4, s.x, y + (crownY - 0.25) * size, s.z,
           this.rng() * Math.PI, -0.2, 0, cardW * 1.05, cardTint, cardW * 0.5, refs);
-        cardTint.setRGB(0.55, 0.58, 0.48).multiplyScalar(0.9 + this.rng() * 0.2);
+        cardTint.setRGB(0.46, 0.5, 0.4).multiplyScalar(0.9 + this.rng() * 0.2);
         if (birch) cardTint.multiplyScalar(1.02);
         placeCard(cardCycle++ % 4, s.x + 0.3 * size, y + (crownY - 0.05) * size, s.z - 0.24 * size,
           this.rng() * Math.PI, -0.1, 0.15, cardW * 0.9, cardTint, cardW * 0.45, refs);
+        cardTint.setRGB(0.52, 0.56, 0.45).multiplyScalar(0.9 + this.rng() * 0.2);
+        if (birch) cardTint.multiplyScalar(1.02);
+        placeCard(cardCycle++ % 4, s.x - 0.3 * size, y + (crownY - 0.12) * size, s.z + 0.26 * size,
+          this.rng() * Math.PI, -0.15, -0.1, cardW * 0.95, cardTint, cardW * 0.45, refs);
         // Far-LOD crossed pair (cluster sprite). Its real matrix is
         // kept in liteBase; the live instance starts collapsed and
         // updateTreeLOD swaps it in beyond ~27 m.
         const liteW = (arch === 'young' ? 2.3 : 3.2) * size;
         const liteY = y + crownY * size;
         const liteIdx: number[] = [];
-        cardTint.setRGB(0.88, 0.94, 0.83);
+        cardTint.setRGB(0.79, 0.88, 0.72);
         for (let p = 0; p < 2; p++) {
           const idx = liteCount++;
           this.dummy.position.set(s.x, liteY, s.z);
