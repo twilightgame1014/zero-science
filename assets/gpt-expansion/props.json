@@ -1,0 +1,187 @@
+{
+ "note": "集落の生活小物（原始段階）。原点=地面中心、正面=+Z（three.js）。寸法は実測（ContactShadow除く）。footprintは構造部分のみ（縄の結び目・布の垂れは含めない）。モデルは models/<id>.glb、原画切り出しは props/<id>.png。材質は建物と共通のGPTテクスチャ（板/樹皮/石/粘土）＋縄・麻・魚の単色。",
+ "props": [
+  {
+   "id": "fence",
+   "name": "柵",
+   "footprint": {
+    "w": 2.45,
+    "d": 0.18
+   },
+   "stage": 1,
+   "note": "杭と横木、縄の結束。連結配置で囲いに使う想定",
+   "size": {
+    "w": 2.45,
+    "h": 1.05,
+    "d": 0.16
+   },
+   "model": "models/fence.glb",
+   "reference": "props/fence.png"
+  },
+  {
+   "id": "pot-large",
+   "name": "壺（大）",
+   "footprint": {
+    "r": 0.3
+   },
+   "stage": 1,
+   "note": "素焼き。口の内側は暗色で奥行き表現",
+   "size": {
+    "w": 0.65,
+    "h": 0.66,
+    "d": 0.68
+   },
+   "model": "models/pot-large.glb",
+   "reference": "props/pot-large.png"
+  },
+  {
+   "id": "pot-small",
+   "name": "壺（小）",
+   "footprint": {
+    "r": 0.19
+   },
+   "stage": 1,
+   "note": "素焼き",
+   "size": {
+    "w": 0.4,
+    "h": 0.41,
+    "d": 0.42
+   },
+   "model": "models/pot-small.glb",
+   "reference": "props/pot-small.png"
+  },
+  {
+   "id": "bucket",
+   "name": "桶",
+   "footprint": {
+    "r": 0.3
+   },
+   "stage": 1,
+   "note": "板張り＋縄のたが。内側は暗色",
+   "size": {
+    "w": 0.64,
+    "h": 0.52,
+    "d": 0.64
+   },
+   "model": "models/bucket.glb",
+   "reference": "props/bucket.png"
+  },
+  {
+   "id": "drying-rack",
+   "name": "布の干し台",
+   "footprint": {
+    "w": 1.45,
+    "d": 0.55
+   },
+   "stage": 1,
+   "note": "木組み＋縄＋麻布。布は両面",
+   "size": {
+    "w": 1.45,
+    "h": 0.89,
+    "d": 0.72
+   },
+   "model": "models/drying-rack.glb",
+   "reference": "props/drying-rack.png"
+  },
+  {
+   "id": "dried-fish",
+   "name": "干し魚",
+   "footprint": {
+    "w": 1.17,
+    "d": 0.12
+   },
+   "stage": 1,
+   "note": "2本の杭と縄、魚3匹。魚は可動部ではない（静止）",
+   "size": {
+    "w": 1.17,
+    "h": 1.0,
+    "d": 0.07
+   },
+   "model": "models/dried-fish.glb",
+   "reference": "props/dried-fish.png"
+  },
+  {
+   "id": "firewood",
+   "name": "薪の束",
+   "footprint": {
+    "w": 0.95,
+    "d": 0.45
+   },
+   "stage": 1,
+   "note": "丸太6本＋縄2箇所。切り口は年輪テクスチャ",
+   "size": {
+    "w": 0.95,
+    "h": 0.47,
+    "d": 0.47
+   },
+   "model": "models/firewood.glb",
+   "reference": "props/firewood.png"
+  },
+  {
+   "id": "well",
+   "name": "井戸の枠",
+   "footprint": {
+    "r": 0.53
+   },
+   "stage": 1,
+   "note": "石積みの輪＋内部は暗色、水面ディスク内蔵。衝突は石の輪のみ",
+   "size": {
+    "w": 1.06,
+    "h": 0.55,
+    "d": 1.08
+   },
+   "model": "models/well.glb",
+   "reference": "props/well.png"
+  },
+  {
+   "id": "rope-basket",
+   "name": "縄かご",
+   "footprint": {
+    "r": 0.33
+   },
+   "stage": 1,
+   "note": "縄編み表現は縄マテリアルの色＋縁。内側は暗色",
+   "size": {
+    "w": 0.86,
+    "h": 0.49,
+    "d": 0.72
+   },
+   "model": "models/rope-basket.glb",
+   "reference": "props/rope-basket.png"
+  },
+  {
+   "id": "tool-stand",
+   "name": "石器の道具立て",
+   "footprint": {
+    "w": 1.15,
+    "d": 0.5
+   },
+   "stage": 1,
+   "note": "石斧と石つるはし付き（道具は分離していない）",
+   "size": {
+    "w": 1.15,
+    "h": 1.01,
+    "d": 0.55
+   },
+   "model": "models/tool-stand.glb",
+   "reference": "props/tool-stand.png"
+  },
+  {
+   "id": "signboard",
+   "name": "木の看板",
+   "footprint": {
+    "w": 0.98,
+    "d": 0.12
+   },
+   "stage": 1,
+   "note": "文字は焼き込んでいない（ゲーム側で必要なら別途）",
+   "size": {
+    "w": 0.98,
+    "h": 1.14,
+    "d": 0.1
+   },
+   "model": "models/signboard.glb",
+   "reference": "props/signboard.png"
+  }
+ ]
+}
