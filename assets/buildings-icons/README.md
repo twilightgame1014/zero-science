@@ -8,7 +8,7 @@ GPT生成シート7点（`source/` に原画を保存）から、ゲームの既
 
 - `icons/<tools|facilities|ops>/<id>.png` — 256pxマスター（透過、αは{0,255}に二値化済み）
 - `icons128/<...>/<id>.png` — 128px版
-- `atlas.png` / `atlas.json` — 全62点を1枚にまとめたアトラス（256pxセル×8列）と座標表
+- `atlas.png` / `atlas.json` — 全62点を1枚にまとめたアトラス（256pxセル×8列）と座標表。atlas.json のキーは `カテゴリ/ID` 形式（例 `ops/filter`）。設備と操作で同じID `filter`（ろ過器／ろ過）が衝突するため、素のIDでは引けない
 - `previews/contact-{32,48,64}-{light,dark}.png` — 実表示サイズの識別性確認シート
 - `tools/process_icons.py` — 切り出しパイプライン（再実行可能）
 - `process-log.json` — シート別の色にじみ除去ピクセル数など処理記録
