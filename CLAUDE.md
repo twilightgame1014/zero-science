@@ -68,6 +68,14 @@
 - 設備との対応は `structures.json` の `facilityId` が正（テストで検査）。かまど（kiln）を発酵つぼなどと統合しない。発電所（power-plant）は火力型モデル。暫定で「蒸気機関と水力発電機の両方」で建てる（登場段階・位置づけは GPT・オーナーと確認中）。
 - アイコン：Muse の `assets/buildings-icons`（原本・62点。キーは「tools/ID」「facilities/ID」「ops/ID」。設備 filter と操作 filter は別物）。`scripts/make-tool-atlas.py` で 64px のアトラス `assets/build/tool-icons-64.*` を作って埋め込む。`ic(id)` は道具・設備なら新しいアイコンを優先、物質は物質アイコン。操作は `opIc(op)`。
 
+## 建築モード・カメラ・セーブ v3（2026-11-07〜）
+- 建築モード（`ui.js` の建築セクション）：建築一覧 → 選ぶ → 候補（地面の枠 SVG：緑／赤と理由）→ 移動（マウス・タップ）・回転（15度・90度、R / Shift+R）・グリッド吸着（0.5マス）→「ここに置く」（Enter）／「やめる」（Esc）。
+  判定と確定は `nature.js` の `checkPlacement`・`commitPlacement`（S.seq のトークンで一度だけ）・`removePlacement`。置く・動かす・撤去で素材は使わない・戻らない（設備は工作で作ったときに素材を使っている。撤去しても持ち物に残る）。
+  建物の位置は `S.build[建物ID]`（`{x,z,rot}` か `{removed:true}`）を優先し、なければ `STRUCT_PLAN` の決まった場所。水車は `rule:"waterside"`（川の水ぎわだけ）。候補の 3D は `ghost:place`（当たり判定なし）。
+- カメラ：描画モジュールの `setCameraView`（Muse へ依頼中、`docs/handoff/WORLD-EXPANSION-GRAPHICS-SPEC.md` §2）があるときだけ、右ドラッグ・ホイール・2本指・画面のボタン・距離スライダー・「標準」を出す。設定は `S.camera`。ない版では部品を出さない。移動・絵の向き・クリック地点は実際のカメラから計算する（回しても画面基準）。
+- セーブ v3：`build`・`camera` を追加（v2 からの移行あり）。形式の古いセーブは移行前に `<キー>-backup-v<版>` へ元のまま控える。主人公の向きは `S.pos.dir`。
+- 広い世界（7エリア・地形9倍・区画読み込み・NPC・エリア別の環境）は、描画側の作業を Muse に依頼中（`docs/handoff/WORLD-EXPANSION-GRAPHICS-SPEC.md`）。オーナー決定（2026-11-07）：描画は Muse、ゲーム側は Claude で分担。
+
 ## 開始時の景観と文明の痕跡（2026-11-06〜）
 - 開始時のフィールドは手つかずの自然。人工物（石の階段・石積みの壁・舗装・柵・橋・建物など）を初期配置しない。「遺跡」などの理由を付けて残さない。
 - 描画モジュールが独自に置く石の階段・石積みの壁（`Stonework`）は `decor.stonework:false`（Muse §19）で描かせない。シーン走査で取り除く処理は廃止。当たり判定はもともとない。
