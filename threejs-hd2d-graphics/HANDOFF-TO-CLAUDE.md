@@ -236,3 +236,22 @@ gpt-forest の上に積んだブランチ。詳細は INTEGRATION.md §16。
 4. **予備樹冠**: Canvas で描く手続き型スプレー（復号失敗があり得ない）を予備にし、WebP が無い場合は同じカード構築で作ります。球体への fallback は削除しました。WebP を渡さないビルドで動作確認済みです（絵は本素材より粗い緊急用です）。
 
 検証: モジュール typecheck/build、ルートの test・typecheck・build・e2e すべて合格。あなたの feature/game-world-nature-verify に載せた worktree でも build / test / typecheck / e2e すべて合格でした。ただし開始地点の野原には木がなく、樹冠と新しいやぶの実ゲーム目視は未確認です。森に入ったところでの目視と、可能なら実機 FPS の確認をお願いします。描画量はデモ見本区画で三角形が約 1 割増えています（密度向上分。§12-5 のインスタンス化で回収する想定です）。
+
+## 追補10（2026-11-07）: 設置建物13種の3Dモデル + 道具・設備・操作アイコン62点（feature/graphics-buildings-icons）
+
+オーナーの新規原画7点からの納品です。モジュール本体のコード変更はありません（新規アセットのみ）。
+
+### A. 設置建物13種 GLB（assets/buildings-3d/）
+
+- `models/<構造物タイプ>.glb` ×13（workbench / campfire / kiln / hut / smelter / laboratory / steam-engine / distillation-tower / factory / power-plant / research-institute / waterwheel / drilling-rig）。原点=接地中心、前面=+Z、実寸は three.js 実測で `structures.json` に記載。
+- 組み込みは現行の設計どおり `StructureRenderer.registerFactory` に GLB 読み込みファクトリを登録する方式を想定（呼び出し側無変更）。GLB の配信方法（単一ファイル同梱か assets 配信か）はあなたの構成に合わせてください。
+- 当たり判定は `structures.json` の footprint（構造そのものの占有。屋根の張り出し・煙突・炎・装飾は除外）を使ってください。全体を囲う箱は使わないでください。入口・操作位置も同ファイルにあります。
+- 可動部は分離済み: campfire=Flame（既存の炎アニメ規約と同名）、steam-engine=Wheel（rotation.z）+ Piston（Xスライド、振幅 0.18 目安）、waterwheel=Wheel、drilling-rig=DrillPipe（縦軸回転）+ Winch。煙は含めていないので従来どおりエフェクトで。
+- 判断メモ: 水車の小屋は既存仕様にないため付けていない（水車単体）。発電所は原画どおり火力型の建屋。あなたの generator（水力）との対応づけはゲーム設定側で確認をお願いします。kiln の設備名は data.js では「かまど」です（統合しないでください）。
+- 検証: three.js 0.180 ビューアでゲームの探索カメラ（pitch 32° / yaw 45°）から全種を確認済み（assets/buildings-3d/renders/）。実ゲーム内配置は未確認です。Blender の EEVEE レンダーは VM に libEGL が無く未実施（実エンジン確認を優先）。
+
+### B. アイコン62点（assets/buildings-icons/）
+
+- 道具20（data.js の T 項目）・設備19（F 項目）・実験操作23（ops キー）を個別 PNG 化。ID・名称は data.js と 1:1 照合済み。256px マスター + 128px 版 + 全62点のアトラス（atlas.png / atlas.json）。対応表と処理方法は同フォルダの README。
+- 修正点: 設備アイコンの作業台は原画に現代工具（のこぎり・かんな・万力）があったため、建物原画の作業台（石器・縄）に差し替え済み。粉砕・冷却は修正版シートを優先（旧版は不採用を process-log に記録）。
+- UI への組み込み（絵文字からの差し替え）はあなたの側でお願いします。物質アイコン（assets/item-icons/）とは別カテゴリで、置き換えではありません。
