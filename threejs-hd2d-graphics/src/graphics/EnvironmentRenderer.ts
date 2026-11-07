@@ -231,8 +231,8 @@ export class EnvironmentRenderer {
     if (decor.pebbles !== false) this.buildRiverbank(scale);
     if (decor.logs !== false) this.buildFallenLogs();
     this.buildPollen(particleTexture, scale);
-    this.buildBackdropMountains();
-    this.buildWaterfall(particleTexture);
+    if (decor.backdrop !== false) this.buildBackdropMountains();
+    if (decor.waterfall !== false) this.buildWaterfall(particleTexture);
     if (decor.stonework !== false) this.buildStonework();
     this.buildGrounding();
   }

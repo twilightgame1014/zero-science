@@ -11,7 +11,7 @@ import {
   lerp,
   riverCenterX,
   smoothstep,
-  terrainHeight,
+  heightAt,
 } from './utils';
 import type { AreaDefinition } from './types';
 
@@ -53,7 +53,7 @@ const VCOLORS = {
   cPath: new THREE.Color(0xa3804f),
   cEarth: new THREE.Color(0x7c6a42),
   cUnderwater: new THREE.Color(0x77683f),
-  cAsh: new THREE.Color(0x655a50),
+  cAsh: new THREE.Color(0x7d7061),
   cTownStone: new THREE.Color(0xa79c8d),
   cTownEarth: new THREE.Color(0x8a6f52),
   cBasalt: new THREE.Color(0x33302e),
@@ -68,6 +68,7 @@ export class TerrainRenderer {
   private detailBrightness: number;
   private quality: QualityTier;
   private waterUniforms: { uTime: { value: number } } | null = null;
+  private riverEnabled = true;
   private waterMesh: THREE.Mesh;
   private waterPlane: THREE.Mesh;
   private riverbedMesh: THREE.Mesh;
@@ -86,7 +87,9 @@ export class TerrainRenderer {
     riverbedTexture?: THREE.Texture,
     groundTextures?: Record<string, THREE.Texture>,
     lavaTextures?: { albedo?: THREE.Texture; emissive?: THREE.Texture },
+    riverEnabled = true,
   ) {
+    this.riverEnabled = riverEnabled;
     this.detailBrightness = detailBrightness;
     this.cfg = cfg;
     this.quality = quality;
@@ -97,9 +100,11 @@ export class TerrainRenderer {
     this.waterPlane = this.buildWaterPlane();
     this.riverbedMesh = this.buildRiverbed(riverbedTexture);
     this.group.add(this.chunkGroup);
-    this.group.add(this.riverbedMesh);
+    if (this.riverEnabled) {
+      this.group.add(this.riverbedMesh);
+      this.group.add(this.waterMesh);
+    }
     this.group.add(this.waterPlane);
-    this.group.add(this.waterMesh);
     const lava = this.buildLavaLake(lavaTextures);
     if (lava) this.group.add(lava);
     this.group.add(this.buildIcePond());
@@ -113,7 +118,8 @@ export class TerrainRenderer {
    * pickGround API — display geometry only, no passability meaning.
    */
   pick(raycaster: THREE.Raycaster): { point: THREE.Vector3; surface: 'terrain' | 'water' } | null {
-    const targets: THREE.Object3D[] = [this.waterMesh, this.waterPlane];
+    const targets: THREE.Object3D[] = this.riverEnabled
+      ? [this.waterMesh, this.waterPlane] : [this.waterPlane];
     for (const c of this.chunks.values()) targets.push(c.mesh);
     const hits = raycaster.intersectObjects(targets, false);
     if (hits.length === 0) return null;
@@ -141,7 +147,7 @@ export class TerrainRenderer {
   }
 
   getHeightAt(x: number, z: number): number {
-    return terrainHeight(x, z, this.cfg);
+    return heightAt(x, z, this.cfg);
   }
 
   update(time: number): void {
@@ -219,6 +225,38 @@ export class TerrainRenderer {
     }
   }
 
+  /**
+   * Build every chunk around (x, z) NOW, at near detail within
+   * the radius (round 22, Claude §18 / teleport support): call
+   * right after a teleport so the destination is fully meshed
+   * before the first frame there, instead of streaming in over
+   * the next seconds. Synchronous by design — the caller picks
+   * the moment (a fade / loading beat covers the cost).
+   */
+  prepareAround(x: number, z: number, radiusM = 90): void {
+    const { nearSeg } = this.radii();
+    let built = 0;
+    for (let gx = CHUNK_MIN; gx <= CHUNK_MAX && built < 64; gx++) {
+      for (let gz = CHUNK_MIN; gz <= CHUNK_MAX && built < 64; gz++) {
+        const cx = gx * CHUNK + CHUNK / 2;
+        const cz = gz * CHUNK + CHUNK / 2;
+        if (Math.hypot(cx - x, cz - z) > radiusM + CHUNK * 0.7) continue;
+        const key = `${gx},${gz}`;
+        if (this.chunks.get(key)?.tier === 'near') continue;
+        const old = this.chunks.get(key);
+        if (old) {
+          this.chunkGroup.remove(old.mesh);
+          old.mesh.geometry.dispose();
+        }
+        const mesh = this.buildChunk(gx, gz, nearSeg);
+        this.chunks.set(key, { mesh, tier: 'near' });
+        this.chunkGroup.add(mesh);
+        built++;
+      }
+    }
+    this.lastFocus = { x, z };
+  }
+
   private buildChunk(gx: number, gz: number, segments: number): THREE.Mesh {
     const x0 = gx * CHUNK;
     const z0 = gz * CHUNK;
@@ -237,7 +275,7 @@ export class TerrainRenderer {
     for (let i = 0; i < count; i++) {
       const x = x0 + pos.getX(i) + CHUNK / 2;
       const z = z0 + pos.getZ(i) + CHUNK / 2;
-      const h = terrainHeight(x, z, this.cfg);
+      const h = heightAt(x, z, this.cfg);
       pos.setXYZ(i, x, h, z);
       // Detail map anchored to world coordinates (tile ~2.6 m), so
       // chunk borders cannot shift the grain.
@@ -245,8 +283,8 @@ export class TerrainRenderer {
       out.i = i;
       // Analytic normals from the height function itself: identical
       // on both sides of every chunk border by construction.
-      const nx = terrainHeight(x - E, z, this.cfg) - terrainHeight(x + E, z, this.cfg);
-      const nz = terrainHeight(x, z - E, this.cfg) - terrainHeight(x, z + E, this.cfg);
+      const nx = heightAt(x - E, z, this.cfg) - heightAt(x + E, z, this.cfg);
+      const nz = heightAt(x, z - E, this.cfg) - heightAt(x, z + E, this.cfg);
       const inv = 1 / Math.hypot(nx, 2 * E, nz);
       normals[i * 3] = nx * inv;
       normals[i * 3 + 1] = 2 * E * inv;
@@ -459,6 +497,22 @@ export class TerrainRenderer {
               'varying vec4 vSplat2;',
               'varying vec3 vSplat3;',
               'varying vec2 vWPos;',
+              'float gWet = 0.0;',
+              'float splatNoise(vec2 p) {',
+              '  vec2 i = floor(p); vec2 f = fract(p);',
+              '  f = f * f * (3.0 - 2.0 * f);',
+              '  float a = fract(sin(dot(i, vec2(127.1, 311.7))) * 43758.5453);',
+              '  float b = fract(sin(dot(i + vec2(1.0, 0.0), vec2(127.1, 311.7))) * 43758.5453);',
+              '  float c = fract(sin(dot(i + vec2(0.0, 1.0), vec2(127.1, 311.7))) * 43758.5453);',
+              '  float d = fract(sin(dot(i + vec2(1.0, 1.0), vec2(127.1, 311.7))) * 43758.5453);',
+              '  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);',
+              '}',
+              // Break a splat weight's straight interpolated edge with
+              // noise: strongest mid-transition, nil at the extremes,
+              // so full-strength areas keep their identity.
+              'float brkW(float w, float n) {',
+              '  return clamp(w + (n - 0.5) * 0.55 * (1.0 - abs(w * 2.0 - 1.0)), 0.0, 1.0);',
+              '}',
             ].join('\n'),
           )
           .replace(
@@ -468,18 +522,33 @@ export class TerrainRenderer {
               '{',
               '  float lum = dot(diffuseColor.rgb, vec3(0.3333));',
               '  float tintF = clamp(0.45 + 1.1 * lum, 0.6, 1.25);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundForest, vWPos / 7.0).rgb * tintF, vSplat.x * 0.88);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundMud, vWPos / 5.0).rgb * tintF, vSplat.y * 0.9);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSand, vWPos / 6.0).rgb * tintF, vSplat.z * 0.92);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundPath, vWPos / 5.0).rgb * tintF, vSplat.w * 0.94);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundVolcanic, vWPos / 6.0).rgb * tintF, vSplat2.x * 0.92);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundDesert, vWPos / 8.0).rgb * tintF, vSplat2.z * 0.92);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSnow, vWPos / 7.0).rgb * tintF, vSplat2.y * 0.95);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSandWet, vWPos / 5.0).rgb * tintF, vSplat2.w * 0.9);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundScree, vWPos / 6.0).rgb * tintF, vSplat3.z * 0.94);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundDirt, vWPos / 6.0).rgb * tintF, vSplat3.y * 0.92);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundCobble, vWPos / 4.5).rgb * tintF, vSplat3.x * 0.94);',
+              '  float nb = splatNoise(vWPos * 1.35) * 0.62 + splatNoise(vWPos * 4.9) * 0.38;',
+              '  vec4 pw1 = vec4(brkW(vSplat.x, nb), brkW(vSplat.y, nb), brkW(vSplat.z, nb), brkW(vSplat.w, nb));',
+              '  vec4 pw2 = vec4(brkW(vSplat2.x, nb), brkW(vSplat2.y, nb), brkW(vSplat2.z, nb), brkW(vSplat2.w, nb));',
+              '  vec3 pw3 = vec3(brkW(vSplat3.x, nb), brkW(vSplat3.y, nb), brkW(vSplat3.z, nb));',
+              '  gWet = pw2.w;',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundForest, vWPos / 7.0).rgb * tintF, pw1.x * 0.88);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundMud, vWPos / 5.0).rgb * tintF, pw1.y * 0.9);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSand, vWPos / 6.0).rgb * tintF, pw1.z * 0.92);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundPath, vWPos / 5.0).rgb * tintF, pw1.w * 0.94);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundVolcanic, vWPos / 6.0).rgb * tintF, pw2.x * 0.92);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundDesert, vWPos / 8.0).rgb * tintF, pw2.z * 0.92);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSnow, vWPos / 7.0).rgb * tintF, pw2.y * 0.95);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSandWet, vWPos / 5.0).rgb * tintF, pw2.w * 0.9);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundScree, vWPos / 6.0).rgb * tintF, pw3.z * 0.94);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundDirt, vWPos / 6.0).rgb * tintF, pw3.y * 0.92);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundCobble, vWPos / 4.5).rgb * tintF, pw3.x * 0.94);',
               '}',
+            ].join('\n'),
+          )
+          .replace(
+            '#include <roughnessmap_fragment>',
+            [
+              '#include <roughnessmap_fragment>',
+              // Wet band (round 22): colour alone read as dry sand —
+              // separate the wet shore by roughness too, so the band
+              // shines against the matte dry ground beside it.
+              'roughnessFactor = mix(roughnessFactor, 0.32, gWet * 0.85);',
             ].join('\n'),
           );
       };
@@ -509,7 +578,7 @@ export class TerrainRenderer {
       for (let j = 0; j <= across; j++) {
         const t = j / across;
         const x = cx + (t * 2 - 1) * halfW;
-        const bed = terrainHeight(x, z, this.cfg);
+        const bed = heightAt(x, z, this.cfg);
         const y = bed <= waterLevel + 0.02 ? bed + 0.03 : waterLevel - 0.45;
         positions.push(x, y, z);
         uvs.push(t * 1.6, (i / steps) * (size / 5.4));
@@ -693,7 +762,7 @@ export class TerrainRenderer {
         const t = j / across;
         const x = cx + (t * 2 - 1) * halfW;
         positions.push(x, waterLevel, z);
-        depths.push(clamp(waterLevel - terrainHeight(x, z, this.cfg), 0, 2.2));
+        depths.push(clamp(waterLevel - heightAt(x, z, this.cfg), 0, 2.2));
         flows.push(fx, fz);
       }
     }
@@ -739,7 +808,7 @@ export class TerrainRenderer {
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
       const z = pos.getZ(i);
-      depths[i] = clamp(waterLevel - terrainHeight(x, z, this.cfg), 0, 3);
+      depths[i] = clamp(waterLevel - heightAt(x, z, this.cfg), 0, 3);
       flows[i * 2] = 0.119;
       flows[i * 2 + 1] = 0.993;
     }
@@ -761,7 +830,7 @@ export class TerrainRenderer {
   private buildLavaLake(lavaTextures?: { albedo?: THREE.Texture; emissive?: THREE.Texture }): THREE.Mesh | null {
     const def = this.areaDefs.find((a) => a.id === 'volcano');
     if (!def) return null;
-    const y = terrainHeight(def.x, def.z, this.cfg);
+    const y = heightAt(def.x, def.z, this.cfg);
     const geo = new THREE.CircleGeometry(8.2, 28);
     geo.rotateX(-Math.PI / 2);
     let mat: THREE.MeshStandardMaterial;
@@ -797,7 +866,7 @@ export class TerrainRenderer {
    *  in the snowfield. Whether it bears weight is the game's call. */
   private buildIcePond(): THREE.Mesh {
     const pond = frozenPond(this.cfg);
-    const y = terrainHeight(pond.x, pond.z, this.cfg);
+    const y = heightAt(pond.x, pond.z, this.cfg);
     const geo = new THREE.CircleGeometry(pond.r + 1.6, 24);
     geo.rotateX(-Math.PI / 2);
     const mat = new THREE.MeshStandardMaterial({

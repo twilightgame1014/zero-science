@@ -543,6 +543,17 @@ export class GraphicsEngine {
    * pixel ratio, shadow resolution and the post chain follow the
    * tier. The game's settings screen can call this at any time.
    */
+  /**
+   * Build the terrain around (x, z) immediately at near detail
+   * (round 22, Claude §18): call right after a teleport so the
+   * destination renders complete on the first frame instead of
+   * streaming in. Synchronous — call it during a fade or a
+   * loading beat. Radius defaults to 90 m.
+   */
+  prepareTerrainAt(x: number, z: number, radiusM = 90): void {
+    this.world.prepareTerrainAt(x, z, radiusM);
+  }
+
   setQuality(tier: QualityTier): void {
     if (tier === this.quality) return;
     this.quality = tier;

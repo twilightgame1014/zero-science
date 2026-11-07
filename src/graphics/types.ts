@@ -141,6 +141,26 @@ export interface DecorOptions {
    */
   stonework?: boolean;
   /**
+   * The module's set-piece waterfall at the legacy highland
+   * (Claude §18-1, round 22). Default true. Set false when the
+   * game builds its own falls from its terrain (the wide world)
+   * — placement of new falls uses createWaterfallKit.
+   */
+  waterfall?: boolean;
+  /**
+   * The backdrop mountain ring (Claude §18-1, round 22).
+   * Default true. Set false when the game's own terrain forms
+   * the horizon (the wide world), so no ring stands inside it.
+   */
+  backdrop?: boolean;
+  /**
+   * The legacy river surface + riverbed ribbons, which span
+   * only the built-in terrain (Claude §18-4, round 22).
+   * Default true. Set false when the game draws the river
+   * continuation itself across its wider world.
+   */
+  river?: boolean;
+  /**
    * Circular areas kept free of ALL scenery (trees, rocks, shrubs,
    * grass tufts, flowers, herb patches, logs, riverbank pebbles) so
    * game-owned natural objects can stand there alone — e.g. the
@@ -261,6 +281,16 @@ export interface GraphicsConfig {
     plateauCenter: { x: number; z: number };
     plateauRadius: number;
     seed: number;
+    /**
+     * Host-supplied ground height (Claude §18-2, round 22). When
+     * set, EVERY module height query — terrain chunks, grounding
+     * of characters / resources / structures, water depth — uses
+     * this function instead of the built-in terrainHeight, so
+     * the game can own the world's shape (its wide-world
+     * worldHeight) without build-time shims. The built-in
+     * terrainHeight stays the default and is unchanged.
+     */
+    heightAt?: (x: number, z: number) => number;
   };
   coordinates: {
     /** scene = (logic - origin) * scale. Adjust at integration time so
