@@ -35,6 +35,14 @@ html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
 body{background:#1f2d24;color:var(--ink);font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
   font-weight:500;line-height:1.7;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
 button{font:inherit;color:inherit}
+/* カメラの操作（描画モジュールに setCameraView があるときだけ出す） */
+.camctl{position:absolute;right:calc(var(--sar,0px) + 10px);top:calc(var(--sat,0px) + 70px);z-index:4;display:flex;flex-wrap:wrap;gap:4px;width:132px;pointer-events:auto}
+.camctl[hidden]{display:none}
+.camctl button{width:40px;height:40px;border-radius:10px;border:1.5px solid var(--line);background:rgba(255,255,255,.92);font:inherit;font-weight:900;cursor:pointer}
+.camctl button[data-id="reset"]{width:auto;flex:1;font-size:.8rem}
+.camzoom{display:flex;align-items:center;gap:4px;width:100%;font-size:.72rem;font-weight:800;background:rgba(255,255,255,.92);border-radius:10px;padding:2px 6px}
+.camzoom input{flex:1;min-width:0;touch-action:pan-x}
+[data-ui="touch"] .camctl{top:auto;bottom:calc(var(--navh,64px) + 150px)}
 /* 建築モード（置き場所を決める帯と、地面の枠） */
 .buildbar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--navh,64px) + 12px);z-index:6;background:rgba(255,255,255,.96);border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.28);padding:8px 10px;width:min(94vw,520px);pointer-events:auto}
 .buildbar[hidden]{display:none}
@@ -520,6 +528,13 @@ textarea{width:100%;min-height:90px;font:inherit;font-size:.75rem;border:1.5px s
     <div class="combo" id="combo"></div><div class="banner" id="banner" role="status"></div>
     <div class="joy" id="joy" aria-label="移動スティック"><div class="knob"></div></div>
     <button class="w3act idle" id="w3act" data-act="g3" hidden></button>
+    <div class="camctl" id="camctl" hidden role="group" aria-label="カメラ（向き・角度・距離）">
+      <button data-act="cam" data-id="left" title="カメラを左へ回す">⟲</button><button data-act="cam" data-id="right" title="カメラを右へ回す">⟳</button>
+      <button data-act="cam" data-id="up" title="上から見る">⤒</button><button data-act="cam" data-id="down" title="横から見る">⤓</button>
+      <button data-act="cam" data-id="in" title="近づく">＋</button><button data-act="cam" data-id="out" title="離れる">－</button>
+      <label class="camzoom" title="カメラの距離"><span>距離</span><input type="range" id="camZoom" aria-label="カメラの距離"></label>
+      <button data-act="cam" data-id="reset" title="標準の角度と距離に戻す">標準</button>
+    </div>
     <div class="buildbar" id="buildbar" hidden role="group" aria-label="建物の置き場所を決める">
       <div class="bbtitle" id="bbTitle"></div><div class="bbmsg" id="bbMsg" role="status"></div>
       <div class="bbrow"><button data-act="b-rot" data-id="-90" title="左へ90度（Shift+R）">⟲90°</button><button data-act="b-rot" data-id="-15" title="左へ15度">⟲15°</button><button data-act="b-rot" data-id="15" title="右へ15度（R）">⟳15°</button><button data-act="b-rot" data-id="90" title="右へ90度">⟳90°</button>

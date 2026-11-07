@@ -50,7 +50,10 @@ const CIV = ()=> S.verify ? (p=>({fire:p.has("st-fire"), bench:p.has("st-bench")
 const civSig = ()=>Object.values(CIV()).map(v=>v?1:0).join("");
 
 /* ---------- 保存 ---------- */
-function readKey(k){ try{ const t = localStorage.getItem(k); if(t) return E.deserialize(t); }catch(e){} return null; }
+function readKey(k){ try{ const t = localStorage.getItem(k); if(t){
+    /* 形式が古いセーブは、移行する前に元のまま別のキーへ控える（一度だけ。戻したいときに使える） */
+    try{ const v = JSON.parse(t).v; if(typeof v==="number" && v < E.SCHEMA){ const bk = k+"-backup-v"+v; if(!localStorage.getItem(bk)) localStorage.setItem(bk, t); } }catch(e){}
+    return E.deserialize(t); } }catch(e){} return null; }
 function load(){
   const s = readKey(curKey());
   if(VERIFY) return s && s.verify ? s : E.makeVerifyState();
@@ -866,6 +869,7 @@ async function start3D(){
     W3.pos = spawnPos();
     syncAll3D();
     W3.state = "ready";
+    camInit();
     { const g=gfxStatus(); if(g.ok===false) console.warn("木の枝葉カードのテクスチャを "+g.branch+"/"+g.want+" しか読み込めなかった（描画モジュールが旧来の球体の樹冠に戻っている可能性）"); }
     W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false});
     renderField(); updateFieldActivity();
@@ -874,9 +878,10 @@ async function start3D(){
 /* セーブの位置から始める。新しい当たり判定で木や岩に埋まっていたら、近くの立てる場所へ移す */
 function spawnPos(){
   const p = (S.pos && isFinite(S.pos.x) && isFinite(S.pos.z)) ? {x:S.pos.x, z:S.pos.z} : {x:D.base.x, z:D.base.z};
+  if(S.pos && ["down","up","left","right"].includes(S.pos.dir)) W3.dir = S.pos.dir;      // 向きも元どおりに
   if(!world()) return p;
   const q = WORLD.safeSpawn(S, p);
-  if(q.moved){ S.pos={x:+q.x.toFixed(2), z:+q.z.toFixed(2)}; save(); setTimeout(()=>banner("🧭 木や岩と重ならない場所へ移動した"), 600); }
+  if(q.moved){ S.pos={x:+q.x.toFixed(2), z:+q.z.toFixed(2), dir:W3.dir}; save(); setTimeout(()=>banner("🧭 木や岩と重ならない場所へ移動した"), 600); }
   return {x:q.x, z:q.z};
 }
 function applySavedPos(){
@@ -904,6 +909,8 @@ function haltField(){
   if(W3.work) cancelWork(null);
   if(W3.joyReset) W3.joyReset();
   if(W3.actReset) W3.actReset();
+  if(W3.camDrag || W3.pinch){ W3.camDrag=null; W3.pinch=null; }
+  if(W3.camTouches) W3.camTouches.clear();
   if(W3.walk){ W3.walk.on=false; W3.walk.slow=0; }
   if(W3.moving && W3.gfx && W3.pos){ W3.moving=false; W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving:false}); updateLoc(); }
 }
@@ -1013,7 +1020,7 @@ function loop3D(ts){
   // 資源の再生・表示範囲
   if(++W3.tick%20===0){ NODES.forEach(n=>syncNode(n)); syncNature(); updateAction3D(); }
   updateLabels3D();
-  if(ts-W3.lastSave>2000 && (!S.pos || Math.abs(S.pos.x-W3.pos.x)>0.01 || Math.abs(S.pos.z-W3.pos.z)>0.01)){ W3.lastSave=ts; S.pos={x:+W3.pos.x.toFixed(2), z:+W3.pos.z.toFixed(2)}; save(); }
+  if(ts-W3.lastSave>2000 && (!S.pos || Math.abs(S.pos.x-W3.pos.x)>0.01 || Math.abs(S.pos.z-W3.pos.z)>0.01 || S.pos.dir!==W3.dir)){ W3.lastSave=ts; S.pos={x:+W3.pos.x.toFixed(2), z:+W3.pos.z.toFixed(2), dir:W3.dir}; save(); }
 }
 /* 歩き始め：毎秒0.9マス以上。止まる：毎秒0.35マス未満が0.12秒続く（小さな揺れでちらつかない）。
    入力も移動予約もなければ、その場で止まる。止まっても向き（W3.dir）は変えない */
@@ -1179,8 +1186,24 @@ function selectAndGo(t){
 /* ---------- 入力：タップ・クリックで選択と移動 ---------- */
 function bind3DInput(){
   const w=$("#w3"); if(!w || w._bound) return; w._bound=true;
-  w.addEventListener("pointerdown", e=>{ if(!fieldInputActive() || e.target.closest(".joy,.w3lab,button")) return; W3.down={x:e.clientX,y:e.clientY,t:Date.now(),id:e.pointerId}; });
+  w.addEventListener("pointerdown", e=>{ if(!fieldInputActive() || e.target.closest(".joy,.w3lab,button,.camctl,.buildbar") || (e.pointerType==="mouse" && e.button!==0) || W3.pinch) return; W3.down={x:e.clientX,y:e.clientY,t:Date.now(),id:e.pointerId}; });
   w.addEventListener("pointercancel", ()=>{ W3.down=null; });
+  /* カメラ：右ドラッグで回転と上下角、ホイールでズーム（PC）。2本指で回転とピンチ（スマホ）。左クリック・1本指のタップは今までどおり移動・選択 */
+  const T2 = W3.camTouches = new Map();     // マップに触れている指（UI の上の指は数えない）
+  w.addEventListener("pointerdown", e=>{
+    if(!camSupported() || !fieldInputActive()) return;
+    if(e.pointerType==="mouse" && e.button===2){ const u=camUser(); W3.camDrag={id:e.pointerId, x:e.clientX, y:e.clientY, yaw:u.yaw, pitch:u.pitch}; try{ w.setPointerCapture(e.pointerId); }catch(err){} e.preventDefault(); return; }
+    if(e.pointerType==="touch" && !e.target.closest(".joy,.w3lab,button,.camctl,.buildbar")){ T2.set(e.pointerId, {x:e.clientX, y:e.clientY});
+      if(T2.size===2){ const [a,b]=[...T2.values()], u=camUser(); W3.down=null; W3.pinch={ang:Math.atan2(b.y-a.y,b.x-a.x), dist:Math.hypot(b.x-a.x,b.y-a.y)||1, yaw:u.yaw, zoom:u.zoom}; } } }, true);
+  w.addEventListener("pointermove", e=>{
+    const d=W3.camDrag; if(d && e.pointerId===d.id){ camSet({yaw:d.yaw-(e.clientX-d.x)*0.35, pitch:d.pitch+(e.clientY-d.y)*0.2}, true); return; }
+    if(T2.has(e.pointerId)){ T2.set(e.pointerId, {x:e.clientX, y:e.clientY}); const P=W3.pinch;
+      if(P && T2.size===2){ const [a,b]=[...T2.values()]; const ang=Math.atan2(b.y-a.y,b.x-a.x), dist=Math.hypot(b.x-a.x,b.y-a.y)||1;
+        camSet({yaw:P.yaw-(ang-P.ang)*180/Math.PI, zoom:P.zoom*P.dist/dist}, true); } } });
+  const camEnd = e=>{ if(W3.camDrag && e.pointerId===W3.camDrag.id){ W3.camDrag=null; save(); }
+    if(T2.delete(e.pointerId) && W3.pinch && T2.size<2){ W3.pinch=null; save(); } };
+  ["pointerup","pointercancel","lostpointercapture"].forEach(t=>w.addEventListener(t, camEnd));
+  w.addEventListener("wheel", e=>{ if(!camSupported() || !fieldInputActive()) return; e.preventDefault(); const u=camUser(); camSet({zoom:u.zoom*(e.deltaY>0?1.1:1/1.1)}, true); clearTimeout(W3.wheelT); W3.wheelT=setTimeout(save,300); }, {passive:false});
   /* 建築モード：マウスを動かすと候補が付いてくる（ボタンを押していないとき）。タップ・クリックはその場所へ候補を動かす（歩かない） */
   w.addEventListener("pointermove", e=>{ if(!W3.place || e.pointerType!=="mouse" || e.buttons || !fieldInputActive()) return; const h=screenToGround(e.clientX,e.clientY); if(h) placeMoveTo(h.x,h.z); });
   w.addEventListener("pointerup", e=>{ const down=W3.down; if(!down || down.id!==e.pointerId || !fieldInputActive()) return; const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y); const quick=Date.now()-down.t<450; W3.down=null;
@@ -1468,6 +1491,31 @@ function intro(){
   openModal($("#introGo")); S.flags.intro=1; save();
 }
 document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); applyIcons(); bindHudInput(); renderChrome(); render(); layout(); intro();
+/* ===================== カメラ（回転・上下角・ズーム。2026-11-07） =====================
+   描画モジュールに setCameraView（Muse へ依頼中。docs/handoff/WORLD-EXPANSION-GRAPHICS-SPEC.md §2）があるときだけ使い、操作部品を出す。
+   ない版では何も出さない（押しても動かないボタンを見せない）。ユーザーの設定は S.camera に保存し、演出の一時変更（temporary）とは分ける。
+   移動の向き・主人公の絵の向き・タップ地点は、いつも実際のカメラ（camBasis・screenToGround）から計算しているので、回しても画面基準のまま。 */
+const CAM_PITCH = [20,60], CAM_ZOOM = [0.6, 1.85];     // 上下角（度）・ズーム（標準の表示範囲に対する倍率）
+const camSupported = ()=> !!(W3.gfx && typeof W3.gfx.setCameraView==="function");
+const clampN = (v,a,b)=> Math.max(a, Math.min(b, v));
+function camDefaults(){ const c=(W3.cfg && W3.cfg.camera)||{}; return {yaw:c.yawDegrees!=null?c.yawDegrees:45, pitch:c.pitchDegrees!=null?c.pitchDegrees:32, zoom:c.viewSize!=null?c.viewSize:13}; }
+function camUser(){ const d=camDefaults(), u=S.camera||{}; return {yaw:isFinite(u.yaw)?u.yaw:d.yaw, pitch:isFinite(u.pitch)?u.pitch:d.pitch, zoom:isFinite(u.zoom)?u.zoom:d.zoom}; }
+function camZoomLim(){ const z=camDefaults().zoom; return [+(z*CAM_ZOOM[0]).toFixed(2), +(z*CAM_ZOOM[1]).toFixed(2)]; }
+function camNorm(v){ const zl=camZoomLim(); return {yaw:((v.yaw%360)+360)%360, pitch:clampN(v.pitch, CAM_PITCH[0], CAM_PITCH[1]), zoom:clampN(v.zoom, zl[0], zl[1])}; }
+function camApply(v){ if(!camSupported()) return; v=camNorm(v); try{ W3.gfx.setCameraView({yawDegrees:v.yaw, pitchDegrees:v.pitch, viewSize:v.zoom}, {}); }catch(e){} W3.camView=v; }
+function camSet(ch, keep){ const v=camNorm(Object.assign(camUser(), ch)); S.camera={yaw:+v.yaw.toFixed(2), pitch:+v.pitch.toFixed(2), zoom:+v.zoom.toFixed(2)}; camApply(S.camera); if(!keep) save(); camUI(); }
+function camReset(){ S.camera={}; camApply(camDefaults()); save(); camUI(); banner("🎥 カメラを標準の角度と距離に戻した"); }
+function camUI(){ const box=$("#camctl"); if(!box) return; box.hidden = !camSupported(); const z=$("#camZoom");
+  if(z && camSupported()){ const zl=camZoomLim(); z.min=zl[0]; z.max=zl[1]; z.step=0.25; z.value = camNorm(camUser()).zoom; } }
+function camInit(){ camUI(); if(camSupported()) camApply(camUser()); }
+document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.closest("[data-act='cam']"); if(!b) return; ev.preventDefault();
+  const u=camUser(), id=b.dataset.id;
+  if(id==="left") camSet({yaw:u.yaw-30}); else if(id==="right") camSet({yaw:u.yaw+30});
+  else if(id==="up") camSet({pitch:u.pitch+6}); else if(id==="down") camSet({pitch:u.pitch-6});
+  else if(id==="in") camSet({zoom:u.zoom/1.15}); else if(id==="out") camSet({zoom:u.zoom*1.15}); else if(id==="reset") camReset(); });
+document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="camZoom") camSet({zoom:+ev.target.value}, true); });
+document.addEventListener("change", ev=>{ if(ev.target && ev.target.id==="camZoom") save(); });
+
 /* ===================== 建築モード（家・設備の自由設置。2026-11-07） =====================
    建築一覧 → 建物を選ぶ → 置き場所の候補（地面の枠：置ければ緑・置けなければ赤と理由）→ 移動・回転 → 「ここに置く」。
    置くのは工作で作った家・設備（作った時点で素材は使っている）。置く・動かす・撤去で素材は増えも減りもしない。

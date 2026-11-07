@@ -455,6 +455,90 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await ctx.close();
 }
 
+/* ---------------- カメラ（回転・上下角・ズーム。描画側の setCameraView がある版） ---------------- */
+{
+  const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
+  await page.click('#introGo'); await page.waitForTimeout(700);
+  await page.evaluate(`(()=>{ ${G}.W3.pos={x:-12,z:24}; })()`); await page.waitForTimeout(300);
+  const vis = await page.evaluate(`!document.getElementById('camctl').hidden`);
+  ok('カメラの部品（回転・上下・近づく・離れる・距離・標準）が出る', vis);
+  const yaw0 = await page.evaluate(`${G}.W3.camView ? ${G}.W3.camView.yaw : null`);
+  // 右ドラッグで回す（移動クリックにならない）
+  await page.mouse.move(700, 400); await page.mouse.down({ button: 'right' }); await page.mouse.move(820, 400, { steps: 6 }); await page.mouse.up({ button: 'right' }); await page.waitForTimeout(150);
+  const r1 = await page.evaluate(`({yaw:${G}.W3.camView.yaw, saved:${G}.S.camera.yaw, target:!!${G}.W3.target, last:(__FAKE.camCalls||[]).slice(-1)[0]})`);
+  ok('右ドラッグでカメラが回り（設定に保存）、移動先は決まらない', Math.abs(((r1.yaw - yaw0 + 540) % 360) - 180) > 20 && r1.saved === r1.yaw && !r1.target && r1.last.v.yawDegrees === r1.yaw, JSON.stringify({ yaw0, r1 }));
+  // ホイールでズーム
+  const z0 = await page.evaluate(`${G}.W3.camView.zoom`); await page.mouse.move(700, 400); await page.mouse.wheel(0, -300); await page.waitForTimeout(450);
+  const z1 = await page.evaluate(`({z:${G}.W3.camView.zoom, saved:${G}.S.camera.zoom, slider:+document.getElementById('camZoom').value})`);
+  ok('ホイールでズーム（正投影の表示範囲）。距離スライダーにも反映され、保存される', z1.z < z0 && z1.saved === z1.z && Math.abs(z1.slider - z1.z) < 0.26, JSON.stringify({ z0, z1 }));
+  // 90度回したあとも、↑キーは画面の奥へ、主人公の絵は「上（後ろ向き）」
+  await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.waitForTimeout(100);
+  const p0 = await pos(page);
+  await page.keyboard.down('ArrowUp'); await page.waitForTimeout(600); await page.keyboard.up('ArrowUp'); await page.waitForTimeout(200);
+  const mv = await page.evaluate(`(()=>{ const G=${G}, T=HD2D.THREE, v=new T.Vector3(); G.W3.gfx.getCamera().getWorldDirection(v); const l=Math.hypot(v.x,v.z); return {fx:v.x/l, fz:v.z/l, dir:G.W3.dir, x:G.W3.pos.x, z:G.W3.pos.z}; })()`);
+  const dx = mv.x - p0.x, dz = mv.z - p0.z, dl = Math.hypot(dx, dz);
+  ok('カメラを回したあとも、↑キーで画面の奥へ進み、主人公は後ろ向き（上）の絵になる', dl > 0.5 && (dx * mv.fx + dz * mv.fz) / dl > 0.9 && mv.dir === 'up', JSON.stringify({ dx, dz, mv }));
+  // タップ（クリック）地点への移動も、回した後の画面から正しい地面の座標へ
+  const goal = await page.evaluate(`(()=>{ const G=${G}; const g={x:G.W3.pos.x+3, z:G.W3.pos.z-2}; const s=G.toScreen(g.x, HD2D.terrainHeight(g.x,g.z,G.W3.cfg), g.z), r=document.getElementById('w3').getBoundingClientRect(); return {g, sx:r.left+s.x, sy:r.top+s.y}; })()`);
+  await page.evaluate(`document.getElementById('toasts').innerHTML=''`); await page.mouse.click(goal.sx, goal.sy); await page.waitForTimeout(80);
+  const tgt = await page.evaluate(`${G}.W3.target`);
+  ok('回したあとでも、クリックした地点が正しい地面の座標になる', tgt && Math.hypot(tgt.x - goal.g.x, tgt.z - goal.g.z) < 0.6, JSON.stringify({ tgt, goal: goal.g }));
+  // 標準に戻す・再読み込みで設定が復元
+  await page.click('#camctl [data-act="cam"][data-id="left"]'); await page.waitForTimeout(100);
+  const saved = await page.evaluate(`JSON.stringify(${G}.S.camera)`);
+  await page.waitForTimeout(400); await page.reload(); await page.waitForTimeout(900);
+  const after = await page.evaluate(`({cam:JSON.stringify(${G}.S.camera), view:${G}.W3.camView, first:(__FAKE.camCalls||[])[0]})`);
+  ok('カメラの設定は保存され、再読み込みしても同じ向き・角度・距離になる', after.cam === saved && Math.abs(after.view.yaw - JSON.parse(saved).yaw) < 1e-6 && after.first && Math.abs(after.first.v.yawDegrees - JSON.parse(saved).yaw) < 1e-6, JSON.stringify({ saved, after }));
+  await page.click('#camctl [data-act="cam"][data-id="reset"]'); await page.waitForTimeout(100);
+  ok('「標準」で標準の角度と距離に戻る（保存した設定も消える）', await page.evaluate(`JSON.stringify(${G}.S.camera)==='{}' && ${G}.W3.camView.yaw===${G}.W3.cfg.camera.yawDegrees && ${G}.W3.camView.zoom===${G}.W3.cfg.camera.viewSize`));
+  ok('ページでエラーが起きていない（カメラ・PC）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+{
+  const { page, errors, ctx } = await newPage({ width: 390, height: 844 }, true);
+  await page.click('#introGo'); await page.waitForTimeout(700);
+  const cdp = await ctx.newCDPSession(page); const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });
+  const jr = await rect(page, '#joy'), jx = jr.l + jr.w / 2, jy = jr.t + jr.h / 2;
+  const yaw0 = await page.evaluate(`${G}.W3.camView.yaw`), zoom0 = await page.evaluate(`${G}.W3.camView.zoom`), p0 = await pos(page);
+  // 左の指でスティック、右の2本指で回転とピンチ（同時）
+  await touch('touchStart', [{ x: jx, y: jy, id: 1 }]); await touch('touchMove', [{ x: jx, y: jy - 40, id: 1 }]);
+  await touch('touchStart', [{ x: jx, y: jy - 40, id: 1 }, { x: 200, y: 300, id: 2 }]);
+  await touch('touchStart', [{ x: jx, y: jy - 40, id: 1 }, { x: 200, y: 300, id: 2 }, { x: 300, y: 300, id: 3 }]);
+  for (let i = 1; i <= 8; i++) { const a = i * 0.06; await touch('touchMove', [{ x: jx, y: jy - 40, id: 1 }, { x: 250 - 50 * Math.cos(a) * (1 + i * 0.05), y: 300 - 50 * Math.sin(a) * (1 + i * 0.05), id: 2 }, { x: 250 + 50 * Math.cos(a) * (1 + i * 0.05), y: 300 + 50 * Math.sin(a) * (1 + i * 0.05), id: 3 }]); await page.waitForTimeout(60); }
+  const mid = await page.evaluate(`({yaw:${G}.W3.camView.yaw, zoom:${G}.W3.camView.zoom, joy:!!${G}.W3.joy, target:!!${G}.W3.target})`);
+  await touch('touchEnd', [{ x: 250, y: 300, id: 3 }]); await touch('touchEnd', [{ x: 250, y: 300, id: 2 }]); await page.waitForTimeout(100);
+  const stillJoy = await page.evaluate(`!!${G}.W3.joy`); await touch('touchEnd', [{ x: jx, y: jy - 40, id: 1 }]); await page.waitForTimeout(200);
+  const p1 = await pos(page);
+  ok('スマホ：スティックで歩きながら、別の2本指で回転とピンチズームができる（タップ移動にはならない）', Math.abs(mid.yaw - yaw0) > 5 && mid.zoom < zoom0 && mid.joy && !mid.target && stillJoy && Math.hypot(p1.x - p0.x, p1.z - p0.z) > 0.3, JSON.stringify({ yaw0, zoom0, mid, stillJoy }));
+  const sl = await rect(page, '#camZoom');
+  ok('スマホ：回転ボタンと距離スライダーもある（指が届く大きさ）', sl.shown && sl.w > 60 && (await rect(page, '#camctl [data-id="right"]')).w >= 40);
+  ok('ページでエラーが起きていない（カメラ・スマホ）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+{
+  // 描画側に API がない版：カメラの部品を出さない（押しても動かないボタンを見せない）
+  const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
+  await page.addInitScript(() => { window.__FAKE_NO_CAMVIEW = true; }); await page.reload(); await page.waitForTimeout(400);
+  if (await page.evaluate(`document.getElementById('modal').classList.contains('open')`)) await page.click('#introGo'); await page.waitForTimeout(700);
+  ok('描画モジュールにカメラの API がない版では、カメラの部品は出ない', await page.evaluate(`document.getElementById('camctl').hidden && !${G}.W3.camView`));
+  ok('ページでエラーが起きていない（カメラ API なし）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+
+/* ---------------- 古い形式（v2）のセーブ：移行前のバックアップ・向きの復元 ---------------- */
+{
+  const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
+  const v2 = JSON.stringify({ v: 2, inv: { twig: 4 }, disc: { twig: { first: 1, made: 1, total: 4, routes: [], best: 0 } }, hist: [], gathered: {}, explore: {}, auto: [], seq: 3, flags: { intro: 1, hero: 'girl' }, nature: {}, pos: { x: -14, z: 25, dir: 'left' }, created: 1 });
+  // 前のページが閉じるときの保存で上書きされないよう、次のページの読み込み前に置く
+  await page.addInitScript(s => { if (!sessionStorage.getItem('seed-v2')) { localStorage.clear(); localStorage.setItem('zero-kagaku-save', s); sessionStorage.setItem('seed-v2', '1'); } }, v2);
+  await page.reload(); await page.waitForTimeout(900);
+  const r = await page.evaluate(`({bk:localStorage.getItem('zero-kagaku-save-backup-v2'), v:${G}.S.v, twig:${G}.S.inv.twig, build:JSON.stringify(${G}.S.build), pos:${G}.W3.pos, dir:${G}.W3.dir, player:__FAKE.player&&__FAKE.player.direction})`);
+  ok('古い形式（v2）のセーブは、移行する前に元のまま別のキーへ控える。移行後も持ち物・位置は同じ', r.bk === v2 && r.v === 3 && r.twig === 4 && r.build === '{}' && Math.abs(r.pos.x + 14) < 0.05 && Math.abs(r.pos.z - 25) < 0.05, JSON.stringify(r).slice(0, 200));
+  ok('保存した向き（左）で復元される', r.dir === 'left' && r.player === 'left', JSON.stringify({ dir: r.dir, player: r.player }));
+  ok('ページでエラーが起きていない（v2 の移行）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+
 /* ---------------- 建築モード（家・設備の自由設置） ---------------- */
 {
   const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
