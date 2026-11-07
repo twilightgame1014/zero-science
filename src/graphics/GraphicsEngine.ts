@@ -32,6 +32,7 @@ import { AreaParticles } from './AreaParticles';
 import type { ParticleKind } from './AreaParticles';
 import { GPT_TEXTURES } from './gptTextures';
 import { BRANCH_TEXTURES } from './branchTextures';
+import { ENV_TEXTURES } from './envTextures';
 import { EXPANSION_TEXTURES, GROUND_TEXTURES, LAVA_TEXTURES } from './expansionTextures';
 import { DQ3_TEXTURES } from './dq3Textures';
 import { PostEffects } from './PostEffects';
@@ -275,6 +276,19 @@ export class GraphicsEngine {
         }
       }),
     );
+    const env: Record<string, THREE.Texture> = {};
+    await Promise.all(
+      Object.entries(ENV_TEXTURES).map(async ([key, uri]) => {
+        try {
+          env[key] = await assets.loadTexture(uri, {
+            repeat: key === 'streaks' || key === 'groundScree' || key === 'shoreFoam',
+          });
+        } catch {
+          /* kit falls back to procedural art */
+        }
+      }),
+    );
+    if (env['groundScree']) groundTex['scree'] = env['groundScree'];
     if (dq3['town-cobble']) groundTex['cobble'] = dq3['town-cobble'];
     if (dq3['town-dirt-plain']) groundTex['dirtPlain'] = dq3['town-dirt-plain'];
 
@@ -312,6 +326,7 @@ export class GraphicsEngine {
       ground: groundTex,
       lava: { albedo: dq3['lava-flow'] ?? expansion['lava_albedo'], emissive: dq3['lava-flow-emissive'] ?? expansion['lava_emissive'] },
       decor: options.decor,
+      env,
     });
     const groundAt = (x: number, z: number) => world.getGroundHeight(x, z);
     const character = new CharacterRenderer(

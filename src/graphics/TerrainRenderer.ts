@@ -62,6 +62,7 @@ const VCOLORS = {
 };
 
 export class TerrainRenderer {
+  private hasScree = false;
   readonly group = new THREE.Group();
   private cfg: GraphicsConfig;
   private detailBrightness: number;
@@ -91,6 +92,7 @@ export class TerrainRenderer {
     this.quality = quality;
     this.areaDefs = areaDefinitions(cfg);
     this.terrainMaterial = this.buildTerrainMaterial(detailTexture, groundTextures);
+    this.hasScree = !!groundTextures?.scree;
     this.waterMesh = this.buildWater();
     this.waterPlane = this.buildWaterPlane();
     this.riverbedMesh = this.buildRiverbed(riverbedTexture);
@@ -228,9 +230,9 @@ export class TerrainRenderer {
     const colors = new Float32Array(count * 3);
     const splat = new Float32Array(count * 4);
     const splat2 = new Float32Array(count * 4);
-    const splat3 = new Float32Array(count * 2);
+    const splat3 = new Float32Array(count * 3);
     const normals = new Float32Array(count * 3);
-    const out = { r: 0, g: 0, b: 0, s: splat, s2: splat2, s3: splat3, i: 0 };
+    const out = { r: 0, g: 0, b: 0, s: splat, s2: splat2, s3: splat3, i: 0, ny: 1 };
     const E = 0.9; // normal sampling step (m)
     for (let i = 0; i < count; i++) {
       const x = x0 + pos.getX(i) + CHUNK / 2;
@@ -241,10 +243,6 @@ export class TerrainRenderer {
       // chunk borders cannot shift the grain.
       uv.setXY(i, x / 2.6, z / 2.6);
       out.i = i;
-      this.fillVertex(x, z, h, out);
-      colors[i * 3] = out.r;
-      colors[i * 3 + 1] = out.g;
-      colors[i * 3 + 2] = out.b;
       // Analytic normals from the height function itself: identical
       // on both sides of every chunk border by construction.
       const nx = terrainHeight(x - E, z, this.cfg) - terrainHeight(x + E, z, this.cfg);
@@ -253,11 +251,16 @@ export class TerrainRenderer {
       normals[i * 3] = nx * inv;
       normals[i * 3 + 1] = 2 * E * inv;
       normals[i * 3 + 2] = nz * inv;
+      out.ny = normals[i * 3 + 1];
+      this.fillVertex(x, z, h, out);
+      colors[i * 3] = out.r;
+      colors[i * 3 + 1] = out.g;
+      colors[i * 3 + 2] = out.b;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geo.setAttribute('splat', new THREE.BufferAttribute(splat, 4));
     geo.setAttribute('splat2', new THREE.BufferAttribute(splat2, 4));
-    geo.setAttribute('splat3', new THREE.BufferAttribute(splat3, 2));
+    geo.setAttribute('splat3', new THREE.BufferAttribute(splat3, 3));
     geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
     const mesh = new THREE.Mesh(geo, this.terrainMaterial);
     mesh.receiveShadow = true;
@@ -277,7 +280,7 @@ export class TerrainRenderer {
 
   private fillVertex(
     x: number, z: number, h: number,
-    out: { r: number; g: number; b: number; s: Float32Array; s2: Float32Array; s3: Float32Array; i: number },
+    out: { r: number; g: number; b: number; s: Float32Array; s2: Float32Array; s3: Float32Array; i: number; ny: number },
   ): void {
     const i = out.i;
     const tmp = this.cTmp;
@@ -374,8 +377,16 @@ export class TerrainRenderer {
     // (weights computed above, before the colour write)
     const cobbleW = cobbleWPre * aboveWater;
     const s3 = out.s3;
-    s3[i * 2] = cobbleW;
-    s3[i * 2 + 1] = clamp(wTown * 0.85 * (1 - cobbleW), 0, 0.96) * aboveWater;
+    s3[i * 3] = cobbleW;
+    s3[i * 3 + 1] = clamp(wTown * 0.85 * (1 - cobbleW), 0, 0.96) * aboveWater;
+    // Scree (round 21): rubble ground on steep slopes, driven by
+    // the analytic normal — the same slope the rock vertex colour
+    // reads, so scree appears exactly where the mountain bares
+    // rock. Suppressed under snowfields and the town tiles.
+    s3[i * 3 + 2] = this.hasScree
+      ? clamp(smoothstep(0.945, 0.845, out.ny) * 1.05, 0, 0.95) *
+        aboveWater * (1 - wSnow * 0.85) * (1 - wVol * 0.85) * (1 - clamp(cobbleW, 0, 1))
+      : 0;
   }
 
   private buildTerrainMaterial(
@@ -417,11 +428,12 @@ export class TerrainRenderer {
         shader.uniforms.uGroundDesert = { value: desert };
         shader.uniforms.uGroundSandWet = { value: sandWet };
         shader.uniforms.uGroundCobble = { value: cobble };
+        shader.uniforms.uGroundScree = { value: gt.scree ?? dirtPlain };
         shader.uniforms.uGroundDirt = { value: dirtPlain };
         shader.vertexShader = shader.vertexShader
           .replace(
             '#include <common>',
-            '#include <common>\nattribute vec4 splat;\nattribute vec4 splat2;\nattribute vec2 splat3;\nvarying vec4 vSplat;\nvarying vec4 vSplat2;\nvarying vec2 vSplat3;\nvarying vec2 vWPos;',
+            '#include <common>\nattribute vec4 splat;\nattribute vec4 splat2;\nattribute vec3 splat3;\nvarying vec4 vSplat;\nvarying vec4 vSplat2;\nvarying vec3 vSplat3;\nvarying vec2 vWPos;',
           )
           .replace(
             '#include <begin_vertex>',
@@ -441,10 +453,11 @@ export class TerrainRenderer {
               'uniform sampler2D uGroundDesert;',
               'uniform sampler2D uGroundSandWet;',
               'uniform sampler2D uGroundCobble;',
+              'uniform sampler2D uGroundScree;',
               'uniform sampler2D uGroundDirt;',
               'varying vec4 vSplat;',
               'varying vec4 vSplat2;',
-              'varying vec2 vSplat3;',
+              'varying vec3 vSplat3;',
               'varying vec2 vWPos;',
             ].join('\n'),
           )
@@ -463,6 +476,7 @@ export class TerrainRenderer {
               '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundDesert, vWPos / 8.0).rgb * tintF, vSplat2.z * 0.92);',
               '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSnow, vWPos / 7.0).rgb * tintF, vSplat2.y * 0.95);',
               '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSandWet, vWPos / 5.0).rgb * tintF, vSplat2.w * 0.9);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundScree, vWPos / 6.0).rgb * tintF, vSplat3.z * 0.94);',
               '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundDirt, vWPos / 6.0).rgb * tintF, vSplat3.y * 0.92);',
               '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundCobble, vWPos / 4.5).rgb * tintF, vSplat3.x * 0.94);',
               '}',

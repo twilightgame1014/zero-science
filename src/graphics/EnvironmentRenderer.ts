@@ -101,6 +101,8 @@ function addInstanceFade(target: WindMaterial | THREE.Material): void {
  */
 export class EnvironmentRenderer {
   readonly group = new THREE.Group();
+  private envTex: Record<string, THREE.Texture> = {};
+  private quality: QualityTier = 'high';
   private cfg: GraphicsConfig;
   private windMaterials: WindMaterial[] = [];
   private pollen: THREE.Points | null = null;
@@ -195,9 +197,12 @@ export class EnvironmentRenderer {
     gpt: Record<string, THREE.Texture> = {},
     decor: DecorOptions = {},
     branch: Record<string, THREE.Texture> = {},
+    envTex: Record<string, THREE.Texture> = {},
   ) {
     this.cfg = cfg;
     this.gpt = gpt;
+    this.envTex = envTex;
+    this.quality = quality;
     this.branch = branch;
     this.rng = mulberry32(cfg.world.seed);
     const scale = quality === 'high' ? 1 : 0.5;
@@ -1371,6 +1376,11 @@ export class EnvironmentRenderer {
       drop,
       particleTexture,
       seed: 20261107,
+      streakTexture: this.envTex['streaks'] ?? null,
+      foamRingTexture: this.envTex['foamRing1'] ?? null,
+      foamClusterTexture: this.envTex['foamCluster1'] ?? null,
+      mossTextures: ['moss1', 'moss2'].map((k) => this.envTex[k]).filter(Boolean) as THREE.Texture[],
+      detail: this.quality === 'low' ? 'low' : 'high',
     });
     kit.group.position.set(base.x, baseY, base.z);
     kit.group.rotation.y = Math.atan2(dir.x, dir.z);

@@ -59,6 +59,8 @@ const FALL_FRAG = /* glsl */ `
   uniform float uOpacity;
   uniform vec3 uTop;
   uniform vec3 uBottom;
+  uniform sampler2D uStreaks;
+  uniform float uUseTex;
   varying vec2 vUv;
   void main() {
     float streaks = sin(vUv.x * 26.0 + sin(vUv.y * 3.0 - uTime * 2.4) * 1.5
@@ -66,16 +68,25 @@ const FALL_FRAG = /* glsl */ `
     float scroll = sin((vUv.y - uTime * 1.5) * 6.2831) * 0.5 + 0.5;
     vec3 col = mix(uTop, uBottom, clamp(vUv.y / max(uLen, 0.001), 0.0, 1.0))
              + streaks * 0.10 + scroll * 0.05;
+    // GPT streak art (round 21): one texture tile spans 2.2 m of
+    // fall and scrolls at the same 1.5 m/s as the procedural
+    // bands, so pattern size and flow speed stay height-
+    // independent. Where the art is transparent the sheet dims,
+    // which breaks the fall into separate water columns.
+    vec4 tx = texture2D(uStreaks, vec2(vUv.x, (vUv.y * 1.35 - uTime * 1.5) / 2.2));
+    col = mix(col, tx.rgb, tx.a * 0.55 * uUseTex);
     float foam = smoothstep(1.1, 0.2, uLen - vUv.y);
     col = mix(col, vec3(1.0), foam * 0.8);
     float edge = smoothstep(0.0, 0.16, vUv.x) * smoothstep(1.0, 0.84, vUv.x);
     float head = smoothstep(0.0, 0.35, vUv.y);
-    float alpha = (0.66 + streaks * 0.22 + foam * 0.3) * edge * head * uOpacity;
+    float texDim = mix(1.0, 0.5 + tx.a * 0.8, uUseTex);
+    float alpha = (0.66 + streaks * 0.22 + foam * 0.3) * edge * head * uOpacity * texDim;
     gl_FragColor = vec4(col, alpha);
   }
 `;
 
-function fallMaterial(len: number, opacity: number, top: number, bottom: number) {
+function fallMaterial(len: number, opacity: number, top: number, bottom: number,
+  streaks?: THREE.Texture | null) {
   return new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
@@ -86,6 +97,8 @@ function fallMaterial(len: number, opacity: number, top: number, bottom: number)
       uOpacity: { value: opacity },
       uTop: { value: new THREE.Color(top) },
       uBottom: { value: new THREE.Color(bottom) },
+      uStreaks: { value: streaks ?? null },
+      uUseTex: { value: streaks ? 1 : 0 },
     },
     vertexShader: FALL_VERT,
     fragmentShader: FALL_FRAG,
@@ -124,12 +137,20 @@ export function createWaterfallKit(opts: {
   drop: number;
   particleTexture: THREE.Texture;
   seed?: number;
+  /** GPT art (round 21, assets/gpt-env). All optional — the kit
+   *  falls back to its procedural art when absent. */
+  streakTexture?: THREE.Texture | null;
+  foamRingTexture?: THREE.Texture | null;
+  foamClusterTexture?: THREE.Texture | null;
+  mossTextures?: THREE.Texture[];
+  detail?: 'high' | 'low';
 }): WaterfallKit {
   const { width, drop } = opts;
   const rng = mulberry32(opts.seed ?? 777);
   const am = new AssetManager();
-  const foamRingTex = am.createFoamTexture('ring');
+  const foamRingTex = opts.foamRingTexture ?? am.createFoamTexture('ring');
   const foamClusterTex = am.createFoamTexture('cluster');
+  const detail = opts.detail ?? 'high';
 
   const group = new THREE.Group();
   group.name = 'Waterfall';
@@ -230,7 +251,7 @@ export function createWaterfallKit(opts: {
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     geo.setIndex(indices);
     geo.computeVertexNormals();
-    const mat = fallMaterial(fallLen / 1.35, opacity, top, bottom);
+    const mat = fallMaterial(fallLen / 1.35, opacity, top, bottom, opts.streakTexture);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.name = name;
     mesh.renderOrder = 3;
@@ -275,6 +296,50 @@ export function createWaterfallKit(opts: {
   foam.renderOrder = 4;
   foam.name = 'WF_Foam';
   group.add(foam);
+
+  /* ---- WF_FoamCluster: GPT foam accent at the plunge ---- */
+  let foamClusterMat: THREE.MeshBasicMaterial | null = null;
+  let foamCluster: THREE.Mesh | null = null;
+  if (opts.foamClusterTexture && detail !== 'low') {
+    foamClusterMat = new THREE.MeshBasicMaterial({
+      map: opts.foamClusterTexture, transparent: true, opacity: 0.85, depthWrite: false,
+    });
+    foamCluster = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.95, width * 0.5), foamClusterMat);
+    foamCluster.rotation.x = -Math.PI / 2;
+    foamCluster.rotation.z = 0.4;
+    foamCluster.position.set(0.08, 0.115, 0.36);
+    foamCluster.renderOrder = 4;
+    foamCluster.name = 'WF_FoamCluster';
+    group.add(foamCluster);
+  }
+
+  /* ---- WF_Moss: GPT moss decals hugging the lip rocks ---- */
+  if (opts.mossTextures && opts.mossTextures.length > 0 && detail !== 'low') {
+    const spots: Array<{ x: number; y: number; z: number; tilt: number }> = [
+      { x: -width * 0.72, y: drop + 0.38, z: -0.52, tilt: 0.18 },
+      { x: width * 0.74, y: drop + 0.32, z: -0.44, tilt: -0.14 },
+    ];
+    spots.forEach((sp, i) => {
+      const geo = new THREE.PlaneGeometry(0.85, 0.62, 4, 4);
+      const pp = geo.attributes.position as THREE.BufferAttribute;
+      for (let vi = 0; vi < pp.count; vi++) {
+        const px = pp.getX(vi) / 0.85;
+        const py = pp.getY(vi) / 0.62;
+        pp.setZ(vi, 0.05 * Math.max(0, 1 - (px * px + py * py)));
+      }
+      geo.computeVertexNormals();
+      const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+        map: opts.mossTextures![i % opts.mossTextures!.length],
+        transparent: true, alphaTest: 0.06, roughness: 1,
+        polygonOffset: true, polygonOffsetFactor: -2, side: THREE.DoubleSide,
+      }));
+      m.rotation.x = -Math.PI / 2 + sp.tilt;
+      m.rotation.z = i * 1.9 + 0.5;
+      m.position.set(sp.x, sp.y, sp.z);
+      m.name = 'WF_Moss';
+      group.add(m);
+    });
+  }
 
   /* ---- WF_Downstream ---- */
   const downstream = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.8, 2.6), softWater());
@@ -336,6 +401,13 @@ export function createWaterfallKit(opts: {
     const pulse = 1 + Math.sin(time * 2.2) * 0.05 + Math.sin(time * 5.7) * 0.02;
     foam.scale.setScalar(pulse);
     foamMat.opacity = 0.78 + Math.sin(time * 3.1) * 0.14;
+    if (foamCluster && foamClusterMat) {
+      // offset phase from the ring so the two foam layers never
+      // pulse in lockstep (round-21 spec §7)
+      foamCluster.scale.setScalar(1 + Math.sin(time * 2.2 + 1.7) * 0.06);
+      foamCluster.rotation.z = 0.4 + Math.sin(time * 0.4) * 0.2;
+      foamClusterMat.opacity = 0.7 + Math.sin(time * 3.1 + 1.3) * 0.15;
+    }
     mistMat.opacity = 0.11 + Math.sin(time * 0.7) * 0.035;
     mist.rotation.y = Math.sin(time * 0.23) * 0.16;
     const arr = sGeo.attributes.position as THREE.BufferAttribute;

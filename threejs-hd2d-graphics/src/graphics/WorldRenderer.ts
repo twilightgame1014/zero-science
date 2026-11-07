@@ -24,6 +24,7 @@ export class WorldRenderer {
       branch?: Record<string, THREE.Texture>;
       ground?: Record<string, THREE.Texture>;
       lava?: { albedo?: THREE.Texture; emissive?: THREE.Texture };
+      env?: Record<string, THREE.Texture>;
       detailBrightness?: number;
       decor?: DecorOptions;
     },
@@ -37,7 +38,7 @@ export class WorldRenderer {
       textures.ground,
       textures.lava,
     );
-    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, textures.decor ?? {}, textures.branch ?? {});
+    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, textures.decor ?? {}, textures.branch ?? {}, textures.env ?? {});
     this.group.add(this.terrain.group);
     this.group.add(this.environment.group);
   }
