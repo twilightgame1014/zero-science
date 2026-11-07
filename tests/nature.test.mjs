@@ -202,5 +202,26 @@ ok('最初の目標（木の枝）と2番目（丸い石・火打ち石）を新
   for (const f of ['ui.js', 'engine.js', 'data.js', 'nature.js']) { try { new vm.Script(fs.readFileSync(new URL('../src/game/' + f, import.meta.url), 'utf8'), { filename: f }); } catch (e) { synErr += f + ': ' + e.message + ' '; } }
   ok('ゲームのスクリプトに構文エラーがない（ui.js・engine.js・data.js・nature.js）', !synErr, synErr);
 }
+
+/* ---------- 見た目の違い（Muse 第17ラウンド）と飾り・溶岩 ---------- */
+{
+  const S9 = E.newState(), cnt = k => W.objects.filter(o => (o.kind + ':' + o.variant) === k).length;
+  ok('見た目の違い（針葉樹・葦・乾いたやぶ・苔むした岩・ヤシ）が地形に合わせて付く', cnt('tree:conifer') >= 5 && cnt('grass:reed') >= 10 && cnt('bush:dry') >= 3 && cnt('rock:mossy') >= 1 && cnt('tree:palm') >= 1,
+    JSON.stringify({ c: cnt('tree:conifer'), r: cnt('grass:reed'), d: cnt('bush:dry'), m: cnt('rock:mossy'), p: cnt('tree:palm') }));
+  const conif = W.objects.find(o => o.variant === 'conifer'), reed = W.objects.find(o => o.variant === 'reed');
+  ok('見た目が違っても得られる素材は基本の種類と同じ（針葉樹→丸太、葦→草）。名前は見た目に合わせる', JSON.stringify(W.yieldsOf(conif)) === JSON.stringify(N.KINDS.tree.yields) && JSON.stringify(W.yieldsOf(reed)) === JSON.stringify(N.KINDS.grass.yields) && W.nameOf(conif) === '針葉樹' && W.nameOf(reed) === '葦の茂み');
+  const conifRiver = W.objects.filter(o => o.variant === 'conifer' && T.distanceToRiver(o.x, o.z, T.DEFAULT_CONFIG) < 5.6);
+  ok('葦は川岸だけ、針葉樹は川の中にない', W.objects.filter(o => o.variant === 'reed').every(o => T.distanceToRiver(o.x, o.z, T.DEFAULT_CONFIG) < 8.5) && conifRiver.length === 0);
+  const lavas = W.decos.filter(d => d.kind === 'lava'), lilies = W.decos.filter(d => d.kind === 'lily');
+  const vol = D.regions.find(r => r.id === 'volcano');
+  ok('溶岩は火山地帯の中にあり、通れない（固定の障害物）', lavas.length >= 3 && lavas.every(l => Math.hypot(l.x - vol.w.x, l.z - vol.w.z) < 9.5 && !W.free(SU, l.x, l.z) && W.statics.some(s => s.id === l.id && s.kind === 'lava')), lavas.length + '');
+  ok('溶岩の上・すぐそばに自然物はない', W.objects.every(o => lavas.every(l => Math.hypot(o.x - l.x, o.z - l.z) >= 0.8 * l.scale + o.r + 0.4 - 1e-6)));
+  ok('溶岩は採取できる物の一覧に入らない（見た目と通行止めだけ）', lavas.every(l => !W.byId.get(l.id)) && W.objects.every(o => o.kind !== 'lava'));
+  const lv = lavas[0], wbspec = { id: 't', type: 'workbench', footprint: { shape: 'rect', w: 2.2, d: 1.05 }, x: lv.x + 0.5, z: lv.z, rot: 0 };
+  ok('溶岩の上・すぐそばには建物を置けない（理由つき）', /溶岩/.test(W.checkPlacement(SU, wbspec, { player: { x: -200, z: -200 } }).reasons.join('/')));
+  ok('睡蓮は川の水面にあり（水位より低い所）、歩くのを妨げない', lilies.length >= 8 && lilies.every(l => T.terrainHeight(l.x, l.z, T.DEFAULT_CONFIG) < T.DEFAULT_CONFIG.world.waterLevel && T.distanceToRiver(l.x, l.z, T.DEFAULT_CONFIG) < 3.9 && W.free(S9, l.x, l.z)));
+  const W3b = N.create(D, E, env);
+  ok('見た目の違いと飾りは毎回同じ（位置から決める）', JSON.stringify(W3b.decos) === JSON.stringify(W.decos) && W3b.objects.every((o, i) => o.id === W.objects[i].id && o.variant === W.objects[i].variant));
+}
 console.log(`\n${total - fail}/${total} 合格`);
 process.exit(fail ? 1 : 0);

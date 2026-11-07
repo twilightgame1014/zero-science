@@ -41,6 +41,12 @@ var NATURE = (function(){
   const VARIANTS = {
     "pebble:flint": {name:"火打ち石", icon:"🔪", yields:{flint:1}},
     "rock:basalt":  {name:"黒い岩（玄武岩）", yields:{basalt:1, cobble:1}},
+    /* 見た目だけが違う仲間（得られる素材は基本の種類と同じ。Muse 第17ラウンドの見た目） */
+    "tree:conifer": {name:"針葉樹"},
+    "tree:palm":    {name:"ヤシの木"},
+    "rock:mossy":   {name:"苔むした岩"},
+    "grass:reed":   {name:"葦の茂み"},
+    "bush:dry":     {name:"乾いたやぶ"},
   };
 
   /* 地域の採取地点の姿（描画モジュールの資源タイプ）と、当たり判定の半径（0 は歩行を妨げない）。
@@ -154,6 +160,9 @@ var NATURE = (function(){
        置かない所：川の中と岸のすぐそば・急な斜面・拠点の台地（壁になる物）・拠点から各地域への通り道（壁になる物）・採取地点のそば
        ※第1層は「水位＋0.15 より低い土地」に置かなかったが、そこは川の外では乾いた低地（描画も土色）で、マップの約半分あった。
          第2層では低地にも置く（湿った低地は木を減らし、草むら・やぶを多めにする） */
+    /* 川の中心の x（地形関数に riverCenterX があれば使う。なければ距離が最小の所を探す） */
+    const riverX = z=>{ if(T.riverCenterX) return T.riverCenterX(z);
+      let best=0, bd=1e9; for(let x=-60;x<=60;x+=0.5){ const d=T.distanceToRiver(x,z); if(d<bd){ bd=d; best=x; } } return best; };
     const L2 = mulberry32(SEED + 101);
     const vhash = (i,j,k)=>{ let h = (i*374761393 + j*668265263 + k*1442695041) | 0; h = (h ^ (h>>>13)) * 1274126177 | 0; return ((h ^ (h>>>16)) >>> 0) / 4294967296; };
     const vnoise = (x,z,cell,k)=>{ const fx=x/cell, fz=z/cell, i=Math.floor(fx), j=Math.floor(fz), u=smooth(0,1,fx-i), v=smooth(0,1,fz-j);
@@ -215,11 +224,39 @@ var NATURE = (function(){
     for(let i=0; i<6000 && L2N.twig<Math.round(trees2.length*0.45); i++){ const t=trees2[Math.floor(L2()*trees2.length)]; const a=L2()*Math.PI*2, d=t.r+0.9+L2()*1.8;
       const x=t.x+Math.cos(a)*d, z=t.z+Math.sin(a)*d; if(fits2("twig",x,z,1) && add("twig",x,z,1,null,L2)) L2N.twig++; }
 
+    /* ---------- 見た目の違い（2026-11-07、Muse 第17ラウンド） ----------
+       生成のあとで、場所から決める（乱数を使わない）ので、位置・ID・セーブの状態は変わらない。得られる素材も同じ。
+       高地・山岳の木は針葉樹、海辺の木はヤシ、川岸の草むらは葦、火山・高地のやぶは乾いたやぶ、森の岩は苔むした岩。 */
+    objs.forEach(o=>{ if(o.variant) return;
+      const hl=highland(o.x,o.z), h01=vhash(Math.round(o.x*10), Math.round(o.z*10), 77);
+      if(o.kind==="tree"){ if(hl>0.35 || near(o.x,o.z,mw.x,mw.z) < 16) o.variant="conifer"; else if(coastal(o.x,o.z) > 0.45) o.variant="palm"; }
+      else if(o.kind==="grass"){ if(T.distanceToRiver(o.x,o.z) < 8.5) o.variant="reed"; }
+      else if(o.kind==="bush"){ if(volcanic(o.x,o.z) > 0.2 || hl > 0.5) o.variant="dry"; }
+      else if(o.kind==="rock"){ if(forestness(o.x,o.z) > 0.3 && h01 < 0.75) o.variant="mossy"; } });
+
+    /* ---------- 飾り（採れない・見た目だけ）と溶岩 ----------
+       睡蓮：川の水面（川の中心から 2.3〜3.5。描画が水面に浮かべる）。歩行は妨げない。
+       溶岩：火山地帯の中心のまわりに数か所。見た目は描画、通れない決まりはゲーム（固定の障害物にする。建物も置けない）。 */
+    const decos = [];
+    for(let k=0, n=0; k<400 && n<16; k++){ const z=-50+vhash(k,3,91)*100, side=vhash(k,5,92)<0.5?-1:1, off=2.3+vhash(k,7,93)*1.2;
+      const x = riverX(z) + side*off; if(!inWorld(x,z,3) || H(x,z) > wl-0.05) continue;
+      if(decos.some(d=>Math.hypot(d.x-x,d.z-z) < 5)) continue;
+      decos.push({id:"lily:"+Math.round(x*10)+","+Math.round(z*10), kind:"lily", type:"lily", x:+x.toFixed(2), z:+z.toFixed(2), rot:+(vhash(k,9,94)*6.28).toFixed(3), scale:+(0.8+vhash(k,11,95)*0.5).toFixed(2)}); n++; }
+    const lavas = [];
+    for(let k=0, n=0; k<200 && n<7; k++){ const a=vhash(k,13,96)*Math.PI*2, d=2.5+vhash(k,15,97)*6, x=vw.x+Math.cos(a)*d, z=vw.z+Math.sin(a)*d, sc=1.1+vhash(k,17,98)*0.9;
+      if(deps.some(p=>near(x,z,p.x,p.z) < 0.8*sc+2.0) || lavas.some(l=>near(x,z,l.x,l.z) < 0.8*(sc+l.scale)+1.6)) continue;
+      lavas.push({id:"lava:"+Math.round(x*10)+","+Math.round(z*10), kind:"lava", type:"lava", x:+x.toFixed(2), z:+z.toFixed(2), rot:+(vhash(k,19,99)*6.28).toFixed(3), scale:+sc.toFixed(2)}); n++; }
+    /* 溶岩の上の自然物は取り除く（生成のあとで外すので、ほかの ID は変わらない） */
+    for(let i=objs.length-1;i>=0;i--){ const o=objs[i]; if(lavas.some(l=>near(o.x,o.z,l.x,l.z) < 0.8*l.scale+o.r+0.4)) objs.splice(i,1); }
+    lavas.forEach(l=>decos.push(l));
+
     const byId = new Map(objs.map(o=>[o.id,o]));
     /* 地域の採取地点のうち、木・岩・鉱石の姿のものは固定の障害物（見た目の幹・占有範囲に合わせる） */
     const statics = [];
     D.regions.forEach(r=>{ if(r.w) r.res.forEach(res=>{ const sh=DEPOSIT_SHAPE[res.id]; if(!sh || !sh.r) return; const p=E.depositPos(r,res);
       statics.push({id:E.depositId(r.id,res.id), kind:"deposit", x:p.x, z:p.z, r:sh.r, block:true, static:true}); }); });
+    /* 溶岩は通れない（描画の占有 0.8×大きさ） */
+    decos.filter(d=>d.kind==="lava").forEach(d=>statics.push({id:d.id, kind:"lava", x:d.x, z:d.z, r:+(0.8*d.scale).toFixed(3), block:true, static:true}));
 
     /* ---------- 建物の当たり判定（2026-11-07） ----------
        建てた建物の占有形状（Muse の structures.json の footprint。円 {r} か矩形 {w,d}。屋根・煙突・炎は含まない）を
@@ -276,7 +313,8 @@ var NATURE = (function(){
         if(pts.some(q=>sdist(o,q.x,q.z) < 0.5) || samples(o).some(q=>sdist(t,q.x,q.z) < 0.5)) { why.add("ほかの建物と重なる"); break; } }
       const near = around(t.x, t.z, t.r+2.5);
       if(near.some(o=>o.block && present(S,o,now) && sdist(t,o.x,o.z) < o.r+0.15)) why.add("木や岩と重なる（先に伐る・割るか、場所を変える）");
-      if(statics.some(o=>Math.abs(o.x-t.x)<t.r+3 && Math.abs(o.z-t.z)<t.r+3 && sdist(t,o.x,o.z) < o.r+0.3)) why.add("採取地点と重なる");
+      if(statics.some(o=>o.kind==="lava" && Math.abs(o.x-t.x)<t.r+5 && Math.abs(o.z-t.z)<t.r+5 && sdist(t,o.x,o.z) < o.r+1.0)) why.add("溶岩の上・すぐそばには置けない");
+      if(statics.some(o=>o.kind!=="lava" && Math.abs(o.x-t.x)<t.r+3 && Math.abs(o.z-t.z)<t.r+3 && sdist(t,o.x,o.z) < o.r+0.3)) why.add("採取地点と重なる");
       if(opts.player && sdist(t, opts.player.x, opts.player.z) < PLAYER_R+0.15) why.add("主人公と重なる（少し離れて置く）");
       (opts.npcs||[]).forEach(n=>{ if(sdist(t,n.x,n.z) < (n.r||PLAYER_R)+0.2) why.add("人と重なる"); });
       (opts.reserved||[]).forEach(r=>{ if(pts.some(q=>Math.hypot(q.x-r.x,q.z-r.z) < r.r) || sdist(t,r.x,r.z) < r.r) why.add(r.why||"ここには置けない"); });
@@ -496,7 +534,7 @@ var NATURE = (function(){
 
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
             free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids, layer2:L2N,
-            setStructures, structures:()=>structs.slice(), sdist, covered, checkPlacement, commitPlacement, removePlacement, toWorld};
+            setStructures, structures:()=>structs.slice(), sdist, covered, checkPlacement, commitPlacement, removePlacement, toWorld, decos};
   }
   return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, SITES, FORMER_STONEWORK};
 })();

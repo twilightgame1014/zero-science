@@ -722,7 +722,8 @@ function syncNode(n, force){
 /* ---------- フィールドの自然物（正本は nature.js。描画には状態だけを渡す） ---------- */
 let WORLD = null;
 function world(){
-  if(!WORLD && window.TERRAIN && window.NATURE) WORLD = NATURE.create(D, E, {terrainHeight:TERRAIN.terrainHeight, distanceToRiver:TERRAIN.distanceToRiver, cfg:TERRAIN.DEFAULT_CONFIG});
+  if(!WORLD && window.TERRAIN && window.NATURE) WORLD = NATURE.create(D, E, {terrainHeight:TERRAIN.terrainHeight, distanceToRiver:TERRAIN.distanceToRiver, cfg:TERRAIN.DEFAULT_CONFIG,
+    riverCenterX: TERRAIN.riverCenterX ? (z=>TERRAIN.riverCenterX(z, TERRAIN.DEFAULT_CONFIG)) : null});
   return WORLD;
 }
 /* 描画モジュールの資源タイプ（INTEGRATION.md §13）。落ち枝は branch、小石は pebble。
@@ -756,7 +757,12 @@ function syncNature(force){
     if(!force && shown.has(o.id) && W3.visSig[o.id]===sig) return;
     W3.visSig[o.id]=sig; shown.add(o.id); W3.gfx.updateResourceVisual(o.id, v);
   });
-  [...shown].forEach(id=>{ if(!seen.has(id)){ const o=WORLD.byId.get(id); if(o) hide(o); else shown.delete(id); } });
+  /* 飾り（睡蓮・溶岩）：採れない・選べない。画面に入るものだけ描く */
+  (WORLD.decos||[]).forEach(d=>{ if(Math.abs(d.x-W3.pos.x)>NAT_HIDE_R || Math.abs(d.z-W3.pos.z)>NAT_HIDE_R) return;
+    const inView = onScreenish(d.x, d.z, 0.2, shown.has(d.id) ? 0.45 : 0.22); seen.add(d.id);
+    if(!inView){ if(shown.has(d.id)){ W3.gfx.updateResourceVisual(d.id, null); shown.delete(d.id); } return; }
+    if(!shown.has(d.id)){ W3.gfx.updateResourceVisual(d.id, {position:{x:d.x, z:d.z}, type:d.type, rotationY:d.rot, scale:d.scale, visible:true}); shown.add(d.id); } });
+  [...shown].forEach(id=>{ if(!seen.has(id)){ const o=WORLD.byId.get(id); if(o) hide(o); else { W3.gfx.updateResourceVisual(id, null); shown.delete(id); } } });
 }
 /* 文明の段階に合わせて拠点の建物が増えていく（フィールドの進化） */
 /* 拠点の建物：プレイヤーが工作で作った設備（E.has＝所持）に1対1で対応させる。
