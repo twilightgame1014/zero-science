@@ -1,6 +1,7 @@
 # 広い世界（Muse ラウンド18の7エリア＋ゲームの山・滝・道）
 
-更新：2026-11-07（Claude）。ブランチ `feature/game-world-merge`（`feature/game-wide-world` に Muse の `feature/graphics-world-areas` 5da904a まで＝ラウンド18・19を統合）。
+更新：2026-11-08（Claude）。ブランチ `feature/game-round22`（`feature/game-world-merge` に Muse の `feature/graphics-variation-shores` 15cfa83＝ラウンド20〜22を統合）。
+以前：`feature/game-world-merge`（`feature/game-wide-world` に Muse の `feature/graphics-world-areas` 5da904a まで＝ラウンド18・19を統合）。
 `src/graphics` は Muse の原本とバイト一致（`threejs-hd2d-graphics/src/graphics` と同じ。変更していない）。
 オーナー決定（2026-11-07）：**Muse の7エリアを正にし、ゲームの山・滝・海岸をその中へ移す**。
 
@@ -45,12 +46,17 @@
 - **ワープ後の地面**：モジュールの区画は「12m 動いたとき・1回に2区画」しか作らないので、瞬間移動のあとは `W3.world.afterWarp` がモジュールの区画作りを数回まとめて呼ぶ。
 - 遠景の山（`BackdropMountains`）はラウンド18で外側（距離262以上）へ移ったので、表示に戻した。
 
+### 4.1 ラウンド22（2026-11-08）
+- **開水面プレーンは切らない**：Muse は `decor.openWater:false` を必須として依頼したが、その検証は統合前の世界で行われていた。統合後の世界では湖畔の湖・海・オアシスの水面はこのプレーンだけが描く。実WebGL で切ると3つとも消えることを確かめたので、切らずに、旧世界の低地の深さを0にする処理（上）を続ける（Muse への回答：handoff §20.1）。
+- 地形の高さの公開口 `config.world.heightAt` に `worldHeight` を渡す。ビルドの差し替え（terrain-shim）は残す：モジュールの `EnvironmentRenderer` がまだ `terrainHeight` を直接呼ぶため（handoff §20.2）。
+- 旧い滝は `decor.waterfall:false` で描かせない。瞬間移動のあとはモジュールの `prepareTerrainAt`（ない版は従来の区画作り）。
+
 ## 5. 検証（環境と結果）
 | 検証 | 環境 | 結果 |
 |---|---|---|
-| typecheck・build（14.5 MB） | Node 22 | 合格 |
+| typecheck・build（15.51 MB、ラウンド22後） | Node 22 | 合格 |
 | `npm test`：エンジン32・自然物64・広い世界45・検証18・アセット35・全物質到達 | Node 22 | 合格（9.44倍、旧世界の高さ差0、Muse の7エリア、旧世界の低地は水にしない、溶岩湖は歩けない・氷は歩ける、経路7区間の往復、崖・深い水で止まる、滝の水の高さ） |
-| `npm run e2e`（偽の描画モジュール） | Playwright Chromium | 180件 合格 |
+| `npm run e2e`（偽の描画モジュール） | Playwright Chromium | 182件 合格（ラウンド22後） |
 | 実WebGL の画面（滝・湖・海岸・火山・砂漠・凍った池・旧世界の低地・集落の人・建築の候補） | ヘッドレス Chromium＋SwiftShader 1366×768 | §6 の未解決以外は破綻なし |
 | 実WebGL で経路を歩く | 同上（低品質） | 下の §5.1 |
 
@@ -71,6 +77,7 @@
 ## 6. 未対応・未検証・Muse への依頼
 - 未検証：実機（スマホ・PC の GPU）の見た目と FPS、iPhone Safari、実機のメモリの推移。
 - SwiftShader では、ラウンド18の統合後は 960×540 で毎秒1.5〜2コマ（統合前のゲームは数コマ）。実機の速さは未計測。
-- 火山の斜面はエリアの環境を渡しても、とても暗く見える（SwiftShader）。
+- 火山の斜面はエリアの環境を渡しても、とても暗く見える（SwiftShader）。ラウンド22の増光後も平均輝度56（拠点75）。
+- 実WebGL での経路の歩き直しは、ラウンド22の取り込み後は未実施（地形の高さは変わっていないので、§5.1 はラウンド18統合時の結果）。
 - ラウンド19（DQ3 の GLB 21点）は、発展した街の素材なので原始の開始には置かない。軽量版の生成とゲームへの組み込みは未着手（解放の条件はオーナーと相談）。
 - Muse への依頼：`docs/handoff/CLAUDE-TO-MUSE-2026-11-06.md` §19。

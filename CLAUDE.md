@@ -88,9 +88,11 @@
   崖（`WALK_SLOPE` 0.85 超）・深い水（`WADE_DEPTH` 0.55 超。本流は歩いて渡れる）・火口の溶岩湖は `nature.js` の `terrainBlocked` で止める。凍った池（氷）は歩ける。旧世界（±60）の水位より低い乾いた低地は水にしない（以前どおり）。
   新しい陸地の自然物は第3層（32マスの区画ごとに近づいたら作る。順番に依らず同じ位置・ID）。密度は Muse のエリアの重み（`TERRAIN.areasAt`）。火口のまわり±10 には置かない。
   描画：外側の地形はモジュールの区画。ゲームは `src/world/render.ts` で本流の続き・山の池・滝・滝つぼ・山の川を描き、モジュールの旧い `Waterfall` を隠し、全面の水面 `OpenWater` の深さを旧世界の中だけ0にする。シェーダーは色・不透明度を 0〜1 に収める（範囲外の値が後処理で画面に広がるため）。
-  Muse の API：NPC は `setNpcVisualState`（絵は最初の1回だけ渡す）、建築の候補は `setStructurePreview`、エリアの環境は `setEnvironment({weights})`（0.5秒ごと）。瞬間移動のあとは `W3.world.afterWarp`。
+  Muse の API：NPC は `setNpcVisualState`（絵は最初の1回だけ渡す）、建築の候補は `setStructurePreview`、エリアの環境は `setEnvironment({weights})`（0.5秒ごと）。瞬間移動のあとは `W3.world.afterWarp`（中でモジュールの `prepareTerrainAt`）。
+  ラウンド22（2026-11-08）：`config.world.heightAt` に `worldHeight` を渡す（terrain-shim も残す。モジュールの EnvironmentRenderer が直接 terrainHeight を呼ぶため）。旧い滝は `decor.waterfall:false`。
+  **`decor.openWater` は渡さない**：統合後の世界では湖・海・オアシスの水面はモジュールの開水面プレーンだけが描く（切ると消える。実WebGL で確認）。旧世界の低地は `render.ts` が深さ0にする。
   セーブ v4（`worldVer`。今の地形の版は3。古い版なら位置を確かめて安全な所へ）。地図（世界タブ）・地名・「拠点へ瞬間移動」・斜面でカメラの角度を一時的に上げる処理（`camClearance`）。
-- Muse への依頼の続き：`docs/handoff/CLAUDE-TO-MUSE-2026-11-06.md` §19。ラウンド19（DQ3 の GLB）は発展した街の素材なので原始の開始には置かない（未組み込み）。オーナー決定（2026-11-07）：描画は Muse、ゲーム側は Claude で分担。
+- Muse への依頼の続き：`docs/handoff/CLAUDE-TO-MUSE-2026-11-06.md` §19・§20。ラウンド19（DQ3 の GLB）は発展した街の素材なので原始の開始には置かない（未組み込み）。オーナー決定（2026-11-07）：描画は Muse、ゲーム側は Claude で分担。
 
 ## 開始時の景観と文明の痕跡（2026-11-06〜）
 - 開始時のフィールドは手つかずの自然。人工物（石の階段・石積みの壁・舗装・柵・橋・建物など）を初期配置しない。「遺跡」などの理由を付けて残さない。
