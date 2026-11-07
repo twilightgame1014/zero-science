@@ -15,6 +15,11 @@
 ## 設計のルール（厳守）
 1. **データとロジックと画面を分ける。** 科学データは `src/game/data.js`、判定は `src/game/engine.js`、フィールドの自然物（生成・当たり判定・経路・採取）は `src/game/nature.js`、表示と入力は `src/game/ui.js`。実験や採取の判定を UI の中に書かない。
 2. **描画モジュール `src/graphics/` は改変しない。** 担当は Muse（グラフィック側）。必要な機能はメモにまとめてユーザー経由で Muse に依頼する。
+   - **役割分担（2026-11-07 オーナー決定）**：Claude＝総合編集（コード全体の最終編集と統合、ゲームロジック・地形と地域の生成・区画・移動・採取・建築・NPC・当たり判定と経路・保存と移行）。Muse＝グラフィック主担当（モデル・UV・材質・LOD・植物・水・滝・溶岩の見た目・配置の情報・表示の確認）。GPT＝ゲームディレクター・素材原画。
+   - Muse は自分のグラフィックを導入するのに必要な範囲で、ゲーム側のコードを直接編集してよい（Claude のレビューと最終統合を通す）。進行・セーブ形式・システム仕様の変更は仕様として分ける。
+   - 破綻防止：1作業1ブランチ（土台は相手の最新の「完了済み」ブランチ先端。作業中のブランチには乗らない。main へ直接 push しない）。Muse がゲーム側のファイルに触れるときは `threejs-hd2d-graphics/HANDOFF-TO-CLAUDE.md` の冒頭に対象ファイルを宣言し、その作業が終わるまで Claude はそのファイルを書き換えない（逆も同じ）。
+     共有の契約ファイル（`terrainHeight`・`src/world/shape.ts`・`DEFAULT_AREAS`・`src/graphics/types.ts`・`src/terrain-entry.ts`・セーブ形式の `engine.js`）は一度に一人だけが編集し、地形を変えるときは既存範囲の高さの差 0 の数値検証を付ける。
+     統合は小さく分け、npm test・typecheck・build・e2e の結果を正直に書く（やっていない確認は「未確認」）。衝突したら黙って書き換えず、ハンドオフ文書で指摘する（最終判断は Claude とオーナー）。
    - モジュールは描画専用。座標・採取状態・建物・進行の正本はゲーム側。結果だけを `setPlayerVisualState` / `updateResourceVisual` / `addStructureVisual` / `playVisualEffect` で渡す。
    - API の正本は `src/graphics/types.ts`、連携仕様は `docs/handoff/INTEGRATION.md`。
    - `threejs-hd2d-graphics/`・`references/`・`assets/lab-stages*/` は Muse から受け取った素材（原本）。ゲームのビルドでは使わず、参照用として改変しない。
