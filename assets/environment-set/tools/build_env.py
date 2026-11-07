@@ -18,6 +18,7 @@ BTEX = os.path.join(BASE, 'buildings-3d', 'textures')
 DQ3G = os.path.join(BASE, 'gpt-dq3', 'ground')
 DQ3S = os.path.join(BASE, 'gpt-dq3', 'sprays')
 EXPS = os.path.join(BASE, 'gpt-expansion', 'sprays')
+ENVT = os.path.join(BASE, 'gpt-env')
 os.makedirs(MODELS, exist_ok=True)
 
 REGISTRY = []   # metadata entries (§6)
@@ -33,7 +34,7 @@ def wipe():
 def _img(path):
     return bpy.data.images.load(path, check_existing=True)
 
-def mat_tex(name, albedo, tint=(1, 1, 1, 1), rough=0.95, vcol=False):
+def mat_tex(name, albedo, tint=(1, 1, 1, 1), rough=0.95, vcol=False, normal=None):
     m = bpy.data.materials.get(name)
     if m:
         return m
@@ -62,6 +63,15 @@ def mat_tex(name, albedo, tint=(1, 1, 1, 1), rough=0.95, vcol=False):
         m.node_tree.links.new(mix.outputs['Color'], bsdf.inputs['Base Color'])
     else:
         m.node_tree.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
+    if normal:
+        ntex = m.node_tree.nodes.new('ShaderNodeTexImage')
+        ntex.image = _img(normal)
+        ntex.image.colorspace_settings.name = 'Non-Color'
+        ntex.extension = 'REPEAT'
+        nmap = m.node_tree.nodes.new('ShaderNodeNormalMap')
+        nmap.inputs['Strength'].default_value = 0.85
+        m.node_tree.links.new(ntex.outputs['Color'], nmap.inputs['Color'])
+        m.node_tree.links.new(nmap.outputs['Normal'], bsdf.inputs['Normal'])
     return m
 
 def mat_color(name, rgba, rough=0.95):
@@ -76,13 +86,13 @@ def mat_color(name, rgba, rough=0.95):
     bsdf.inputs['Metallic'].default_value = 0.0
     return m
 
-def mat_alpha(name, path, clip=0.45):
+def mat_alpha(name, path, clip=0.45, blend=False):
     m = bpy.data.materials.get(name)
     if m:
         return m
     m = bpy.data.materials.new(name)
     m.use_nodes = True
-    m.blend_method = 'CLIP'
+    m.blend_method = 'BLEND' if blend else 'CLIP'
     bsdf = m.node_tree.nodes['Principled BSDF']
     bsdf.inputs['Roughness'].default_value = 0.9
     bsdf.inputs['Alpha'].default_value = 1.0
@@ -97,7 +107,8 @@ def mat_alpha(name, path, clip=0.45):
 BARK = lambda: mat_tex('envBark', os.path.join(BTEX, 'bark.png'))
 ROCKM = lambda: mat_tex('envRock', os.path.join(BTEX, 'stone.png'), tint=(0.8, 0.8, 0.84, 1))
 ROCKVC = lambda: mat_tex('envRockVC', os.path.join(BTEX, 'stone.png'), vcol=True)
-CLIFFM = lambda: mat_tex('envCliff', os.path.join(DQ3G, 'stone-wall.png'), tint=(0.72, 0.72, 0.74, 1))
+CLIFFM = lambda: mat_tex('envCliff', os.path.join(ENVT, 'cliff-face.png'),
+                         normal=os.path.join(ENVT, 'cliff-face_n.png'))
 EARTH = lambda: mat_tex('envEarth', os.path.join(BTEX, 'earth.png'))
 RINGS = lambda: mat_tex('envRings', os.path.join(DQ3G, 'rings.png'))
 LEAF = {
@@ -456,7 +467,7 @@ def build_cliff(tid, kind):
             if kind == 'top':
                 y += z * 0.15
             verts.append((x, y, z))
-            uvs.append(((x + W / 2) / 1.25, z / 1.25))
+            uvs.append(((x + W / 2) / 2.0, z / 2.0))
     for j in range(ROWS):
         for i in range(COLS):
             a = j * (COLS + 1) + i
@@ -480,6 +491,70 @@ def build_cliff(tid, kind):
     for p in o.data.polygons:
         p.use_smooth = False
     return [o]
+
+# ----------------------------------------------------------------
+# moss decals (round 21, gpt-env/moss)
+# ----------------------------------------------------------------
+
+MOSSM = {}
+def moss_mat(i):
+    if i not in MOSSM:
+        MOSSM[i] = mat_alpha(f'envMoss{i}', os.path.join(ENVT, 'moss', f'moss-{i}.png'),
+                             clip=0.05, blend=True)
+    return MOSSM[i]
+
+def build_moss_patch(name, w, seed):
+    rng = random.Random(seed)
+    N = 4
+    verts, faces, uvs = [], [], []
+    for iy in range(N + 1):
+        for ix in range(N + 1):
+            u, v = ix / N, iy / N
+            x = (u - 0.5) * w
+            y = (v - 0.5) * w * 0.74
+            r2 = ((u - 0.5) * 2) ** 2 + ((v - 0.5) * 2) ** 2
+            z = 0.055 * max(0.0, 1 - r2) + rng.uniform(-0.005, 0.005)
+            verts.append((x, y, z))
+            uvs.append((u, v))
+    for iy in range(N):
+        for ix in range(N):
+            a = iy * (N + 1) + ix
+            faces.append((a, a + 1, a + N + 2, a + N + 1))
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    uv = mesh.uv_layers.new(name='UVMap')
+    for li, loop in enumerate(mesh.loops):
+        uv.data[li].uv = uvs[loop.vertex_index]
+    o = new_obj(name, mesh)
+    o.data.materials.append(moss_mat(rng.randint(1, 6)))
+    return o
+
+def _top_z(obj, x, y, rad=0.55):
+    best = None
+    for v in obj.data.vertices:
+        co = v.co
+        if (co.x - x) ** 2 + (co.y - y) ** 2 <= rad * rad:
+            if best is None or co.z > best:
+                best = co.z
+    return best
+
+def moss_on_rock(rock, base_name, seed, count=2, w=1.05):
+    rng = random.Random(seed)
+    xs = [v.co.x for v in rock.data.vertices]
+    ys = [v.co.y for v in rock.data.vertices]
+    out = []
+    for k in range(count):
+        x = rng.uniform(min(xs) * 0.4, max(xs) * 0.4)
+        y = rng.uniform(min(ys) * 0.4, max(ys) * 0.4)
+        z = _top_z(rock, x, y)
+        if z is None:
+            continue
+        p = build_moss_patch(f'{base_name}-moss{k + 1}', w * rng.uniform(0.8, 1.25), seed + k * 7)
+        p.location = (x, y, z + 0.015)
+        p.rotation_euler = (rng.uniform(-0.22, 0.22), rng.uniform(-0.22, 0.22), rng.uniform(0, 6.28))
+        out.append(p)
+    return out
 
 # ----------------------------------------------------------------
 # coast smalls + waterfall frame
@@ -592,7 +667,10 @@ def main():
             m['clearanceM'] = round(r * 1.1, 2)
             m['collision'] = {'shape': 'circle', 'radius': round(r * 0.72, 2),
                               'height': round(r * 1.1, 2)}
-            export_model(tid, [o], m)
+            objs = [o]
+            if sz == 'l':
+                objs += moss_on_rock(o, tid, (hash(tid) & 0xffff) + 31)
+            export_model(tid, objs, m)
             if sz in ('m', 'l'):
                 o2 = fractured(tid, fam, r, hash(tid) & 0xffff)
                 o2.data.materials.append(ROCKM())
@@ -607,7 +685,7 @@ def main():
     for tid, fam, seed in [('rock-shore-1', 'round', 3131), ('rock-shore-2', 'sharp', 3232)]:
         o = fractured(tid, fam, 1.05, seed, vc_wet=0.34)
         o.data.materials.append(ROCKVC())
-        export_model(tid, [o],
+        export_model(tid, [o] + moss_on_rock(o, tid, seed + 77, count=1, w=0.9),
                      M(area=('coast', 'lakeside'), clearance=0.8, embed=0.2,
                        cond={'placement': 'shoreline', 'waterlineM': 0.34},
                        collision={'shape': 'circle', 'radius': 0.75, 'height': 1.0},
@@ -621,6 +699,7 @@ def main():
                  collision={'shape': 'box', 'size': [4.0, 1.2, 3.0]})
         export_model(tid, objs, meta)
         REGISTRY[-1]['lod'] = [{'level': 0, 'distance': [0, 120]}]
+        REGISTRY[-1]['material'] = 'gpt-env/cliff-face.png (tile 2 m) + cliff-face_n.png'
     # coast smalls
     export_model('pebble-cluster', build_pebbles(5151),
                  M(area=('coast', 'forest'), clearance=0.25, slope=45, align='terrain'))
@@ -688,6 +767,44 @@ def main():
          M(kind='runtime', area=('forest', 'mountain'), clearance=1.6,
            cond={'placement': 'terrain-step', 'dropM': [1.5, 14], 'widthM': [1.2, 3.5],
                  'anchors': 'assets/environment-set/waterfall.json'}))
+    decal = M(kind='decal', slope=60, align='surface', scale=(0.7, 1.5))
+    def decal_e(tid, file, size, area, cond=None):
+        e = dict(decal)
+        e['areas'] = list(area)
+        if cond:
+            e['conditions'] = cond
+        hand(tid, file, size, e)
+    for i in range(1, 7):
+        decal_e(f'moss-{i}', f'gpt-env/moss/moss-{i}.png', {'w': 1.1, 'h': 0.08, 'd': 0.8},
+                ('forest', 'mountain'), {'placement': 'on-rock-or-wood', 'moisture': 'high'})
+    wsp = M(kind='sprite', slope=10, align='surface')
+    def wsprite(tid, file, size, cond):
+        e = dict(wsp)
+        e['conditions'] = cond
+        hand(tid, file, size, e)
+    for i in range(1, 5):
+        wsprite(f'foam-cluster-{i}', f'gpt-env/foam/foam-cluster-{i}.png',
+                {'w': 1.6, 'h': 0.05, 'd': 0.8},
+                {'placement': 'water-surface', 'usage': 'rapids/plunge accents'})
+    for i in range(1, 3):
+        wsprite(f'foam-ring-{i}', f'gpt-env/foam/foam-ring-{i}.png',
+                {'w': 1.5, 'h': 0.05, 'd': 1.5},
+                {'placement': 'water-surface', 'usage': 'plunge foam / ripple rings'})
+    hand('shore-foam', 'gpt-env/shore-foam.png', {'w': 3, 'h': 0.04, 'd': 0.75},
+         M(kind='ribbon', area=('coast', 'lakeside'), slope=15, align='surface',
+           cond={'placement': 'shoreline-ribbon', 'tileM': 3,
+                 'uv': 'u = shoreline arc length / 3 m (world-anchored, chunk-continuous)',
+                 'phase': 'global clock'}))
+    hand('waterfall-streaks', 'gpt-env/waterfall-streaks.png', {'w': 2.2, 'h': 2.2, 'd': 0},
+         M(kind='texture', area=('forest', 'mountain'),
+           cond={'usage': 'WaterfallKit fall layers (bundled in envTextures)',
+                 'tileM': 2.2, 'scroll': '1.5 m/s downward, global clock phase'}))
+    hand('cliff-face-tex', 'gpt-env/cliff-face.png', {'w': 2, 'h': 0, 'd': 2},
+         M(kind='texture', area=('mountain',), slope=90,
+           cond={'tileM': 2, 'normal': 'gpt-env/cliff-face_n.png', 'usage': 'cliff-* models'}))
+    hand('ground-scree', 'gpt-env/ground-scree.png', {'w': 6, 'h': 0, 'd': 6},
+         M(kind='ground', area=('mountain', 'forest'), slope=90, align='terrain',
+           cond={'tileM': 6, 'splatChannel': 'splat3.z', 'patternCellM': 2, 'drawnRocksCm': '5-33'}))
     hand('ground-forest', 'gpt-expansion/ground/ground-forest.png',
          {'w': 7, 'h': 0, 'd': 7},
          M(kind='ground', area=('forest',), slope=90, align='terrain',

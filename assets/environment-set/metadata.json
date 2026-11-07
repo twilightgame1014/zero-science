@@ -625,9 +625,9 @@
    "assetId": "rock-s-blocky",
    "file": "environment-set/models/rock-s-blocky.glb",
    "sizeM": {
-    "w": 0.91,
-    "d": 0.99,
-    "h": 0.82
+    "w": 0.99,
+    "d": 0.98,
+    "h": 0.81
    },
    "triangles": 108
   },
@@ -678,9 +678,9 @@
    "assetId": "rock-m-blocky",
    "file": "environment-set/models/rock-m-blocky.glb",
    "sizeM": {
-    "w": 2.06,
-    "d": 2.13,
-    "h": 1.72
+    "w": 2.09,
+    "d": 2.15,
+    "h": 1.71
    },
    "triangles": 108
   },
@@ -731,11 +731,11 @@
    "assetId": "rock-l-blocky",
    "file": "environment-set/models/rock-l-blocky.glb",
    "sizeM": {
-    "w": 3.73,
-    "d": 3.52,
-    "h": 2.94
+    "w": 3.72,
+    "d": 3.67,
+    "h": 3.2
    },
-   "triangles": 108
+   "triangles": 172
   },
   {
    "kind": "model",
@@ -784,9 +784,9 @@
    "assetId": "rock-s-round",
    "file": "environment-set/models/rock-s-round.glb",
    "sizeM": {
-    "w": 0.83,
-    "d": 0.83,
-    "h": 0.74
+    "w": 0.89,
+    "d": 0.97,
+    "h": 0.7
    },
    "triangles": 80
   },
@@ -837,9 +837,9 @@
    "assetId": "rock-m-round",
    "file": "environment-set/models/rock-m-round.glb",
    "sizeM": {
-    "w": 1.79,
-    "d": 1.9,
-    "h": 1.44
+    "w": 1.75,
+    "d": 1.89,
+    "h": 1.4
    },
    "triangles": 80
   },
@@ -890,11 +890,11 @@
    "assetId": "rock-l-round",
    "file": "environment-set/models/rock-l-round.glb",
    "sizeM": {
-    "w": 3.03,
-    "d": 3.53,
-    "h": 2.59
+    "w": 3.0,
+    "d": 3.35,
+    "h": 2.66
    },
-   "triangles": 80
+   "triangles": 144
   },
   {
    "kind": "model",
@@ -943,9 +943,9 @@
    "assetId": "rock-s-sharp",
    "file": "environment-set/models/rock-s-sharp.glb",
    "sizeM": {
-    "w": 0.93,
-    "d": 0.88,
-    "h": 0.73
+    "w": 1.13,
+    "d": 0.82,
+    "h": 0.7
    },
    "triangles": 80
   },
@@ -996,9 +996,9 @@
    "assetId": "rock-m-sharp",
    "file": "environment-set/models/rock-m-sharp.glb",
    "sizeM": {
-    "w": 2.09,
-    "d": 1.78,
-    "h": 1.64
+    "w": 2.35,
+    "d": 1.7,
+    "h": 1.54
    },
    "triangles": 80
   },
@@ -1049,11 +1049,11 @@
    "assetId": "rock-l-sharp",
    "file": "environment-set/models/rock-l-sharp.glb",
    "sizeM": {
-    "w": 3.99,
-    "d": 3.22,
-    "h": 2.58
+    "w": 4.26,
+    "d": 3.37,
+    "h": 2.49
    },
-   "triangles": 80
+   "triangles": 144
   },
   {
    "kind": "model",
@@ -1159,7 +1159,7 @@
     "d": 1.79,
     "h": 1.55
    },
-   "triangles": 80
+   "triangles": 112
   },
   {
    "kind": "model",
@@ -1215,7 +1215,7 @@
     "d": 2.17,
     "h": 1.6
    },
-   "triangles": 80
+   "triangles": 112
   },
   {
    "kind": "model",
@@ -1262,7 +1262,8 @@
     "d": 1.41,
     "h": 3.0
    },
-   "triangles": 464
+   "triangles": 464,
+   "material": "gpt-env/cliff-face.png (tile 2 m) + cliff-face_n.png"
   },
   {
    "kind": "model",
@@ -1309,7 +1310,8 @@
     "d": 1.84,
     "h": 3.0
    },
-   "triangles": 464
+   "triangles": 464,
+   "material": "gpt-env/cliff-face.png (tile 2 m) + cliff-face_n.png"
   },
   {
    "kind": "model",
@@ -1356,7 +1358,8 @@
     "d": 1.64,
     "h": 3.0
    },
-   "triangles": 464
+   "triangles": 464,
+   "material": "gpt-env/cliff-face.png (tile 2 m) + cliff-face_n.png"
   },
   {
    "kind": "model",
@@ -1403,7 +1406,8 @@
     "d": 1.52,
     "h": 1.21
    },
-   "triangles": 464
+   "triangles": 464,
+   "material": "gpt-env/cliff-face.png (tile 2 m) + cliff-face_n.png"
   },
   {
    "kind": "model",
@@ -1450,7 +1454,8 @@
     "d": 2.05,
     "h": 1.97
    },
-   "triangles": 464
+   "triangles": 464,
+   "material": "gpt-env/cliff-face.png (tile 2 m) + cliff-face_n.png"
   },
   {
    "kind": "model",
@@ -2607,6 +2612,837 @@
     "w": 2.4,
     "h": 5.6,
     "d": 5.6
+   }
+  },
+  {
+   "kind": "decal",
+   "areas": [
+    "forest",
+    "mountain"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.7,
+    1.5
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 60,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "on-rock-or-wood",
+    "moisture": "high"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "moss-1",
+   "file": "gpt-env/moss/moss-1.png",
+   "sizeM": {
+    "w": 1.1,
+    "h": 0.08,
+    "d": 0.8
+   }
+  },
+  {
+   "kind": "decal",
+   "areas": [
+    "forest",
+    "mountain"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.7,
+    1.5
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 60,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "on-rock-or-wood",
+    "moisture": "high"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "moss-2",
+   "file": "gpt-env/moss/moss-2.png",
+   "sizeM": {
+    "w": 1.1,
+    "h": 0.08,
+    "d": 0.8
+   }
+  },
+  {
+   "kind": "decal",
+   "areas": [
+    "forest",
+    "mountain"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.7,
+    1.5
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 60,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "on-rock-or-wood",
+    "moisture": "high"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "moss-3",
+   "file": "gpt-env/moss/moss-3.png",
+   "sizeM": {
+    "w": 1.1,
+    "h": 0.08,
+    "d": 0.8
+   }
+  },
+  {
+   "kind": "decal",
+   "areas": [
+    "forest",
+    "mountain"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.7,
+    1.5
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 60,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "on-rock-or-wood",
+    "moisture": "high"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "moss-4",
+   "file": "gpt-env/moss/moss-4.png",
+   "sizeM": {
+    "w": 1.1,
+    "h": 0.08,
+    "d": 0.8
+   }
+  },
+  {
+   "kind": "decal",
+   "areas": [
+    "forest",
+    "mountain"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.7,
+    1.5
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 60,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "on-rock-or-wood",
+    "moisture": "high"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "moss-5",
+   "file": "gpt-env/moss/moss-5.png",
+   "sizeM": {
+    "w": 1.1,
+    "h": 0.08,
+    "d": 0.8
+   }
+  },
+  {
+   "kind": "decal",
+   "areas": [
+    "forest",
+    "mountain"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.7,
+    1.5
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 60,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "on-rock-or-wood",
+    "moisture": "high"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "moss-6",
+   "file": "gpt-env/moss/moss-6.png",
+   "sizeM": {
+    "w": 1.1,
+    "h": 0.08,
+    "d": 0.8
+   }
+  },
+  {
+   "kind": "sprite",
+   "areas": [
+    "forest"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.85,
+    1.2
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 10,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "water-surface",
+    "usage": "rapids/plunge accents"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "foam-cluster-1",
+   "file": "gpt-env/foam/foam-cluster-1.png",
+   "sizeM": {
+    "w": 1.6,
+    "h": 0.05,
+    "d": 0.8
+   }
+  },
+  {
+   "kind": "sprite",
+   "areas": [
+    "forest"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.85,
+    1.2
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 10,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "water-surface",
+    "usage": "rapids/plunge accents"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "foam-cluster-2",
+   "file": "gpt-env/foam/foam-cluster-2.png",
+   "sizeM": {
+    "w": 1.6,
+    "h": 0.05,
+    "d": 0.8
+   }
+  },
+  {
+   "kind": "sprite",
+   "areas": [
+    "forest"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.85,
+    1.2
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 10,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "water-surface",
+    "usage": "rapids/plunge accents"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "foam-cluster-3",
+   "file": "gpt-env/foam/foam-cluster-3.png",
+   "sizeM": {
+    "w": 1.6,
+    "h": 0.05,
+    "d": 0.8
+   }
+  },
+  {
+   "kind": "sprite",
+   "areas": [
+    "forest"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.85,
+    1.2
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 10,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "water-surface",
+    "usage": "rapids/plunge accents"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "foam-cluster-4",
+   "file": "gpt-env/foam/foam-cluster-4.png",
+   "sizeM": {
+    "w": 1.6,
+    "h": 0.05,
+    "d": 0.8
+   }
+  },
+  {
+   "kind": "sprite",
+   "areas": [
+    "forest"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.85,
+    1.2
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 10,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "water-surface",
+    "usage": "plunge foam / ripple rings"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "foam-ring-1",
+   "file": "gpt-env/foam/foam-ring-1.png",
+   "sizeM": {
+    "w": 1.5,
+    "h": 0.05,
+    "d": 1.5
+   }
+  },
+  {
+   "kind": "sprite",
+   "areas": [
+    "forest"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.85,
+    1.2
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 10,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "water-surface",
+    "usage": "plunge foam / ripple rings"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "foam-ring-2",
+   "file": "gpt-env/foam/foam-ring-2.png",
+   "sizeM": {
+    "w": 1.5,
+    "h": 0.05,
+    "d": 1.5
+   }
+  },
+  {
+   "kind": "ribbon",
+   "areas": [
+    "coast",
+    "lakeside"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.85,
+    1.2
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 15,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "surface",
+   "conditions": {
+    "placement": "shoreline-ribbon",
+    "tileM": 3,
+    "uv": "u = shoreline arc length / 3 m (world-anchored, chunk-continuous)",
+    "phase": "global clock"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "shore-foam",
+   "file": "gpt-env/shore-foam.png",
+   "sizeM": {
+    "w": 3,
+    "h": 0.04,
+    "d": 0.75
+   }
+  },
+  {
+   "kind": "texture",
+   "areas": [
+    "forest",
+    "mountain"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.85,
+    1.2
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 25,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "upright",
+   "conditions": {
+    "usage": "WaterfallKit fall layers (bundled in envTextures)",
+    "tileM": 2.2,
+    "scroll": "1.5 m/s downward, global clock phase"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "waterfall-streaks",
+   "file": "gpt-env/waterfall-streaks.png",
+   "sizeM": {
+    "w": 2.2,
+    "h": 2.2,
+    "d": 0
+   }
+  },
+  {
+   "kind": "texture",
+   "areas": [
+    "mountain"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.85,
+    1.2
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 90,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "upright",
+   "conditions": {
+    "tileM": 2,
+    "normal": "gpt-env/cliff-face_n.png",
+    "usage": "cliff-* models"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "cliff-face-tex",
+   "file": "gpt-env/cliff-face.png",
+   "sizeM": {
+    "w": 2,
+    "h": 0,
+    "d": 2
+   }
+  },
+  {
+   "kind": "ground",
+   "areas": [
+    "mountain",
+    "forest"
+   ],
+   "stage": "primitive",
+   "origin": "ground-centre",
+   "groundContactY": 0,
+   "scaleRange": [
+    0.85,
+    1.2
+   ],
+   "rotation": "free-y",
+   "maxSlopeDeg": 90,
+   "clearanceM": 0.6,
+   "embedM": 0.05,
+   "slopeAlign": "terrain",
+   "conditions": {
+    "tileM": 6,
+    "splatChannel": "splat3.z",
+    "patternCellM": 2,
+    "drawnRocksCm": "5-33"
+   },
+   "lod": [
+    {
+     "level": 0,
+     "distance": [
+      0,
+      30
+     ]
+    },
+    {
+     "level": 1,
+     "distance": [
+      30,
+      90
+     ]
+    }
+   ],
+   "collision": {
+    "shape": "none"
+   },
+   "harvest": {
+    "role": "decor"
+   },
+   "assetId": "ground-scree",
+   "file": "gpt-env/ground-scree.png",
+   "sizeM": {
+    "w": 6,
+    "h": 0,
+    "d": 6
    }
   },
   {
