@@ -170,12 +170,37 @@ def despill(rgb: np.ndarray, alpha: np.ndarray) -> int:
     return int(len(ys))
 
 
+_SEG = {}
+
+
+def seg_alpha(fname):
+    """Foreground alpha from rembg (isnet-general-use) for a source
+    sheet, computed once per file. The border flood fill cannot reach
+    background that the object's own outline encloses — frame
+    interiors, cable loops, the space under a table — while the
+    segmentation model reads exactly those areas as background and
+    still keeps glass, paper funnels and thin cables. Used as a gate:
+    flood-foreground pixels the model confidently calls background
+    (alpha < 32) are removed."""
+    if fname not in _SEG:
+        from rembg import new_session, remove
+        if "session" not in _SEG:
+            _SEG["session"] = new_session("isnet-general-use")
+        im = Image.open(SRC / fname).convert("RGB")
+        out = remove(im, session=_SEG["session"])
+        _SEG[fname] = np.asarray(out)[:, :, 3]
+    return _SEG[fname]
+
+
 def cut_sheet(fname, cols, rows):
     """Return {(row, col): RGBA PIL image cropped to the cell content}."""
     im = Image.open(SRC / fname).convert("RGB")
     rgb = np.asarray(im).astype(np.uint8)
     bg = flood_background(rgb)
     alpha = np.where(bg, 0, 255).astype(np.uint8)
+    gated = (alpha > 0) & (seg_alpha(fname) < 32)
+    n_seg = int(gated.sum())
+    alpha = np.where(gated, 0, alpha).astype(np.uint8)
     n_fixed = despill(rgb, alpha)
     rgba = np.dstack([rgb, alpha])
     img = Image.fromarray(rgba, "RGBA")
@@ -198,7 +223,7 @@ def cut_sheet(fname, cols, rows):
             by0 = max(0, ys.min() - pad)
             by1 = min(y1 - y0, ys.max() + 1 + pad)
             out[(r, c)] = img.crop((x0 + bx0, y0 + by0, x0 + bx1, y0 + by1))
-    return out, n_fixed
+    return out, n_fixed, n_seg
 
 
 def cream_cut(fname, cols, rows, want):
@@ -232,6 +257,8 @@ def cream_cut(fname, cols, rows, want):
                 bg[ny, nx] = True
                 dq.append((ny, nx))
     alpha = np.where(bg, 0, 255).astype(np.uint8)
+    alpha = np.where((alpha > 0) & (seg_alpha(fname) < 32), 0,
+                     alpha).astype(np.uint8)
     rgba = np.dstack([np.asarray(im), alpha])
     img = Image.fromarray(rgba, "RGBA")
     r, c = want
@@ -336,8 +363,8 @@ def main():
     masters = {}  # (category, id) -> 256px PIL
 
     for fname, cols, rows, cat, ids in SHEETS:
-        cuts, n_fixed = cut_sheet(fname, cols, rows)
-        log["sheets"][fname] = {"despill_px": n_fixed}
+        cuts, n_fixed, n_seg = cut_sheet(fname, cols, rows)
+        log["sheets"][fname] = {"despill_px": n_fixed, "seg_gated_px": n_seg}
         for idx, icon_id in enumerate(ids):
             if icon_id is None:
                 continue
