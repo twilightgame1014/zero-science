@@ -104,6 +104,23 @@ NAMES = {
     "electrolyze": "電気分解", "crack": "熱分解", "polymerize": "重合",
 }
 
+# Ops names are kept in their own dict: the op id "filter" （ろ過） collides
+# with the facility id "filter" （ろ過器）, so a flat id->name map cannot
+# hold both. Atlas keys are likewise category-qualified ("ops/filter").
+OPS_NAMES = {
+    "crush": "破砕", "grind": "粉砕", "mix": "混合", "wash": "水洗",
+    "filter": "ろ過", "settle": "沈降", "heat": "加熱", "cool": "冷却",
+    "evaporate": "蒸発", "crystallize": "結晶化", "dry": "乾燥",
+    "dissolve": "溶解", "burn": "燃焼", "fire": "焼成", "char": "炭化",
+    "shape": "成形", "smelt": "製錬", "melt": "溶融", "ferment": "発酵",
+    "distill": "蒸留", "electrolyze": "電気分解", "crack": "熱分解",
+    "polymerize": "重合",
+}
+
+
+def display_name(cat: str, icon_id: str) -> str:
+    return OPS_NAMES[icon_id] if cat == "ops" else NAMES[icon_id]
+
 
 def flood_background(rgb: np.ndarray, thresh: int = 238) -> np.ndarray:
     """Boolean mask of background pixels: near-white AND reachable from
@@ -308,17 +325,22 @@ def main():
     cell, acol = 256, 8
     arows = (len(order) + acol - 1) // acol
     atlas = Image.new("RGBA", (acol * cell, arows * cell), (0, 0, 0, 0))
-    manifest = {"cell": cell, "columns": acol, "entries": {}}
+    manifest = {"cell": cell, "columns": acol,
+                "keyFormat": "category/id (ids collide across categories: "
+                             "facilities/filter vs ops/filter)",
+                "entries": {}}
     for i, (cat, icon_id) in enumerate(order):
         x = (i % acol) * cell
         y = (i // acol) * cell
         atlas.paste(masters[(cat, icon_id)], (x, y))
-        manifest["entries"][icon_id] = {
-            "category": cat, "name": NAMES[icon_id],
+        manifest["entries"][f"{cat}/{icon_id}"] = {
+            "category": cat, "name": display_name(cat, icon_id),
             "x": x, "y": y, "w": cell, "h": cell,
             "file": f"icons/{cat}/{icon_id}.png",
             "file128": f"icons128/{cat}/{icon_id}.png",
         }
+    assert len(manifest["entries"]) == len(order), (
+        len(manifest["entries"]), len(order))
     atlas.save(ROOT / "atlas.png")
     (ROOT / "atlas.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
