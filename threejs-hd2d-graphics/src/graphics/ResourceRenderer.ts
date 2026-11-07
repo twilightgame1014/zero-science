@@ -156,6 +156,13 @@ export class ResourceRenderer {
   private gpt: Record<string, THREE.Texture>;
   /** Branch/leaf spray textures for the card-built tree canopies. */
   private branch: Record<string, THREE.Texture>;
+  /** World-expansion spray / lava textures (assets/gpt-expansion/):
+   *  conifer species, snow set, shore plants, lava pair. Missing
+   *  entries fall back to the spray set / plain materials. */
+  private expansion: Record<string, THREE.Texture>;
+  /** World water level (scene Y): floating visuals (lily pads)
+   *  anchor to it rather than to the bed height under the node. */
+  private waterLevel: number;
   /** Procedural reserve sprays (canvas-drawn; cannot fail to
    *  decode). Used when the bundled spray WebPs are unavailable, so
    *  canopies and bushes stay card-built instead of reverting to
@@ -173,10 +180,14 @@ export class ResourceRenderer {
     gpt: Record<string, THREE.Texture> = {},
     yawDegrees = 45,
     branch: Record<string, THREE.Texture> = {},
+    expansion: Record<string, THREE.Texture> = {},
+    waterLevel = 0.32,
   ) {
     this.groundHeightAt = groundHeightAt;
     this.gpt = gpt;
     this.branch = branch;
+    this.expansion = expansion;
+    this.waterLevel = waterLevel;
     this.yawRad = THREE.MathUtils.degToRad(yawDegrees);
     const am = new AssetManager();
     this.barkTex = am.createBarkTexture();
@@ -560,6 +571,8 @@ export class ResourceRenderer {
         return this.crossSlots(keys[seed % 3], 2, 0.6, 0.42, WHITE);
       }
       case 'grass': {
+        // Reeds are a 3D shore build, not a flat tuft sprite.
+        if (state.natural?.variant === 'reed') return null;
         // Gatherable grass （草むら）: four crossed planes, taller and
         // denser than the scenery tufts (which are now height-capped
         // and thinned around nodes), with a warm-green tint — the
@@ -785,16 +798,35 @@ export class ResourceRenderer {
           return v - Math.floor(v);
         };
         const sprays = this.spraySet();
-        if (variant === 'conifer') {
+        if (variant === 'conifer' || variant === 'conifer-snow') {
           // Conifer (world expansion, 2026-11-07): a straight tall
-          // trunk with four drooping tiers of spray cards — a
-          // triangular silhouette that stays distinct from the
-          // broadleaf archetypes at any camera yaw. Depleted form
-          // stays the shared stump (handled before the switch).
+          // trunk with four tiers of spray cards — a triangular
+          // silhouette that stays distinct from the broadleaf
+          // archetypes at any camera yaw. Species is picked
+          // deterministically from the node seed: cedar (strongly
+          // drooping), pine (wide flat tiers) or young (small,
+          // bright). Since the GPT expansion set, the tiers use the
+          // dedicated conifer sprays instead of borrowing broadleaf
+          // art; 'conifer-snow' uses the snow-laden spray (the snow
+          // rides on the branches in the art — the tree is NOT
+          // painted white). Depleted form stays the shared stump.
+          const snow = variant === 'conifer-snow';
+          const species = snow ? 0 : Math.floor(sr(7) * 3); // 0 cedar, 1 pine, 2 young
+          const coniferTex = snow
+            ? this.expansion.snow_conifer
+            : [this.expansion.conifer_cedar, this.expansion.conifer_pine,
+               this.expansion.conifer_young][species];
+          const tierTex = coniferTex ?? sprays[species % sprays.length];
+          const tipTex = snow ? tierTex : (this.expansion.conifer_tip ?? tierTex);
           const trunk = add(new THREE.Mesh(
             this.geo('trunk', () => new THREE.CylinderGeometry(0.14, 0.26, 1.8, 7)), wood));
-          trunk.scale.set(0.72, 1.55, 0.72);
-          trunk.position.y = 1.4;
+          const heightMul = species === 2 ? 0.82 : 1;
+          trunk.scale.set(0.72, 1.55 * heightMul, 0.72);
+          trunk.position.y = 1.4 * heightMul;
+          const tint: [number, number, number] = snow
+            ? [0.92, 0.97, 1.0]
+            : species === 0 ? [0.50, 0.70, 0.50]
+            : species === 1 ? [0.56, 0.76, 0.50] : [0.64, 0.84, 0.54];
           const card = (
             tex: THREE.Texture, x: number, y: number, z: number,
             yaw: number, tiltX: number, w: number, shade: number,
@@ -804,7 +836,7 @@ export class ResourceRenderer {
               alphaTest: 0.45,
               side: THREE.DoubleSide,
               roughness: 0.95,
-              color: new THREE.Color(shade * 0.52, shade * 0.72, shade * 0.50),
+              color: new THREE.Color(shade * tint[0], shade * tint[1], shade * tint[2]),
             });
             pulseMaterials.push(m);
             const img = tex.image as { width: number; height: number } | undefined;
@@ -817,6 +849,11 @@ export class ResourceRenderer {
             mesh.receiveShadow = true;
             g.add(mesh);
           };
+          // Snow-laden tiers lie flatter (shelves, not slats) and
+          // shade deeper, or the pale snow art stacks into a washed
+          // totem (first verification shot, 2026-11-07).
+          const droop = snow ? 1.08 : species === 0 ? 1.0 : species === 1 ? 0.5 : 0.75;
+          const wide = species === 1 ? 1.15 : snow ? 0.92 : 1;
           const tiers = [
             { y: 1.7, w: 1.85 }, { y: 2.3, w: 1.5 },
             { y: 2.85, w: 1.15 }, { y: 3.35, w: 0.8 },
@@ -825,14 +862,112 @@ export class ResourceRenderer {
             for (let c = 0; c < 3; c++) {
               const az = sr(200 + ti * 7 + c) * Math.PI * 2;
               card(
-                sprays[Math.floor(sr(230 + ti * 7 + c) * sprays.length) % sprays.length],
-                Math.cos(az) * t.w * 0.2, t.y, Math.sin(az) * t.w * 0.2,
-                az + Math.PI / 2, 0.8 + sr(260 + ti * 7 + c) * 0.25,
-                t.w, 0.78 + ti * 0.08);
+                tierTex,
+                Math.cos(az) * t.w * 0.2, t.y * heightMul, Math.sin(az) * t.w * 0.2,
+                az + Math.PI / 2, droop + sr(260 + ti * 7 + c) * 0.25,
+                t.w * wide, (snow ? 0.62 : 0.78) + ti * 0.08);
             }
           });
-          card(sprays[Math.floor(sr(295) * sprays.length) % sprays.length],
-            0, 3.78, 0, sr(296) * Math.PI, 0.2, 0.66, 1.0);
+          card(tipTex, 0, 3.78 * heightMul, 0, sr(296) * Math.PI, 0.2, 0.66, 1.0);
+          break;
+        }
+        if (variant === 'winter') {
+          // Bare winter broadleaf (GPT expansion): trunk + rising
+          // limbs carrying the snow-dusted bare-branch spray, one
+          // icicle branch hanging low. No leaves at all — the
+          // silhouette is the branch structure itself.
+          const trunk = add(new THREE.Mesh(
+            this.geo('trunk', () => new THREE.CylinderGeometry(0.14, 0.26, 1.8, 7)), wood));
+          trunk.scale.set(1, 1.45, 1);
+          trunk.position.y = 1.3;
+          const branchTex = this.expansion.snow_broadleaf ?? sprays[0];
+          const icicleTex = this.expansion.snow_icicle;
+          const up = new THREE.Vector3(0, 1, 0);
+          for (let i = 0; i < 5; i++) {
+            const az = (i / 5) * Math.PI * 2 + sr(300 + i) * 0.9;
+            const tilt = 0.55 + sr(310 + i) * 0.45;
+            const dir = new THREE.Vector3(
+              Math.cos(az) * Math.sin(tilt), Math.cos(tilt), Math.sin(az) * Math.sin(tilt));
+            const limb = add(new THREE.Mesh(
+              this.geo('limb', () => new THREE.CylinderGeometry(0.035, 0.07, 1.5, 5)), wood));
+            limb.quaternion.setFromUnitVectors(up, dir);
+            limb.position.set(dir.x * 0.6, 2.2 + dir.y * 0.6, dir.z * 0.6);
+            const m = new THREE.MeshStandardMaterial({
+              map: branchTex, alphaTest: 0.45, side: THREE.DoubleSide,
+              roughness: 0.95, color: new THREE.Color(0.95, 0.98, 1.02),
+            });
+            pulseMaterials.push(m);
+            const img = branchTex.image as { width: number; height: number } | undefined;
+            const aspect = img && img.width > 0 ? img.height / img.width : 0.87;
+            const tip = new THREE.Vector3(dir.x * 1.25, 2.2 + dir.y * 1.25, dir.z * 1.25);
+            const w = 1.45 + sr(320 + i) * 0.35;
+            // Two crossed cards per limb tip: a single plane reads
+            // edge-on from half the orbit angles.
+            for (let k = 0; k < 2; k++) {
+              const cardM = new THREE.Mesh(
+                this.geo('sprayCard', () => new THREE.PlaneGeometry(1, 1)), m);
+              cardM.position.copy(tip);
+              cardM.rotation.set(0.35, az + Math.PI / 2 + k * (Math.PI / 2.2), 0);
+              cardM.scale.set(w, w * aspect, w);
+              cardM.receiveShadow = true;
+              g.add(cardM);
+            }
+          }
+          if (icicleTex) {
+            const m = new THREE.MeshStandardMaterial({
+              map: icicleTex, alphaTest: 0.45, side: THREE.DoubleSide,
+              roughness: 0.9, color: new THREE.Color(0.95, 0.98, 1.02),
+            });
+            pulseMaterials.push(m);
+            const cardM = new THREE.Mesh(
+              this.geo('sprayCard', () => new THREE.PlaneGeometry(1, 1)), m);
+            cardM.position.set(0.75, 2.3, 0.3);
+            cardM.rotation.set(0.15, 0.7, 0);
+            cardM.scale.set(0.95, 0.83, 0.95);
+            cardM.receiveShadow = true;
+            g.add(cardM);
+          }
+          break;
+        }
+        if (variant === 'palm') {
+          // Palm (GPT expansion): a leaning segmented trunk and a
+          // crown of arcing frond cards. Fronds radiate at varied
+          // yaw / droop so the crown reads in the round.
+          const frondTex = this.expansion.palm_frond ?? sprays[1];
+          const lean = sr(330) * Math.PI * 2;
+          const lx = Math.cos(lean), lz = Math.sin(lean);
+          let px = 0, pz = 0;
+          for (let sgm = 0; sgm < 4; sgm++) {
+            const seg = add(new THREE.Mesh(
+              this.geo('palmSeg', () => new THREE.CylinderGeometry(0.13, 0.16, 1.05, 7)), wood));
+            px += lx * 0.16; pz += lz * 0.16;
+            seg.position.set(px * (sgm + 1) * 0.55, 0.5 + sgm * 0.92, pz * (sgm + 1) * 0.55);
+            seg.rotation.set(lz * 0.17, 0, -lx * 0.17);
+          }
+          const topX = px * 4 * 0.55, topZ = pz * 4 * 0.55, topY = 4.15;
+          for (let i = 0; i < 7; i++) {
+            const az = (i / 7) * Math.PI * 2 + sr(340 + i) * 0.5;
+            const m = new THREE.MeshStandardMaterial({
+              map: frondTex, alphaTest: 0.45, side: THREE.DoubleSide,
+              roughness: 0.95, color: new THREE.Color(0.85, 1.0, 0.72),
+            });
+            pulseMaterials.push(m);
+            const img = frondTex.image as { width: number; height: number } | undefined;
+            const aspect = img && img.width > 0 ? img.height / img.width : 0.87;
+            const cardM = new THREE.Mesh(
+              this.geo('sprayCard', () => new THREE.PlaneGeometry(1, 1)), m);
+            cardM.position.set(topX, topY, topZ);
+            cardM.rotation.set(0.55 + sr(350 + i) * 0.55, az + Math.PI / 2, 0);
+            const w = 1.7 + sr(360 + i) * 0.4;
+            cardM.scale.set(w, w * aspect, w);
+            cardM.receiveShadow = true;
+            g.add(cardM);
+          }
+          for (let i = 0; i < 2; i++) {
+            const nut = add(new THREE.Mesh(
+              this.geo('coconut', () => new THREE.SphereGeometry(0.13, 8, 6)), std(0x6b4e2e, 1)));
+            nut.position.set(topX + (i - 0.5) * 0.24, topY - 0.22, topZ + 0.08 * i);
+          }
           break;
         }
         const arch = Math.floor(sr(1) * 3); // 0 wide, 1 tall, 2 young
@@ -1126,6 +1261,34 @@ export class ResourceRenderer {
         break;
       }
       case 'grass': {
+        if (variant === 'reed') {
+          // Reeds (GPT expansion): tall crossed cards of the
+          // cattail spray for shore placement. The stems stay in
+          // the texture (they root at the card base), so the cards
+          // root at ground level and sway is left to the shaderless
+          // wind convention — cards only, no trunk to bend.
+          const reedTex = this.expansion.reed;
+          if (reedTex) {
+            for (let i = 0; i < 3; i++) {
+              const m = new THREE.MeshStandardMaterial({
+                map: reedTex, alphaTest: 0.45, side: THREE.DoubleSide,
+                roughness: 0.95, color: new THREE.Color(0.92, 1.0, 0.82),
+              });
+              pulseMaterials.push(m);
+              const img = reedTex.image as { width: number; height: number } | undefined;
+              const aspect = img && img.width > 0 ? img.height / img.width : 1;
+              const cardM = new THREE.Mesh(
+                this.geo('sprayCard', () => new THREE.PlaneGeometry(1, 1)), m);
+              const w = 1.12;
+              cardM.scale.set(w, w * aspect, w);
+              cardM.position.set(0, (w * aspect) / 2 - 0.06, 0);
+              cardM.rotation.y = (i * Math.PI) / 3 + (seed % 7) * 0.06;
+              cardM.receiveShadow = true;
+              g.add(cardM);
+            }
+          }
+          break;
+        }
         // Group-path fallback for the gatherable grass clump (used
         // only when the instanced pool or its texture is unavailable):
         // same taller, denser, warm-tinted form as the pooled one.
@@ -1162,7 +1325,14 @@ export class ResourceRenderer {
           const v = Math.sin(seed * 127.1 + n * 311.7) * 43758.5453;
           return v - Math.floor(v);
         };
-        const sprays = this.spraySet();
+        // Variant art (GPT expansion): snow shrubs carry their snow
+        // in the spray art; dry shrubs use the olive dry spray.
+        let sprays = this.spraySet();
+        if (variant === 'snow' && this.expansion.snow_shrub) {
+          sprays = [this.expansion.snow_shrub];
+        } else if (variant === 'dry' && this.expansion.dry_shrub) {
+          sprays = [this.expansion.dry_shrub];
+        }
         const up = new THREE.Vector3(0, 1, 0);
         for (let i = 0; i < 3; i++) {
           const az = (i / 3) * Math.PI * 2 + bs(1) * 1.2;
@@ -1183,7 +1353,11 @@ export class ResourceRenderer {
             alphaTest: 0.45,
             side: THREE.DoubleSide,
             roughness: 0.95,
-            color: new THREE.Color(shade * 0.84, shade * 0.97, shade * 0.74),
+            color: variant === 'snow'
+              ? new THREE.Color(shade * 0.96, shade * 0.99, shade * 1.0)
+              : variant === 'dry'
+                ? new THREE.Color(shade * 0.98, shade * 0.94, shade * 0.72)
+                : new THREE.Color(shade * 0.84, shade * 0.97, shade * 0.74),
           });
           pulseMaterials.push(m);
           const img = tex.image as { width: number; height: number } | undefined;
@@ -1237,6 +1411,64 @@ export class ResourceRenderer {
         cap.position.y = 0.34;
         break;
       }
+      case 'lily': {
+        // Water lilies (GPT expansion): the pad cluster lies flat on
+        // the water surface — the long stems of the source art are
+        // NOT stood up. Two overlapping pads at slightly different
+        // scales/rotations break the single-stamp look. Pads anchor
+        // to the world water level (not the bed height under the
+        // node), so they float correctly anywhere in the shallows;
+        // on dry ground they settle to the ground instead.
+        const lilyTex = this.expansion.lily;
+        if (lilyTex) {
+          const bedY = this.groundHeightAt(state.position.x, state.position.z);
+          const floatY = THREE.MathUtils.clamp(
+            this.waterLevel + 0.02 - bedY, 0.03, 1.4);
+          for (let i = 0; i < 2; i++) {
+            const m = new THREE.MeshStandardMaterial({
+              map: lilyTex, alphaTest: 0.45, side: THREE.DoubleSide,
+              roughness: 0.7, color: new THREE.Color(0.95, 1.02, 0.9),
+            });
+            pulseMaterials.push(m);
+            const pad = new THREE.Mesh(
+              this.geo('lilyPad', () => new THREE.PlaneGeometry(1, 1)), m);
+            const w = i === 0 ? 1.05 : 0.72;
+            pad.scale.set(w, w, w);
+            pad.rotation.set(-Math.PI / 2, 0, (seed % 9) * 0.35 + i * 1.9);
+            pad.position.set(i * 0.28 - 0.1, floatY + i * 0.008, i * 0.16);
+            pad.receiveShadow = true;
+            g.add(pad);
+          }
+        }
+        break;
+      }
+      case 'lava': {
+        // Lava pool (GPT expansion): dark basalt crust albedo with
+        // the glow confined to the cracks via the emissive mask —
+        // never a whole-surface red. Static emissive (no scrolling:
+        // the crust is solid); the highlight pulse system may still
+        // brighten it when targeted. Rim of dark rock grounds it.
+        const rim = add(new THREE.Mesh(
+          this.geo('lavaRim', () => new THREE.CylinderGeometry(0.86, 0.95, 0.1, 18)),
+          std(0x2e2c2c, 1)));
+        rim.position.y = 0.03;
+        const alb = this.expansion.lava_albedo;
+        const emi = this.expansion.lava_emissive;
+        const m = alb
+          ? new THREE.MeshStandardMaterial({
+              map: alb, emissiveMap: emi ?? null, emissive: 0xff5a00,
+              emissiveIntensity: 1.15, roughness: 1,
+            })
+          : std(0x35322f, 1);
+        pulseMaterials.push(m);
+        const disc = new THREE.Mesh(
+          this.geo('lavaDisc', () => new THREE.CircleGeometry(0.78, 24)), m);
+        disc.rotation.x = -Math.PI / 2;
+        disc.position.y = 0.085;
+        disc.receiveShadow = true;
+        g.add(disc);
+        break;
+      }
       default: {
         const blob = add(new THREE.Mesh(
           this.geo('defaultBlob', () => new THREE.IcosahedronGeometry(0.4, 1)), leaf));
@@ -1280,6 +1512,8 @@ export const RESOURCE_VISUAL_SPECS: Record<string, ResourceVisualSpec> = {
   water: { footprintRadius: 0.7, height: 0.15, depletedForm: 'none' },
   oil: { footprintRadius: 0.7, height: 0.12, depletedForm: 'none' },
   ore: { footprintRadius: 1.0, height: 1.15, depletedForm: 'rubble' },
+  lily: { footprintRadius: 0.55, height: 0.06, depletedForm: 'none' },
+  lava: { footprintRadius: 0.8, height: 0.06, depletedForm: 'none' },
 };
 
 /**
@@ -1290,5 +1524,9 @@ export const RESOURCE_VISUAL_SPECS: Record<string, ResourceVisualSpec> = {
  */
 export const RESOURCE_VARIANT_SPECS: Record<string, ResourceVisualSpec> = {
   'tree:conifer': { footprintRadius: 1.0, trunkRadius: 0.22, height: 3.9, depletedForm: 'stump' },
+  'tree:conifer-snow': { footprintRadius: 1.0, trunkRadius: 0.22, height: 3.9, depletedForm: 'stump' },
+  'tree:winter': { footprintRadius: 1.05, trunkRadius: 0.26, height: 3.4, depletedForm: 'stump' },
+  'tree:palm': { footprintRadius: 1.0, trunkRadius: 0.24, height: 4.3, depletedForm: 'stump' },
   'branch:log': { footprintRadius: 0.85, height: 0.35, depletedForm: 'none' },
+  'grass:reed': { footprintRadius: 0.5, height: 1.2, depletedForm: 'cut-patch' },
 };
