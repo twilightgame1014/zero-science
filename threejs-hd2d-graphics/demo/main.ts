@@ -272,7 +272,7 @@ document.getElementById('btn-orbit')!.addEventListener('click', (e) => {
  * environment blend follows the player automatically (interval
  * below), exactly as the game will drive it from its own loop. */
 const demoCfg = resolveConfig();
-const AREA_TOURS: Record<string, { x: number; z: number; yaw: number; nodes: Array<[string, object]> }> = {
+const AREA_TOURS: Record<string, { x: number; z: number; yaw: number; viewSize?: number; nodes: Array<[string, object]> }> = {
   lakeside: {
     x: 82, z: 2, yaw: 270,
     nodes: [
@@ -313,9 +313,13 @@ const AREA_TOURS: Record<string, { x: number; z: number; yaw: number; nodes: Arr
     ],
   },
   town: { x: 100, z: 100, yaw: 45, nodes: [] },
+  // Round 20: the rebuilt waterfall kit at the legacy highland
+  // (base (26.5,-15.5), lip toward (30.5,-20.5)). Stand is on the
+  // downstream bank looking back NE at the fall.
+  waterfall: { x: 24.2, z: -12.2, yaw: 315, viewSize: 11, nodes: [] },
 };
 const tourNodeIds = new Set<string>();
-for (const area of ['lakeside', 'coast', 'volcano', 'snow', 'desert', 'town']) {
+for (const area of ['lakeside', 'coast', 'volcano', 'snow', 'desert', 'town', 'waterfall']) {
   document.getElementById(`btn-tour-${area}`)!.addEventListener('click', () => {
     const tour = AREA_TOURS[area];
     for (const id of tourNodeIds) gfx.updateResourceVisual(id, null);
@@ -328,7 +332,7 @@ for (const area of ['lakeside', 'coast', 'volcano', 'snow', 'desert', 'town']) {
     player.z = tour.z;
     player.moving = false;
     orbitYaw = tour.yaw;
-    gfx.setCameraView({ yawDegrees: tour.yaw, pitchDegrees: 32, viewSize: 16 }, { transition: 0.8 });
+    gfx.setCameraView({ yawDegrees: tour.yaw, pitchDegrees: 32, viewSize: tour.viewSize ?? 16 }, { transition: 0.8 });
   });
 }
 // The environment follows the player's area weights (spec §5).

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
 import { AssetManager } from './AssetManager';
+import { createWaterfallKit, type WaterfallKit } from './WaterfallKit';
 import {
   distanceToPath,
   distanceToRiver,
@@ -104,8 +105,7 @@ export class EnvironmentRenderer {
   private windMaterials: WindMaterial[] = [];
   private pollen: THREE.Points | null = null;
   private pollenBase: Float32Array | null = null;
-  private fallsUniforms: { uTime: { value: number } } | null = null;
-  private mist: THREE.Sprite | null = null;
+  private waterfallKit: WaterfallKit | null = null;
   private canopy: CanopySet[] = [];
   private rng: () => number;
   private barkTex!: THREE.Texture;
@@ -302,11 +302,7 @@ export class EnvironmentRenderer {
 
   update(time: number): void {
     for (const w of this.windMaterials) w.uniforms.uTime.value = time;
-    if (this.fallsUniforms) this.fallsUniforms.uTime.value = time;
-    if (this.mist) {
-      (this.mist.material as THREE.SpriteMaterial).opacity =
-        0.22 + Math.sin(time * 0.8) * 0.06;
-    }
+    if (this.waterfallKit) this.waterfallKit.update(time);
     if (this.pollen && this.pollenBase) {
       const pos = this.pollen.geometry.attributes.position as THREE.BufferAttribute;
       for (let i = 0; i < pos.count; i++) {
@@ -1358,166 +1354,28 @@ export class EnvironmentRenderer {
     this.group.add(g);
   }
 
-  /* ---------------- waterfall set piece (rocky highland spring) ---------------- */
+  /* ---------------- waterfall set piece (rocky highland spring) ----------------
+   * Round 20: rebuilt on the parametric WaterfallKit (curved
+   * sheet in metre UVs, fractured rocks, animated foam/splash/
+   * mist, named anchors). Anchors and placement contract:
+   * assets/environment-set/waterfall.json. */
   private buildWaterfall(particleTexture: THREE.Texture): void {
     const base = { x: 26.5, z: -15.5 };
     const top = { x: 30.5, z: -20.5 };
     const baseY = this.groundY(base.x, base.z);
     const topGroundY = this.groundY(top.x, top.z);
-    const dir = {
-      x: base.x - top.x,
-      z: base.z - top.z,
-    };
-    const g = new THREE.Group();
-    g.name = 'Waterfall';
-    g.position.set(base.x, baseY, base.z);
-    g.rotation.y = Math.atan2(dir.x, dir.z);
-
-    const rockMat = new THREE.MeshStandardMaterial({
-      color: 0x7e7c78,
-      roughness: 1,
-      flatShading: true,
+    const dir = { x: base.x - top.x, z: base.z - top.z };
+    const drop = topGroundY - baseY + 2.3;
+    const kit = createWaterfallKit({
+      width: 2.0,
+      drop,
+      particleTexture,
+      seed: 20261107,
     });
-    const rockDark = new THREE.MeshStandardMaterial({
-      color: 0x5f6058,
-      roughness: 1,
-      flatShading: true,
-    });
-    const waterMat = new THREE.MeshStandardMaterial({
-      color: 0x5fb6c9,
-      roughness: 0.15,
-      metalness: 0.05,
-      transparent: true,
-      opacity: 0.92,
-    });
-
-    const topY = topGroundY - baseY + 2.3; // ledge height in local space
-    const rock = (r: number, x: number, y: number, z: number, dark = false) => {
-      const geo = new THREE.IcosahedronGeometry(r, 1);
-      const p = geo.attributes.position as THREE.BufferAttribute;
-      for (let i = 0; i < p.count; i++) {
-        const j = 1 + (this.rng() - 0.5) * 0.35;
-        p.setXYZ(i, p.getX(i) * j, p.getY(i) * j * 0.85, p.getZ(i) * j);
-      }
-      geo.computeVertexNormals();
-      const m = new THREE.Mesh(geo, dark ? rockDark : rockMat);
-      m.position.set(x, y, z);
-      m.castShadow = true;
-      m.receiveShadow = true;
-      g.add(m);
-      return m;
-    };
-    // Flanking rock columns and the lip the water pours over.
-    rock(1.5, -1.7, topY - 0.9, -2.6);
-    rock(1.3, -1.9, topY - 2.3, -1.6, true);
-    rock(1.6, 1.8, topY - 1.0, -2.7, true);
-    rock(1.2, 2.0, topY - 2.5, -1.5);
-    rock(1.1, 0, topY - 0.7, -3.6);
-    rock(0.8, -2.3, 0.3, 0.6);
-    rock(0.7, 2.4, 0.25, 0.9, true);
-    rock(0.55, -1.6, 0.15, 2.2);
-    rock(0.5, 1.7, 0.12, 2.4);
-
-    // Upper pool.
-    const upper = new THREE.Mesh(new THREE.CircleGeometry(1.7, 18), waterMat);
-    upper.rotation.x = -Math.PI / 2;
-    upper.position.set(0, topY + 0.12, -3.1);
-    g.add(upper);
-    // Lower pool.
-    const lower = new THREE.Mesh(new THREE.CircleGeometry(2.1, 18), waterMat);
-    lower.rotation.x = -Math.PI / 2;
-    lower.position.set(0, 0.07, 1.1);
-    lower.receiveShadow = true;
-    g.add(lower);
-
-    // Falling sheet with scrolling stripes and a foamy base.
-    this.fallsUniforms = { uTime: { value: 0 } };
-    const sheetH = topY + 0.1;
-    const sheet = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.0, sheetH, 1, 8),
-      new THREE.ShaderMaterial({
-        transparent: true,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        uniforms: {
-          uTime: this.fallsUniforms.uTime,
-          uTop: { value: new THREE.Color(0xbfe6ef) },
-          uBottom: { value: new THREE.Color(0xeafcfe) },
-        },
-        vertexShader: /* glsl */ `
-          varying vec2 vUv;
-          void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: /* glsl */ `
-          uniform float uTime;
-          uniform vec3 uTop;
-          uniform vec3 uBottom;
-          varying vec2 vUv;
-          void main() {
-            float streaks = sin(vUv.x * 34.0 + sin(vUv.y * 20.0 + uTime * 2.2) * 1.6
-                                + uTime * 5.0) * 0.5 + 0.5;
-            float scroll = sin((vUv.y * 3.0 + uTime * 1.15) * 6.2831) * 0.5 + 0.5;
-            vec3 col = mix(uBottom, uTop, vUv.y) + streaks * 0.10 + scroll * 0.05;
-            float foam = smoothstep(0.30, 0.02, vUv.y);
-            col = mix(col, vec3(1.0), foam * 0.75);
-            float edge = smoothstep(0.0, 0.18, vUv.x) * smoothstep(1.0, 0.82, vUv.x);
-            float alpha = (0.72 + streaks * 0.2 + foam * 0.25) * edge;
-            gl_FragColor = vec4(col, alpha);
-          }
-        `,
-      }),
-    );
-    sheet.position.set(0, sheetH / 2, -1.15);
-    sheet.rotation.x = -0.1;
-    sheet.renderOrder = 3;
-    g.add(sheet);
-
-    // Foam specks at the plunge base.
-    const foamCount = 42;
-    const foamPos = new Float32Array(foamCount * 3);
-    for (let i = 0; i < foamCount; i++) {
-      const a = this.rng() * Math.PI * 2;
-      const rr = Math.sqrt(this.rng()) * 1.5;
-      foamPos[i * 3] = Math.cos(a) * rr;
-      foamPos[i * 3 + 1] = 0.14 + this.rng() * 0.12;
-      foamPos[i * 3 + 2] = 1.1 + Math.sin(a) * rr * 0.7;
-    }
-    const foamGeo = new THREE.BufferGeometry();
-    foamGeo.setAttribute('position', new THREE.BufferAttribute(foamPos, 3));
-    const foam = new THREE.Points(
-      foamGeo,
-      new THREE.PointsMaterial({
-        map: particleTexture,
-        color: 0xffffff,
-        size: 0.34,
-        transparent: true,
-        opacity: 0.85,
-        depthWrite: false,
-        sizeAttenuation: true,
-      }),
-    );
-    foam.renderOrder = 4;
-    g.add(foam);
-
-    // Drifting mist.
-    this.mist = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: particleTexture,
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.25,
-        depthWrite: false,
-      }),
-    );
-    this.mist.scale.set(5.2, 2.4, 1);
-    this.mist.position.set(0, 0.8, 1.3);
-    this.mist.renderOrder = 6;
-    g.add(this.mist);
-
-    this.group.add(g);
+    kit.group.position.set(base.x, baseY, base.z);
+    kit.group.rotation.y = Math.atan2(dir.x, dir.z);
+    this.waterfallKit = kit;
+    this.group.add(kit.group);
   }
 
   /* ---------------- stone stairs & retaining walls ---------------- */
