@@ -267,6 +267,70 @@ def place_on_canvas(cut: Image.Image, size: int, fill: int = 208) -> Image.Image
     return binarize_alpha(canvas)
 
 
+# Per-icon relaxed thresholds for pockets the automatic rule misses,
+# added only after visual review (recorded in process-log.json).
+# Every entry below was confirmed on a magenta composite: the white is
+# flat background showing through the object. NOT overridden:
+# facilities/steamengine (the white is its drawn smoke) and the glass
+# interiors of ops/settle, tools/bottle, ops/distill (shaded artwork).
+POCKET_OVERRIDES = {
+    ("facilities", "rack"): dict(min_share=0.60),
+    ("ops", "dry"): dict(min_share=0.70),
+    ("facilities", "eaf"): dict(min_share=0.70),
+    ("facilities", "electrolyzer"): dict(min_share=0.70),
+    ("facilities", "refinery"): dict(min_area=40, min_share=0.30,
+                                     max_std=7.0, white_min=225,
+                                     pure_min=240),
+    ("facilities", "reactor"): dict(min_share=0.75),
+    ("tools", "rig"): dict(min_share=0.75),
+    ("ops", "crack"): dict(min_share=0.0),
+}
+
+
+def remove_white_pockets(img, min_area=300, min_share=0.80, max_std=5.0,
+                         white_min=235, pure_min=248):
+    """Remove enclosed background pockets from a finished master.
+
+    The border flood fill cannot reach white regions that the object's
+    own outline encloses (inside a frame, under a handle arch, between
+    hanging parts) — in the sheet those are flat background white seen
+    THROUGH the object, and they must be transparent. Legit white parts
+    of the artwork (paper, glass) are shaded/tinted and never form a
+    large FLAT near-white component, so a component is removed only if
+    it is big, almost entirely near-pure white (>=248) and flat.
+    Returns (image, [(area, pure_share, std), ...] removed)."""
+    a = np.asarray(img.convert("RGBA")).astype(int)
+    rgb, al = a[:, :, :3], a[:, :, 3]
+    minc = rgb.min(axis=2)
+    maxc = rgb.max(axis=2)
+    white = (al > 0) & (minc >= white_min) & ((maxc - minc) <= 30)
+    lab, n = ndimage.label(white)
+    removed = np.zeros(al.shape, bool)
+    decisions = []
+    for i in range(1, n + 1):
+        comp = lab == i
+        area = int(comp.sum())
+        if area < min_area:
+            continue
+        vals = minc[comp]
+        share = float((vals >= pure_min).mean())
+        std = float(vals.std())
+        if share >= min_share and std <= max_std:
+            removed |= comp
+            decisions.append((area, round(share, 2), round(std, 1)))
+    if not removed.any():
+        return img, decisions
+    # pale anti-aliased rim that lined the pocket also goes
+    ring = (ndimage.binary_dilation(removed) & (al > 0)
+            & (minc >= 190) & ((maxc - minc) <= 45))
+    removed |= ring
+    rgb_u8 = rgb.astype(np.uint8)
+    al_u8 = np.where(removed, 0, al).astype(np.uint8)
+    despill(rgb_u8, al_u8)  # clean the newly exposed edges
+    out = Image.fromarray(np.dstack([rgb_u8, al_u8]), "RGBA")
+    return out, decisions
+
+
 def main():
     log = {"sheets": {}, "icons": []}
     masters = {}  # (category, id) -> 256px PIL
@@ -297,6 +361,15 @@ def main():
         if e["id"] == "bench":
             e["status"] = "replaced: buildings-1 workbench (stone tools); " \
                           "facility-sheet version had modern saw/plane/vise"
+
+    # --- remove enclosed background pockets (white showing through
+    # frames / handle arches / hanging parts) from every master
+    log["whitePockets"] = {}
+    for key in list(masters):
+        kw = POCKET_OVERRIDES.get(key, {})
+        masters[key], dec = remove_white_pockets(masters[key], **kw)
+        if dec:
+            log["whitePockets"][f"{key[0]}/{key[1]}"] = dec
 
     # --- write masters + 128px versions
     for (cat, icon_id), img in sorted(masters.items()):
