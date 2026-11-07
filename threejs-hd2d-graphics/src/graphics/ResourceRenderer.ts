@@ -535,6 +535,9 @@ export class ResourceRenderer {
   private buildInstanced(state: ResourceVisualState, seed: number): SlotRef[] | null {
     switch (state.type) {
       case 'branch': {
+        // The 'log' variant is a 3D fallen log, not the flat twig
+        // sprite — send it down the group path.
+        if (state.natural?.variant === 'log') return null;
         const pool = this.spritePool('prop_branch');
         if (!pool) return null;
         return this.allocSlots(pool, [{
@@ -782,6 +785,56 @@ export class ResourceRenderer {
           return v - Math.floor(v);
         };
         const sprays = this.spraySet();
+        if (variant === 'conifer') {
+          // Conifer (world expansion, 2026-11-07): a straight tall
+          // trunk with four drooping tiers of spray cards — a
+          // triangular silhouette that stays distinct from the
+          // broadleaf archetypes at any camera yaw. Depleted form
+          // stays the shared stump (handled before the switch).
+          const trunk = add(new THREE.Mesh(
+            this.geo('trunk', () => new THREE.CylinderGeometry(0.14, 0.26, 1.8, 7)), wood));
+          trunk.scale.set(0.72, 1.55, 0.72);
+          trunk.position.y = 1.4;
+          const card = (
+            tex: THREE.Texture, x: number, y: number, z: number,
+            yaw: number, tiltX: number, w: number, shade: number,
+          ) => {
+            const m = new THREE.MeshStandardMaterial({
+              map: tex,
+              alphaTest: 0.45,
+              side: THREE.DoubleSide,
+              roughness: 0.95,
+              color: new THREE.Color(shade * 0.52, shade * 0.72, shade * 0.50),
+            });
+            pulseMaterials.push(m);
+            const img = tex.image as { width: number; height: number } | undefined;
+            const aspect = img && img.width > 0 ? img.height / img.width : 0.87;
+            const mesh = new THREE.Mesh(
+              this.geo('sprayCard', () => new THREE.PlaneGeometry(1, 1)), m);
+            mesh.position.set(x, y, z);
+            mesh.rotation.set(tiltX, yaw, 0);
+            mesh.scale.set(w, w * aspect, w);
+            mesh.receiveShadow = true;
+            g.add(mesh);
+          };
+          const tiers = [
+            { y: 1.7, w: 1.85 }, { y: 2.3, w: 1.5 },
+            { y: 2.85, w: 1.15 }, { y: 3.35, w: 0.8 },
+          ];
+          tiers.forEach((t, ti) => {
+            for (let c = 0; c < 3; c++) {
+              const az = sr(200 + ti * 7 + c) * Math.PI * 2;
+              card(
+                sprays[Math.floor(sr(230 + ti * 7 + c) * sprays.length) % sprays.length],
+                Math.cos(az) * t.w * 0.2, t.y, Math.sin(az) * t.w * 0.2,
+                az + Math.PI / 2, 0.8 + sr(260 + ti * 7 + c) * 0.25,
+                t.w, 0.78 + ti * 0.08);
+            }
+          });
+          card(sprays[Math.floor(sr(295) * sprays.length) % sprays.length],
+            0, 3.78, 0, sr(296) * Math.PI, 0.2, 0.66, 1.0);
+          break;
+        }
         const arch = Math.floor(sr(1) * 3); // 0 wide, 1 tall, 2 young
         const trunkH = arch === 1 ? 2.25 : arch === 2 ? 1.45 : 1.8;
         const trunk = add(new THREE.Mesh(
@@ -866,6 +919,25 @@ export class ResourceRenderer {
           rockM));
         rock.position.y = 0.45;
         rock.scale.set(1.15, 0.8, 1);
+        if (variant === 'mossy') {
+          // Mossy rock (world expansion, 2026-11-07): flattened moss
+          // pads settled on the top and shoulders — colour and a
+          // soft silhouette break, same footprint as a plain rock.
+          const mossM = std(0x51652c, 1);
+          const mr = (n: number) => {
+            const v = Math.sin(seed * 57.3 + n * 91.7) * 43758.5453;
+            return v - Math.floor(v);
+          };
+          for (let i = 0; i < 3; i++) {
+            const b = add(new THREE.Mesh(
+              this.geo(`mossPad${i % 2}`, () => new THREE.IcosahedronGeometry(0.3, 0)), mossM));
+            b.scale.set(1, 0.3, 0.8);
+            b.position.set(
+              (mr(i * 3) - 0.5) * 0.9,
+              0.92 + mr(i * 3 + 1) * 0.14,
+              (mr(i * 3 + 2) - 0.5) * 0.7);
+          }
+        }
         break;
       }
       case 'ore': {
@@ -951,6 +1023,34 @@ export class ResourceRenderer {
         break;
       }
       case 'branch': {
+        if (variant === 'log') {
+          // Fallen log (world expansion, 2026-11-07): a thick trunk
+          // section lying on the ground — bark side, pale cut faces
+          // at both ends, moss settling on top. Distinct from the
+          // 'branch' pickup twig in both size and silhouette.
+          const yawA = seed * 1.3;
+          const axis = { x: -Math.cos(yawA), z: Math.sin(yawA) };
+          const log = add(new THREE.Mesh(
+            this.geo('logCyl', () => new THREE.CylinderGeometry(0.17, 0.19, 1.7, 9)), wood));
+          log.rotation.set(0, yawA, Math.PI / 2);
+          log.position.y = 0.15;
+          const capM = std(0xc8a165, 1);
+          for (const s of [-1, 1]) {
+            const cap = add(new THREE.Mesh(
+              this.geo('logCap', () => new THREE.CylinderGeometry(0.165, 0.165, 0.04, 9)), capM));
+            cap.rotation.set(0, yawA, Math.PI / 2);
+            cap.position.set(axis.x * 0.86 * s, 0.15, axis.z * 0.86 * s);
+          }
+          const mossM = std(0x51652c, 1);
+          for (const [along, side] of [[-0.4, 0.05], [0.3, -0.06]] as const) {
+            const b = add(new THREE.Mesh(
+              this.geo('logMoss', () => new THREE.IcosahedronGeometry(0.16, 0)), mossM));
+            b.scale.set(1.4, 0.35, 0.9);
+            b.position.set(axis.x * along - axis.z * side, 0.31, axis.z * along + axis.x * side);
+            b.rotation.y = yawA;
+          }
+          break;
+        }
         const spr = sprite(this.gpt.prop_branch, 0.95, 0.78);
         if (spr) g.add(spr);
         else {
@@ -1180,4 +1280,15 @@ export const RESOURCE_VISUAL_SPECS: Record<string, ResourceVisualSpec> = {
   water: { footprintRadius: 0.7, height: 0.15, depletedForm: 'none' },
   oil: { footprintRadius: 0.7, height: 0.12, depletedForm: 'none' },
   ore: { footprintRadius: 1.0, height: 1.15, depletedForm: 'rubble' },
+};
+
+/**
+ * Specs for variants whose footprint/height differ from their base
+ * type (world expansion, 2026-11-07). Keyed `type:variant`. Variants
+ * not listed here share the base type's spec exactly (e.g. rock
+ * 'mossy' and 'basalt' keep the plain rock footprint).
+ */
+export const RESOURCE_VARIANT_SPECS: Record<string, ResourceVisualSpec> = {
+  'tree:conifer': { footprintRadius: 1.0, trunkRadius: 0.22, height: 3.9, depletedForm: 'stump' },
+  'branch:log': { footprintRadius: 0.85, height: 0.35, depletedForm: 'none' },
 };

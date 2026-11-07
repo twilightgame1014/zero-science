@@ -201,6 +201,32 @@ document.getElementById('btn-plot')!.addEventListener('click', () => {
   player.z = 31.5;
   player.moving = false;
 });
+// World-expansion verification (2026-11-07): forest kit variants and
+// the 360° orbit camera. The kit nodes are placed at fixed spots SW of
+// the village; the player is moved next to them for inspection.
+let kitPlaced = false;
+document.getElementById('btn-forest-kit')!.addEventListener('click', (e) => {
+  kitPlaced = !kitPlaced;
+  const put = (id: string, st: object | null) => gfx.updateResourceVisual(id, st as never);
+  if (kitPlaced) {
+    put('demo-conifer-1', { position: { x: -26, z: 26 }, type: 'tree', scale: 1.1, natural: { kind: 'tree', variant: 'conifer' } });
+    put('demo-conifer-2', { position: { x: -28.6, z: 23.4 }, type: 'tree', scale: 0.8, natural: { kind: 'tree', variant: 'conifer' } });
+    put('demo-log-1', { position: { x: -24, z: 21.5 }, type: 'branch', scale: 1, natural: { kind: 'branch', variant: 'log' } });
+    put('demo-mossy-1', { position: { x: -22.4, z: 24.8 }, type: 'rock', scale: 1.1, natural: { kind: 'rock', variant: 'mossy' } });
+    player.x = -24.6;
+    player.z = 27.8;
+    player.moving = false;
+  } else {
+    for (const id of ['demo-conifer-1', 'demo-conifer-2', 'demo-log-1', 'demo-mossy-1']) put(id, null);
+  }
+  (e.target as HTMLButtonElement).textContent = kitPlaced ? '森林キットを消す' : '森林キットを置く';
+});
+let orbitYaw = 45;
+document.getElementById('btn-orbit')!.addEventListener('click', (e) => {
+  orbitYaw = (orbitYaw + 90) % 360;
+  gfx.setCameraOrbit({ yawDegrees: orbitYaw });
+  (e.target as HTMLButtonElement).textContent = `カメラを90°回す（現在${orbitYaw}°）`;
+});
 document.getElementById('tod')!.addEventListener('input', (e) => {
   const v = Number((e.target as HTMLInputElement).value) / 100;
   gfx.setWorldVisualState({ timeOfDay: v });

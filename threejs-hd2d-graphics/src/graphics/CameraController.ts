@@ -27,13 +27,24 @@ export class CameraController {
   private insetBottom = 0;
   private heightPx = 0;
 
+  private yawDegrees: number;
+  private pitchDegrees: number;
+
   constructor(cfg: GraphicsConfig['camera']) {
     this.cfg = cfg;
     this.viewSize = cfg.viewSize;
     this.effectiveViewSize = cfg.viewSize;
+    this.yawDegrees = cfg.yawDegrees;
+    this.pitchDegrees = cfg.pitchDegrees;
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400);
-    const pitch = THREE.MathUtils.degToRad(cfg.pitchDegrees);
-    const yaw = THREE.MathUtils.degToRad(cfg.yawDegrees);
+    this.applyOrientation();
+    this.applyFrustum();
+    this.snapToTarget();
+  }
+
+  private applyOrientation(): void {
+    const pitch = THREE.MathUtils.degToRad(this.pitchDegrees);
+    const yaw = THREE.MathUtils.degToRad(this.yawDegrees);
     const dist = 90;
     this.offset.set(
       Math.sin(yaw) * Math.cos(pitch),
@@ -45,8 +56,42 @@ export class CameraController {
       Math.cos(pitch),
       -Math.cos(yaw) * Math.sin(pitch),
     );
+  }
+
+  /**
+   * Orbit the camera at runtime (world-expansion spec, 2026-11-07):
+   * the world is authored to be viewed from any side, so yaw/pitch
+   * are no longer fixed at construction. Omitted fields keep their
+   * current values. Yaw is free (360°); pitch is clamped to a sane
+   * exploration range so the ground plane never flips.
+   */
+  setOrientation(yawDegrees?: number, pitchDegrees?: number): void {
+    if (yawDegrees !== undefined && Number.isFinite(yawDegrees)) {
+      this.yawDegrees = ((yawDegrees % 360) + 360) % 360;
+    }
+    if (pitchDegrees !== undefined && Number.isFinite(pitchDegrees)) {
+      this.pitchDegrees = THREE.MathUtils.clamp(pitchDegrees, 12, 72);
+    }
+    this.applyOrientation();
+    this.updateCameraTransform();
+  }
+
+  /** Current orbit yaw in degrees (0–360). Input mapping on the game
+   *  side should follow this so screen-relative movement stays true. */
+  getYawDegrees(): number {
+    return this.yawDegrees;
+  }
+
+  getPitchDegrees(): number {
+    return this.pitchDegrees;
+  }
+
+  /** Zoom: with an orthographic camera this is the frustum height. */
+  setViewSize(viewSize: number): void {
+    if (!Number.isFinite(viewSize) || viewSize <= 0) return;
+    this.viewSize = THREE.MathUtils.clamp(viewSize, 4, 60);
     this.applyFrustum();
-    this.snapToTarget();
+    this.updateCameraTransform();
   }
 
   /** Set the point the camera should look at (scene coordinates). */
