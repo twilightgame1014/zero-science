@@ -142,7 +142,7 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   // メニュー（シート）と大きな項目
   await page.click('nav [data-tab="menu"]'); await page.waitForTimeout(150);
   const items = await page.evaluate(`[...document.querySelectorAll('#dockBody .bigitem')].map(b=>({t:b.querySelector('span:last-child').firstChild.textContent.trim(), h:b.getBoundingClientRect().height}))`);
-  ok('「メニュー」に図鑑・技術・記録・設定が文字付きの大きな項目で並ぶ', items.length === 4 && items.every(i => i.h >= 48) && items.map(i => i.t).join() === '図鑑,技術,記録,設定', JSON.stringify(items));
+  ok('「メニュー」に図鑑・技術・記録・建築・設定が文字付きの大きな項目で並ぶ', items.length === 5 && items.every(i => i.h >= 48) && items.map(i => i.t).join() === '図鑑,技術,記録,建築,設定', JSON.stringify(items));
   ok('メニューのシートを開いている間も、後ろのマップは描画を続ける（入力は止まる）', await page.evaluate(`__FAKE.loop === true && document.getElementById('view').inert`));
   await page.click('#dockBody .bigitem[data-tab="book"]'); await page.waitForTimeout(150);
   ok('メニューから図鑑に切り替わる（重ねずに1つだけ）', await page.evaluate(`${G}.U.tab==='book' && document.querySelectorAll('.dock:not([hidden])').length===1 && document.querySelector('nav [data-tab="menu"]').getAttribute('aria-current')==='page'`));
@@ -237,7 +237,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   const fc = await fullCheck(page);
   ok('PC：表示領域の端から端までマップで、ページがスクロールしない', fc.full && fc.noScroll && fc.ui === 'pc', JSON.stringify(fc));
   const navT = await page.evaluate(`[...document.querySelectorAll('#nav button')].filter(b=>getComputedStyle(b).display!=='none').map(b=>b.textContent.trim()+(b.title?'*':''))`);
-  ok('PCの下部中央ドックは 研究室／工作／図鑑／技術／記録（ツールチップ付き）', navT.join() === '研究室*,工作*,図鑑*,技術*,記録*' && await page.evaluate(`[...document.querySelectorAll('#nav button')].filter(b=>getComputedStyle(b).display!=='none').every(b=>b.querySelector('img.ico'))`), JSON.stringify(navT));
+  ok('PCの下部中央ドックは 研究室／工作／図鑑／技術／記録／建築（ツールチップ付き）', navT.join() === '研究室*,工作*,図鑑*,技術*,記録*,建築*' && await page.evaluate(`[...document.querySelectorAll('#nav button')].filter(b=>getComputedStyle(b).display!=='none').every(b=>b.querySelector('img.ico'))`), JSON.stringify(navT));
   const dockR = await rect(page, '#nav');
   ok('ドックは画面下部の中央にある', Math.abs((dockR.l + dockR.r) / 2 - 683) < 4 && dockR.b <= 768 && dockR.b > 700, JSON.stringify(dockR));
   ok('PCでは仮想スティックを表示しない', !(await rect(page, '#joy')).shown);
@@ -452,6 +452,52 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await page.waitForTimeout(400); await page.reload(); await page.waitForTimeout(800);
   ok('再読み込みしても、刈った草むらは刈り跡のまま（同じIDの状態がセーブに残る）', await page.evaluate(`(()=>{ const G=${G}, o=G.WORLD.byId.get('${tgt.id}'); return !!o && G.WORLD.visual(G.S,o).state==='cut'; })()`));
   ok('ページでエラーが起きていない（地域の外の採取）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+
+/* ---------------- 建築モード（家・設備の自由設置） ---------------- */
+{
+  const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
+  await page.goto(url + '?verify=1'); await page.waitForTimeout(900);
+  page.on('dialog', d => d.accept());
+  // 作業台を「建てた」状態にして、拠点から少し離れた開けた所へ
+  await page.evaluate(`(()=>{ const G=${G}; G.S.verify.placed=['st-bench']; G.render(); G.W3.pos={x:-13,z:25}; })()`); await page.waitForTimeout(400);
+  await page.click('#nav [data-tab="build"]'); await page.waitForTimeout(300);
+  const list = await page.evaluate(`[...document.querySelectorAll('#dockBody .bit')].map(b=>b.textContent.replace(/\\s+/g,' ').trim())`);
+  ok('建築一覧に、建てた（作った）家・設備だけが並び、素材の決まり（使わない・戻らない）が書いてある', list.length === 1 && /作業台/.test(list[0]) && await page.evaluate(`/素材は使わず、戻りもしません/.test(document.getElementById('dockBody').textContent)`), JSON.stringify(list));
+  await page.click('#dockBody [data-act="b-start"][data-id="st-bench"]'); await page.waitForTimeout(300);
+  const st0 = await page.evaluate(`({place:!!${G}.W3.place, bar:!document.getElementById('buildbar').hidden, ghost:!!__FAKE.structures['ghost:place'], orig:!!__FAKE.structures['st-bench'], tab:${G}.U.tab, inv:JSON.stringify(${G}.S.inv).length})`);
+  ok('「移動・回転」で置き場所を決めるモードになり、候補が出る（元の建物はいったん隠れ、パネルは閉じる）', st0.place && st0.bar && st0.ghost && !st0.orig && st0.tab === 'explore', JSON.stringify(st0));
+  // 置けない所（川）→ 赤と理由、ボタンは押せない
+  await page.evaluate(`(()=>{ const G=${G}; const P=G.W3.place; P.x=T_RIVER_X; P.z=0; })()`.replace('T_RIVER_X', '16.9')); await page.waitForTimeout(200);
+  const ng = await page.evaluate(`({msg:document.getElementById('bbMsg').textContent, cls:document.getElementById('bbMsg').className, dis:document.querySelector('#buildbar .bbok').disabled, poly:(document.querySelector('#buildov polygon')||{getAttribute:()=>''}).getAttribute('stroke')})`);
+  ok('置けない所では赤い枠と理由が出て、「ここに置く」は押せない', /川/.test(ng.msg) && /ng/.test(ng.cls) && ng.dis && ng.poly === '#e0434f', JSON.stringify(ng));
+  // マウスを動かすと候補が付いてくる（グリッド吸着ONなら0.5マス刻み）
+  await page.mouse.move(700, 420); await page.mouse.move(705, 424); await page.waitForTimeout(150);
+  const snap = await page.evaluate(`(()=>{ const P=${G}.W3.place; return {x:P.x, z:P.z, gx:Math.abs(P.x*2-Math.round(P.x*2))<1e-9, gz:Math.abs(P.z*2-Math.round(P.z*2))<1e-9}; })()`);
+  ok('マウスを動かすと候補が付いてきて、グリッド吸着で0.5マス刻みになる', snap.gx && snap.gz && Math.abs(snap.x - 16.9) > 1, JSON.stringify(snap));
+  // 開けた所へ動かし、15度・90度回転、グリッド吸着
+  await page.evaluate(`(()=>{ const G=${G}; G.W3.place.x=-10.26; G.W3.place.z=21.73; })()`); await page.click('[data-act="b-rot"][data-id="15"]'); await page.click('[data-act="b-rot"][data-id="90"]'); await page.waitForTimeout(200);
+  const okst = await page.evaluate(`({msg:document.getElementById('bbMsg').textContent, dis:document.querySelector('#buildbar .bbok').disabled, rot:${G}.W3.place.rot, poly:document.querySelector('#buildov polygon').getAttribute('stroke'), title:document.getElementById('bbTitle').textContent})`);
+  ok('置ける所では緑の枠。回転は15度・90度の刻みで、向きが表示される', /置ける/.test(okst.msg) && !okst.dis && okst.poly === '#3fbf62' && /向き/.test(okst.title), JSON.stringify(okst));
+  const seq0 = await page.evaluate(`${G}.S.seq`), inv0 = await page.evaluate(`JSON.stringify(${G}.S.inv)`);
+  await page.evaluate(`(()=>{ const b=document.querySelector('#buildbar .bbok'); b.click(); b.click(); b.click(); })()`); await page.waitForTimeout(300);
+  const placed = await page.evaluate(`(()=>{ const G=${G}; const b=G.S.build['st-bench'], c=G.WORLD.structures().filter(t=>t.id==='struct:st-bench'); return {b, seq:G.S.seq, n:Object.keys(__FAKE.structures).filter(k=>k==='st-bench'||k.startsWith('ghost')).length, col:c.length, cx:c[0]&&c[0].x, inv:JSON.stringify(G.S.inv), place:!!G.W3.place}; })()`);
+  ok('「ここに置く」を連打しても、置くのは1回だけ（記録1つ・建物1つ・当たり判定1つ）。素材は変わらない', placed.b && Math.abs(placed.b.x + 10.26) < 1e-6 && placed.seq === seq0 + 1 && placed.n === 1 && placed.col === 1 && Math.abs(placed.cx + 10.26) < 1e-6 && placed.inv === inv0 && !placed.place, JSON.stringify(placed));
+  // やめる：何も変わらない
+  await page.click('#nav [data-tab="build"]'); await page.waitForTimeout(200); await page.click('#dockBody [data-act="b-start"][data-id="st-bench"]'); await page.waitForTimeout(200);
+  await page.evaluate(`(()=>{ const G=${G}; G.W3.place.x=-14; G.W3.place.z=28; })()`); await page.click('[data-act="b-cancel"]'); await page.waitForTimeout(200);
+  const cancel = await page.evaluate(`({b:${G}.S.build['st-bench'], seq:${G}.S.seq, shown:!!__FAKE.structures['st-bench'], ghost:!!__FAKE.structures['ghost:place']})`);
+  ok('「やめる」と置き場所は元のまま（素材も記録も変わらない・候補は消える）', Math.abs(cancel.b.x + 10.26) < 1e-6 && cancel.seq === seq0 + 1 && cancel.shown && !cancel.ghost, JSON.stringify(cancel));
+  // 再読み込み：同じ場所・向きで復元、当たり判定も
+  await page.waitForTimeout(400); await page.reload(); await page.waitForTimeout(900);
+  const rl = await page.evaluate(`(()=>{ const G=${G}; const f=__FAKE.structures['st-bench']; const c=G.WORLD.structures().find(t=>t.id==='struct:st-bench'); return {fx:f&&f.pos.x, frot:f&&f.rot, brot:G.S.build['st-bench'].rot, cx:c&&c.x, wall:!G.WORLD.free(G.S,-10.5,21.5)}; })()`);
+  ok('再読み込みしても、同じ場所・同じ向きで建ち、当たり判定も同じ場所', Math.abs(rl.fx + 10.26) < 1e-6 && Math.abs(rl.frot - rl.brot) < 1e-6 && Math.abs(rl.cx + 10.26) < 1e-6 && rl.wall, JSON.stringify(rl));
+  // 撤去：見えない壁が残らない・持ち物に残る
+  await page.click('#nav [data-tab="build"]'); await page.waitForTimeout(200); await page.click('#dockBody [data-act="b-remove"][data-id="st-bench"]'); await page.waitForTimeout(300);
+  const rm = await page.evaluate(`({b:${G}.S.build['st-bench'], shown:!!__FAKE.structures['st-bench'], col:${G}.WORLD.structures().length, free:${G}.WORLD.free(${G}.S,-10.5,21.5), own:${G}.S.inv.bench, btn:!!document.querySelector('#dockBody [data-act="b-start"][data-id="st-bench"]')})`);
+  ok('撤去すると建物も当たり判定も消え（見えない壁が残らない）、作業台は持ち物に残り、また「置く」ができる', rm.b.removed && !rm.shown && rm.col === 0 && rm.free && rm.own === 1 && rm.btn, JSON.stringify(rm));
+  ok('ページでエラーが起きていない（建築モード）', errors.length === 0, errors.join('\n'));
   await ctx.close();
 }
 

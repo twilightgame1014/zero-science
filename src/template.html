@@ -35,6 +35,17 @@ html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
 body{background:#1f2d24;color:var(--ink);font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
   font-weight:500;line-height:1.7;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
 button{font:inherit;color:inherit}
+/* 建築モード（置き場所を決める帯と、地面の枠） */
+.buildbar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--navh,64px) + 12px);z-index:6;background:rgba(255,255,255,.96);border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.28);padding:8px 10px;width:min(94vw,520px);pointer-events:auto}
+.buildbar[hidden]{display:none}
+.bbtitle{font-weight:900;font-size:.95rem}.bbmsg{font-size:.82rem;font-weight:700;margin:2px 0 6px}.bbmsg.ok{color:#2d6a3e}.bbmsg.ng{color:#a3262f}
+.bbrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px}.bbrow button{font:inherit;font-weight:800;min-height:44px;min-width:56px;border-radius:10px;border:1.5px solid var(--line);background:#fff;cursor:pointer}
+.bbrow .bbok{background:var(--meadow);color:var(--meadow-ink);border:none;flex:1}.bbrow .bbok:disabled{opacity:.45}
+.bbgrid{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;margin-left:auto}.bbgrid input{width:22px;height:22px}
+.game.placing .w3act,.game.placing .joy{visibility:visible}
+#buildov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.blist .bit{display:flex;gap:8px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:8px;margin:6px 0;background:var(--card)}
+.blist .bit .n{flex:1;font-weight:800}.blist .bit small{display:block;font-weight:500;color:var(--muted)}
 /* 検証モード（全解放）の表示と画面 */
 .vbadge{display:block;margin:0 0 6px;border:2px solid #b23a48;background:#fff3f4;color:#8c1f2c;font-weight:900;font-size:.8rem;border-radius:999px;padding:3px 12px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.18);pointer-events:auto}
 .vbadge[hidden]{display:none}
@@ -509,6 +520,12 @@ textarea{width:100%;min-height:90px;font:inherit;font-size:.75rem;border:1.5px s
     <div class="combo" id="combo"></div><div class="banner" id="banner" role="status"></div>
     <div class="joy" id="joy" aria-label="移動スティック"><div class="knob"></div></div>
     <button class="w3act idle" id="w3act" data-act="g3" hidden></button>
+    <div class="buildbar" id="buildbar" hidden role="group" aria-label="建物の置き場所を決める">
+      <div class="bbtitle" id="bbTitle"></div><div class="bbmsg" id="bbMsg" role="status"></div>
+      <div class="bbrow"><button data-act="b-rot" data-id="-90" title="左へ90度（Shift+R）">⟲90°</button><button data-act="b-rot" data-id="-15" title="左へ15度">⟲15°</button><button data-act="b-rot" data-id="15" title="右へ15度（R）">⟳15°</button><button data-act="b-rot" data-id="90" title="右へ90度">⟳90°</button>
+        <label class="bbgrid"><input type="checkbox" id="bbGrid" data-act="b-grid" checked>グリッド吸着</label></div>
+      <div class="bbrow"><button class="bbok" data-act="b-ok" title="ここに置く（Enter）">ここに置く</button><button data-act="b-cancel" title="やめる（Esc）">やめる</button></div>
+    </div>
   </div>
   <div class="scrim" id="scrim" data-act="closepanel" hidden></div>
   <section class="dock" id="dock" role="dialog" aria-labelledby="dockTitle" hidden>
@@ -521,6 +538,7 @@ textarea{width:100%;min-height:90px;font:inherit;font-size:.75rem;border:1.5px s
     <button data-tab="book" data-icon="book" data-only="pc" title="図鑑：見つけたものの説明"><span class="ico">📖</span>図鑑</button>
     <button data-tab="map" data-icon="tech" data-only="pc" title="技術マップ：技術と物質のつながり"><span class="ico">🕸️</span>技術</button>
     <button data-tab="log" data-icon="log" data-only="pc" title="記録：実験の記録とセーブデータ"><span class="ico">📓</span>記録</button>
+    <button data-tab="build" data-icon="home" data-only="pc" title="建築：作った家や設備を好きな場所に置く"><span class="ico">🏗️</span>建築</button>
     <button data-tab="menu" data-icon="menu" data-only="touch" title="メニュー：図鑑・技術・記録・設定"><span class="ico">☰</span>メニュー</button>
   </nav>
 </div>

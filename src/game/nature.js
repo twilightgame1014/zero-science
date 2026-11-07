@@ -250,6 +250,58 @@ var NATURE = (function(){
       structSig = structs.map(o=>o.id+"@"+o.x.toFixed(2)+","+o.z.toFixed(2)+","+o.rot.toFixed(2)).join("|");
       gridCache = null;
     }
+    /* ---------- 建築モード：置けるかの判定と確定（2026-11-07） ----------
+       p：{id, type, footprint, entrance, operate, rule, x, z, rot}。opts：{player:{x,z}, npcs:[{x,z,r}], reserved:[{x,z,r,why}]}
+       返り値：{ok, reasons:[文], shape}。素材は使わない（設備は工作で作った時点で素材を使っている）。 */
+    const toWorld = (o, lx, lz)=>{ const c=Math.cos(o.rot||0), s_=Math.sin(o.rot||0); return {x:o.x + c*lx + s_*lz, z:o.z - s_*lx + c*lz}; };
+    function shapeOf(p){ const f=p.footprint||{shape:"circle", r:1};
+      return {x:p.x, z:p.z, rot:p.rot||0, shape:f.shape==="rect"?"rect":"circle", w:f.w, d:f.d, r: f.shape==="rect" ? Math.hypot(f.w,f.d)/2 : f.r}; }
+    function samples(o){ if(o.shape==="rect"){ const hw=o.w/2, hd=o.d/2, pts=[];
+        for(const i of [-1,-0.5,0,0.5,1]) for(const j of [-1,-0.5,0,0.5,1]) pts.push(toWorld(o, i*hw, j*hd)); return pts; }
+      const pts=[{x:o.x, z:o.z}]; for(let k=0;k<12;k++){ const a=k/12*Math.PI*2; pts.push({x:o.x+Math.cos(a)*o.r, z:o.z+Math.sin(a)*o.r}); pts.push({x:o.x+Math.cos(a)*o.r*0.5, z:o.z+Math.sin(a)*o.r*0.5}); } return pts; }
+    function checkPlacement(S, p, opts, now){
+      opts=opts||{}; now=now||Date.now();
+      const t = shapeOf(p), pts = samples(t), why = new Set(), ignore = "struct:"+p.id;
+      if(pts.some(q=>!inWorld(q.x,q.z,1.2))) why.add("世界の端に近すぎる");
+      if(lockedNow(S).some(r=>pts.some(q=>Math.hypot(q.x-r.w.x,q.z-r.w.z) < REGION_R))) why.add("まだ入れない地域の中");
+      const hs = pts.map(q=>H(q.x,q.z)), hmin=Math.min(...hs), hmax=Math.max(...hs);
+      const diag = t.shape==="rect" ? Math.hypot(t.w,t.d) : t.r*2;          // 大きい建物ほど端と端の高さの差は大きくてよい（なだらかなら置ける）
+      if(hmax-hmin > Math.max(0.8, 0.3*diag) || pts.some(q=>slope(q.x,q.z) > 0.6)) why.add("地面が傾きすぎている（平らな所へ）");
+      const dr = pts.map(q=>T.distanceToRiver(q.x,q.z));
+      if(p.rule==="waterside"){        // 水車：川の水ぎわ（一部が水にかかり、中心は岸の上）
+        const dc = T.distanceToRiver(t.x,t.z);
+        if(!(dc > 3.4 && dc < 6.4 && Math.min(...dr) < 4.6)) why.add("水車は川の水ぎわ（半分が水にかかる所）に置く");
+      } else if(Math.min(...dr) < 5.0) why.add("川（水の中・水ぎわ）には置けない");
+      for(const o of structs){ if(o.id===ignore) continue;
+        if(pts.some(q=>sdist(o,q.x,q.z) < 0.5) || samples(o).some(q=>sdist(t,q.x,q.z) < 0.5)) { why.add("ほかの建物と重なる"); break; } }
+      const near = around(t.x, t.z, t.r+2.5);
+      if(near.some(o=>o.block && present(S,o,now) && sdist(t,o.x,o.z) < o.r+0.15)) why.add("木や岩と重なる（先に伐る・割るか、場所を変える）");
+      if(statics.some(o=>Math.abs(o.x-t.x)<t.r+3 && Math.abs(o.z-t.z)<t.r+3 && sdist(t,o.x,o.z) < o.r+0.3)) why.add("採取地点と重なる");
+      if(opts.player && sdist(t, opts.player.x, opts.player.z) < PLAYER_R+0.15) why.add("主人公と重なる（少し離れて置く）");
+      (opts.npcs||[]).forEach(n=>{ if(sdist(t,n.x,n.z) < (n.r||PLAYER_R)+0.2) why.add("人と重なる"); });
+      (opts.reserved||[]).forEach(r=>{ if(pts.some(q=>Math.hypot(q.x-r.x,q.z-r.z) < r.r) || sdist(t,r.x,r.z) < r.r) why.add(r.why||"ここには置けない"); });
+      /* 入口・操作する場所の前（外側へ0.6）に、人が立てる空きがあるか */
+      for(const k of ["entrance","operate"]){ const lp=p[k]; if(!lp) continue;
+        const L=Math.hypot(lp[0],lp[1])||1, w=toWorld(t, lp[0]+lp[0]/L*0.6, lp[1]+lp[1]/L*0.6);
+        // 主人公は川の中も歩けるので、水ぎわに置く設備（水車）は使う場所が浅瀬でもよい
+        let bad = !inWorld(w.x,w.z,0.5) || (p.rule!=="waterside" && T.distanceToRiver(w.x,w.z) < 4.6) || slope(w.x,w.z) > 0.7;
+        if(!bad) for(const o of nearbySolids(S,w.x,w.z,now)){ if(o.id===ignore) continue; if(sdist(o,w.x,w.z) < PLAYER_R){ bad=true; break; } }
+        if(!bad && sdist(t,w.x,w.z) < PLAYER_R*0.5) bad=true;
+        if(bad){ why.add(k==="entrance" ? "入口の前があいていない" : "設備を使う場所（前）があいていない"); } }
+      return {ok: why.size===0, reasons:[...why], shape:t};
+    }
+    /* 置き場所を確定する（token が S.seq と同じときだけ・一度だけ）。素材は使わない */
+    function commitPlacement(S, p, token, opts, now){
+      if(token!==S.seq) return {ok:false, kind:"dup", reasons:["もう置いた（二重の操作は取り消した）"]};
+      const c = checkPlacement(S, p, opts, now); if(!c.ok) return Object.assign({kind:"bad"}, c);
+      S.build = S.build || {}; S.build[p.id] = {x:+p.x.toFixed(2), z:+p.z.toFixed(2), rot:+(((p.rot%(Math.PI*2))+Math.PI*2)%(Math.PI*2)).toFixed(4)};
+      S.seq++;
+      return {ok:true, at:S.build[p.id]};
+    }
+    function removePlacement(S, id, token){
+      if(token!==S.seq) return {ok:false, kind:"dup"};
+      S.build = S.build || {}; S.build[id] = {removed:true}; S.seq++; return {ok:true};
+    }
     /* 建物の下（占有形状＋自然物の半径＋少しの余白）にある自然物 */
     const covered = o=> !o.static && structs.some(t=> Math.abs(t.x-o.x) < t.r+o.r+1 && Math.abs(t.z-o.z) < t.r+o.r+1 && sdist(t,o.x,o.z) < o.r + 0.25);
 
@@ -444,7 +496,7 @@ var NATURE = (function(){
 
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
             free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids, layer2:L2N,
-            setStructures, structures:()=>structs.slice(), sdist, covered};
+            setStructures, structures:()=>structs.slice(), sdist, covered, checkPlacement, commitPlacement, removePlacement, toWorld};
   }
   return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, SITES, FORMER_STONEWORK};
 })();

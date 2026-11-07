@@ -1,12 +1,13 @@
 /* ===================== ゲームエンジン（UIから独立） ===================== */
 var ENGINE = (function(D){
-  const SCHEMA = 2;
+  const SCHEMA = 3;
   const IT = D.items;
   const BASKET_RES = ["twig","leaves","vine","seed","grass","grape","shell","seaweed","cobble","sand","clay"];
   const AIR = ["O","N","C","H"]; // 空気中の酸素・窒素・二酸化炭素・水蒸気
 
   /* nature：変化した自然物・採取地点の状態だけを保存する（{id:{u:使った回数, t:取り尽くした時刻}}） */
-  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, created:Date.now()}; }
+  /* build：建物の置き場所 {建物ID:{x,z,rot}}（撤去したものは {removed:true}。記録がなければ決まった場所）。camera：カメラのユーザー設定（v3〜） */
+  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, build:{}, camera:{}, created:Date.now()}; }
   const cnt = (S,id)=> S.inv[id]||0;
   const has = (S,id)=> cnt(S,id)>0;
   /* 検証モード（S.verify。通常のセーブには存在しない）の条件バイパス。
@@ -302,7 +303,8 @@ var ENGINE = (function(D){
       if(Array.isArray(s.found)) s.found.forEach(id=>{ n.disc[id]={first:Date.now(),made:1,total:1,routes:[],best:0}; });
       return n;
     },
-    1: s => { s.nature = {}; return s; }  // v1→v2：自然物・採取地点の状態（最初は何も変化していない）
+    1: s => { s.nature = {}; return s; },  // v1→v2：自然物・採取地点の状態（最初は何も変化していない）
+    2: s => { s.build = {}; s.camera = {}; return s; }  // v2→v3：建物の自由設置・カメラの設定（これまでの建物は決まった場所のまま）
   };
   const ALIASES = {}; // 名称変更したIDの対応表（例：{"oldId":"newId"}）
   function migrate(raw){
@@ -314,6 +316,9 @@ var ENGINE = (function(D){
     for(const k in n.inv){ const x = n.inv[k]; if(typeof x!=="number" || !isFinite(x) || x<=0) delete n.inv[k]; else n.inv[k]=Math.floor(x); }
     if(!Array.isArray(n.hist)) n.hist=[]; if(!Array.isArray(n.auto)) n.auto=[];
     if(!n.nature || typeof n.nature!=="object" || Array.isArray(n.nature)) n.nature={};
+    if(!n.build || typeof n.build!=="object" || Array.isArray(n.build)) n.build={};
+    for(const k of Object.keys(n.build)){ const b=n.build[k]; if(!b || typeof b!=="object" || !(b.removed===true || (isFinite(b.x) && isFinite(b.z) && isFinite(b.rot)))) delete n.build[k]; }
+    if(!n.camera || typeof n.camera!=="object" || Array.isArray(n.camera)) n.camera={};
     for(const k of Object.keys(n.nature)){ const x=n.nature[k]; if(!x || typeof x!=="object" || !(x.u>0) || !isFinite(x.u)) delete n.nature[k]; else { x.u=Math.floor(x.u); if(x.t!==undefined && !isFinite(x.t)) delete x.t; } }
     return n;
   }
@@ -398,7 +403,11 @@ var ENGINE = (function(D){
     const neg = deserialize(JSON.stringify({v:1, inv:{twig:-5, ash:2.7}}));
     ok("壊れた数量（負の数・小数）を修正する", !neg.inv.twig && neg.inv.ash===2);
     const v1 = deserialize(JSON.stringify({v:1, inv:{twig:2}, disc:{twig:{first:1,made:1,total:2,routes:[],best:0}}, pos:{x:-20,z:20}}));
-    ok("スキーマv1のセーブをv2へ移行できる（自然物の状態は空・座標は残る）", v1.v===2 && v1.inv.twig===2 && v1.pos.x===-20 && JSON.stringify(v1.nature)==="{}");
+    ok("スキーマv1のセーブを最新（v3）へ移行できる（自然物の状態は空・座標は残る・建物は決まった場所のまま）", v1.v===SCHEMA && v1.inv.twig===2 && v1.pos.x===-20 && JSON.stringify(v1.nature)==="{}" && JSON.stringify(v1.build)==="{}");
+    const v2 = deserialize(JSON.stringify({v:2, inv:{bench:1}, disc:{}, pos:{x:-18,z:21}, nature:{"twig:1,2":{u:1,t:5}}}));
+    ok("スキーマv2のセーブをv3へ移行できる（採取状態・座標はそのまま、置き場所とカメラは空）", v2.v===3 && v2.nature["twig:1,2"].u===1 && v2.pos.z===21 && JSON.stringify(v2.build)==="{}" && JSON.stringify(v2.camera)==="{}");
+    const badB = deserialize(JSON.stringify({v:3, build:{"st-bench":{x:1,z:2,rot:0.5}, "st-fire":{removed:true}, "st-kiln":{x:"a"}, "st-x":null}}));
+    ok("壊れた置き場所の記録は捨てる（正しいものは残す）", badB.build["st-bench"].rot===0.5 && badB.build["st-fire"].removed===true && !badB.build["st-kiln"] && !("st-x" in badB.build));
     const badN = deserialize(JSON.stringify({v:2, nature:{"t:1,2":{u:-1}, "d:river:cobble":{u:2.5,t:"x"}}}));
     ok("壊れた自然物の状態を修正する", !badN.nature["t:1,2"] && badN.nature["d:river:cobble"].u===2 && badN.nature["d:river:cobble"].t===undefined);
     // 7 残量つきの採取（地域の資源）

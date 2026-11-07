@@ -23,7 +23,7 @@ ok('原本の名前とデータの名前が一致（道具・設備）', Object.
 /* ---------- 建物（assets/buildings-3d → assets/build/buildings） ---------- */
 const spec = Object.fromEntries(JSON.parse(rd('assets/buildings-3d/structures.json')).structures.map(s => [s.id, s]));
 const ui = rd('src/game/ui.js'), plan = ui.slice(ui.indexOf('const STRUCT_PLAN = ['), ui.indexOf('];', ui.indexOf('const STRUCT_PLAN = [')));
-const rows = [...plan.matchAll(/\{id:"([^"]+)",\s*type:"([^"]+)",\s*at:\{x:([-\d.]+),z:([-\d.]+)\}(?:,\s*rot:([-\d.]+))?,\s*when:\(\)=>([^}\n]+)\}/g)]
+const rows = [...plan.matchAll(/\{id:"([^"]+)",\s*type:"([^"]+)",\s*at:\{x:([-\d.]+),z:([-\d.]+)\}(?:,\s*rot:([-\d.]+))?(?:,\s*rule:"[^"]+")?,\s*when:\(\)=>([^}\n]+)\}/g)]
   .map(m => ({ id: m[1], type: m[2], x: +m[3], z: +m[4], rot: m[5] !== undefined ? +m[5] : Math.atan2(D.base.x - (+m[3]), D.base.z - (+m[4])), when: m[6] }));
 ok('STRUCT_PLAN を読めた（' + rows.length + ' 件）', rows.length >= 13);
 const noModel = rows.filter(r => !spec[r.type] || !fs.existsSync(new URL('assets/build/buildings/' + r.type + '.glb', root)));
@@ -64,5 +64,42 @@ ok('どの向きから工場へ歩いても、壁の中に入らない', inside 
 const cov = W.objects.filter(o => W.covered(o));
 ok('建物の下になった自然物は、見えない・壁にならない・採れない（建物を取り除くと戻る）', cov.length > 0 && cov.every(o => W.visual(SV, o).state === 'gone' && !W.solid(SV, o) && !W.info(SV, o).ok)
   && (W.setStructures([]), cov.every(o => !W.covered(o))), cov.length + '件');
+
+/* ---------- 建築モード：置けるかの判定・確定・撤去（nature.js） ---------- */
+{
+  const rows2 = [...plan.matchAll(/\{id:"([^"]+)",\s*type:"([^"]+)",\s*at:\{x:([-\d.]+),z:([-\d.]+)\}(?:,\s*rot:([-\d.]+))?(?:,\s*rule:"([^"]+)")?/g)]
+    .map(m => ({ id: m[1], type: m[2], x: +m[3], z: +m[4], rot: m[5] !== undefined ? +m[5] : Math.atan2(D.base.x - (+m[3]), D.base.z - (+m[4])), rule: m[6] || null }));
+  const P = (r, o = {}) => Object.assign({ id: r.id, type: r.type, footprint: spec[r.type].footprint, entrance: spec[r.type].entrance, operate: spec[r.type].operate, rule: r.rule, x: r.x, z: r.z, rot: r.rot }, o);
+  const RES = [{ x: D.base.x, z: D.base.z, r: 1.3, why: '拠点の真ん中' }], far = { x: -200, z: -200 };
+  W.setStructures(rows2.map(r => ({ ...r, footprint: spec[r.type].footprint })));
+  const S2 = E.makeVerifyState();
+  const badSlots = rows2.filter(r => !W.checkPlacement(S2, P(r), { player: { x: D.base.x, z: D.base.z }, reserved: RES }).ok);
+  ok('建築：全部建てた状態でも、13種それぞれの決まった場所は「置ける」（自分の形は除いて判定）', badSlots.length === 0, badSlots.map(r => r.id + ':' + W.checkPlacement(S2, P(r), { reserved: RES }).reasons.join('/')).join(' '));
+  const wb = rows2.find(r => r.id === 'st-bench'), ww = rows2.find(r => r.id === 'st-wheel');
+  const why = (o, opt) => W.checkPlacement(S2, P(wb, o), Object.assign({ player: far, reserved: RES }, opt)).reasons.join('/');
+  const tr = W.objects.find(o => o.kind === 'tree' && W.present(S2, o) && !W.covered(o));
+  const steep = (() => { for (let x = 10; x < 54; x += 0.7) for (let z = -50; z < 20; z += 0.7) { const h = (a, b) => T.terrainHeight(a, b, T.DEFAULT_CONFIG); if (Math.abs(h(x + 0.6, z) - h(x - 0.6, z)) / 1.2 > 0.8 && T.distanceToRiver(x, z, T.DEFAULT_CONFIG) > 8) return { x, z }; } return null; })();
+  ok('建築：川の中・水ぎわには置けない（理由つき）', /川/.test(why({ x: T.riverCenterX(0, T.DEFAULT_CONFIG), z: 0 })));
+  ok('建築：木の上には置けない（先に伐る）', /木や岩/.test(why({ x: tr.x, z: tr.z })));
+  ok('建築：急な斜面には置けない', steep && /傾き/.test(why({ x: steep.x, z: steep.z })), JSON.stringify(steep));
+  ok('建築：ほかの建物と重ならない', /ほかの建物/.test(why({ x: rows2.find(r => r.id === 'st-kiln').x + 0.5, z: rows2.find(r => r.id === 'st-kiln').z })));
+  ok('建築：主人公と重ならない・拠点の真ん中はあけておく', /主人公/.test(why({ x: -12, z: 22 }, { player: { x: -12, z: 22 } })) && /拠点の真ん中/.test(why({ x: D.base.x, z: D.base.z })));
+  ok('建築：水車は川の水ぎわだけ（陸の真ん中には置けない）', /水ぎわ/.test(W.checkPlacement(S2, P(ww, { x: -12, z: 22 }), { player: far }).reasons.join('/')));
+  ok('建築：開けた平らな地面なら置ける', W.checkPlacement(S2, P(wb, { x: -12, z: 22, rot: 0.3 }), { player: far, reserved: RES }).ok);
+  // 確定：同じトークンでの2回目は取り消し（重複しない）
+  const S3 = E.makeVerifyState(); const seq0 = S3.seq;
+  const r1 = W.commitPlacement(S3, P(wb, { x: -12, z: 22, rot: 0.3 }), S3.seq - 0, { player: far, reserved: RES });
+  const r2 = W.commitPlacement(S3, P(wb, { x: -12, z: 22, rot: 0.3 }), seq0, { player: far, reserved: RES });
+  ok('建築：確定は一度だけ（連打しても2回目は取り消し、置き場所の記録は1つ）', r1.ok && !r2.ok && r2.kind === 'dup' && S3.seq === seq0 + 1 && Object.keys(S3.build).length === 1 && Math.abs(S3.build['st-bench'].x + 12) < 1e-9);
+  const bad = W.commitPlacement(S3, P(wb, { x: tr.x, z: tr.z }), S3.seq, { player: far });
+  ok('建築：置けない場所では確定しても何も変わらない', !bad.ok && S3.build['st-bench'].x === -12 && S3.seq === seq0 + 1);
+  const rm = W.removePlacement(S3, 'st-bench', S3.seq);
+  ok('建築：撤去すると記録は「撤去中」になり、持ち物（作業台）は残る', rm.ok && S3.build['st-bench'].removed === true && S3.inv.bench === 1);
+  // 回転：矩形は向きで占有が変わる。撤去後は見えない壁が残らない
+  W.setStructures([{ id: 'st-bench', type: 'workbench', x: -12, z: 22, rot: 0, footprint: spec.workbench.footprint }]);
+  const in0 = !W.free(S3, -12 + 0.9, 22); W.setStructures([{ id: 'st-bench', type: 'workbench', x: -12, z: 22, rot: Math.PI / 2, footprint: spec.workbench.footprint }]);
+  const in90 = !W.free(S3, -12 + 0.9, 22), along90 = !W.free(S3, -12, 22 + 0.9); W.setStructures([]);
+  ok('建築：回転すると当たり判定も回る（作業台の長い辺の向きが変わる）・撤去すると壁が残らない', in0 && !in90 && along90 && W.free(S3, -12, 22));
+}
 console.log(`\n${total - fail}/${total} 合格`);
 process.exit(fail ? 1 : 0);

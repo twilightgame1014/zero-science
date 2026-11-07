@@ -86,11 +86,11 @@ function afterChange(news){
 /* 探索フィールドがホーム。ほかの画面は下部タブから「パネル」として上に重ねて開く。
    U.tab==="explore" はパネルが閉じている状態を表す。フィールドのDOMと3D描画は保ったまま。 */
 const TABS = {explore:"🗺️ 探索", lab:"🧪 研究室", craft:"🔨 工作", book:"📖 図鑑", map:"🕸️ 技術マップ", log:"📓 記録",
-  world:"🗺️ 地図・地域", menu:"☰ メニュー", settings:"⚙️ 設定・ヘルプ", verify:"🧪 検証モード"};
+  world:"🗺️ 地図・地域", menu:"☰ メニュー", settings:"⚙️ 設定・ヘルプ", verify:"🧪 検証モード", build:"🏗️ 建築"};
 /* パネルの大きさ。PC：右側のパネル（side）か大きなオーバーレイ（wide）。スマホ：下からのシート（sheet）か全高近く（tall） */
 const PC_SIZE = {book:"wide", map:"wide", lab:"wide"};   /* 研究室は材料・操作と実験台を並べる */
-const TOUCH_SIZE = {lab:"tall", craft:"tall", book:"tall", map:"tall", log:"tall", verify:"tall"};
-const MENU_TABS = ["menu","book","map","log","settings","verify"];   /* スマホでは「メニュー」の中にある画面 */
+const TOUCH_SIZE = {lab:"tall", craft:"tall", book:"tall", map:"tall", log:"tall", verify:"tall", build:"tall"};
+const MENU_TABS = ["menu","book","map","log","settings","verify","build"];   /* スマホでは「メニュー」の中にある画面 */
 /* 画面幅だけでなく入力方法（タッチかマウスか）も見て、PC用とスマホ用の配置を切り替える */
 const MQ_COARSE = matchMedia("(pointer:coarse)");
 const uiMode = ()=>{ const a=$("#app"); return a ? a.dataset.ui : "pc"; };
@@ -193,6 +193,7 @@ function renderPanel(){
   else if(U.tab==="map") body.innerHTML = viewMap();
   else if(U.tab==="log") body.innerHTML = viewLog();
   else if(U.tab==="verify") body.innerHTML = viewVerify();
+  else if(U.tab==="build") body.innerHTML = viewBuild();
   else if(U.tab==="world"){ body.innerHTML = viewWorld(); drawRegion(); }
   else if(U.tab==="menu") body.innerHTML = viewMenu();
   else if(U.tab==="settings") body.innerHTML = viewSettings();
@@ -203,7 +204,7 @@ function stageSummary(){
     <p class="desc" style="margin-top:0">次の文明の進化：${D.stages[st].need}</p>`;
 }
 function viewMenu(){
-  return stageSummary()+`<div class="bigmenu">${[["book","book","図鑑","見つけたものの説明"],["map","tech","技術","技術と物質のつながり"],["log","log","記録","実験の記録・セーブ"],...(VERIFY?[["verify","settings","検証モード","全解放・素材・移動・アセット"]]:[]),["settings","settings","設定","主人公・表示・遊び方"]]
+  return stageSummary()+`<div class="bigmenu">${[["book","book","図鑑","見つけたものの説明"],["map","tech","技術","技術と物質のつながり"],["log","log","記録","実験の記録・セーブ"],["build","home","建築","作った家や設備を好きな場所に置く"],...(VERIFY?[["verify","settings","検証モード","全解放・素材・移動・アセット"]]:[]),["settings","settings","設定","主人公・表示・遊び方"]]
     .map(([t,i,n,d])=>`<button class="bigitem" data-tab="${t}">${iconHTML(i)}<span>${n}<small>${d}</small></span></button>`).join("")}</div>`;
 }
 function viewSettings(){
@@ -773,7 +774,7 @@ const STRUCT_PLAN = [
   {id:"st-power",   type:"power-plant",at:{x:-7,z:13},    when:()=>owned("steamengine") && owned("generator")},
   {id:"st-inst",    type:"research-institute", at:{x:-30,z:31}, when:()=>owned("reactor")},
   /* 拠点の外：水車は川岸（nature.js の SITES で自然物を置かない）、掘削やぐらは油田の原油のそば */
-  {id:"st-wheel",   type:"waterwheel", at:{x:15.2,z:3.8}, rot:2.17, when:()=>owned("waterwheel")},
+  {id:"st-wheel",   type:"waterwheel", at:{x:15.2,z:3.8}, rot:2.17, rule:"waterside", when:()=>owned("waterwheel")},
   {id:"st-rig",     type:"drilling-rig", at:{x:3.2,z:48}, when:()=>owned("rig")},
 ];
 /* 建物を置く・取り除く（描画・GLB の読み込み・当たり判定をまとめて扱う）。W3.structInfo：id → {type,x,z,rot} */
@@ -792,7 +793,7 @@ function structRemove(id){ W3.gfx.removeStructureVisual(id); W3.structs.delete(i
 /* 当たり判定：建物の占有形状（structures.json の footprint）を自然物の世界へ渡す。プレビュー（vps:）は判定なし */
 function syncStructColliders(){
   if(!world()) return;
-  const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:")) return; const sp=ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type];
+  const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:") || id.startsWith("ghost:")) return; const sp=ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type];
     if(sp && sp.footprint) list.push({id, type:v.type, x:v.x, z:v.z, rot:v.rot, footprint:sp.footprint}); });
   const sig=JSON.stringify(list); if(sig===W3.colSig) return; W3.colSig=sig;
   WORLD.setStructures(list);
@@ -801,13 +802,21 @@ function syncStructColliders(){
     W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false}); } }
   syncNature(true);      // 建物の下になった自然物を隠す・戻す
 }
+/* 建物の置き場所：S.build の記録（自由設置）を優先し、なければ決まった場所。撤去したもの・移動中のものは出さない */
+const buildRec = id=> (S.build||{})[id];
+function planPos(p){ const b=buildRec(p.id); if(b && !b.removed) return {x:b.x, z:b.z, rot:b.rot};
+  return {x:p.at.x, z:p.at.z, rot: p.rot!=null ? p.rot : Math.atan2(D.base.x-p.at.x, D.base.z-p.at.z)}; }
+function planOwned(p){ return S.verify ? placedSet().has(p.id) : p.when(); }
+function planWanted(p){ const b=buildRec(p.id); if(b && b.removed) return false; if(W3.place && W3.place.id===p.id) return false; return planOwned(p); }
 function syncStructures(){
   if(!W3.gfx) return;
   /* 検証モードでは「全部持っている」ので、設備の所持ではなく、検証メニューで置いた物だけを建てる（原野を保つ） */
-  const placed = S.verify ? placedSet() : null;
-  STRUCT_PLAN.forEach(p=>{ const want= placed ? placed.has(p.id) : p.when(), has=W3.structs.has(p.id);
-    if(want && !has){ const rot= p.rot!=null ? p.rot : Math.atan2(D.base.x-p.at.x, D.base.z-p.at.z); structAdd(p.id, p.type, p.at, rot);
-      if(W3.state==="ready") W3.gfx.playVisualEffect("levelup", p.at); }
+  STRUCT_PLAN.forEach(p=>{ const want=planWanted(p), pos=planPos(p); let has=W3.structs.has(p.id);
+    const info = has && W3.structInfo && W3.structInfo.get(p.id);
+    if(want && has && info && (Math.abs(info.x-pos.x)>1e-3 || Math.abs(info.z-pos.z)>1e-3 || Math.abs(info.rot-pos.rot)>1e-4)){ structRemove(p.id); has=false; }   // 移動・回転した
+    if(want && !has){ structAdd(p.id, p.type, {x:pos.x, z:pos.z}, pos.rot);
+      const seen = W3.everShown || (W3.everShown = new Set());
+      if(W3.state==="ready" && !seen.has(p.id)) W3.gfx.playVisualEffect("levelup", {x:pos.x, z:pos.z}); seen.add(p.id); }
     else if(!want && has) structRemove(p.id); });
   /* 検証メニューで足もとに置いた建物（STRUCT_PLAN にない種類も試せる） */
   const extra = (S.verify && S.verify.extra) || [], ids = new Set(extra.map(x=>x.id));
@@ -958,6 +967,7 @@ function loop3D(ts){
   W3.raf = requestAnimationFrame(loop3D);
   if(W3.state!=="ready" || W3.lost) return;
   if(window.HD2D && HD2D.tickBuildingParts) HD2D.tickBuildingParts(ts/1000);   // 建物の可動部（ピストン・掘削軸など）
+  if(W3.place || $("#buildov")) drawPlaceOverlay();
   /* 大きなフレーム間隔でも進む距離を保つ（すり抜けは nature.move が細かく分けて防ぐ） */
   const dt = W3.lastTs ? Math.min(0.1,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
   let ix=0, iy=0;
@@ -1171,8 +1181,11 @@ function bind3DInput(){
   const w=$("#w3"); if(!w || w._bound) return; w._bound=true;
   w.addEventListener("pointerdown", e=>{ if(!fieldInputActive() || e.target.closest(".joy,.w3lab,button")) return; W3.down={x:e.clientX,y:e.clientY,t:Date.now(),id:e.pointerId}; });
   w.addEventListener("pointercancel", ()=>{ W3.down=null; });
+  /* 建築モード：マウスを動かすと候補が付いてくる（ボタンを押していないとき）。タップ・クリックはその場所へ候補を動かす（歩かない） */
+  w.addEventListener("pointermove", e=>{ if(!W3.place || e.pointerType!=="mouse" || e.buttons || !fieldInputActive()) return; const h=screenToGround(e.clientX,e.clientY); if(h) placeMoveTo(h.x,h.z); });
   w.addEventListener("pointerup", e=>{ const down=W3.down; if(!down || down.id!==e.pointerId || !fieldInputActive()) return; const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y); const quick=Date.now()-down.t<450; W3.down=null;
     if(moved>10||!quick) return;
+    if(W3.place){ const h=screenToGround(e.clientX,e.clientY); if(h) placeMoveTo(h.x,h.z); return; }
     const t = pickAt(e.clientX, e.clientY);
     if(t){ selectAndGo(t); W3.gfx.playVisualEffect("sparkle", tPos(t)); return; }
     const hit=screenToGround(e.clientX,e.clientY); if(!hit) return;
@@ -1208,6 +1221,7 @@ document.addEventListener("keydown", e=>{
   if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","w","a","s","d"].includes(k)){ W3.keys[k]=true; e.preventDefault(); }
   /* ボタンにフォーカスがあるときのスペースは、そのボタンを押す操作なので採取しない */
   if(k===" " && e.target.closest && e.target.closest("button,a,summary,[role=button]")) return;
+  if(W3.place){ if(k==="r"){ e.preventDefault(); placeRotate(e.shiftKey?90:ROT_STEP); return; } if(k==="Enter"){ e.preventDefault(); placeConfirm(); return; } }
   if((k===" "||k==="e")){ e.preventDefault(); if(!e.repeat) pressAction(); } });
 document.addEventListener("keyup", e=>{ const k=e.key.length===1?e.key.toLowerCase():e.key; delete W3.keys[k]; });
 window.addEventListener("blur", haltField);
@@ -1415,6 +1429,7 @@ document.addEventListener("click", ev=>{
 document.addEventListener("change", ev=>{ if(ev.target.dataset.act==="pick"){ U.target=ev.target.value; renderPanel(); } });
 document.addEventListener("keydown", ev=>{
   if(ev.key!=="Escape") return;
+  if(W3.place && !modalOpen() && U.tab==="explore"){ ev.preventDefault(); placeCancel(); return; }
   if(modalOpen()){ ev.preventDefault(); closeModal(); }
   else if(U.tab!=="explore"){ ev.preventDefault(); setTab("explore"); }
 });
@@ -1453,6 +1468,95 @@ function intro(){
   openModal($("#introGo")); S.flags.intro=1; save();
 }
 document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); applyIcons(); bindHudInput(); renderChrome(); render(); layout(); intro();
+/* ===================== 建築モード（家・設備の自由設置。2026-11-07） =====================
+   建築一覧 → 建物を選ぶ → 置き場所の候補（地面の枠：置ければ緑・置けなければ赤と理由）→ 移動・回転 → 「ここに置く」。
+   置くのは工作で作った家・設備（作った時点で素材は使っている）。置く・動かす・撤去で素材は増えも減りもしない。
+   判定と確定は nature.js（checkPlacement・commitPlacement。二重の確定は S.seq のトークンで防ぐ）。 */
+const ROT_STEP = 15, GRID = 0.5;
+const PLACE_RESERVED = ()=>[{x:D.base.x, z:D.base.z, r:1.3, why:"拠点の真ん中（はじめの場所）はあけておく"}].concat(W3.reserved||[]);
+function planSpec(p){ const sp=(ASSETS.buildingSpecs||{})[p.type]||{}; return {id:p.id, type:p.type, footprint:sp.footprint||{shape:"circle", r:1}, entrance:sp.entrance, operate:sp.operate, rule:p.rule||null}; }
+/* 建物ごとの「作った設備」（表示用。条件の正本は STRUCT_PLAN の when） */
+const STRUCT_FAC = {"st-bench":["bench"],"st-fire":["campfire"],"st-kiln":["kiln"],"st-hut1":["storehouse"],"st-smelter":["furnace","blastfurnace"],"st-lab":["still"],
+  "st-steam":["steamengine"],"st-tower":["refinery"],"st-factory":["eaf"],"st-power":["steamengine","generator"],"st-inst":["reactor"],"st-wheel":["waterwheel"],"st-rig":["rig"]};
+function placeLabel(p){ const sp=(ASSETS.buildingSpecs||{})[p.type]||{};
+  return {name: sp.name || p.type, from: (STRUCT_FAC[p.id]||[]).filter(id=>IT[id]).map(nm).join("・")}; }
+function viewBuild(){
+  const list = STRUCT_PLAN.filter(planOwned);
+  const rows = list.map(p=>{ const L=placeLabel(p), b=buildRec(p.id), st = b && b.removed ? "撤去中（設備は持ち物に残っている）" : b ? "好きな場所に置いた" : "決まった場所に建っている";
+    return `<div class="bit"><span class="i">${ic((STRUCT_FAC[p.id]||[])[0]||"")}</span><span class="n">${L.name}<small>${st}${L.from?"（"+L.from+"）":""}</small></span>
+      ${b && b.removed ? `<button class="btn small" data-act="b-start" data-id="${p.id}">置く</button>`
+        : `<button class="btn small" data-act="b-start" data-id="${p.id}">移動・回転</button><button class="btn small sub" data-act="b-remove" data-id="${p.id}">撤去</button>`}</div>`; }).join("");
+  return `<p class="desc" style="margin-top:0">作った家や設備を、好きな場所に置けます。置き場所を決める間は、地面の枠が<b style="color:#2d6a3e">緑</b>なら置ける・<b style="color:#a3262f">赤</b>なら置けない（理由も出ます）。</p>
+  <ul class="helplist"><li>置く・動かす・撤去で素材は使わず、戻りもしません（素材は工作で作ったときに使っています）。撤去しても設備は持ち物に残り、いつでも置き直せます。</li>
+    <li>設備の働き（研究室・工作・自動採取）は、置き場所に関係なく使えます。家や建物の中に入ることはまだできません。</li>
+    <li>水車は川の水ぎわにだけ置けます。川・急な斜面・木や岩・ほかの建物の上と、入口や設備の前がふさがる所には置けません。</li></ul>
+  <div class="blist">${rows || `<p class="desc">まだ置ける家や設備がありません。「工作」で作業台・たき火・かまど・倉庫などを作ると、ここに出ます。</p>`}</div>`;
+}
+function placeSnap(v){ return W3.place && W3.place.grid ? Math.round(v/GRID)*GRID : v; }
+function startPlace(id){
+  const p = STRUCT_PLAN.find(x=>x.id===id); if(!p || !W3.pos || W3.state!=="ready" || !planOwned(p)) return;
+  if(W3.place) endPlace();
+  const B=camBasis(), b=buildRec(id), cur = !(b && b.removed) && W3.structs.has(id) ? planPos(p) : null;
+  W3.place = {id, type:p.type, spec:planSpec(p), grid: W3.lastGrid!==false, x:0, z:0, rot:0, token:S.seq, ghostSig:""};
+  if(cur){ W3.place.x=cur.x; W3.place.z=cur.z; W3.place.rot=cur.rot; }
+  else { W3.place.x = placeSnap(W3.pos.x + B.f.x*4.5); W3.place.z = placeSnap(W3.pos.z + B.f.z*4.5); W3.place.rot = Math.round(Math.atan2(-B.f.x, -B.f.z)/(Math.PI/12))*(Math.PI/12); }  // 入口が主人公のほうを向く
+  $("#app").classList.add("placing"); setTab("explore");
+  syncStructures(); placeUpdate(true);
+  const bb=$("#buildbar"); bb.hidden=false; const g=$("#bbGrid"); if(g) g.checked=W3.place.grid;
+  banner("🏗️ 置き場所を決める：地面をタップ（クリック）して動かし、回転して「ここに置く」");
+}
+function placeArgs(){ const P=W3.place; return [Object.assign({}, P.spec, {x:P.x, z:P.z, rot:P.rot}), {player:W3.pos, npcs:(W3.npcList||[]), reserved:PLACE_RESERVED()}]; }
+function placeUpdate(force){
+  const P=W3.place; if(!P) return;
+  const [pp, op] = placeArgs(); P.check = WORLD.checkPlacement(S, pp, op);
+  const L=placeLabel(STRUCT_PLAN.find(x=>x.id===P.id));
+  $("#bbTitle").textContent = "🏗️ "+L.name+"を置く（向き "+Math.round(((P.rot*180/Math.PI)%360+360)%360)+"°）";
+  const m=$("#bbMsg"); m.className="bbmsg "+(P.check.ok?"ok":"ng"); m.textContent = P.check.ok ? "✅ ここに置ける" : "❌ "+P.check.reasons.join("／");
+  const ok=$("#buildbar .bbok"); if(ok) ok.disabled = !P.check.ok;
+  /* 3Dの見た目（候補）。動かすたびに作り直すので、少し間引く */
+  const sig=P.x.toFixed(2)+","+P.z.toFixed(2)+","+P.rot.toFixed(3), now=performance.now();
+  if(force || (sig!==P.ghostSig && (!P.ghostAt || now-P.ghostAt>90))){ P.ghostAt=now; P.ghostSig=sig;
+    if(W3.structs.has("ghost:place")) structRemove("ghost:place"); structAdd("ghost:place", P.type, {x:P.x, z:P.z}, P.rot); }
+}
+/* 地面の枠（画面に重ねる SVG。毎フレーム、カメラに合わせて描き直す） */
+function drawPlaceOverlay(){
+  let sv=$("#buildov"); const P=W3.place;
+  if(!P){ if(sv) sv.innerHTML=""; return; }
+  if(!sv){ const w=$("#w3"); if(!w) return; w.insertAdjacentHTML("beforeend", '<svg id="buildov" aria-hidden="true"></svg>'); sv=$("#buildov"); }
+  if(P.ghostSig !== P.x.toFixed(2)+","+P.z.toFixed(2)+","+P.rot.toFixed(3)) placeUpdate();
+  const t=P.check && P.check.shape; if(!t) return;
+  const pts=[]; if(t.shape==="rect"){ for(const [i,j] of [[-1,-1],[1,-1],[1,1],[-1,1]]) pts.push(WORLD.toWorld(t, i*t.w/2, j*t.d/2)); }
+  else for(let k=0;k<24;k++){ const a=k/24*Math.PI*2; pts.push({x:t.x+Math.cos(a)*t.r, z:t.z+Math.sin(a)*t.r}); }
+  const sp=pts.map(q=>toScreen(q.x, groundY(q.x,q.z)+0.05, q.z));
+  const col = P.check.ok ? "#3fbf62" : "#e0434f";
+  const marks = ["entrance","operate"].map(k=>{ const lp=P.spec[k]; if(!lp) return ""; const w=WORLD.toWorld(t, lp[0], lp[1]), s2=toScreen(w.x, groundY(w.x,w.z)+0.05, w.z);
+    return `<circle cx="${s2.x.toFixed(1)}" cy="${s2.y.toFixed(1)}" r="6" fill="#fff" stroke="${col}" stroke-width="3"/>`; }).join("");
+  sv.innerHTML = `<polygon points="${sp.map(q=>q.x.toFixed(1)+","+q.y.toFixed(1)).join(" ")}" fill="${col}" fill-opacity=".28" stroke="${col}" stroke-width="3" ${P.check.ok?"":'stroke-dasharray="8 5"'}/>${marks}`;
+}
+function placeMoveTo(x, z){ const P=W3.place; if(!P) return; P.x=placeSnap(x); P.z=placeSnap(z); placeUpdate(); }
+function placeRotate(deg){ const P=W3.place; if(!P) return; P.rot += deg*Math.PI/180; if(P.grid) P.rot = Math.round(P.rot/(ROT_STEP*Math.PI/180))*(ROT_STEP*Math.PI/180); placeUpdate(true); }
+function endPlace(){ if(W3.structs.has("ghost:place")) structRemove("ghost:place"); W3.place=null; $("#app").classList.remove("placing"); const bb=$("#buildbar"); if(bb) bb.hidden=true; drawPlaceOverlay(); syncStructures(); }
+function placeConfirm(){
+  const P=W3.place; if(!P || P.busy) return; P.busy=true;
+  const [pp, op] = placeArgs(); const r = WORLD.commitPlacement(S, pp, P.token, op);
+  if(!r.ok){ P.busy=false; if(r.kind==="dup"){ endPlace(); return; } placeUpdate(true); banner("❌ 置けない："+(r.reasons||[]).join("／")); return; }
+  const name=placeLabel(STRUCT_PLAN.find(x=>x.id===P.id)).name; save(); endPlace(); banner("🏗️ "+name+"を置いた");
+}
+function placeCancel(){ if(!W3.place) return; endPlace(); banner("置くのをやめた（何も変わっていない）"); }
+function removeBuild(id){
+  const p=STRUCT_PLAN.find(x=>x.id===id); if(!p) return; const name=placeLabel(p).name;
+  if(!confirm(name+"を撤去する？\n素材は戻りません。設備は持ち物に残るので、「建築」からいつでも置き直せます。")) return;
+  const r=WORLD.removePlacement(S, id, S.seq); if(!r.ok) return; save(); syncStructures(); renderPanel(); banner("🏗️ "+name+"を撤去した（持ち物には残っている）");
+}
+document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.closest("[data-act^='b-']"); if(!b || b.tagName==="INPUT") return;
+  const a=b.dataset.act, id=b.dataset.id;
+  if(a==="b-start"){ ev.preventDefault(); startPlace(id); }
+  else if(a==="b-remove"){ ev.preventDefault(); removeBuild(id); }
+  else if(a==="b-rot"){ ev.preventDefault(); placeRotate(+id); }
+  else if(a==="b-ok"){ ev.preventDefault(); placeConfirm(); }
+  else if(a==="b-cancel"){ ev.preventDefault(); placeCancel(); } });
+document.addEventListener("change", ev=>{ if(ev.target && ev.target.id==="bbGrid" && W3.place){ W3.place.grid = W3.lastGrid = !!ev.target.checked; placeMoveTo(W3.place.x, W3.place.z); } });
+
 /* ===================== 検証モード（全解放） =====================
    通常のセーブとは別の状態（S.verify を持つ）で、登録されているものを全部試せるようにする。
    一覧と件数は、いまのコードの登録内容（data.js・描画モジュールの登録・埋め込んだアセット）から毎回作る。 */
