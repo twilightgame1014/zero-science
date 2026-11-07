@@ -104,10 +104,10 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
         float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
           return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
         void main() {
-          float dk = smoothstep(0.0, uDD, vDepth);
+          float dk = smoothstep(0.0, max(uDD, 0.01), max(vDepth, 0.0));
           vec3 col = mix(uShallow, uDeep, dk);
           float alpha = mix(uSA, uDA, dk);
-          vec2 fl = length(vFlow) > 0.01 ? normalize(vFlow) : vec2(0.0, 1.0);
+          float fln = length(vFlow); vec2 fl = fln > 0.01 ? vFlow / fln : vec2(0.0, 1.0);
           vec2 pr = vec2(-fl.y, fl.x);
           vec2 fs = vec2(dot(vWorld.xz, pr), dot(vWorld.xz, fl));
           float t = uTime;
@@ -125,10 +125,10 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
           if (uImpactOn > 0.5) {
             float d = length(vWorld.xz - uImpact.xz);
             float ring = sin(d * 6.0 - t * 4.0) * 0.5 + 0.5;
-            float m = smoothstep(3.2, 0.6, d);
+            float m = 1.0 - smoothstep(0.6, 3.2, d);
             col = mix(col, mix(uShallow, vec3(1.0), 0.35), ring * m * 0.25);
             // 落ちる水が当たる所の泡（落下点のまわりだけ。滝の下端と水面の境目を自然にする）
-            float fz = smoothstep(2.1, 0.5, d) * smoothstep(0.35, 0.7, noise(vWorld.xz * 2.4 + vec2(t * 0.6, -t * 0.4)) * 0.7 + noise(vWorld.xz * 5.0 - t) * 0.3);
+            float fz = (1.0 - smoothstep(0.5, 2.1, d)) * smoothstep(0.35, 0.7, noise(vWorld.xz * 2.4 + vec2(t * 0.6, -t * 0.4)) * 0.7 + noise(vWorld.xz * 5.0 - t) * 0.3);
             col = mix(col, vec3(0.93, 0.97, 0.98), fz * 0.8);
             alpha = max(alpha, fz * 0.85);
           }
@@ -138,14 +138,15 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
           // 波打ち際の泡：深さ0の線に沿って、寄せては返す
           float wash = uSwell > 0.0 ? (0.5 + 0.5 * sin(t * 0.9 + fs.x * 0.15)) : 0.5;
           float fd = uFoamD * (0.7 + 0.8 * wash);
-          float band = smoothstep(fd, fd * 0.25, vDepth);
+          float band = 1.0 - smoothstep(fd * 0.25, fd, vDepth);
           float fn = noise(fs * vec2(2.2, 4.0) + vec2(0.0, -t * 0.4)) * 0.6 + noise(fs * 6.0 + 3.1) * 0.4;
           float foam = band * smoothstep(0.42, 0.75, fn);
           col = mix(col, vec3(0.95, 0.98, 1.0), foam * 0.85);
           alpha = clamp(alpha + foam * 0.45, 0.0, 1.0);
           alpha *= smoothstep(0.0, 0.05, vDepth) * (0.25 + 0.75 * smoothstep(0.0, 0.12, vDepth));
           alpha *= vFade;
-          gl_FragColor = vec4(col, alpha);
+          // 後処理（bloom・ぼかし）へ範囲外の値を渡さない（1点でも数でない値があると画面に広がる）
+          gl_FragColor = vec4(clamp(col, 0.0, 1.0), clamp(alpha, 0.0, 1.0));
           #include <fog_fragment>
         }`,
     });
@@ -192,7 +193,6 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
     }
   }
   
-  riverRibbon(-WS.OLD_HALF, -WS.DRAW_HALF);
 
   riverRibbon(WS.OLD_HALF, FIELD);
   riverRibbon(-WS.OLD_HALF, -FIELD);
@@ -341,7 +341,7 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
       vertexShader: /* glsl */ `
         attribute float aFall; varying vec2 vUv; varying float vFall; varying vec3 vWorld; varying vec3 vN;
         #include <fog_pars_vertex>
-        void main() { vUv = uv; vFall = aFall; vec4 wp = modelMatrix * vec4(position, 1.0); vWorld = wp.xyz; vN = normalize(mat3(modelMatrix) * normal);
+        void main() { vUv = uv; vFall = aFall; vec4 wp = modelMatrix * vec4(position, 1.0); vWorld = wp.xyz; vN = mat3(modelMatrix) * normal;
           vec4 mvPosition = viewMatrix * wp; gl_Position = projectionMatrix * mvPosition;
           #include <fog_vertex>
         }`,
@@ -368,17 +368,17 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
           col = mix(col, uFoam, bottom * (0.35 + 0.35 * strand));
           // 光：太陽の向き（描画モジュールの太陽とほぼ同じ）で明るさを変え、影の谷では暗くなる
           vec3 sunD = normalize(vec3(0.55, 0.75, 0.3));
-          float lam = clamp(dot(normalize(vN), sunD), 0.0, 1.0);
+          float vnl = length(vN); float lam = clamp(dot(vnl > 0.0001 ? vN / vnl : vec3(0.0, 1.0, 0.0), sunD), 0.0, 1.0);
           col *= 0.62 + 0.38 * lam;
           // 横の縁：流れと一緒に動く大きめのでこぼこで削る（まっすぐな縦の線を見せない）
           float edgeN = noise(vec2(sv * 1.3, 4.0)) * 0.6 + noise(vec2(sv * 4.0, 9.0)) * 0.4;
           float edgeM = noise(vec2(sv * 1.1, 17.0)) * 0.6 + noise(vec2(sv * 3.6, 23.0)) * 0.4;
-          float edge = smoothstep(0.02, 0.12 + 0.22 * edgeN, u) * smoothstep(0.98, 0.88 - 0.22 * edgeM, u);
+          float edge = smoothstep(0.02, 0.12 + 0.22 * edgeN, u) * (1.0 - smoothstep(0.88 - 0.22 * edgeM, 0.98, u));
           float alpha = mix(0.5, 0.42 + strand * 0.4, vFall) * edge;
           alpha = max(alpha, bottom * 0.75 * edge);
           alpha *= smoothstep(0.0, 0.7, v);
           alpha *= smoothstep(uPool - 0.38, uPool + 0.02, vWorld.y);
-          gl_FragColor = vec4(min(col, vec3(0.92)), alpha);
+          gl_FragColor = vec4(clamp(col, vec3(0.0), vec3(0.92)), clamp(alpha, 0.0, 1.0));
           #include <fog_fragment>
         }`,
     });

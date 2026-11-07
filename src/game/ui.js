@@ -1052,8 +1052,9 @@ function loop3D(ts){
   const dt = W3.lastTs ? Math.min(0.1,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
   if(W3.world && W3.pos) W3.world.update(dt, W3.pos, W3.gfx.getCamera());   // 外側の地形の区画（近いほど細かく・少しずつ作る）と水・滝の動き
   camClearance(dt);
-  /* 地名（山麓・海岸など）が変わったら左上の表示を更新（0.5秒ごとに確かめる） */
-  W3.plT=(W3.plT||0)+dt; if(W3.plT>0.5 && W3.pos){ W3.plT=0; const pn=placeHere(); if(pn!==W3.placeName){ W3.placeName=pn; updateLoc(); } }
+  /* 地名（山麓・海岸など）が変わったら左上の表示を更新、エリアの照明・空・霧・粒子を Muse の setEnvironment へ（0.5秒ごと） */
+  W3.plT=(W3.plT||0)+dt; if(W3.plT>0.5 && W3.pos){ W3.plT=0; const pn=placeHere(); if(pn!==W3.placeName){ W3.placeName=pn; updateLoc(); }
+    if(typeof W3.gfx.setEnvironment==="function" && TERRAIN.areaWeights){ try{ W3.gfx.setEnvironment({weights: TERRAIN.areaWeights(W3.pos.x, W3.pos.z, W3.cfg)}); }catch(e){} } }
   let ix=0, iy=0;
   const active = fieldInputActive();
   if(!active && (W3.path || W3.joy || W3.work || Object.keys(W3.keys).length)) haltField();
@@ -1675,7 +1676,15 @@ function npcUpdate(dt){
   let best=null, bd=NPC_NEAR; W3.npcs.forEach(n=>{ const dd=Math.hypot(n.x-W3.pos.x, n.z-W3.pos.z); if(dd<bd){ bd=dd; best=n; } });
   if(best!==W3.npcNear){ W3.npcNear=best; updateAction3D(); }
   if(W3.talkTo){ const n=W3.npcs.find(x=>x.id===W3.talkTo); if(n && Math.hypot(n.x-W3.pos.x, n.z-W3.pos.z) < NPC_NEAR){ W3.talkTo=null; openTalk(n); } }
-  /* 描画（Muse の NPC シートを主人公と同じ仕組みで。描画モジュール側に API はないので、ゲーム側の入口 HD2D.npcSet を使う） */
+  /* 描画：Muse の setNpcVisualState（ラウンド18。主人公と同じ描き方・遮蔽フェードつき）。ない版ではゲーム側の入口 HD2D.npcSet */
+  if(W3.gfx && typeof W3.gfx.setNpcVisualState==="function"){
+    W3.npcs.forEach(n=>{ const far = Math.hypot(n.x-W3.pos.x, n.z-W3.pos.z) > NAT_HIDE_R;
+      if(far){ if(n.shown){ W3.gfx.setNpcVisualState(n.id, null); n.shown=false; } return; }
+      // 絵（spriteUrl）は出したときに一度だけ渡す（毎フレーム渡すと、モジュールが絵を毎回貼り直して重くなる）
+      const st = {position:{x:n.x, z:n.z}, direction:n.dir, moving:n.moving}; if(!n.shown) st.spriteUrl = (ASSETS.npc||{})[n.def.sheet];
+      n.shown=true; W3.gfx.setNpcVisualState(n.id, st); });
+    return;
+  }
   const H=window.HD2D;
   if(H && H.npcSet && W3.gfx) W3.npcs.forEach(n=>{ const far = Math.hypot(n.x-W3.pos.x, n.z-W3.pos.z) > NAT_HIDE_R;
     if(far){ if(n.shown){ H.npcRemove(W3.gfx, n.id); n.shown=false; } return; }
@@ -1761,7 +1770,11 @@ function placeUpdate(force){
   /* 3Dの見た目（候補）。動かすたびに作り直すので、少し間引く */
   const sig=P.x.toFixed(2)+","+P.z.toFixed(2)+","+P.rot.toFixed(3), now=performance.now();
   if(force || (sig!==P.ghostSig && (!P.ghostAt || now-P.ghostAt>90))){ P.ghostAt=now; P.ghostSig=sig;
-    if(W3.structs.has("ghost:place")) structRemove("ghost:place"); structAdd("ghost:place", P.type, {x:P.x, z:P.z}, P.rot); }
+    /* Muse の setStructurePreview（半透明・緑／赤・影なし）があれば使う。ない版は当たり判定なしの建物を置く */
+    if(typeof W3.gfx.setStructurePreview==="function") W3.gfx.setStructurePreview({type:P.type, position:{x:P.x, z:P.z}, rotationY:P.rot, valid:!!P.check.ok});
+    else { if(W3.structs.has("ghost:place")) structRemove("ghost:place"); structAdd("ghost:place", P.type, {x:P.x, z:P.z}, P.rot); } }
+  else if(typeof W3.gfx.setStructurePreview==="function" && P.lastOk !== P.check.ok) W3.gfx.setStructurePreview({type:P.type, position:{x:P.x, z:P.z}, rotationY:P.rot, valid:!!P.check.ok});
+  P.lastOk = P.check.ok;
 }
 /* 地面の枠（画面に重ねる SVG。毎フレーム、カメラに合わせて描き直す） */
 function drawPlaceOverlay(){
@@ -1780,7 +1793,7 @@ function drawPlaceOverlay(){
 }
 function placeMoveTo(x, z){ const P=W3.place; if(!P) return; P.x=placeSnap(x); P.z=placeSnap(z); placeUpdate(); }
 function placeRotate(deg){ const P=W3.place; if(!P) return; P.rot += deg*Math.PI/180; if(P.grid) P.rot = Math.round(P.rot/(ROT_STEP*Math.PI/180))*(ROT_STEP*Math.PI/180); placeUpdate(true); }
-function endPlace(){ if(W3.structs.has("ghost:place")) structRemove("ghost:place"); W3.place=null; $("#app").classList.remove("placing"); const bb=$("#buildbar"); if(bb) bb.hidden=true; drawPlaceOverlay(); syncStructures(); }
+function endPlace(){ if(W3.structs.has("ghost:place")) structRemove("ghost:place"); if(W3.gfx && typeof W3.gfx.setStructurePreview==="function") W3.gfx.setStructurePreview(null); W3.place=null; $("#app").classList.remove("placing"); const bb=$("#buildbar"); if(bb) bb.hidden=true; drawPlaceOverlay(); syncStructures(); }
 function placeConfirm(){
   const P=W3.place; if(!P || P.busy) return; P.busy=true;
   const [pp, op] = placeArgs(); const r = WORLD.commitPlacement(S, pp, P.token, op);
