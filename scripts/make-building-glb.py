@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Muse の建物モデル（assets/buildings-3d/models/*.glb、原本）から、ゲームに埋め込む軽量版を作る。
 原本は変更しない。テクスチャ画像だけを縮小・再圧縮する（形・ノード名・可動部・寸法は変えない）。
-  ・長辺 MAX 以下に縮小（既定 256px）
+  ・長辺 MAX 以下に縮小（既定 512px＝第14ラウンドの色テクスチャそのまま。法線・粗さは原本が 256px）
   ・透明な画素がない画像は JPEG（品質 82）、透明な画素がある画像は PNG のまま
 出力：assets/build/buildings/<id>.glb
 使い方：python3 scripts/make-building-glb.py [MAX]   （Pillow が必要）"""
@@ -10,7 +10,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "assets/buildings-3d/models")
 OUT = os.path.join(ROOT, "assets/build/buildings")
-MAX = int(sys.argv[1]) if len(sys.argv) > 1 else 256
+MAX = int(sys.argv[1]) if len(sys.argv) > 1 else 512
 
 def read_glb(path):
     b = open(path, "rb").read()

@@ -62,7 +62,7 @@
 - 描画の状態：枝葉カードのテクスチャが読めないと描画モジュールは旧来の球体の樹冠に戻るので、`gfxStatus()` で検出して検証メニューとコンソールに出す。
 
 ## 建物の3Dモデルと道具・設備・操作のアイコン（Muse・2026-11-07〜）
-- 建物：Muse の `assets/buildings-3d`（原本の GLB 13種・`structures.json`）。`scripts/make-building-glb.py` でテクスチャだけを縮小した軽量版 `assets/build/buildings/*.glb` を作り（原本を変えたら再実行）、base64 で埋め込む。
+- 建物：Muse の `assets/buildings-3d`（原本の GLB 13種・`structures.json`）。`scripts/make-building-glb.py` でテクスチャだけを再圧縮した軽量版 `assets/build/buildings/*.glb` を作り（原本を変えたら再実行。既定は長辺512px＝第14ラウンドの色テクスチャの解像度のまま、不透明な画像は JPEG）、base64 で埋め込む。モデル内の接地影 `ContactShadow` はそのまま使う（地形と干渉したらこのノードだけ外す）。
 - 読み込みは `src/graphics-entry.ts` の `HD2D.ensureBuildingModel`：GLB を解析して雛形を持ち、`StructureRenderer.registerFactory` に「雛形の複製（ジオメトリ・材質も建物ごと）」を返すファクトリを登録する。読み終えるまでは従来の手続きモデル。読み終えたら UI がその種類の建物を置き直す。使う種類だけをその時に読む。可動部は Flame・Wheel が描画モジュールの既存アニメ、Piston・DrillPipe・Winch・Bellows は `HD2D.tickBuildingParts`（ゲームの描画ループから呼ぶ）。
 - 当たり判定は `structures.json` の footprint（円か回転した矩形。屋根・煙突・炎は含まない）。UI の `syncStructColliders` が `WORLD.setStructures` に渡し、`nature.js` は形までの距離（`sdist`）で移動・押し出し・立てる場所・経路を判定する。建物の下になった自然物は、建物がある間だけ隠れて採れない。建てたときに主人公が中にいたら外へ出す。検証のプレビュー（`vps:`）は判定なし。
 - 設備との対応は `structures.json` の `facilityId` が正（テストで検査）。かまど（kiln）を発酵つぼなどと統合しない。発電所（power-plant）は火力型モデル。暫定で「蒸気機関と水力発電機の両方」で建てる（登場段階・位置づけは GPT・オーナーと確認中）。
