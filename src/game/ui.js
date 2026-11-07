@@ -17,16 +17,25 @@ const U = {tab:"explore", opener:null, dockTab:null, missionOpen:false, tray:{},
 const $ = s=>document.querySelector(s);
 const nm = id=>IT[id]?IT[id].name:id;
 /* 物質アイコン（Muse の assets/item-icons から作った 64px アトラス。ないもの・道具・設備は絵文字） */
-const ITEM_ICO = (()=>{ const a = window.ASSETS && ASSETS.items; if(!a || !a.src) return null;
+/* アイコンのアトラス（Muse の原本から作った 64px 版）。画像は blob URL にして CSS 変数で配る。
+   物質：assets/item-icons（キーは ID）。道具・設備・操作：assets/buildings-icons（キーは「tools/ID」「facilities/ID」「ops/ID」） */
+function makeAtlas(a, v){ if(!a || !a.src) return null;
   let url = a.src;
   try{ const b = atob(a.src.slice(a.src.indexOf(",")+1)), u = new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); url = URL.createObjectURL(new Blob([u],{type:"image/webp"})); }catch(e){}
-  document.documentElement.style.setProperty("--iat", `url("${url}")`);
-  document.documentElement.style.setProperty("--iat-c", a.cols); document.documentElement.style.setProperty("--iat-r", a.rows);
-  return {url, cols:a.cols, rows:a.rows, pos:a.pos||{}}; })();
+  const r=document.documentElement.style; r.setProperty("--"+v, `url("${url}")`); r.setProperty("--"+v+"-c", a.cols); r.setProperty("--"+v+"-r", a.rows);
+  return {url, cols:a.cols, rows:a.rows, pos:a.pos||{}}; }
+const ITEM_ICO = makeAtlas(window.ASSETS && ASSETS.items, "iat");
+const TOOL_ICO = makeAtlas(window.ASSETS && ASSETS.tools, "tat");
+/* 道具・設備のアイコンの位置（新しい62点を優先）。なければ null */
+const toolKey = id=> IT[id] ? (IT[id].tags.includes("研究設備") ? "facilities/"+id : IT[id].tags.includes("道具") ? "tools/"+id : null) : null;
+function icoPos(id){ const k=toolKey(id); if(k && TOOL_ICO && TOOL_ICO.pos[k]) return {a:TOOL_ICO, p:TOOL_ICO.pos[k], cls:"tic"};
+  const p = ITEM_ICO && ITEM_ICO.pos[id]; return p ? {a:ITEM_ICO, p, cls:"iic"} : null; }
 const icT = id=>IT[id]?IT[id].icon:"❔";   // 文字だけの場所（バナー・選択肢・SVGの代替）
-const ic = id=>{ const p = ITEM_ICO && ITEM_ICO.pos[id]; return p ? `<span class="iic" style="--c:${p[0]};--r:${p[1]}" aria-hidden="true"></span>` : icT(id); };
-const svgIc = (id, x, y, sz)=>{ const p = ITEM_ICO && ITEM_ICO.pos[id];
-  return p ? `<svg x="${x}" y="${y}" width="${sz}" height="${sz}" viewBox="${p[0]*64} ${p[1]*64} 64 64" aria-hidden="true"><image href="${ITEM_ICO.url}" width="${ITEM_ICO.cols*64}" height="${ITEM_ICO.rows*64}"/></svg>`
+const ic = id=>{ const q = icoPos(id); return q ? `<span class="${q.cls}" style="--c:${q.p[0]};--r:${q.p[1]}" aria-hidden="true"></span>` : icT(id); };
+/* 実験の操作（加熱・ろ過など）のアイコン。なければ絵文字 */
+const opIc = o=>{ const p = TOOL_ICO && TOOL_ICO.pos["ops/"+o]; return p ? `<span class="tic" style="--c:${p[0]};--r:${p[1]}" aria-hidden="true"></span>` : (OPS[o] ? OPS[o].icon : ""); };
+const svgIc = (id, x, y, sz)=>{ const q = icoPos(id), p = q && q.p;
+  return p ? `<svg x="${x}" y="${y}" width="${sz}" height="${sz}" viewBox="${p[0]*64} ${p[1]*64} 64 64" aria-hidden="true"><image href="${q.a.url}" width="${q.a.cols*64}" height="${q.a.rows*64}"/></svg>`
            : `<text text-anchor="middle" x="${x+sz/2}" y="${y+sz*0.78}" font-size="${sz*0.75}">${icT(id)}</text>`; };
 const isMat = id=>IT[id] && !IT[id].tags.includes("道具") && !IT[id].tags.includes("研究設備");
 const owned = id=>E.has(S,id);
@@ -445,7 +454,7 @@ function drawLabCtl(){
     <div class="opts">${facs.length? facs.map(f=>`<button class="opt" data-act="fac" data-id="${f}" aria-pressed="${U.fac===f}">${ic(f)} ${nm(f)}</button>`).join("") : `<span class="desc">まだ装置がない。「工作」で作業台やたき火を作ろう。</span>`}</div>
     ${U.fac?`<p class="desc">${IT[U.fac].kid}</p>`:""}
     <h3 class="mt"><span class="n">3</span>操作を選ぶ</h3>
-    <div class="opts">${U.fac? IT[U.fac].ops.map(o=>`<button class="opt" data-act="op" data-id="${o}" aria-pressed="${U.op===o}">${OPS[o].icon} ${OPS[o].name}</button>`).join("") : `<span class="desc">先に装置を選んでね。</span>`}</div>
+    <div class="opts">${U.fac? IT[U.fac].ops.map(o=>`<button class="opt" data-act="op" data-id="${o}" aria-pressed="${U.op===o}">${opIc(o)} ${OPS[o].name}</button>`).join("") : `<span class="desc">先に装置を選んでね。</span>`}</div>
     <p class="desc">${op?`<b>${op.name}（${op.yomi}）</b>：${op.kid}`:""}</p>
     <div class="runbar"><button class="btn big" data-act="run" ${canRun?"":"disabled"}>🧪 実験スタート</button><button class="btn sub" data-act="hint">💡 ヒント</button></div>
   </div>
@@ -493,7 +502,7 @@ function animate(p, done){
 function resultNote(res){
   const p=res.proc, isNew = res.news.length>0, showP = owned("balance"), outs = Object.keys(res.produce);
   return `<div class="note ${isNew?"new":"good"}">
-    <h4>${isNew?"✨ 新しい発見！":"✅ 実験成功！"} <small style="font-weight:700;color:var(--muted)">${OPS[p.op].icon}${OPS[p.op].name} × ${res.batches}回</small></h4>
+    <h4>${isNew?"✨ 新しい発見！":"✅ 実験成功！"} <small style="font-weight:700;color:var(--muted)">${opIc(p.op)}${OPS[p.op].name} × ${res.batches}回</small></h4>
     <div class="eq">${Object.keys(res.consume).map(k=>ic(k)+nm(k)+"×"+res.consume[k]).join(" ＋ ")} → ${outs.map(k=>ic(k)+nm(k)+"×"+res.produce[k]).join(" ＋ ")}</div>
     <div class="why"><b>何が起きたの？</b><br>${p.why}</div>
     ${outs.map(k=>{ const it=IT[k]; return `<div class="prod"><span class="i">${ic(k)}</span><p><b>${it.name}</b>${res.news.includes(k)?'<span class="tag">NEW</span>':""}${it.f?` <small style="color:var(--muted)">${it.f}</small>`:""}<br>${it.kid}
@@ -759,24 +768,52 @@ const STRUCT_PLAN = [
   {id:"st-steam",   type:"steam-engine", at:{x:-31,z:21}, when:()=>owned("steamengine")},
   {id:"st-tower",   type:"distillation-tower", at:{x:-27,z:28}, when:()=>owned("refinery")},
   {id:"st-factory", type:"factory",    at:{x:-10,z:30},   when:()=>owned("eaf")},
-  {id:"st-power",   type:"power-plant",at:{x:-7,z:13},    when:()=>owned("generator")},
+  /* 発電所のモデルは火力型（オーナー決定 2026-11-07：段階建物として扱う）。火力発電＝蒸気機関で発電機を回すので、
+     暫定で「蒸気機関」と「水力発電機」の両方を作ったときに建てる（水力だけなら水車が表す）。登場段階・位置づけは GPT・オーナーと確認中 */
+  {id:"st-power",   type:"power-plant",at:{x:-7,z:13},    when:()=>owned("steamengine") && owned("generator")},
   {id:"st-inst",    type:"research-institute", at:{x:-30,z:31}, when:()=>owned("reactor")},
   /* 拠点の外：水車は川岸（nature.js の SITES で自然物を置かない）、掘削やぐらは油田の原油のそば */
   {id:"st-wheel",   type:"waterwheel", at:{x:15.2,z:3.8}, rot:2.17, when:()=>owned("waterwheel")},
   {id:"st-rig",     type:"drilling-rig", at:{x:3.2,z:48}, when:()=>owned("rig")},
 ];
+/* 建物を置く・取り除く（描画・GLB の読み込み・当たり判定をまとめて扱う）。W3.structInfo：id → {type,x,z,rot} */
+function structAdd(id, type, at, rot){
+  (W3.structInfo || (W3.structInfo = new Map())).set(id, {type, x:at.x, z:at.z, rot:rot||0});
+  W3.gfx.addStructureVisual(id, type, at, rot||0); W3.structs.add(id);
+  /* Muse の GLB（assets/buildings-3d）。読み終えたら、その種類の建物を置き直して GLB の見た目にする（それまでは従来の手続きモデル） */
+  const H=window.HD2D;
+  if(H && H.ensureBuildingModel && ASSETS.buildings && ASSETS.buildings[type]){
+    H.ensureBuildingModel(W3.gfx, type, ASSETS.buildings[type]).then(ok=>{ const done=(W3.modelReady||(W3.modelReady=new Set()));
+      if(!ok || done.has(type)) return; done.add(type);
+      W3.structInfo.forEach((v,k)=>{ if(v.type===type && W3.structs.has(k)){ W3.gfx.removeStructureVisual(k); W3.gfx.addStructureVisual(k, v.type, {x:v.x, z:v.z}, v.rot); } }); });
+  }
+}
+function structRemove(id){ W3.gfx.removeStructureVisual(id); W3.structs.delete(id); if(W3.structInfo) W3.structInfo.delete(id); }
+/* 当たり判定：建物の占有形状（structures.json の footprint）を自然物の世界へ渡す。プレビュー（vps:）は判定なし */
+function syncStructColliders(){
+  if(!world()) return;
+  const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:")) return; const sp=ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type];
+    if(sp && sp.footprint) list.push({id, type:v.type, x:v.x, z:v.z, rot:v.rot, footprint:sp.footprint}); });
+  const sig=JSON.stringify(list); if(sig===W3.colSig) return; W3.colSig=sig;
+  WORLD.setStructures(list);
+  /* 建物の中に入ってしまったら、近くの立てる場所へ（歩行にはしない） */
+  if(W3.pos && !WORLD.free(S, W3.pos.x, W3.pos.z)){ const q=WORLD.nearestFree(S, W3.pos, Date.now(), 8); if(q){ W3.pos={x:q.x, z:q.z}; W3.path=null; W3.target=null;
+    W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false}); } }
+  syncNature(true);      // 建物の下になった自然物を隠す・戻す
+}
 function syncStructures(){
   if(!W3.gfx) return;
   /* 検証モードでは「全部持っている」ので、設備の所持ではなく、検証メニューで置いた物だけを建てる（原野を保つ） */
   const placed = S.verify ? placedSet() : null;
   STRUCT_PLAN.forEach(p=>{ const want= placed ? placed.has(p.id) : p.when(), has=W3.structs.has(p.id);
-    if(want && !has){ const rot= p.rot!=null ? p.rot : Math.atan2(D.base.x-p.at.x, D.base.z-p.at.z); W3.gfx.addStructureVisual(p.id, p.type, p.at, rot); W3.structs.add(p.id);
+    if(want && !has){ const rot= p.rot!=null ? p.rot : Math.atan2(D.base.x-p.at.x, D.base.z-p.at.z); structAdd(p.id, p.type, p.at, rot);
       if(W3.state==="ready") W3.gfx.playVisualEffect("levelup", p.at); }
-    else if(!want && has){ W3.gfx.removeStructureVisual(p.id); W3.structs.delete(p.id); } });
+    else if(!want && has) structRemove(p.id); });
   /* 検証メニューで足もとに置いた建物（STRUCT_PLAN にない種類も試せる） */
   const extra = (S.verify && S.verify.extra) || [], ids = new Set(extra.map(x=>x.id));
-  extra.forEach(x=>{ if(!W3.structs.has(x.id)){ W3.gfx.addStructureVisual(x.id, x.type, {x:x.x, z:x.z}, x.rot||0); W3.structs.add(x.id); } });
-  [...W3.structs].forEach(id=>{ if(id.startsWith("vx:") && !ids.has(id)){ W3.gfx.removeStructureVisual(id); W3.structs.delete(id); } });
+  extra.forEach(x=>{ if(!W3.structs.has(x.id)) structAdd(x.id, x.type, {x:x.x, z:x.z}, x.rot||0); });
+  [...W3.structs].forEach(id=>{ if(id.startsWith("vx:") && !ids.has(id)) structRemove(id); });
+  syncStructColliders();
 }
 function syncAll3D(){ if(!NODES) buildNodes(); NODES.forEach(n=>syncNode(n,true)); syncNature(true); syncStructures(); }
 
@@ -920,6 +957,7 @@ function regionAt(x,z){ let best=null, bd=1e9; D.regions.forEach(r=>{ if(!r.w) r
 function loop3D(ts){
   W3.raf = requestAnimationFrame(loop3D);
   if(W3.state!=="ready" || W3.lost) return;
+  if(window.HD2D && HD2D.tickBuildingParts) HD2D.tickBuildingParts(ts/1000);   // 建物の可動部（ピストン・掘削軸など）
   /* 大きなフレーム間隔でも進む距離を保つ（すり抜けは nature.move が細かく分けて防ぐ） */
   const dt = W3.lastTs ? Math.min(0.1,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
   let ix=0, iy=0;
@@ -1224,7 +1262,7 @@ function viewBook(){
   <div class="dex">${list.map(k=>{ const st=E.status(S,k); return `<button class="dx ${st}" data-act="item" data-id="${k}"><span class="i">${st==="known"?ic(k):"❔"}</span><span class="n">${st==="known"?IT[k].name:"？？？"}</span></button>`; }).join("")}</div>
   <div class="sec">🧪 実験操作の図鑑 <small>どんな操作があるのか</small></div>
   <div class="oplist">${Object.keys(OPS).map(o=>{ const fs=Object.keys(IT).filter(f=>IT[f].facility&&IT[f].ops.includes(o)); const can=fs.some(owned);
-    return `<div class="opc"><b>${OPS[o].icon} ${OPS[o].name}</b>（${OPS[o].yomi}）${can?"":' <span class="tag" style="background:var(--line);color:var(--muted)">未解放</span>'}<br>${OPS[o].kid}<br><small style="color:var(--muted)">使える装置：${fs.map(f=>S.disc[f]?nm(f):"？？？").join("・")}</small></div>`; }).join("")}</div>`;
+    return `<div class="opc"><b>${opIc(o)} ${OPS[o].name}</b>（${OPS[o].yomi}）${can?"":' <span class="tag" style="background:var(--line);color:var(--muted)">未解放</span>'}<br>${OPS[o].kid}<br><small style="color:var(--muted)">使える装置：${fs.map(f=>S.disc[f]?nm(f):"？？？").join("・")}</small></div>`; }).join("")}</div>`;
 }
 function openItem(id){
   const it = IT[id], st = E.status(S,id), r = S.disc[id], sh = $("#sheet");
@@ -1233,7 +1271,7 @@ function openItem(id){
       <div class="kidbox">🦉 ${st==="hinted"?"ヒント：":""}${E.hint(S,id)}</div>`;
   } else {
     const pr = E.producers(id), us = E.usesOf(id);
-    const fmtP = p => `${OPS[p.op].icon}${OPS[p.op].name}（${p.at.map(f=>S.disc[f]?nm(f):"？？？").join("／")}）：${Object.keys(p.inp).map(k=>S.disc[k]?nm(k):"？？？").join("＋")}`;
+    const fmtP = p => `${opIc(p.op)}${OPS[p.op].name}（${p.at.map(f=>S.disc[f]?nm(f):"？？？").join("／")}）：${Object.keys(p.inp).map(k=>S.disc[k]?nm(k):"？？？").join("＋")}`;
     const knownRoutes = r.routes.map(rt=>{ const p=D.procs.find(x=>x.id===rt), c=D.crafts.find(x=>x.id===rt);
       if(p) return fmtP(p); if(c) return "🔨工作："+Object.keys(c.inp).map(nm).join("＋");
       if(rt.startsWith("gather:")) return "🗺️ "+(D.regions.find(x=>x.id===rt.slice(7))||{}).name+"で採取";
@@ -1286,7 +1324,7 @@ function tree(id, depth, seen){
   const c = pr.crafts.find(x=>r_known(x.id)) || pr.crafts[0];
   const step = p || c; if(!step) return `<li>${label}</li>`;
   const reveal = k || Object.keys(step.inp).every(i=>S.disc[i]);
-  const via = p ? `${reveal?OPS[p.op].icon+OPS[p.op].name:"？？の操作"}（${p.at.map(f=>S.disc[f]?nm(f):"？？？").join("／")}）` : "🔨工作"+(c.at?"（"+(S.disc[c.at]?nm(c.at):"？？？")+"）":"");
+  const via = p ? `${reveal?opIc(p.op)+OPS[p.op].name:"？？の操作"}（${p.at.map(f=>S.disc[f]?nm(f):"？？？").join("／")}）` : "🔨工作"+(c.at?"（"+(S.disc[c.at]?nm(c.at):"？？？")+"）":"");
   const alt = pr.procs.length + pr.crafts.length > 1 ? ` ほか${pr.procs.length+pr.crafts.length-1}ルート` : "";
   const kids = Object.keys(step.inp).concat(step.tools||[]).concat(step===c&&c.at?[c.at]:[]);
   return `<li>${label}<span class="via">← ${via}${alt}</span><ul>${kids.map(i=>tree(i,depth+1,seen)).join("")}</ul></li>`;
@@ -1311,7 +1349,7 @@ function viewLog(){
   const tests = E.runTests(), passN = tests.filter(t=>t.pass).length;
   return `<div class="sec">📓 実験の記録 <small>新しい順（最大200件）</small></div>
   <div class="card hist">${S.hist.slice(0,30).map(h=>{ const p = h.k==="exp"? D.procs.find(x=>x.id===h.proc):null;
-    return `<div class="h"><span>${p?OPS[p.op].icon:"🔨"}</span><span class="t">${Object.keys(h.inp).map(k=>nm(k)+"×"+h.inp[k]).join("＋")} → ${Object.keys(h.out).map(k=>nm(k)+"×"+h.out[k]).join("＋")}<br><small style="color:var(--muted)">${new Date(h.t).toLocaleTimeString("ja-JP")}${p?"・"+nm(h.fac):""}</small></span>
+    return `<div class="h"><span>${p?opIc(p.op):"🔨"}</span><span class="t">${Object.keys(h.inp).map(k=>nm(k)+"×"+h.inp[k]).join("＋")} → ${Object.keys(h.out).map(k=>nm(k)+"×"+h.out[k]).join("＋")}<br><small style="color:var(--muted)">${new Date(h.t).toLocaleTimeString("ja-JP")}${p?"・"+nm(h.fac):""}</small></span>
       ${p&&owned("notebook")?`<button class="btn small sub" data-act="again" data-proc="${p.id}" data-fac="${h.fac}">もう一度</button>`:""}</div>`; }).join("") || "<p class='desc'>まだ記録がないよ。</p>"}
     ${!owned("notebook")?`<p class="desc">📓 研究ノートを作ると、ここから同じ実験をすぐ繰り返せるようになるよ。</p>`:""}</div>
   <div class="sec">💾 セーブデータ <small>自動でブラウザに保存されています（スキーマv${E.SCHEMA}）</small></div>
@@ -1422,7 +1460,7 @@ function switchState(next){
   haltField(); clearTimeout(saveTimer); clearPreview();
   S = next; lastMission=E.missionIndex(S); lastStage=stage(); U.tray={}; U.fac=null; U.op=null; U.last=null; U.target=null; fieldSig=""; sceneSig="";
   if(W3.gfx){ (W3.natShown||new Set()).forEach(id=>W3.gfx.updateResourceVisual(id,null)); W3.natShown=new Set(); W3.visSig={};
-    [...W3.structs].forEach(id=>W3.gfx.removeStructureVisual(id)); W3.structs.clear(); W3.sel=null; W3.near=null; }
+    [...W3.structs].forEach(id=>structRemove(id)); W3.structs.clear(); W3.colSig=null; syncStructColliders(); W3.sel=null; W3.near=null; }
   applySavedPos(); writeNow(); renderChrome(); render();
 }
 function setVerifyMode(on, fresh){        // fresh："new"（全解放で作り直す）・"copy"（通常セーブを写す）・"keep"（前の検証データの続き）
@@ -1528,14 +1566,14 @@ function assetSheet(){
   openModal($("#sheet").querySelector(".close"));
 }
 const PREVIEW = new Map(); let previewN=0;
-function clearPreview(){ if(W3.gfx) PREVIEW.forEach((kind,id)=>{ if(kind==="st") W3.gfx.removeStructureVisual(id); else W3.gfx.updateResourceVisual(id,null); }); PREVIEW.clear(); previewN=0; }
+function clearPreview(){ if(W3.gfx) PREVIEW.forEach((kind,id)=>{ if(kind==="st") structRemove(id); else W3.gfx.updateResourceVisual(id,null); }); PREVIEW.clear(); previewN=0; }
 function previewAt(spec){
   if(!W3.gfx || !W3.pos){ banner("3D表示が始まってから使えます"); return; }
   const [kind, type] = spec.split(":"), k=previewN++, a=k*0.9, r=3+((k%4)*0.8);
   const p={x:W3.pos.x+Math.cos(a)*r, z:W3.pos.z+Math.sin(a)*r};
   if(kind==="fx"){ W3.gfx.playVisualEffect(type, W3.pos); return; }
   const id=(kind==="st"?"vps:":"vpr:")+type+":"+k;
-  if(kind==="st") W3.gfx.addStructureVisual(id, type, p, 0); else W3.gfx.updateResourceVisual(id, {position:p, type, scale:1, visible:true});
+  if(kind==="st") structAdd(id, type, p, 0); else W3.gfx.updateResourceVisual(id, {position:p, type, scale:1, visible:true});
   PREVIEW.set(id, kind);
 }
 function verifyAct(act, id, b){

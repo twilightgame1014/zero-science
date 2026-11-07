@@ -90,3 +90,8 @@ gfx.updateResourceVisual('tree:-412,388', {
 | `branch`・`pebble`・`herb`・`grass`・`bush`・`flowers`・`clay`・`water`・`oil` | 枝・丸い石・火打ち石・貝殻・落ち葉・海藻・草・つる・ぶどう・粘土・黄土・砂・水・原油 | なし |
 
 フィールドの自然物の見た目は、草むら→`grass`、やぶ→`bush`（2026-11-06〜）。
+
+## 8. 建物の当たり判定（2026-11-07）
+- 建物の占有形状は Muse の `assets/buildings-3d/structures.json` の footprint（円 `{r}` か矩形 `{w,d}`。屋根の張り出し・煙突・炎・装飾は含まない）。矩形は建物の向き（three.js の rotation.y）で回す。
+- ゲームの `WORLD.setStructures` が受け取り、移動・押し出し・立てる場所・経路の格子を「形までの距離」で判定する。描画メッシュや見た目全体の箱は判定に使わない。
+- 建物の下になった自然物（形＋自然物の半径＋0.25 の内側）は、建物がある間だけ `state:"gone"`・壁にならない・採れない。建物を取り除けば戻る。

@@ -128,7 +128,13 @@ img.ico{width:32px;height:32px;object-fit:contain;image-rendering:pixelated}
   background:var(--iat) no-repeat !important;
   background-size:calc(var(--iat-c) * 100%) calc(var(--iat-r) * 100%) !important;
   background-position:calc(var(--c) * 100% / (var(--iat-c) - 1)) calc(var(--r) * 100% / (var(--iat-r) - 1)) !important}
-.sheet .bigi .iic,.prod .i .iic,.dx .i .iic,.toast .i .iic{width:1.15em;height:1.15em}
+/* 道具・設備・操作のアイコン（別のアトラス。大きさの決まりは物質アイコンと同じ） */
+.tic{display:inline-block;width:1.25em;height:1.25em;vertical-align:-.25em;flex:none;
+  margin:0 .08em 0 0 !important;padding:0 !important;border:0 !important;border-radius:0 !important;box-shadow:none !important;
+  background:var(--tat) no-repeat !important;
+  background-size:calc(var(--tat-c) * 100%) calc(var(--tat-r) * 100%) !important;
+  background-position:calc(var(--c) * 100% / (var(--tat-c) - 1)) calc(var(--r) * 100% / (var(--tat-r) - 1)) !important}
+.sheet .bigi .iic,.prod .i .iic,.dx .i .iic,.toast .i .iic,.sheet .bigi .tic,.prod .i .tic,.dx .i .tic,.toast .i .tic{width:1.15em;height:1.15em}
 .hbtn img.ico{width:28px;height:28px}
 .bigitem img.ico{width:44px;height:44px}
 .bigitem .ico.emo{font-size:1.8rem}

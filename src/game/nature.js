@@ -221,13 +221,45 @@ var NATURE = (function(){
     D.regions.forEach(r=>{ if(r.w) r.res.forEach(res=>{ const sh=DEPOSIT_SHAPE[res.id]; if(!sh || !sh.r) return; const p=E.depositPos(r,res);
       statics.push({id:E.depositId(r.id,res.id), kind:"deposit", x:p.x, z:p.z, r:sh.r, block:true, static:true}); }); });
 
+    /* ---------- 建物の当たり判定（2026-11-07） ----------
+       建てた建物の占有形状（Muse の structures.json の footprint。円 {r} か矩形 {w,d}。屋根・煙突・炎は含まない）を
+       UI から setStructures で受け取る。矩形は建物の向き rot（three.js の rotation.y）で回す。
+       建物の下に入った自然物は、建物がある間は「覆われた」扱い（見えない・壁にならない・採れない）。 */
+    let structs = [], structSig = "";
+    /* 形の外側までの距離（中なら負） */
+    function sdist(o, x, z){
+      if(o.shape==="rect"){ const dx=x-o.x, dz=z-o.z, c=Math.cos(o.rot||0), s_=Math.sin(o.rot||0);
+        const lx=c*dx - s_*dz, lz=s_*dx + c*dz, qx=Math.abs(lx)-o.w/2, qz=Math.abs(lz)-o.d/2;
+        return Math.hypot(Math.max(qx,0), Math.max(qz,0)) + Math.min(Math.max(qx,qz), 0); }
+      return Math.hypot(x-o.x, z-o.z) - o.r;
+    }
+    /* 形の外へ向かう向き（単位ベクトル） */
+    function snormal(o, x, z){
+      if(o.shape==="rect"){ const dx=x-o.x, dz=z-o.z, c=Math.cos(o.rot||0), s_=Math.sin(o.rot||0);
+        const lx=c*dx - s_*dz, lz=s_*dx + c*dz, hx=o.w/2, hz=o.d/2;
+        let nx, nz;
+        if(Math.abs(lx)<=hx && Math.abs(lz)<=hz){ if(hx-Math.abs(lx) < hz-Math.abs(lz)){ nx=Math.sign(lx)||1; nz=0; } else { nx=0; nz=Math.sign(lz)||1; } }
+        else { const px=Math.max(-hx,Math.min(hx,lx)), pz=Math.max(-hz,Math.min(hz,lz)); nx=lx-px; nz=lz-pz; const l=Math.hypot(nx,nz)||1; nx/=l; nz/=l; }
+        return {x: c*nx + s_*nz, z: -s_*nx + c*nz}; }      // ローカル→ワールド（rotation.y の回転）
+      const dx=x-o.x, dz=z-o.z, d=Math.hypot(dx,dz); return d>1e-6 ? {x:dx/d, z:dz/d} : {x:1, z:0};
+    }
+    function setStructures(list){
+      structs = (list||[]).filter(t=>t && t.footprint).map(t=>{ const f=t.footprint;
+        return {id:"struct:"+t.id, kind:"structure", type:t.type, x:t.x, z:t.z, rot:t.rot||0, shape:f.shape==="rect"?"rect":"circle",
+                w:f.w, d:f.d, r: f.shape==="rect" ? Math.hypot(f.w,f.d)/2 : f.r, block:true, static:true, struct:true}; });
+      structSig = structs.map(o=>o.id+"@"+o.x.toFixed(2)+","+o.z.toFixed(2)+","+o.rot.toFixed(2)).join("|");
+      gridCache = null;
+    }
+    /* 建物の下（占有形状＋自然物の半径＋少しの余白）にある自然物 */
+    const covered = o=> !o.static && structs.some(t=> Math.abs(t.x-o.x) < t.r+o.r+1 && Math.abs(t.z-o.z) < t.r+o.r+1 && sdist(t,o.x,o.z) < o.r + 0.25);
+
     /* ---------- 状態 ---------- */
     const kindOf = o=>KINDS[o.kind];
     const nameOf = o=> (o.variant && VARIANTS[o.kind+":"+o.variant] && VARIANTS[o.kind+":"+o.variant].name) || kindOf(o).name;
     const iconOf = o=> (o.variant && VARIANTS[o.kind+":"+o.variant] && VARIANTS[o.kind+":"+o.variant].icon) || kindOf(o).icon;
     const yieldsOf = o=> (o.variant && VARIANTS[o.kind+":"+o.variant] && VARIANTS[o.kind+":"+o.variant].yields) || kindOf(o).yields;
     function stock(S, o, now){ const K=kindOf(o); return E.stockOf(S, o.id, K.uses, K.regrow, now); }
-    function present(S, o, now){ return stock(S,o,now).left > 0; }
+    function present(S, o, now){ return stock(S,o,now).left > 0 && !covered(o); }
     /* 当たり判定に使うか（取り尽くした木・岩は切り株・残骸になり、歩行を妨げない） */
     function solid(S, o, now){ return o.static ? true : o.block && present(S,o,now); }
     /* 採取できるか・できない理由・得られる素材 */
@@ -236,6 +268,7 @@ var NATURE = (function(){
       Object.keys(base).forEach(id=>{ y[id]=base[id]; });
       if(K.bonus && E.has(S,K.bonus)) Object.keys(y).forEach((id,i)=>{ if(i===0) y[id]+=1; });
       const out = {name:nameOf(o), icon:iconOf(o), verb:K.verb, yields:y, left:k.left, uses:K.uses, until:k.until, need:K.need, after:K.after};
+      if(covered(o)) return Object.assign(out, {ok:false, kind:"covered", reason:"建物の下になっている"});
       if(k.left<=0) return Object.assign(out, {ok:false, kind:"empty", reason: k.until ? "取り尽くした（しばらくすると戻る）" : K.after==="stump" ? "切り株になった" : K.after==="rubble" ? "砕けた" : "もうない"});
       if(K.need && !K.need.some(t=>(E.hasTool||E.has)(S,t))) return Object.assign(out, {ok:false, kind:"tool", reason:"「"+K.need.map(t=>D.items[t].name).join("」か「")+"」が必要"});
       return Object.assign(out, {ok:true});
@@ -244,7 +277,7 @@ var NATURE = (function(){
     function visual(S, o, now){
       const k = stock(S,o,now), K=kindOf(o);
       return {id:o.id, kind:o.kind, variant:o.variant, position:{x:o.x, z:o.z}, rotationY:o.rot, scale:o.scale,
-              state: k.left>0 ? "intact" : K.after, collider: {shape:"circle", r:o.r, solid: solid(S,o,now)}, uses:K.uses, left:k.left};
+              state: covered(o) ? "gone" : k.left>0 ? "intact" : K.after, collider: {shape:"circle", r:o.r, solid: solid(S,o,now)}, uses:K.uses, left:k.left};
     }
     /* 採取する。opt.pos：主人公の位置（離れていたら採れない）／opt.token：S.seq と一致したときだけ確定（二重取得防止） */
     function harvest(S, id, opt){
@@ -270,6 +303,7 @@ var NATURE = (function(){
     function nearbySolids(S, x, z, now){
       const out=[]; const cx=Math.floor(x/CELL), cz=Math.floor(z/CELL);
       for(let i=-1;i<=1;i++) for(let j=-1;j<=1;j++){ const a=cells.get(ck(cx+i,cz+j)); if(a) a.forEach(o=>{ if(solid(S,o,now)) out.push(o); }); }
+      for(const t of structs) if(Math.abs(t.x-x) < t.r+CELL && Math.abs(t.z-z) < t.r+CELL) out.push(t);
       return out;
     }
     const lockedNow = S=>lockedRegions.filter(r=>!E.regionOpen(S,r));
@@ -277,7 +311,7 @@ var NATURE = (function(){
     function free(S, x, z, now){
       if(!inWorld(x,z)) return false;
       for(const r of lockedNow(S)) if(Math.hypot(x-r.w.x,z-r.w.z) < REGION_R) return false;
-      for(const o of nearbySolids(S,x,z,now)) if(Math.hypot(x-o.x,z-o.z) < o.r + PLAYER_R) return false;
+      for(const o of nearbySolids(S,x,z,now)) if(sdist(o,x,z) < PLAYER_R) return false;
       return true;
     }
     /* 円の外へ押し出す（重なっていれば外周へ） */
@@ -285,8 +319,8 @@ var NATURE = (function(){
       for(let it=0; it<3; it++){
         let moved=false;
         for(const o of nearbySolids(S,p.x,p.z,now)){
-          const dx=p.x-o.x, dz=p.z-o.z, d=Math.hypot(dx,dz), min=o.r+PLAYER_R;
-          if(d < min){ const nx = d>1e-6 ? dx/d : 1, nz = d>1e-6 ? dz/d : 0; p.x = o.x + nx*(min+1e-4); p.z = o.z + nz*(min+1e-4); moved=true; }
+          const sd = sdist(o,p.x,p.z);
+          if(sd < PLAYER_R){ const n=snormal(o,p.x,p.z), push=PLAYER_R-sd+1e-4; p.x += n.x*push; p.z += n.z*push; moved=true; }
         }
         if(!moved) break;
       }
@@ -303,9 +337,9 @@ var NATURE = (function(){
       for(let i=0;i<steps;i++){
         let vx=sx, vz=sz;
         for(const o of nearbySolids(S,p.x,p.z,now)){
-          const ox=p.x-o.x, oz=p.z-o.z, d=Math.hypot(ox,oz), min=o.r+PLAYER_R+0.02;
-          if(d < min + Math.hypot(vx,vz)){
-            const nx=ox/(d||1), nz=oz/(d||1), vn=vx*nx+vz*nz;
+          const sd=sdist(o,p.x,p.z), min=PLAYER_R+0.02;
+          if(sd < min + Math.hypot(vx,vz)){
+            const n=snormal(o,p.x,p.z), nx=n.x, nz=n.z, vn=vx*nx+vz*nz;
             if(vn<0){ hit=true; const v=Math.hypot(vx,vz);
               vx-=vn*nx; vz-=vn*nz;                 // 法線方向を消して外周に沿わせる
               const t=Math.hypot(vx,vz);
@@ -327,13 +361,15 @@ var NATURE = (function(){
     const gi = v=>Math.round((v+WORLD_R)/GRID), gv = i=>i*GRID-WORLD_R;
     let gridCache=null, gridSig="";
     function blockGrid(S, now){
-      const sig = lockedNow(S).map(r=>r.id).join(",")+"|"+objs.filter(o=>o.block && !present(S,o,now)).map(o=>o.id).join(",");
+      const sig = lockedNow(S).map(r=>r.id).join(",")+"|"+objs.filter(o=>o.block && !present(S,o,now)).map(o=>o.id).join(",")+"|"+structSig;
       if(gridCache && sig===gridSig) return gridCache;
       const g = new Uint8Array(GN*GN);
       for(let i=0;i<GN;i++) for(let j=0;j<GN;j++){ if(!inWorld(gv(i),gv(j),0.2)) g[i*GN+j]=1; }
       const mark=(cx,cz,r)=>{ const a=gi(cx-r), b=gi(cx+r), c=gi(cz-r), d=gi(cz+r);
         for(let i=Math.max(0,a);i<=Math.min(GN-1,b);i++) for(let j=Math.max(0,c);j<=Math.min(GN-1,d);j++){ if(Math.hypot(gv(i)-cx,gv(j)-cz) < r) g[i*GN+j]=1; } };
       objs.concat(statics).forEach(o=>{ if(solid(S,o,now)) mark(o.x,o.z,o.r+PLAYER_R+0.08); });
+      structs.forEach(t=>{ const R=t.r+PLAYER_R+0.1, a=gi(t.x-R), b=gi(t.x+R), c=gi(t.z-R), d=gi(t.z+R);
+        for(let i=Math.max(0,a);i<=Math.min(GN-1,b);i++) for(let j=Math.max(0,c);j<=Math.min(GN-1,d);j++){ if(sdist(t,gv(i),gv(j)) < PLAYER_R+0.08) g[i*GN+j]=1; } });
       lockedNow(S).forEach(r=>mark(r.w.x,r.w.z,REGION_R+0.2));
       gridCache=g; gridSig=sig; return g;
     }
@@ -407,7 +443,8 @@ var NATURE = (function(){
       return out; }
 
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
-            free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids, layer2:L2N};
+            free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids, layer2:L2N,
+            setStructures, structures:()=>structs.slice(), sdist, covered};
   }
   return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, SITES, FORMER_STONEWORK};
 })();

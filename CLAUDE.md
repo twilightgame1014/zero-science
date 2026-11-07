@@ -7,7 +7,7 @@
 ## コマンド
 - `npm install` … 依存を入れる
 - `npm run build` … `dist/index.html` を作る（描画モジュールのバンドル＋画像の埋め込み）
-- `npm test` … エンジンの自動テスト（`runTests`）・自然物・検証モードのテストとボットの全物質到達テスト。**変更後は必ず通すこと**
+- `npm test` … エンジンの自動テスト（`runTests`）・自然物・検証モード・アセットのつなぎ込みのテストとボットの全物質到達テスト。**変更後は必ず通すこと**
 - `npm run build` は `dist/index.html`（通常）と `dist/verify.html`（検証モードが最初から有効）を作る
 - `npm run e2e` … 偽の描画モジュールを使ったブラウザ結合テスト（`npx playwright install chromium` が必要）
 - `npm run typecheck` … `src/graphics` の型チェック
@@ -45,7 +45,7 @@
 - 採取は「選ぶ → 近づく（外周へ）→ 条件確認 → 短い作業 → 一度だけ確定」。距離と二重実行（`S.seq` のトークン）はロジック側で確認する。
 - 変化した自然物・地域の採取地点の状態は `S.nature` に保存（スキーマ v2）。自動採取も同じ残量を使う。
 - 研究室は画像を使わず、SVG の実験台（`drawScene`）。研究室の画像はビルドに埋め込まない。
-- 物質アイコンは Muse の `assets/item-icons`（原本・137件）から `scripts/make-item-atlas.py` で 64px のアトラス `assets/build/item-icons-64.*` を作って埋め込む（アイコンを差し替えたら再実行）。`ic(id)` は HTML（アイコンがなければ絵文字）、文字だけの場所（バナー・`<option>`）は `icT(id)`、SVG の中は `svgIc`。道具・設備はまだ絵文字。
+- 物質アイコンは Muse の `assets/item-icons`（原本・137件）から `scripts/make-item-atlas.py` で 64px のアトラス `assets/build/item-icons-64.*` を作って埋め込む（アイコンを差し替えたら再実行）。`ic(id)` は HTML（アイコンがなければ絵文字）、文字だけの場所（バナー・`<option>`）は `icT(id)`、SVG の中は `svgIc`。道具・設備・操作は下の「建物の3Dモデルと…アイコン」。
 - アイコンは Muse の `assets/ui-icons`（タブ・メニューは 48px 版、右上のボタンは 32px 版、`image-rendering: pixelated`）。ない名前は絵文字。必ず文字ラベルと組み合わせる。
 - 実験台の器具は Muse の `assets/lab-apparatus/sprites`（装置と液体・炎は別レイヤー。炎は加熱の演出中だけ、液体は材料が入っているときだけ）。解放済みの器具だけ置く。
 - 歩行状態（描画へ渡す moving）は、衝突処理のあとに実際に進んだ量と経過時間で決める（`updateWalk`：毎秒0.9マスで歩き始め、毎秒0.35マス未満が0.12秒続くと止まる。入力も移動予約もなければすぐ止まる）。入力や移動予約の有無だけで歩かせない。ワープ・ロード時の補正は歩行にしない。
@@ -61,6 +61,13 @@
 - 検証モードでは STRUCT_PLAN・CIV は「所持」ではなく `placed` で決める（全解放でも原野に建物を自動で置かない）。一覧・件数は data.js・`HD2D.RESOURCE_VISUAL_SPECS`・ビルド時に描画モジュールのソースから読んだ演出と建物タイプ（`ASSETS.gfxCatalog`）・埋め込んだアセットから毎回作る。アセット一覧は案内の枠（別画面）で開いたときだけ作る。
 - 描画の状態：枝葉カードのテクスチャが読めないと描画モジュールは旧来の球体の樹冠に戻るので、`gfxStatus()` で検出して検証メニューとコンソールに出す。
 
+## 建物の3Dモデルと道具・設備・操作のアイコン（Muse・2026-11-07〜）
+- 建物：Muse の `assets/buildings-3d`（原本の GLB 13種・`structures.json`）。`scripts/make-building-glb.py` でテクスチャだけを縮小した軽量版 `assets/build/buildings/*.glb` を作り（原本を変えたら再実行）、base64 で埋め込む。
+- 読み込みは `src/graphics-entry.ts` の `HD2D.ensureBuildingModel`：GLB を解析して雛形を持ち、`StructureRenderer.registerFactory` に「雛形の複製（ジオメトリ・材質も建物ごと）」を返すファクトリを登録する。読み終えるまでは従来の手続きモデル。読み終えたら UI がその種類の建物を置き直す。使う種類だけをその時に読む。可動部は Flame・Wheel が描画モジュールの既存アニメ、Piston・DrillPipe・Winch・Bellows は `HD2D.tickBuildingParts`（ゲームの描画ループから呼ぶ）。
+- 当たり判定は `structures.json` の footprint（円か回転した矩形。屋根・煙突・炎は含まない）。UI の `syncStructColliders` が `WORLD.setStructures` に渡し、`nature.js` は形までの距離（`sdist`）で移動・押し出し・立てる場所・経路を判定する。建物の下になった自然物は、建物がある間だけ隠れて採れない。建てたときに主人公が中にいたら外へ出す。検証のプレビュー（`vps:`）は判定なし。
+- 設備との対応は `structures.json` の `facilityId` が正（テストで検査）。かまど（kiln）を発酵つぼなどと統合しない。発電所（power-plant）は火力型モデル。暫定で「蒸気機関と水力発電機の両方」で建てる（登場段階・位置づけは GPT・オーナーと確認中）。
+- アイコン：Muse の `assets/buildings-icons`（原本・62点。キーは「tools/ID」「facilities/ID」「ops/ID」。設備 filter と操作 filter は別物）。`scripts/make-tool-atlas.py` で 64px のアトラス `assets/build/tool-icons-64.*` を作って埋め込む。`ic(id)` は道具・設備なら新しいアイコンを優先、物質は物質アイコン。操作は `opIc(op)`。
+
 ## 開始時の景観と文明の痕跡（2026-11-06〜）
 - 開始時のフィールドは手つかずの自然。人工物（石の階段・石積みの壁・舗装・柵・橋・建物など）を初期配置しない。「遺跡」などの理由を付けて残さない。
 - 描画モジュールが独自に置く石の階段・石積みの壁（`Stonework`）は `decor.stonework:false`（Muse §19）で描かせない。シーン走査で取り除く処理は廃止。当たり判定はもともとない。
@@ -71,7 +78,7 @@
 
 ## 主なデータの場所
 - 地域と3D上の位置：`data.js` の `regions`（`w` がワールド座標、`res[].p` が地域内の配置）
-- 拠点の建物（作った設備で増える）：`ui.js` の `STRUCT_PLAN`（3D）と `CIV()`（地図・2D）
+- 拠点の建物（作った設備で増える）：`ui.js` の `STRUCT_PLAN`（3D）と `CIV()`（地図・2D）。見た目と占有形状は `assets/buildings-3d/structures.json`
 - 地域の採取地点の見た目と当たり判定：`nature.js` の `DEPOSIT_SHAPE`（描画の資源タイプと半径。岩・鉱石・木の姿は固定の障害物）。自然物の見た目は `ui.js` の `NAT_VIS`
 - 研究室の背景：`ui.js` の `labBackground`（SVG）。`assets/lab/` の画像は原本として残すだけで、ビルドには使わない
 
@@ -85,9 +92,10 @@
 7. （対応済み：川の水面・`pickGround`・`setViewportInsets` は `feature/graphics-world-polish` で追加され、このブランチに統合）
 8. `GraphicsOptions.decor` は統合済み（景観の木・岩・茂み・倒木・小石は描かない）。残り：景観の草むら（十字面の群落）がゲームの採取できる草むらと見分けにくい・まとめて描くAPIの中身をインスタンス描画にする（性能）
 9. （対応済み：第9ラウンドでフェード範囲の拡大・足元の輪の最前面化・アイコンの一本化）
-10. 道具・研究設備 37 件のアイコン（任意）。川の水（3層）は既定値で使用中（`config.water` は渡さない）。`assets/env-textures` は未使用
+10. （対応済み：道具・設備・操作のアイコン62点を統合）川の水（3層）は既定値で使用中（`config.water` は渡さない）。`assets/env-textures` は未使用
 11. （対応済み：`decor.stonework` は統合済み）地形の「踏み分け道」（`distanceToPath` の土の帯）は残しているので、開始時に要るかを相談したい
-12. 木（第9・樹冠再構築の統合後。`docs/handoff/CLAUDE-TO-MUSE-2026-11-06.md` §12）：伐ろうとしている隣の木が近接フェードでほぼ見えなくなる・樹冠が薄く黄緑寄り・やぶは球体のまま・テクスチャ読込失敗時に球体の樹冠へ戻る経路が残っている・木1本の部品が多く、スマホで木17本＝描画400回（インスタンス化の希望）
+12. 木（§12）：1〜4 は第12ラウンド（c896bc6）で対応済み。残り：木のインスタンス化（描画回数）・ノードの木の距離 LOD。伐ろうとしている木は見えるようになったが、その樹冠の向こうの主人公が薄く隠れる（§13）
+13. 建物（§13）：発電所の発光部の白い円の見え方・小屋や研究施設など facilityId のない建物の扱い（ゲームは作った設備に対応させている）
 
 ## 今後の拡張候補
 - 第5段階（集積回路・医薬品・ナノ材料）

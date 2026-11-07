@@ -270,6 +270,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   ok('背景（マップ側）をクリックするとメニューが閉じ、そのクリックで歩き出さない', (await page.evaluate(`${G}.U.tab`)) === 'explore' && !(await page.evaluate(`${G}.W3.target`)) && same(p0, await pos(page)));
   await page.keyboard.down('d'); await page.waitForTimeout(500); await page.keyboard.up('d');
   ok('メニューを閉じるとWASDで移動できる', !same(p0, await pos(page)));
+  await page.evaluate(`document.getElementById('toasts').innerHTML=''`);   // 新発見の通知（押すと図鑑が開く）が積み上がっていると、画面上部の中央を覆うことがあるので片付けてから
   await page.mouse.click(683, 300); await page.waitForTimeout(60);
   ok('マップのクリックで移動先（地面、または近くの自然物）が決まる', await page.evaluate(`!!(${G}.W3.target || ${G}.W3.sel)`));
   await page.click('.hud-tr [data-tab="settings"]'); await page.waitForTimeout(150);
@@ -500,8 +501,11 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await page.click('[data-act="v-place"][data-id="st-wheel"]'); await page.waitForTimeout(150);
   await page.click('[data-act="v-extra"][data-id="bridge"]'); await page.waitForTimeout(150);
   const st1 = await page.evaluate(`Object.entries(__FAKE.structures).map(([k,v])=>k+':'+v.type)`);
+  const col1 = await page.evaluate(`(()=>{ const G=${G}, t=G.WORLD.structures(); const w=t.find(o=>o.type==='waterwheel'); return {types:t.map(o=>o.type), wallAtCenter: w ? !G.WORLD.free(G.S,w.x,w.z) : null}; })()`);
+  ok('置いた建物には structures.json の占有形状の当たり判定が付く（水車）。仕様のない橋は判定なし', col1.types.includes('waterwheel') && !col1.types.includes('bridge') && col1.wallAtCenter === true, JSON.stringify(col1));
   await page.click('[data-act="v-clearst"]'); await page.waitForTimeout(150);
   const st2 = await page.evaluate(`Object.keys(__FAKE.structures).length`);
+  ok('建物を撤去すると、当たり判定も消える', await page.evaluate(`${G}.WORLD.structures().length===0`));
   ok('検証メニュー：建物を選んで置き（決まりにない橋も足もとに置ける）、全部撤去できる', st1.includes('st-wheel:waterwheel') && st1.some(x => /:bridge$/.test(x)) && st2 === 0, JSON.stringify(st1));
   await page.evaluate(`(()=>{ const G=${G}; const o=G.WORLD.objects.find(o=>o.kind==='twig'); G.S.nature[o.id]={u:1,t:Date.now()}; window.__tw=o.id; })()`);
   await page.evaluate(`${G}.render()`); await page.waitForTimeout(150);       // 検証パネルは開いたまま（全高なのでバッジは隠れている）
@@ -516,6 +520,15 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await page.click('#sheet [data-act="v-prev"][data-id="res:tree"]'); await page.waitForTimeout(200);
   const a3 = await page.evaluate(`Object.keys(__FAKE.resources).filter(k=>k.startsWith('vpr:tree')).length`);
   ok('アセット一覧：別の画面で開き、UIアイコン・全物質のアイコンを表示し、3Dの見た目を主人公のそばに置ける', a1.open && a1.imgs === a1.want && a2.figs === a2.want && a3 === 1, JSON.stringify({ a1, a2, a3 }));
+  // 道具・設備・操作のアイコン（Muse の62点）：工作カードと研究室の操作ボタン
+  await page.click('#nav [data-tab="craft"]'); await page.waitForTimeout(400);
+  const ci = await page.evaluate(`({tic:document.querySelectorAll('#dockBody .card h3 .tic').length, iic:document.querySelectorAll('#dockBody .card h3 .iic').length, toolCards:[...document.querySelectorAll('#dockBody .card h3')].length, cards:document.querySelectorAll('#dockBody .card h3').length, emoji:[...document.querySelectorAll('#dockBody .card h3 .i')].filter(e=>!e.querySelector('.tic,.iic')).length})`);
+  await page.click('#nav [data-tab="lab"]'); await page.waitForTimeout(400);
+  await page.click('#dockBody [data-act="fac"]'); await page.waitForTimeout(300);
+  const oi = await page.evaluate(`({ops:document.querySelectorAll('#dockBody .opt[data-act="op"]').length, tic:document.querySelectorAll('#dockBody .opt[data-act="op"] .tic').length, facTic:document.querySelectorAll('#dockBody [data-act="fac"] .tic').length, bg:getComputedStyle(document.querySelector('#dockBody .opt .tic')||document.body).backgroundImage.slice(0,8)})`);
+  ok('道具・設備のアイコン（Muse の62点）：工作カードの見出しはすべて画像（道具・設備は新しいアイコン、材料は物質アイコン）', ci.cards > 3 && ci.tic > 0 && ci.tic + ci.iic === ci.cards && ci.emoji === 0, JSON.stringify(ci));
+  ok('操作のアイコン：研究室の操作ボタンと設備ボタンも画像', oi.ops > 0 && oi.tic === oi.ops && oi.facTic > 0 && /url/.test(oi.bg), JSON.stringify(oi));
+  await page.click('#dock .dockx'); await page.waitForTimeout(300);
   // 通常のセーブに戻る → 混入しない → 再読み込みしても通常 → もう一度入ると前の検証データの続き
   await page.click('#vbadge'); await page.waitForTimeout(250); await page.click('[data-act="v-exit"]'); await page.waitForTimeout(400);
   const back = await page.evaluate(`({V:${G}.VERIFY, badge:!document.getElementById('vbadge').hidden, inv:JSON.stringify(${G}.S.inv), verify:!!${G}.S.verify, prev:Object.keys(__FAKE.resources).filter(k=>k.startsWith('vpr:')).length, url:location.search, saved:localStorage.getItem('zero-kagaku-save')})`);

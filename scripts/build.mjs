@@ -51,6 +51,26 @@ if (fs.existsSync(path.join(root, itemAtlas)) && fs.existsSync(path.join(root, i
   const m = JSON.parse(fs.readFileSync(path.join(root, itemMap), 'utf8'));
   ASSETS.items = { src: dataUrl(itemAtlas, 'image/webp'), cols: m.cols, rows: m.rows, pos: m.items };
 }
+// 道具・設備・操作のアイコン（Muse・assets/buildings-icons が原本・62点。scripts/make-tool-atlas.py で作った 64px のアトラス。キーは「カテゴリ/ID」）
+const toolAtlas = 'assets/build/tool-icons-64.webp', toolMap = 'assets/build/tool-icons-64.json';
+if (fs.existsSync(path.join(root, toolAtlas)) && fs.existsSync(path.join(root, toolMap))) {
+  const m = JSON.parse(fs.readFileSync(path.join(root, toolMap), 'utf8'));
+  ASSETS.tools = { src: dataUrl(toolAtlas, 'image/webp'), cols: m.cols, rows: m.rows, pos: m.items };
+}
+// 建物の3Dモデル（Muse・assets/buildings-3d が原本。scripts/make-building-glb.py で作った軽量版を埋め込む）と、
+// 占有形状・入口・操作位置などの正式値（structures.json から必要な項目だけ）
+{
+  const spec = JSON.parse(fs.readFileSync(path.join(root, 'assets/buildings-3d/structures.json'), 'utf8'));
+  ASSETS.buildingSpecs = {};
+  for (const s of spec.structures) ASSETS.buildingSpecs[s.id] = { name: s.name, facilityId: s.facilityId || null, footprint: s.footprint, entrance: s.entrance, operate: s.operate, size: s.size, moving: (s.movingParts || []).map(m => m.name) };
+  ASSETS.buildings = {};
+  const dir = 'assets/build/buildings';
+  for (const id of Object.keys(ASSETS.buildingSpecs)) {
+    const f = path.join(root, dir, id + '.glb');
+    if (fs.existsSync(f)) ASSETS.buildings[id] = fs.readFileSync(f).toString('base64');
+    else console.warn('建物モデルがない（scripts/make-building-glb.py を実行）：' + id);
+  }
+}
 // 検証モードの一覧：描画モジュールに登録されている演出と建物タイプ（ソースから読み取る。固定の数を書かない）
 {
   const fx = fs.readFileSync(path.join(root, 'src/graphics/EffectsManager.ts'), 'utf8');
