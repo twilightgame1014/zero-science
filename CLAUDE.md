@@ -74,7 +74,10 @@
   建物の位置は `S.build[建物ID]`（`{x,z,rot}` か `{removed:true}`）を優先し、なければ `STRUCT_PLAN` の決まった場所。水車は `rule:"waterside"`（川の水ぎわだけ）。候補の 3D は `ghost:place`（当たり判定なし）。
 - カメラ：描画モジュールの `setCameraView`（Muse へ依頼中、`docs/handoff/WORLD-EXPANSION-GRAPHICS-SPEC.md` §2）があるときだけ、右ドラッグ・ホイール・2本指・画面のボタン・距離スライダー・「標準」を出す。設定は `S.camera`。ない版では部品を出さない。移動・絵の向き・クリック地点は実際のカメラから計算する（回しても画面基準）。
 - セーブ v3：`build`・`camera` を追加（v2 からの移行あり）。形式の古いセーブは移行前に `<キー>-backup-v<版>` へ元のまま控える。主人公の向きは `S.pos.dir`。
-- 広い世界（7エリア・地形9倍・区画読み込み・NPC・エリア別の環境）は、描画側の作業を Muse に依頼中（`docs/handoff/WORLD-EXPANSION-GRAPHICS-SPEC.md`）。オーナー決定（2026-11-07）：描画は Muse、ゲーム側は Claude で分担。
+- カメラの API は Muse の `setCameraOrbit({yawDegrees,pitchDegrees,viewSize})`・`getCameraYawDegrees()`（第17ラウンド）。モジュールは絵の行をカメラ基準で選ぶので、ゲームは画面基準の向きを `worldFacing()` で世界の向きに変換して `setPlayerVisualState` に渡す。
+- 自然物の見た目の違い（`variant`：針葉樹・ヤシ・葦・乾いたやぶ・苔むした岩。採れる物は元の種類のまま）と飾り（`WORLD.decos`：睡蓮・溶岩）は `nature.js` が生成後に割り当てる。溶岩は通れない円（`kind:"lava"`）で、上とすぐそばに建物を置けない。
+- 集落と人（`data.js` の `village`、`ui.js` の集落セクション）：小屋は hut の GLB、小物は Muse の `assets/gpt-expansion/props.json`（軽量版 `assets/build/props`）。人は `WORLD.setNpcs` の円で当たり判定、絵は `graphics-entry.ts` の `HD2D.npcSet`（`CharacterRenderer` を人数分。シートは `scripts/make-npc-sprites.py` で `assets/build/npc/*.webp`）。会話は案内の枠。売り買いの仕組みがないので取引のボタンは出さない。集落の中は建物を置けない。
+- 広い世界（7エリア・地形9倍・区画読み込み・エリア別の環境）は、描画側の作業を Muse に依頼中（`docs/handoff/WORLD-EXPANSION-GRAPHICS-SPEC.md`）。オーナー決定（2026-11-07）：描画は Muse、ゲーム側は Claude で分担。
 
 ## 開始時の景観と文明の痕跡（2026-11-06〜）
 - 開始時のフィールドは手つかずの自然。人工物（石の階段・石積みの壁・舗装・柵・橋・建物など）を初期配置しない。「遺跡」などの理由を付けて残さない。
