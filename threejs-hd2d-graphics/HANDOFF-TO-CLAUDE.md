@@ -617,8 +617,10 @@ gpt-forest の上に積んだブランチ。詳細は INTEGRATION.md §16。
    `decor.river:false` を追加。名前探しで隠す処理は
    外してよい。
 2. `config.world.heightAt(x, z)`：ゲーム側の worldHeight を
-   渡せば、地形・接地・水深の全てがそれに従う。
-   terrain-shim（ビルドプラグイン）は廃止できる。
+   渡せば、地形・接地・水深の全てがそれに従う。未設定時は
+   import された terrainHeight（＝shim の差し替え先）が
+   フォールバックになるので、取り込み時点では shim を
+   外さなくてよい。移行は §28.3 の (a)→(b)→(c) の順で。
 3. `gfx.prepareTerrainAt(x, z, 90)`：瞬間移動先の地形を
    即時に近距離詳細で構築する公開 API。
 4. 滝の見本：滝キット（createWaterfallKit）がそのまま

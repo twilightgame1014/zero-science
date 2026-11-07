@@ -11,7 +11,7 @@ import {
   lerp,
   riverCenterX,
   smoothstep,
-  heightAt,
+  terrainHeight,
 } from './utils';
 import type { AreaDefinition } from './types';
 
@@ -147,7 +147,7 @@ export class TerrainRenderer {
   }
 
   getHeightAt(x: number, z: number): number {
-    return heightAt(x, z, this.cfg);
+    return this.h(x, z);
   }
 
   update(time: number): void {
@@ -226,6 +226,18 @@ export class TerrainRenderer {
   }
 
   /**
+   * Height inlet (round 22, shim-safe): the host's
+   * config.world.heightAt wins; otherwise the imported
+   * terrainHeight binding — which the game's wide-world build
+   * legitimately substitutes at build time — is the fallback,
+   * so an externally-owned world shape keeps working with or
+   * without the config inlet.
+   */
+  private h(x: number, z: number): number {
+    return this.cfg.world.heightAt ? this.cfg.world.heightAt(x, z) : terrainHeight(x, z, this.cfg);
+  }
+
+  /**
    * Build every chunk around (x, z) NOW, at near detail within
    * the radius (round 22, Claude §18 / teleport support): call
    * right after a teleport so the destination is fully meshed
@@ -275,7 +287,7 @@ export class TerrainRenderer {
     for (let i = 0; i < count; i++) {
       const x = x0 + pos.getX(i) + CHUNK / 2;
       const z = z0 + pos.getZ(i) + CHUNK / 2;
-      const h = heightAt(x, z, this.cfg);
+      const h = this.h(x, z);
       pos.setXYZ(i, x, h, z);
       // Detail map anchored to world coordinates (tile ~2.6 m), so
       // chunk borders cannot shift the grain.
@@ -283,8 +295,8 @@ export class TerrainRenderer {
       out.i = i;
       // Analytic normals from the height function itself: identical
       // on both sides of every chunk border by construction.
-      const nx = heightAt(x - E, z, this.cfg) - heightAt(x + E, z, this.cfg);
-      const nz = heightAt(x, z - E, this.cfg) - heightAt(x, z + E, this.cfg);
+      const nx = this.h(x - E, z) - this.h(x + E, z);
+      const nz = this.h(x, z - E) - this.h(x, z + E);
       const inv = 1 / Math.hypot(nx, 2 * E, nz);
       normals[i * 3] = nx * inv;
       normals[i * 3 + 1] = 2 * E * inv;
@@ -578,7 +590,7 @@ export class TerrainRenderer {
       for (let j = 0; j <= across; j++) {
         const t = j / across;
         const x = cx + (t * 2 - 1) * halfW;
-        const bed = heightAt(x, z, this.cfg);
+        const bed = this.h(x, z);
         const y = bed <= waterLevel + 0.02 ? bed + 0.03 : waterLevel - 0.45;
         positions.push(x, y, z);
         uvs.push(t * 1.6, (i / steps) * (size / 5.4));
@@ -762,7 +774,7 @@ export class TerrainRenderer {
         const t = j / across;
         const x = cx + (t * 2 - 1) * halfW;
         positions.push(x, waterLevel, z);
-        depths.push(clamp(waterLevel - heightAt(x, z, this.cfg), 0, 2.2));
+        depths.push(clamp(waterLevel - this.h(x, z), 0, 2.2));
         flows.push(fx, fz);
       }
     }
@@ -808,7 +820,7 @@ export class TerrainRenderer {
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
       const z = pos.getZ(i);
-      depths[i] = clamp(waterLevel - heightAt(x, z, this.cfg), 0, 3);
+      depths[i] = clamp(waterLevel - this.h(x, z), 0, 3);
       flows[i * 2] = 0.119;
       flows[i * 2 + 1] = 0.993;
     }
@@ -830,7 +842,7 @@ export class TerrainRenderer {
   private buildLavaLake(lavaTextures?: { albedo?: THREE.Texture; emissive?: THREE.Texture }): THREE.Mesh | null {
     const def = this.areaDefs.find((a) => a.id === 'volcano');
     if (!def) return null;
-    const y = heightAt(def.x, def.z, this.cfg);
+    const y = this.h(def.x, def.z);
     const geo = new THREE.CircleGeometry(8.2, 28);
     geo.rotateX(-Math.PI / 2);
     let mat: THREE.MeshStandardMaterial;
@@ -866,7 +878,7 @@ export class TerrainRenderer {
    *  in the snowfield. Whether it bears weight is the game's call. */
   private buildIcePond(): THREE.Mesh {
     const pond = frozenPond(this.cfg);
-    const y = heightAt(pond.x, pond.z, this.cfg);
+    const y = this.h(pond.x, pond.z);
     const geo = new THREE.CircleGeometry(pond.r + 1.6, 24);
     geo.rotateX(-Math.PI / 2);
     const mat = new THREE.MeshStandardMaterial({

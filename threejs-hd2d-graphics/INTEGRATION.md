@@ -1128,10 +1128,15 @@ GPT-REQUEST-ENV-2026-11-07.md の6点が届いたので、検査→加工
    シーン内の名前探しは不要になった。
 2. 地形の公開口：`config.world.heightAt(x, z)` を追加。
    設定されると地形チャンク・接地・水深の全ての高さ
-   参照がこの関数に従う（モジュール内部は utils の
-   heightAt() に一本化）。未設定時は従来の terrainHeight
-   と完全一致（単体検証済み）。ビルド時の terrain-shim は
-   廃止できる。
+   参照がこの関数に従う。未設定時のフォールバックは
+   「import された terrainHeight バインディング」なので、
+   ゲーム側の terrain-shim（ビルド差し替え）が生きている
+   間も wide-world の高さがそのまま効く（移行期の二重
+   対応）。移行手順：(a) この版を取り込む（shim は
+   そのままで動作不変）、(b) 初期化で config.world.
+   heightAt に worldHeight を渡す、(c) プラグインと
+   shim を外す。単体検証：差し替えなしでは従来と
+   完全一致、heightAt 設定時はそちらが優先。
 3. 瞬間移動の準備：`gfx.prepareTerrainAt(x, z, radiusM=90)`
    を追加。指定地点周辺の全チャンクを近距離詳細で即時
    構築する（同期処理。フェードや読み込みの拍で呼ぶ）。
