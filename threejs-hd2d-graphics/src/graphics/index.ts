@@ -5,7 +5,7 @@ export { EnvironmentRenderer } from './EnvironmentRenderer';
 export { CharacterRenderer } from './CharacterRenderer';
 export { StructureRenderer } from './StructureRenderer';
 export type { StructureFactory } from './StructureRenderer';
-export { ResourceRenderer, RESOURCE_VISUAL_SPECS } from './ResourceRenderer';
+export { ResourceRenderer, RESOURCE_VISUAL_SPECS, RESOURCE_VARIANT_SPECS } from './ResourceRenderer';
 export type { ResourceVisualSpec } from './ResourceRenderer';
 export { CameraController } from './CameraController';
 export { LightingManager } from './LightingManager';

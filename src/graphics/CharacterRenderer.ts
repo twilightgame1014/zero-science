@@ -2,12 +2,38 @@ import * as THREE from 'three';
 import type { Direction, GraphicsConfig, PlayerVisualState } from './types';
 import { dampFactor } from './utils';
 
-const ROW_FOR_DIRECTION: Record<Direction, number> = {
+/** World-space facing angle per direction (atan2(x, z) convention:
+ *  'down' = +Z toward the default camera, 'right' = +X). */
+const DIR_ANGLE: Record<Direction, number> = {
   down: 0,
-  left: 1,
-  right: 2,
-  up: 3,
+  right: Math.PI / 2,
+  up: Math.PI,
+  left: -Math.PI / 2,
 };
+
+/**
+ * Sheet row per screen-relative sector. The sprite must read
+ * correctly from ANY camera yaw (360° orbit, 2026-11-07), so the row
+ * is chosen by where the character's world facing points RELATIVE
+ * to the camera: sector 0 = facing the camera (front row), then
+ * rotating through the character's right side (screen 'right' row),
+ * back row, and left side row. At the historical fixed yaw of 45°
+ * this reproduces the original world-direction mapping exactly.
+ */
+const ROW_BY_SECTOR = [0, 2, 3, 1];
+
+const _camDir = new THREE.Vector3();
+
+function rowForDirection(direction: Direction, camera: THREE.Camera): number {
+  camera.getWorldDirection(_camDir);
+  // Screen-down direction on the ground plane = opposite of the
+  // camera's ground-projected view direction.
+  const screenDown = Math.atan2(-_camDir.x, -_camDir.z);
+  let rel = (DIR_ANGLE[direction] - screenDown) % (Math.PI * 2);
+  if (rel < 0) rel += Math.PI * 2;
+  const sector = Math.round(rel / (Math.PI / 2)) % 4;
+  return ROW_BY_SECTOR[sector];
+}
 
 /** Sprite-sheet layout contract: the character's feet rest ~11% above
  *  the bottom edge of each cell (head room at the top). Sheets supplied
@@ -139,7 +165,7 @@ export class CharacterRenderer {
     const frame = moving
       ? Math.floor(this.animTime * this.cfg.walkFps) % 4
       : STANDING_FRAME;
-    const row = ROW_FOR_DIRECTION[this.state.direction];
+    const row = rowForDirection(this.state.direction, camera);
     this.texture.offset.set(frame / 4, 1 - (row + 1) / 4);
 
     // Walk bob exists only while walking (no idle breathing bob).

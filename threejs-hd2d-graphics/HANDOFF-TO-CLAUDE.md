@@ -349,3 +349,23 @@ gpt-forest の上に積んだブランチ。詳細は INTEGRATION.md §16。
 - 全山の実測：最も内側の裾でも中心から94.6（保証値92以上）。
   油田から一番近い山の裾まで57.4（修正前22.1）。
 - ルートの test 21/21・typecheck 合格。実機FPSは未確認です。
+
+---
+
+## 追補13: ワールド拡張フェーズ1（基盤＋森林キット）/ feature/graphics-world-expansion
+
+オーナーの7エリア拡張指示の第1フェーズです。全体計画は
+`threejs-hd2d-graphics/WORLD-EXPANSION-PLAN.md`、契約は INTEGRATION §22。
+
+1. **カメラ周回**: `setCameraOrbit({yawDegrees, pitchDegrees, viewSize})`
+   と `getCameraYawDegrees()` を追加。既定値は従来どおりで、呼ばなければ
+   無変更です。周回を採用する場合、ui.js の移動マッピング（45°固定前提）
+   を yaw 追従に直してください。pickGround は対応済みです。
+2. **スプライトの向き**はカメラ相対に変更（direction の意味は不変）。
+   NPC を出すときも同じ CharacterRenderer 系でいけます。NPC の
+   方向数・フレーム仕様は計画書 §NPC のとおり相談させてください。
+3. **森林キット**: `tree:conifer`（針葉樹）、`branch:log`（倒木）、
+   `rock:mossy`（苔岩）を nature の variant で出せます。数値が変わる
+   2件は RESOURCE_VARIANT_SPECS にあります。地域配分は nature 側で。
+4. 検証はモジュールデモのみ（周回4方向・近距離・スマホ相当）。
+   実ゲーム・実機 FPS は未確認です。

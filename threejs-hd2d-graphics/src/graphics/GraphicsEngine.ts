@@ -19,7 +19,7 @@ import { CameraController } from './CameraController';
 import { WorldRenderer } from './WorldRenderer';
 import { CharacterRenderer } from './CharacterRenderer';
 import { StructureRenderer } from './StructureRenderer';
-import { ResourceRenderer, RESOURCE_VISUAL_SPECS } from './ResourceRenderer';
+import { ResourceRenderer, RESOURCE_VISUAL_SPECS, RESOURCE_VARIANT_SPECS } from './ResourceRenderer';
 import type { ResourceVisualSpec } from './ResourceRenderer';
 import { EffectsManager } from './EffectsManager';
 import { GPT_TEXTURES } from './gptTextures';
@@ -295,6 +295,25 @@ export class GraphicsEngine {
     this.cameraOverride = { x: p.x, z: p.z };
   }
 
+  /**
+   * Orbit the exploration camera (2026-11-07): yaw is free over
+   * 360°, pitch is clamped to 12–72°, viewSize is the orthographic
+   * zoom (visible world height in metres, clamped 4–60). All fields
+   * optional; omitted ones keep their current values. Defaults stay
+   * yaw 45 / pitch 32 / viewSize 13, so existing integrations are
+   * unaffected until they call this.
+   */
+  setCameraOrbit(orbit: { yawDegrees?: number; pitchDegrees?: number; viewSize?: number }): void {
+    this.cameraRig.setOrientation(orbit.yawDegrees, orbit.pitchDegrees);
+    if (orbit.viewSize !== undefined) this.cameraRig.setViewSize(orbit.viewSize);
+  }
+
+  /** Current camera yaw in degrees (0–360). Screen-relative input
+   *  mapping on the game side should follow this value. */
+  getCameraYawDegrees(): number {
+    return this.cameraRig.getYawDegrees();
+  }
+
   setWorldVisualState(state: WorldVisualState): void {
     if (state.timeOfDay !== undefined) this.lighting.setTimeOfDay(state.timeOfDay);
     if (state.weather !== undefined) this.lighting.setWeather(state.weather);
@@ -462,6 +481,16 @@ export class GraphicsEngine {
    */
   getResourceVisualSpecs(): Record<string, ResourceVisualSpec> {
     return RESOURCE_VISUAL_SPECS;
+  }
+
+  /**
+   * Public API (2026-11-07): specs for variants whose footprint or
+   * height differ from their base type, keyed `type:variant`
+   * (e.g. 'tree:conifer', 'branch:log'). Variants not listed share
+   * the base type's spec. Also exported as RESOURCE_VARIANT_SPECS.
+   */
+  getResourceVariantSpecs(): Record<string, ResourceVisualSpec> {
+    return RESOURCE_VARIANT_SPECS;
   }
 
   /**
