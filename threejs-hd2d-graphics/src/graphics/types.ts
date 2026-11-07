@@ -14,7 +14,16 @@ export interface Vec3Like {
   z: number;
 }
 
-export type Direction = 'down' | 'left' | 'right' | 'up';
+/**
+ * Facing direction the game reports. The four cardinals are the
+ * original contract; the four diagonals (round 23, 8-direction
+ * sheets) are honoured when the character's sheet has 8 rows —
+ * with a 4-row sheet a diagonal snaps to the nearest cardinal
+ * row, so existing games and NPC sheets keep working unchanged.
+ */
+export type Direction =
+  | 'down' | 'left' | 'right' | 'up'
+  | 'down-right' | 'down-left' | 'up-right' | 'up-left';
 
 /** Visual state of the player character, supplied by the game logic. */
 export interface PlayerVisualState {

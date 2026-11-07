@@ -6,9 +6,13 @@ import { dampFactor } from './utils';
  *  'down' = +Z toward the default camera, 'right' = +X). */
 const DIR_ANGLE: Record<Direction, number> = {
   down: 0,
+  'down-right': Math.PI / 4,
   right: Math.PI / 2,
+  'up-right': (Math.PI * 3) / 4,
   up: Math.PI,
+  'up-left': (-Math.PI * 3) / 4,
   left: -Math.PI / 2,
+  'down-left': -Math.PI / 4,
 };
 
 /**
@@ -22,17 +26,68 @@ const DIR_ANGLE: Record<Direction, number> = {
  */
 const ROW_BY_SECTOR = [0, 2, 3, 1];
 
+/**
+ * 8-sector variant for 8-row sheets (round 23): sectors are 45°
+ * wide starting at screen-down; the diagonal sheet rows are
+ * appended after the original four (4 = down-right, 5 = down-left,
+ * 6 = up-right, 7 = up-left — the layout of the *-8dir sheets).
+ */
+const ROW8_BY_SECTOR = [0, 4, 2, 6, 3, 7, 1, 5];
+
+/** Sector centres for the 8-sector layout (radians, screen-relative). */
+const SECTOR8_CENTRE = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => (i * Math.PI) / 4);
+
 const _camDir = new THREE.Vector3();
 
-function rowForDirection(direction: Direction, camera: THREE.Camera): number {
+/** Camera-relative facing angle: 0 = facing the camera (screen
+ *  down), growing through the character's screen-right side. */
+function relativeAngle(direction: Direction, camera: THREE.Camera): number {
   camera.getWorldDirection(_camDir);
   // Screen-down direction on the ground plane = opposite of the
   // camera's ground-projected view direction.
   const screenDown = Math.atan2(-_camDir.x, -_camDir.z);
   let rel = (DIR_ANGLE[direction] - screenDown) % (Math.PI * 2);
   if (rel < 0) rel += Math.PI * 2;
+  return rel;
+}
+
+function rowForDirection(direction: Direction, camera: THREE.Camera): number {
+  const rel = relativeAngle(direction, camera);
   const sector = Math.round(rel / (Math.PI / 2)) % 4;
   return ROW_BY_SECTOR[sector];
+}
+
+/**
+ * Row for an 8-row sheet, with boundary hysteresis: once a row is
+ * shown, the facing must move ~6° INTO the neighbouring sector
+ * before the image switches, so a character walking along a
+ * sector boundary does not flicker between two rows.
+ */
+export function rowForDirection8(
+  direction: Direction,
+  camera: THREE.Camera,
+  currentRow: number,
+): number {
+  const rel = relativeAngle(direction, camera);
+  const sector = Math.round(rel / (Math.PI / 4)) % 8;
+  const candidate = ROW8_BY_SECTOR[sector];
+  if (candidate === currentRow || currentRow < 0) return candidate;
+  let d = Math.abs(rel - SECTOR8_CENTRE[sector]) % (Math.PI * 2);
+  if (d > Math.PI) d = Math.PI * 2 - d;
+  // Half a sector is π/8 ≈ 0.393; require the facing to be at
+  // least 0.10 rad inside the candidate sector before switching.
+  return d < Math.PI / 8 - 0.1 ? candidate : currentRow;
+}
+
+/** Rows in a sprite sheet: cells are square, 4 columns across, so
+ *  the row count follows from the image aspect (1024² = 4 rows,
+ *  1024×2048 = 8 rows). Falls back to 4 until the image exists. */
+export function sheetRowsOf(texture: THREE.Texture): number {
+  const img = texture.image as { width?: number; height?: number } | undefined;
+  if (!img || !img.width || !img.height) return 4;
+  const cell = img.width / 4;
+  const rows = Math.round(img.height / cell);
+  return rows === 8 ? 8 : 4;
 }
 
 /** Sprite-sheet layout contract: the character's feet rest ~11% above
@@ -76,6 +131,10 @@ class CharSprite {
    *  scales alphaTest with opacity, like the node fade. */
   private fade = 1;
   private fadeGoal = 1;
+  /** Sprite-sheet rows (4 or 8) and the row currently shown
+   *  (8-dir hysteresis state). */
+  private sheetRows = 4;
+  private currentRow = -1;
 
   setFadeGoal(v: number): void {
     this.fadeGoal = v;
@@ -98,7 +157,8 @@ class CharSprite {
     // Clone so frame offsets never leak into a shared texture.
     this.texture = spriteTexture.clone();
     this.texture.needsUpdate = true;
-    this.texture.repeat.set(1 / 4, 1 / 4);
+    this.sheetRows = sheetRowsOf(spriteTexture);
+    this.texture.repeat.set(1 / 4, 1 / this.sheetRows);
     this.texture.magFilter = THREE.NearestFilter;
     this.texture.minFilter = THREE.LinearMipmapLinearFilter;
 
@@ -129,12 +189,15 @@ class CharSprite {
     this.group.add(this.shadow);
   }
 
-  /** Swap the sprite sheet at runtime. Same 4x4 layout required. */
+  /** Swap the sprite sheet at runtime. 4x4 sheets and the
+   *  extended 4x8 (8-direction) sheets are both accepted. */
   setSpriteTexture(source: THREE.Texture): void {
     const old = this.texture;
     this.texture = source.clone();
     this.texture.needsUpdate = true;
-    this.texture.repeat.set(1 / 4, 1 / 4);
+    this.sheetRows = sheetRowsOf(source);
+    this.currentRow = -1;
+    this.texture.repeat.set(1 / 4, 1 / this.sheetRows);
     this.texture.magFilter = THREE.NearestFilter;
     this.texture.minFilter = THREE.LinearMipmapLinearFilter;
     const mat = this.sprite.material as THREE.MeshBasicMaterial;
@@ -192,8 +255,11 @@ class CharSprite {
     const frame = moving
       ? Math.floor(this.animTime * this.cfg.walkFps) % 4
       : STANDING_FRAME;
-    const row = rowForDirection(this.state.direction, camera);
-    this.texture.offset.set(frame / 4, 1 - (row + 1) / 4);
+    const row = this.sheetRows === 8
+      ? rowForDirection8(this.state.direction, camera, this.currentRow)
+      : rowForDirection(this.state.direction, camera);
+    this.currentRow = row;
+    this.texture.offset.set(frame / 4, 1 - (row + 1) / this.sheetRows);
 
     const bob = moving
       ? Math.abs(Math.sin(this.animTime * this.cfg.walkFps * Math.PI * 0.5)) * 0.055
@@ -225,9 +291,11 @@ class CharSprite {
 
 /**
  * Renders the player and any NPCs as 2D sprites standing in the 3D
- * world. Sprite sheets are 4x4 grids: rows = down/left/right/up,
- * columns = walk frames. Swapping a character's appearance means
- * supplying a different sheet with the same layout.
+ * world. Sprite sheets are 4-column grids: rows = down/left/right/
+ * up, columns = walk frames; an 8-row sheet appends the diagonal
+ * rows (down-right/down-left/up-right/up-left) and is picked up
+ * automatically from the sheet's aspect. Swapping a character's
+ * appearance means supplying a different sheet with the same layout.
  */
 export class CharacterRenderer {
   readonly group = new THREE.Group();
