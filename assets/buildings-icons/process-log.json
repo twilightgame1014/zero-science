@@ -1,0 +1,651 @@
+{
+ "sheets": {
+  "tool-icons.jpg": {
+   "despill_px": 10202
+  },
+  "facility-icons.jpg": {
+   "despill_px": 11733
+  },
+  "op-icons-1.jpg": {
+   "despill_px": 10156
+  },
+  "op-icons-2.jpg": {
+   "despill_px": 12610
+  },
+  "op-icons-revised.jpg": {
+   "despill_px": 2265
+  }
+ },
+ "icons": [
+  {
+   "id": "pot",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    0,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "crucible",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    0,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "knife",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    0,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "axe",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    0,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "hammer",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    1,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "pickaxe",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    1,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "firedrill",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    1,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "torch",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    1,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "candle",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    2,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "basket",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    2,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "notebook",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    2,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "ironpick",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    2,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "ironaxe",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    3,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "balance",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    3,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "thermometer",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    3,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "bottle",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    3,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "bellows",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    4,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "battery",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    4,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "cylinder",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    4,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "rig",
+   "category": "tools",
+   "sheet": "tool-icons.jpg",
+   "cell": [
+    4,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "bench",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    0,
+    0
+   ],
+   "status": "replaced: buildings-1 workbench (stone tools); facility-sheet version had modern saw/plane/vise"
+  },
+  {
+   "id": "campfire",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    0,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "rack",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    0,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "filter",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    0,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "mill",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    1,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "kiln",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    1,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "charkiln",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    1,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "fermenter",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    1,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "furnace",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    2,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "still",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    2,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "storehouse",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    2,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "electrolyzer",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    2,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "waterwheel",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    3,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "generator",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    3,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "blastfurnace",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    3,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "steamengine",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    3,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "refinery",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    4,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "reactor",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    4,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "eaf",
+   "category": "facilities",
+   "sheet": "facility-icons.jpg",
+   "cell": [
+    4,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "crush",
+   "category": "ops",
+   "sheet": "op-icons-1.jpg",
+   "cell": [
+    0,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "grind_old",
+   "sheet": "op-icons-1.jpg",
+   "status": "superseded-by-revised"
+  },
+  {
+   "id": "mix",
+   "category": "ops",
+   "sheet": "op-icons-1.jpg",
+   "cell": [
+    0,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "wash",
+   "category": "ops",
+   "sheet": "op-icons-1.jpg",
+   "cell": [
+    0,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "filter",
+   "category": "ops",
+   "sheet": "op-icons-1.jpg",
+   "cell": [
+    1,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "settle",
+   "category": "ops",
+   "sheet": "op-icons-1.jpg",
+   "cell": [
+    1,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "heat",
+   "category": "ops",
+   "sheet": "op-icons-1.jpg",
+   "cell": [
+    1,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "cool_old",
+   "sheet": "op-icons-1.jpg",
+   "status": "superseded-by-revised"
+  },
+  {
+   "id": "evaporate",
+   "category": "ops",
+   "sheet": "op-icons-1.jpg",
+   "cell": [
+    2,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "crystallize",
+   "category": "ops",
+   "sheet": "op-icons-1.jpg",
+   "cell": [
+    2,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "dry",
+   "category": "ops",
+   "sheet": "op-icons-1.jpg",
+   "cell": [
+    2,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "dissolve",
+   "category": "ops",
+   "sheet": "op-icons-1.jpg",
+   "cell": [
+    2,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "burn",
+   "category": "ops",
+   "sheet": "op-icons-2.jpg",
+   "cell": [
+    0,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "fire",
+   "category": "ops",
+   "sheet": "op-icons-2.jpg",
+   "cell": [
+    0,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "char",
+   "category": "ops",
+   "sheet": "op-icons-2.jpg",
+   "cell": [
+    0,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "shape",
+   "category": "ops",
+   "sheet": "op-icons-2.jpg",
+   "cell": [
+    0,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "smelt",
+   "category": "ops",
+   "sheet": "op-icons-2.jpg",
+   "cell": [
+    1,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "melt",
+   "category": "ops",
+   "sheet": "op-icons-2.jpg",
+   "cell": [
+    1,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "ferment",
+   "category": "ops",
+   "sheet": "op-icons-2.jpg",
+   "cell": [
+    1,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "distill",
+   "category": "ops",
+   "sheet": "op-icons-2.jpg",
+   "cell": [
+    1,
+    3
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "electrolyze",
+   "category": "ops",
+   "sheet": "op-icons-2.jpg",
+   "cell": [
+    2,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "crack",
+   "category": "ops",
+   "sheet": "op-icons-2.jpg",
+   "cell": [
+    2,
+    1
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "polymerize",
+   "category": "ops",
+   "sheet": "op-icons-2.jpg",
+   "cell": [
+    2,
+    2
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "grind",
+   "category": "ops",
+   "sheet": "op-icons-revised.jpg",
+   "cell": [
+    0,
+    0
+   ],
+   "status": "ok"
+  },
+  {
+   "id": "cool",
+   "category": "ops",
+   "sheet": "op-icons-revised.jpg",
+   "cell": [
+    0,
+    1
+   ],
+   "status": "ok"
+  }
+ ]
+}
