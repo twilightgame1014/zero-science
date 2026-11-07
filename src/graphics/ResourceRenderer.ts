@@ -156,6 +156,11 @@ export class ResourceRenderer {
   private gpt: Record<string, THREE.Texture>;
   /** Branch/leaf spray textures for the card-built tree canopies. */
   private branch: Record<string, THREE.Texture>;
+  /** Procedural reserve sprays (canvas-drawn; cannot fail to
+   *  decode). Used when the bundled spray WebPs are unavailable, so
+   *  canopies and bushes stay card-built instead of reverting to
+   *  solid leaf blobs (Claude 2026-11-07 §12-4). */
+  private fallbackSprays: THREE.Texture[];
   /** Camera azimuth: sprite props stand facing it (the camera never orbits). */
   private yawRad: number;
   /** Shared geometries for the group path (never disposed per node). */
@@ -177,6 +182,17 @@ export class ResourceRenderer {
     this.barkTex = am.createBarkTexture();
     this.foliageTex = am.createFoliageTexture();
     this.rockCrackTex = am.createRockCrackTexture();
+    this.fallbackSprays = [0, 1, 2, 3].map((v) => am.createSprayTexture(v));
+  }
+
+  /** The spray set a card build should use: the bundled sheet art
+   *  when it decoded, the procedural reserve sprays otherwise. */
+  private spraySet(): THREE.Texture[] {
+    const real = [
+      this.branch.branch_1, this.branch.branch_2,
+      this.branch.branch_3, this.branch.branch_4,
+    ].filter((t): t is THREE.Texture => !!t);
+    return real.length >= 2 ? real : this.fallbackSprays;
   }
 
   /* ---------------- instanced pool plumbing ---------------- */
@@ -448,8 +464,19 @@ export class ResourceRenderer {
         playerPos.x, playerPos.y, playerPos.z,
         OCCL_POINT.x, OCCL_POINT.y, OCCL_POINT.z,
       );
-      let goal = d < radius ? FADE_MIN : 1;
-      if (goal === 1 && st.type === 'tree') {
+      // The node the player is interacting with (highlighted as the
+      // current target, or shaking under work) must stay clearly
+      // visible: it is exempt from the proximity test and its fade
+      // floor rises to 0.85 under the segment test (Claude
+      // 2026-11-07 §12-1: a target tree faded to 0.22 all but
+      // vanished while being felled). The segment test alone could
+      // not carry the exemption — at interaction distance the
+      // segment radius (≈ footprint × scale + 0.45) still reaches
+      // the adjacent tree — so the floor applies to both tests.
+      const interacting = st.highlighted === true || st.phase === 'reacting';
+      const floor = interacting ? 0.85 : FADE_MIN;
+      let goal = d < radius ? floor : 1;
+      if (goal === 1 && st.type === 'tree' && !interacting) {
         const dx = p.x - playerPos.x;
         const dz = p.z - playerPos.z;
         const reach = 3.1 * entry.baseScale;
@@ -746,25 +773,24 @@ export class ResourceRenderer {
         // picked deterministically from the node id — the same id
         // always grows the same tree. The trunk (and only the trunk)
         // is what the game's footprint describes; the cards never
-        // take part in collision. Falls back to the previous
-        // leaf-mass build when the spray textures failed to decode.
+        // take part in collision. When the bundled spray WebPs
+        // failed to decode, the procedural reserve sprays take
+        // their place in the same build — the canopy never reverts
+        // to solid leaf blobs (Claude 2026-11-07 §12-4).
         const sr = (n: number) => {
           const v = Math.sin(seed * 127.1 + n * 311.7) * 43758.5453;
           return v - Math.floor(v);
         };
-        const sprays = [
-          this.branch.branch_1, this.branch.branch_2,
-          this.branch.branch_3, this.branch.branch_4,
-        ].filter((t): t is THREE.Texture => !!t);
+        const sprays = this.spraySet();
         const arch = Math.floor(sr(1) * 3); // 0 wide, 1 tall, 2 young
         const trunkH = arch === 1 ? 2.25 : arch === 2 ? 1.45 : 1.8;
         const trunk = add(new THREE.Mesh(
           this.geo('trunk', () => new THREE.CylinderGeometry(0.14, 0.26, 1.8, 7)), wood));
         trunk.scale.set(arch === 2 ? 0.8 : 1, trunkH / 1.8, arch === 2 ? 0.8 : 1);
         trunk.position.y = trunkH / 2;
-        if (sprays.length >= 2) {
+        {
           const crownY = arch === 1 ? 2.85 : arch === 2 ? 1.95 : 2.45;
-          const clusters = arch === 1 ? 5 : arch === 2 ? 4 : 6;
+          const clusters = arch === 1 ? 6 : arch === 2 ? 5 : 8;
           const spreadR = arch === 1 ? 0.45 : arch === 2 ? 0.4 : 0.85;
           const cardW = arch === 1 ? 1.35 : arch === 2 ? 1.1 : 1.55;
           const baseAz = sr(2) * Math.PI * 2;
@@ -790,7 +816,7 @@ export class ResourceRenderer {
               alphaTest: 0.45,
               side: THREE.DoubleSide,
               roughness: 0.95,
-              color: new THREE.Color(shade * 0.94, shade * 1.0, shade * 0.86),
+              color: new THREE.Color(shade * 0.84, shade * 0.97, shade * 0.74),
             });
             pulseMaterials.push(m);
             const img = tex.image as { width: number; height: number } | undefined;
@@ -816,37 +842,19 @@ export class ResourceRenderer {
               sprayCard(tex, cx, cy, cz,
                 az + Math.PI / 2 + p * (Math.PI / 2) + (sr(60 + c * 2 + p) - 0.5) * 0.6,
                 -0.3 + sr(70 + c * 2 + p) * 0.45, (sr(80 + c * 2 + p) - 0.5) * 0.5,
-                cardW * (0.85 + sr(90 + c * 2 + p) * 0.35), 0.92 + sr(100 + c * 2 + p) * 0.16);
+                cardW * (0.85 + sr(90 + c * 2 + p) * 0.35), 0.85 + sr(100 + c * 2 + p) * 0.15);
             }
           }
-          // Inner depth sprays: dark olive, at the crown's heart.
+          // Inner depth sprays: dark olive, deep in the crown —
+          // three of them since 2026-11-07 (Claude §12-2: the
+          // crown read thin and yellow-green; more cards and a
+          // calmer, deeper green).
           sprayCard(sprays[Math.floor(sr(3) * sprays.length) % sprays.length],
-            0, crownY - 0.2, 0, sr(4) * Math.PI, -0.2, 0, cardW * 1.05, 0.42);
+            0, crownY - 0.25, 0, sr(4) * Math.PI, -0.2, 0, cardW * 1.05, 0.36);
           sprayCard(sprays[Math.floor(sr(6) * sprays.length) % sprays.length],
-            0.28, crownY - 0.02, -0.22, sr(5) * Math.PI, -0.1, 0.15, cardW * 0.9, 0.55);
-        } else {
-          // Legacy fallback (spray textures unavailable).
-          for (let i = 0; i < 2; i++) {
-            const limb = add(new THREE.Mesh(
-              this.geo('limb', () => new THREE.CylinderGeometry(0.045, 0.09, 1.1, 5)), wood));
-            limb.position.set((i === 0 ? 0.28 : -0.24), 1.95, (i === 0 ? 0.1 : -0.12));
-            limb.rotation.z = (i === 0 ? -0.7 : 0.75);
-            limb.rotation.x = (i === 0 ? 0.15 : -0.2);
-          }
-          for (let i = 0; i < 3; i++) {
-            const blob = add(new THREE.Mesh(
-              this.geo(`treeBlob${i}`, () => new THREE.IcosahedronGeometry(1.05 - i * 0.18, 1)), leaf));
-            blob.position.set((i - 1) * 0.45, 2.3 + i * 0.5, (i % 2) * 0.4 - 0.2);
-            blob.scale.y = 0.85;
-          }
-          for (let i = 0; i < 4; i++) {
-            const card = sprite(this.gpt.leaf_oak, 1.25, 1.1);
-            if (!card) break;
-            const a = (i / 4) * Math.PI * 2 + seed;
-            card.position.set(Math.cos(a) * 0.55, 2.15 + (i % 2) * 0.7, Math.sin(a) * 0.55);
-            card.rotation.x = (i % 2 ? -0.25 : 0.2);
-            g.add(card);
-          }
+            0.3, crownY - 0.05, -0.24, sr(5) * Math.PI, -0.1, 0.15, cardW * 0.9, 0.48);
+          sprayCard(sprays[Math.floor(sr(8) * sprays.length) % sprays.length],
+            -0.3, crownY - 0.12, 0.26, sr(7) * Math.PI, -0.15, -0.1, cardW * 0.95, 0.6);
         }
         break;
       }
@@ -1042,26 +1050,75 @@ export class ResourceRenderer {
         break;
       }
       case 'bush': {
-        // Gatherable bush （やぶ）: foliage masses + shrub leaf cards,
-        // visibly denser than a decorative shrub.
+        // Gatherable bush （やぶ）: a low shrub built from the same
+        // branch-spray cards as the tree canopies (Claude
+        // 2026-11-07 §12-3: the old jittered leaf blobs read as
+        // green balls next to the rebuilt trees). Short stems arc
+        // out of the base; drooping / wide sprays lie low over
+        // them and two sprays crown the top, with one dark spray
+        // at the heart. Uses the same spray set as the trees, so
+        // the reserve-spray fallback covers it too — no blobs.
+        const bs = (n: number) => {
+          const v = Math.sin(seed * 127.1 + n * 311.7) * 43758.5453;
+          return v - Math.floor(v);
+        };
+        const sprays = this.spraySet();
+        const up = new THREE.Vector3(0, 1, 0);
         for (let i = 0; i < 3; i++) {
-          const blob = add(new THREE.Mesh(
-            this.geo(`bushBlob${i}`, () => {
-              const geo = new THREE.IcosahedronGeometry(0.5 - i * 0.09, 1);
-              jitterRock(geo, 0.3);
-              return geo;
-            }),
-            leaf));
-          blob.position.set((i - 1) * 0.3, 0.36 + (i % 2) * 0.14, (i % 2) * 0.24 - 0.12);
-          blob.scale.y = 0.8;
+          const az = (i / 3) * Math.PI * 2 + bs(1) * 1.2;
+          const tilt = 0.5 + bs(10 + i) * 0.3;
+          const dir = new THREE.Vector3(
+            Math.cos(az) * Math.sin(tilt), Math.cos(tilt), Math.sin(az) * Math.sin(tilt));
+          const stem = add(new THREE.Mesh(
+            this.geo('bushStem', () => new THREE.CylinderGeometry(0.02, 0.04, 0.55, 5)), wood));
+          stem.quaternion.setFromUnitVectors(up, dir);
+          stem.position.copy(dir).multiplyScalar(0.24);
         }
+        const bushCard = (
+          tex: THREE.Texture, x: number, y: number, z: number,
+          yaw: number, tiltX: number, roll: number, w: number, shade: number,
+        ) => {
+          const m = new THREE.MeshStandardMaterial({
+            map: tex,
+            alphaTest: 0.45,
+            side: THREE.DoubleSide,
+            roughness: 0.95,
+            color: new THREE.Color(shade * 0.84, shade * 0.97, shade * 0.74),
+          });
+          pulseMaterials.push(m);
+          const img = tex.image as { width: number; height: number } | undefined;
+          const aspect = img && img.width > 0 ? img.height / img.width : 0.87;
+          const mesh = new THREE.Mesh(
+            this.geo('sprayCard', () => new THREE.PlaneGeometry(1, 1)), m);
+          mesh.position.set(x, y, z);
+          mesh.rotation.set(tiltX, yaw, roll);
+          mesh.scale.set(w, w * aspect, w);
+          mesh.receiveShadow = true;
+          g.add(mesh);
+        };
+        // Lower ring: drooping / wide sprays (indices 2, 3 of the
+        // set) arcing out and down.
         for (let i = 0; i < 3; i++) {
-          const card = sprite(this.gpt.leaf_shrub, 0.8, 0.66);
-          if (!card) break;
-          const a = (i / 3) * Math.PI * 2 + seed;
-          card.position.set(Math.cos(a) * 0.34, 0.3, Math.sin(a) * 0.34);
-          g.add(card);
+          const az = (i / 3) * Math.PI * 2 + bs(2) * 1.2;
+          const tex = sprays[(2 + i) % sprays.length];
+          bushCard(tex,
+            Math.cos(az) * 0.13, 0.4, Math.sin(az) * 0.13,
+            az + Math.PI / 2 + (bs(20 + i) - 0.5) * 0.5,
+            -0.62 - bs(30 + i) * 0.25, (bs(40 + i) - 0.5) * 0.4,
+            0.95 + bs(50 + i) * 0.12, 0.85 + bs(60 + i) * 0.13);
         }
+        // Top pair, more upright.
+        for (let i = 0; i < 2; i++) {
+          const az = bs(3) * Math.PI + i * Math.PI * 0.9;
+          const tex = sprays[Math.floor(bs(70 + i) * sprays.length) % sprays.length];
+          bushCard(tex,
+            Math.cos(az) * 0.05, 0.52, Math.sin(az) * 0.05,
+            az + Math.PI / 2, -0.25 - bs(80 + i) * 0.2, (bs(90 + i) - 0.5) * 0.4,
+            0.85, 0.88 + bs(100 + i) * 0.1);
+        }
+        // Dark heart.
+        bushCard(sprays[Math.floor(bs(5) * sprays.length) % sprays.length],
+          0, 0.34, 0, bs(6) * Math.PI, -0.35, 0, 0.8, 0.45);
         break;
       }
       case 'clay': {
