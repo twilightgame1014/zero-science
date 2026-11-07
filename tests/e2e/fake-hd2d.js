@@ -23,9 +23,10 @@
         __ray(ndc,ray){ const t=this.target,h=this.__half(); const ox=t.x+R.x*ndc.x*h.hw+UP.x*ndc.y*h.hh-F.x*60, oy=t.y+R.y*ndc.x*h.hw+UP.y*ndc.y*h.hh-F.y*60, oz=t.z+R.z*ndc.x*h.hw+UP.z*ndc.y*h.hh-F.z*60; ray.origin.set(ox,oy,oz); ray.direction.set(F.x,F.y,F.z); } };
       return {
         getCamera:()=>cam,
+        /* Muse 第17ラウンド前段（3b54b61）のカメラ周回 API と同じ形 */
         ...(window.__FAKE_NO_CAMVIEW ? {} : {
-          setCameraView(v, opt){ Object.assign(VIEW, v||{}); setAxes(VIEW.yawDegrees, VIEW.pitchDegrees); (FK.camCalls=FK.camCalls||[]).push(JSON.parse(JSON.stringify({v, opt:opt||{}}))); },
-          getCameraView(){ return Object.assign({}, VIEW); } }),
+          setCameraOrbit(v){ Object.assign(VIEW, v||{}); setAxes(VIEW.yawDegrees, VIEW.pitchDegrees); (FK.camCalls=FK.camCalls||[]).push(JSON.parse(JSON.stringify({v}))); },
+          getCameraYawDegrees(){ return VIEW.yawDegrees; } }),
         /* 本物の描画モジュールが独自に置く石の階段・石積みの壁（"Stonework"）の代わり。decor.stonework:false なら置かない（Muse §19 と同じ） */
         getScene:()=>{ if(!FK.scene){ const kids=[]; const sw={name:"Stonework", parent:null, traverse(f){ f(this); }}; FK.scene={children:kids,
             getObjectByName(n){ return kids.find(k=>k.name===n); }, remove(o){ const i=kids.indexOf(o); if(i>=0) kids.splice(i,1); o.parent=null; }}; sw.parent=FK.scene; if(!(FK.opts.decor && FK.opts.decor.stonework===false)) kids.push(sw); }

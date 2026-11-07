@@ -478,8 +478,13 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   const mv = await page.evaluate(`(()=>{ const G=${G}, T=HD2D.THREE, v=new T.Vector3(); G.W3.gfx.getCamera().getWorldDirection(v); const l=Math.hypot(v.x,v.z); return {fx:v.x/l, fz:v.z/l, dir:G.W3.dir, x:G.W3.pos.x, z:G.W3.pos.z}; })()`);
   const dx = mv.x - p0.x, dz = mv.z - p0.z, dl = Math.hypot(dx, dz);
   ok('カメラを回したあとも、↑キーで画面の奥へ進み、主人公は後ろ向き（上）の絵になる', dl > 0.5 && (dx * mv.fx + dz * mv.fz) / dl > 0.9 && mv.dir === 'up', JSON.stringify({ dx, dz, mv }));
+  // 描画モジュールは受け取った向きをワールドの軸として扱い、カメラから見た行を選ぶ（第17ラウンド）。180度回してカメラのほうへ歩くと、渡す向きは「up」（＝正面の絵）
+  await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.click('#camctl [data-act="cam"][data-id="right"]'); await page.waitForTimeout(100);
+  await page.keyboard.down('ArrowDown'); await page.waitForTimeout(500); await page.keyboard.up('ArrowDown'); await page.waitForTimeout(150);
+  const face = await page.evaluate(`({yaw:${G}.W3.camView.yaw, dir:${G}.W3.dir, sent:__FAKE.player.direction})`);
+  ok('カメラをおよそ180度回してカメラのほうへ歩くと、画面基準は「down」、描画へは正面の絵になる向き（up）を渡す', face.yaw > 160 && face.yaw < 250 && face.dir === 'down' && face.sent === 'up', JSON.stringify(face));
   // タップ（クリック）地点への移動も、回した後の画面から正しい地面の座標へ
-  const goal = await page.evaluate(`(()=>{ const G=${G}; const g={x:G.W3.pos.x+3, z:G.W3.pos.z-2}; const s=G.toScreen(g.x, HD2D.terrainHeight(g.x,g.z,G.W3.cfg), g.z), r=document.getElementById('w3').getBoundingClientRect(); return {g, sx:r.left+s.x, sy:r.top+s.y}; })()`);
+  const goal = await page.evaluate(`(()=>{ const G=${G}; let g=null; for(const [ox,oz] of [[3,-2],[-3,2],[3,2],[-3,-2],[4,0],[0,4],[-4,0],[0,-4]]){ const c={x:G.W3.pos.x+ox, z:G.W3.pos.z+oz}; if(G.WORLD.free(G.S,c.x,c.z) && !G.WORLD.around(c.x,c.z,1.6).length){ g=c; break; } } g=g||{x:G.W3.pos.x+3, z:G.W3.pos.z-2}; const s=G.toScreen(g.x, HD2D.terrainHeight(g.x,g.z,G.W3.cfg), g.z), r=document.getElementById('w3').getBoundingClientRect(); return {g, sx:r.left+s.x, sy:r.top+s.y}; })()`);
   await page.evaluate(`document.getElementById('toasts').innerHTML=''`); await page.mouse.click(goal.sx, goal.sy); await page.waitForTimeout(80);
   const tgt = await page.evaluate(`${G}.W3.target`);
   ok('回したあとでも、クリックした地点が正しい地面の座標になる', tgt && Math.hypot(tgt.x - goal.g.x, tgt.z - goal.g.z) < 0.6, JSON.stringify({ tgt, goal: goal.g }));

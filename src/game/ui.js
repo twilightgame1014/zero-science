@@ -802,7 +802,7 @@ function syncStructColliders(){
   WORLD.setStructures(list);
   /* 建物の中に入ってしまったら、近くの立てる場所へ（歩行にはしない） */
   if(W3.pos && !WORLD.free(S, W3.pos.x, W3.pos.z)){ const q=WORLD.nearestFree(S, W3.pos, Date.now(), 8); if(q){ W3.pos={x:q.x, z:q.z}; W3.path=null; W3.target=null;
-    W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false}); } }
+    W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false})); } }
   syncNature(true);      // 建物の下になった自然物を隠す・戻す
 }
 /* 建物の置き場所：S.build の記録（自由設置）を優先し、なければ決まった場所。撤去したもの・移動中のものは出さない */
@@ -871,7 +871,7 @@ async function start3D(){
     W3.state = "ready";
     camInit();
     { const g=gfxStatus(); if(g.ok===false) console.warn("木の枝葉カードのテクスチャを "+g.branch+"/"+g.want+" しか読み込めなかった（描画モジュールが旧来の球体の樹冠に戻っている可能性）"); }
-    W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false});
+    W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false}));
     renderField(); updateFieldActivity();
   }catch(e){ console.error(e); W3.state="failed"; W3.err="3D表示を開始できませんでした："+((e&&e.message)||e); renderField(); }
 }
@@ -888,7 +888,7 @@ function applySavedPos(){
   if(!W3.pos) return;
   W3.pos = spawnPos();
   haltField();
-  if(W3.gfx) W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false});
+  if(W3.gfx) W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false}));
   if(W3.gfx) syncAll3D();
 }
 /* 描画の一時停止：Muse の公開API pauseGraphics / resumeGraphics があれば使い、なければ従来の内部メソッド */
@@ -912,7 +912,7 @@ function haltField(){
   if(W3.camDrag || W3.pinch){ W3.camDrag=null; W3.pinch=null; }
   if(W3.camTouches) W3.camTouches.clear();
   if(W3.walk){ W3.walk.on=false; W3.walk.slow=0; }
-  if(W3.moving && W3.gfx && W3.pos){ W3.moving=false; W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving:false}); updateLoc(); }
+  if(W3.moving && W3.gfx && W3.pos){ W3.moving=false; W3.gfx.setPlayerVisualState(playerVisual({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving:false})); updateLoc(); }
 }
 document.addEventListener("visibilitychange", ()=>{ if(document.hidden) haltField(); updateFieldActivity(); });
 /* アプリ切り替え・ページの一時退避（bfcache）から戻ったときも、押しっぱなしの状態を残さない */
@@ -1009,7 +1009,7 @@ function loop3D(ts){
   /* 歩行状態：入力や移動予約の有無ではなく、衝突処理のあとに実際に進んだ量と経過時間で決める。
      ワープ・ロード時の補正・初期配置は W3.pos を直接書くので、ここでは数えない（歩行にならない） */
   const moving = updateWalk(dt, got, (ix||iy) || !!(W3.path && W3.path.length));
-  W3.gfx.setPlayerVisualState({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving, action: W3.work ? "gather" : undefined});
+  W3.gfx.setPlayerVisualState(playerVisual({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving, action: W3.work ? "gather" : undefined}));
   tickWork(ts);
   // 地域の判定
   const reg = regionAt(W3.pos.x, W3.pos.z);
@@ -1491,18 +1491,32 @@ function intro(){
   openModal($("#introGo")); S.flags.intro=1; save();
 }
 document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); applyIcons(); bindHudInput(); renderChrome(); render(); layout(); intro();
+/* 主人公の絵の向き：ゲームの W3.dir は画面基準（down＝カメラのほう）。第17ラウンドの描画モジュールは、受け取った向きを
+   ワールドの軸（down＝+Z・right＝+X）として扱い、カメラから見た向きで絵の行を選ぶ（CharacterRenderer の rowForDirection）。
+   そこで、モジュールが選ぶ行が画面基準の向きと一致するワールドの向きへ変換して渡す（4方向のうち必ず1つが一致する）。
+   古いモジュール（getCameraYawDegrees がない）にはそのまま渡す。 */
+const DIR_ANGLE = {down:0, right:Math.PI/2, up:Math.PI, left:-Math.PI/2}, SECTOR_OF = {down:0, right:1, up:2, left:3};
+function worldFacing(screenDir){
+  if(!W3.gfx || typeof W3.gfx.getCameraYawDegrees!=="function") return screenDir;
+  const T=HD2D.THREE, v=new T.Vector3(); W3.gfx.getCamera().getWorldDirection(v);
+  const sd=Math.atan2(-v.x,-v.z), want=SECTOR_OF[screenDir];
+  for(const d of ["down","right","up","left"]){ let rel=(DIR_ANGLE[d]-sd)%(Math.PI*2); if(rel<0) rel+=Math.PI*2; if(Math.round(rel/(Math.PI/2))%4===want) return d; }
+  return screenDir;
+}
+function playerVisual(st){ return Object.assign({}, st, {direction: worldFacing(st.direction)}); }
+
 /* ===================== カメラ（回転・上下角・ズーム。2026-11-07） =====================
-   描画モジュールに setCameraView（Muse へ依頼中。docs/handoff/WORLD-EXPANSION-GRAPHICS-SPEC.md §2）があるときだけ使い、操作部品を出す。
+   描画モジュールの setCameraOrbit（Muse 第17ラウンド前段 3b54b61、INTEGRATION §22。pitch 12〜72・viewSize 4〜60 はモジュール側でも制限）があるときだけ使い、操作部品を出す。
    ない版では何も出さない（押しても動かないボタンを見せない）。ユーザーの設定は S.camera に保存し、演出の一時変更（temporary）とは分ける。
    移動の向き・主人公の絵の向き・タップ地点は、いつも実際のカメラ（camBasis・screenToGround）から計算しているので、回しても画面基準のまま。 */
 const CAM_PITCH = [20,60], CAM_ZOOM = [0.6, 1.85];     // 上下角（度）・ズーム（標準の表示範囲に対する倍率）
-const camSupported = ()=> !!(W3.gfx && typeof W3.gfx.setCameraView==="function");
+const camSupported = ()=> !!(W3.gfx && typeof W3.gfx.setCameraOrbit==="function");
 const clampN = (v,a,b)=> Math.max(a, Math.min(b, v));
 function camDefaults(){ const c=(W3.cfg && W3.cfg.camera)||{}; return {yaw:c.yawDegrees!=null?c.yawDegrees:45, pitch:c.pitchDegrees!=null?c.pitchDegrees:32, zoom:c.viewSize!=null?c.viewSize:13}; }
 function camUser(){ const d=camDefaults(), u=S.camera||{}; return {yaw:isFinite(u.yaw)?u.yaw:d.yaw, pitch:isFinite(u.pitch)?u.pitch:d.pitch, zoom:isFinite(u.zoom)?u.zoom:d.zoom}; }
 function camZoomLim(){ const z=camDefaults().zoom; return [+(z*CAM_ZOOM[0]).toFixed(2), +(z*CAM_ZOOM[1]).toFixed(2)]; }
 function camNorm(v){ const zl=camZoomLim(); return {yaw:((v.yaw%360)+360)%360, pitch:clampN(v.pitch, CAM_PITCH[0], CAM_PITCH[1]), zoom:clampN(v.zoom, zl[0], zl[1])}; }
-function camApply(v){ if(!camSupported()) return; v=camNorm(v); try{ W3.gfx.setCameraView({yawDegrees:v.yaw, pitchDegrees:v.pitch, viewSize:v.zoom}, {}); }catch(e){} W3.camView=v; }
+function camApply(v){ if(!camSupported()) return; v=camNorm(v); try{ W3.gfx.setCameraOrbit({yawDegrees:v.yaw, pitchDegrees:v.pitch, viewSize:v.zoom}); }catch(e){} W3.camView=v; }
 function camSet(ch, keep){ const v=camNorm(Object.assign(camUser(), ch)); S.camera={yaw:+v.yaw.toFixed(2), pitch:+v.pitch.toFixed(2), zoom:+v.zoom.toFixed(2)}; camApply(S.camera); if(!keep) save(); camUI(); }
 function camReset(){ S.camera={}; camApply(camDefaults()); save(); camUI(); banner("🎥 カメラを標準の角度と距離に戻した"); }
 function camUI(){ const box=$("#camctl"); if(!box) return; box.hidden = !camSupported(); const z=$("#camZoom");
@@ -1744,7 +1758,7 @@ function verifyAct(act, id, b){
     case "v-warp": { if(id==="base"){ setTab("explore"); if(W3.state==="ready"){ W3.pos=WORLD.safeSpawn(S,{x:D.base.x,z:D.base.z}); haltField(); syncAll3D(); } return true; }
       const r=D.regions.find(x=>x.id===id); if(!r) return true; if(!E.regionOpen(S,r)){ banner("🔒 "+r.name+"：鍵がかかっている（バイパスOFF）"); return true; }
       setTab("explore"); U.region=r.id;
-      if(W3.state==="ready"){ const q=WORLD.safeSpawn(S,{x:r.w.x, z:r.w.z+REGION_R*0.2}); W3.pos={x:q.x,z:q.z}; haltField(); W3.gfx.setPlayerVisualState({position:W3.pos, direction:W3.dir, moving:false}); syncAll3D(); }
+      if(W3.state==="ready"){ const q=WORLD.safeSpawn(S,{x:r.w.x, z:r.w.z+REGION_R*0.2}); W3.pos={x:q.x,z:q.z}; haltField(); W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false})); syncAll3D(); }
       else { fieldSig=""; renderField(); }
       banner(r.icon+" "+r.name+"へ移動した"); return true; }
     case "v-stage": v.stage = id==="auto" ? null : +id; lastStage=stage(); fieldSig=""; sceneSig=""; save(); renderChrome(); render(); return true;
