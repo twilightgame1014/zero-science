@@ -370,3 +370,38 @@ gpt-forest の上に積んだブランチ。詳細は INTEGRATION.md §16。
    2件は RESOURCE_VARIANT_SPECS にあります。地域配分は nature 側で。
 4. 検証はモジュールデモのみ（周回4方向・近距離・スマホ相当）。
    実ゲーム・実機 FPS は未確認です。
+
+---
+
+## 追補14：GPT拡張素材の導入（針葉樹の種別・雪・水辺・溶岩・地面スプラット・NPC・集落小物）（2026-11-07、feature/graphics-world-expansion）
+
+オーナー生成のGPT原画10枚を加工し、モジュールへ反映しました。
+詳細は INTEGRATION §23 と `assets/gpt-expansion/README.md`（対応表）。
+
+1. **自然物の追加（契約変更なし）**: `tree:conifer` が種別対応に
+   （IDシードで cedar/pine/young、専用スプレー使用）。新規 variant:
+   `tree:conifer-snow`、`tree:winter`（裸木＋雪枝＋つらら）、
+   `tree:palm`、`grass:reed`、`bush:snow`、`bush:dry`。
+   新規タイプ: `lily`（水面アンカーで浮く睡蓮）、`lava`（殻＋
+   割れ目発光のみ。侵入制限やダメージはゲーム側でお願いします）。
+   spec は RESOURCE_VISUAL_SPECS / RESOURCE_VARIANT_SPECS に追加済み。
+   地域への配置は nature 側でお願いします。
+2. **地面スプラット**: 地形にタイリング地面4種（森林土・泥・砂・道）を
+   頂点マスク由来のウェイトで混合。ゲーム側の変更は不要です。
+   火山・雪原（足跡除去済）・砂漠・濡れ砂のタイルは
+   `assets/gpt-expansion/ground/` に納品済み（エリア地形の形状は
+   計画書どおり共同設計のうえ次ラウンドで有効化）。
+3. **NPC 3人**: `assets/gpt-expansion/npc/{guide,resident,craftsman}.png`
+   — 主人公シートと同仕様（1024²、4×4、行=正面/左/右/背面、
+   列=静止/歩行1/中間/歩行2、足元基準セル下端29px）に正規化済み。
+   主人公と同じスプライト機構で使えます。歩行は 1→2→3→2 ループ、
+   停止時は列0（moving=false 契約は主人公と同じ）。職人のハンマーは
+   背面のみ背負い（原画仕様）。個別フレームと歩行GIFも同梱。
+4. **集落小物11点**: `assets/gpt-expansion/models/*.glb` ＋
+   `props.json`（寸法・footprint・段階）。建物と同じ registerFactory
+   経路で導入できます。原画切り出しは `props/*.png`。
+5. **検証範囲**: モジュールデモのみ（拡張キット通常/近距離、
+   yaw 225°、川サンプル、スマホ相当 390×844）。小物は three.js
+   ビューアで全11点を確認。実ゲーム・実機 FPS は未検証です。
+   既知の残件: デモ背景の景観松（円錐）は decor 無効の実ゲームには
+   出ません。雪針葉樹は近距離で「雪の棚」の読みが強めです。
