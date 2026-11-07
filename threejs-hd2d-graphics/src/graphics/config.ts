@@ -1,4 +1,5 @@
 import type { GraphicsConfig } from './types';
+import { DEFAULT_AREAS } from './utils';
 
 /**
  * Default tuning for the graphics module. Everything that might need to
@@ -13,6 +14,10 @@ export const DEFAULT_CONFIG: GraphicsConfig = {
     plateauCenter: { x: -20, z: 20 },
     plateauRadius: 15,
     seed: 1337,
+    // Shared 7-area layout (world expansion, 2026-11-07; spec §1.1).
+    // Single source in utils.ts (DEFAULT_AREAS) so the pure terrain
+    // functions and this config can never drift apart.
+    areas: DEFAULT_AREAS,
   },
   coordinates: {
     scale: 1,

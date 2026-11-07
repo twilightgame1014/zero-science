@@ -13,16 +13,26 @@ export { EffectsManager } from './EffectsManager';
 export { PostEffects } from './PostEffects';
 export { AssetManager } from './AssetManager';
 export { DEFAULT_CONFIG, resolveConfig } from './config';
-export { terrainHeight, riverCenterX, distanceToRiver } from './utils';
+export {
+  terrainHeight, riverCenterX, distanceToRiver,
+  areaWeights, areaDefinitions, areaRaw, DEFAULT_AREAS,
+} from './utils';
 export type {
+  AreaDefinition,
+  AreaId,
+  CameraView,
+  CameraViewOptions,
   DecorOptions,
   Direction,
   EffectType,
+  EnvironmentState,
   GraphicsConfig,
   GraphicsOptions,
+  NpcVisualState,
   PlayerVisualState,
   QualityTier,
   ResourceVisualState,
+  StructurePreviewState,
   StructureType,
   Vec3Like,
   WorldVisualState,

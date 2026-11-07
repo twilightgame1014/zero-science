@@ -23,6 +23,7 @@ export class WorldRenderer {
       gpt?: Record<string, THREE.Texture>;
       branch?: Record<string, THREE.Texture>;
       ground?: Record<string, THREE.Texture>;
+      lava?: { albedo?: THREE.Texture; emissive?: THREE.Texture };
       detailBrightness?: number;
       decor?: DecorOptions;
     },
@@ -34,6 +35,7 @@ export class WorldRenderer {
       quality,
       assets.createRiverbedTexture(),
       textures.ground,
+      textures.lava,
     );
     this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, textures.decor ?? {}, textures.branch ?? {});
     this.group.add(this.terrain.group);
@@ -50,9 +52,15 @@ export class WorldRenderer {
     this.environment.setPollenVisible(visible);
   }
 
-  update(time: number): void {
+  update(time: number, focus?: { x: number; z: number }): void {
     this.terrain.update(time);
+    if (focus) this.terrain.updateChunks(focus.x, focus.z);
     this.environment.update(time);
+  }
+
+  /** Runtime quality switch: chunk radii / detail follow the tier. */
+  setQuality(quality: QualityTier): void {
+    this.terrain.setQuality(quality);
   }
 
   /** Fade foreground canopies that block the camera->player sight line. */

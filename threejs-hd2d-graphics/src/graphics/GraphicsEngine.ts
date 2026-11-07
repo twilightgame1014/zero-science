@@ -1,12 +1,18 @@
 import * as THREE from 'three';
 import type {
+  AreaId,
+  CameraView,
+  CameraViewOptions,
   EffectType,
+  EnvironmentState,
   GraphicsConfig,
   GraphicsOptions,
   GroundPick,
+  NpcVisualState,
   PlayerVisualState,
   QualityTier,
   ResourceVisualState,
+  StructurePreviewState,
   StructureType,
   Vec3Like,
   ViewportInsets,
@@ -22,9 +28,12 @@ import { StructureRenderer } from './StructureRenderer';
 import { ResourceRenderer, RESOURCE_VISUAL_SPECS, RESOURCE_VARIANT_SPECS } from './ResourceRenderer';
 import type { ResourceVisualSpec } from './ResourceRenderer';
 import { EffectsManager } from './EffectsManager';
+import { AreaParticles } from './AreaParticles';
+import type { ParticleKind } from './AreaParticles';
 import { GPT_TEXTURES } from './gptTextures';
 import { BRANCH_TEXTURES } from './branchTextures';
 import { EXPANSION_TEXTURES, GROUND_TEXTURES, LAVA_TEXTURES } from './expansionTextures';
+import { DQ3_TEXTURES } from './dq3Textures';
 import { PostEffects } from './PostEffects';
 import { toScenePosition } from './utils';
 
@@ -52,6 +61,9 @@ export class GraphicsEngine {
   private structures: StructureRenderer;
   private resources: ResourceRenderer;
   private effects: EffectsManager;
+  private particles: AreaParticles;
+  private quality: QualityTier;
+  private postWanted: boolean;
   private post: PostEffects | null = null;
   private clock = new THREE.Clock();
   private raf = 0;
@@ -75,6 +87,8 @@ export class GraphicsEngine {
       structures: StructureRenderer;
       resources: ResourceRenderer;
       effects: EffectsManager;
+      particles: AreaParticles;
+      quality: QualityTier;
       cfg: GraphicsConfig;
     },
   ) {
@@ -91,6 +105,9 @@ export class GraphicsEngine {
     this.structures = parts.structures;
     this.resources = parts.resources;
     this.effects = parts.effects;
+    this.particles = parts.particles;
+    this.quality = parts.quality;
+    this.postWanted = options.postEffects ?? parts.quality === 'high';
     if (options.viewportInsets) {
       this.cameraRig.setViewportInsets(
         options.viewportInsets.top ?? 0,
@@ -245,6 +262,21 @@ export class GraphicsEngine {
         }
       }),
     );
+    // DQ3 density set (assets/gpt-dq3/): broadleaf role sprays for
+    // node canopies, the lava-flow pair, town ground tiles for the
+    // terrain splat. Same failure contract as the other sets.
+    const dq3: Record<string, THREE.Texture> = {};
+    await Promise.all(
+      Object.entries(DQ3_TEXTURES).map(async ([key, uri]) => {
+        try {
+          dq3[key] = await assets.loadTexture(uri, { repeat: true });
+        } catch {
+          /* fallback art */
+        }
+      }),
+    );
+    if (dq3['town-cobble']) groundTex['cobble'] = dq3['town-cobble'];
+    if (dq3['town-dirt-plain']) groundTex['dirtPlain'] = dq3['town-dirt-plain'];
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -278,6 +310,7 @@ export class GraphicsEngine {
       gpt,
       branch,
       ground: groundTex,
+      lava: { albedo: dq3['lava-flow'] ?? expansion['lava_albedo'], emissive: dq3['lava-flow-emissive'] ?? expansion['lava_emissive'] },
       decor: options.decor,
     });
     const groundAt = (x: number, z: number) => world.getGroundHeight(x, z);
@@ -288,9 +321,10 @@ export class GraphicsEngine {
       groundAt,
     );
     const structures = new StructureRenderer(groundAt);
-    const resources = new ResourceRenderer(groundAt, gpt, cfg.camera.yawDegrees, branch, expansion, cfg.world.waterLevel);
+    const resources = new ResourceRenderer(groundAt, gpt, cfg.camera.yawDegrees, branch, expansion, cfg.world.waterLevel, dq3);
     const effects = new EffectsManager(particleTexture, groundAt);
-    scene.add(world.group, character.group, structures.group, resources.group, effects.group);
+    const particles = new AreaParticles(particleTexture, quality);
+    scene.add(world.group, character.group, structures.group, resources.group, effects.group, particles.points);
 
     const effectiveOptions: GraphicsOptions = {
       ...options,
@@ -299,7 +333,7 @@ export class GraphicsEngine {
     };
     return new GraphicsEngine(container, effectiveOptions, {
       renderer, scene, assets, lighting, cameraRig, world, character,
-      structures, resources, effects, cfg,
+      structures, resources, effects, particles, quality, cfg,
     });
   }
 
@@ -327,6 +361,9 @@ export class GraphicsEngine {
       return;
     }
     const p = toScenePosition(position, this.cfg);
+    // A malformed target must never poison the camera: a NaN
+    // centre is unrecoverable through the damped follow.
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.z)) return;
     this.cameraOverride = { x: p.x, z: p.z };
   }
 
@@ -336,17 +373,182 @@ export class GraphicsEngine {
    * zoom (visible world height in metres, clamped 4–60). All fields
    * optional; omitted ones keep their current values. Defaults stay
    * yaw 45 / pitch 32 / viewSize 13, so existing integrations are
-   * unaffected until they call this.
+   * unaffected until they call this. Kept as a thin alias of
+   * setCameraView (spec §2) — new integrations should use that.
    */
   setCameraOrbit(orbit: { yawDegrees?: number; pitchDegrees?: number; viewSize?: number }): void {
-    this.cameraRig.setOrientation(orbit.yawDegrees, orbit.pitchDegrees);
-    if (orbit.viewSize !== undefined) this.cameraRig.setViewSize(orbit.viewSize);
+    this.setCameraView(orbit);
   }
 
   /** Current camera yaw in degrees (0–360). Screen-relative input
    *  mapping on the game side should follow this value. */
   getCameraYawDegrees(): number {
     return this.cameraRig.getYawDegrees();
+  }
+
+  /** The view in effect before the first temporary camera change. */
+  private savedView: Required<CameraView> | null = null;
+
+  /**
+   * Runtime camera control (spec §2): set yaw (360°), pitch (12–72°)
+   * and zoom (viewSize 4–60) at any time. Omitted fields keep their
+   * values. Options: `transition` animates over that many seconds;
+   * `temporary` marks a cutscene-style change — the current view is
+   * remembered and restoreCameraView() (or setCameraView(null))
+   * returns to it, while a later non-temporary call makes its view
+   * the new base. The camera never dips under the terrain: the
+   * orthographic rig stays at its fixed height and pitch is clamped.
+   */
+  setCameraView(view: CameraView | null, opts: CameraViewOptions = {}): void {
+    if (view === null) {
+      this.restoreCameraView();
+      return;
+    }
+    if (opts.temporary) {
+      if (!this.savedView) this.savedView = this.getCameraView();
+    } else if (this.savedView && !opts.temporary) {
+      // A base-view change while a temporary view is in effect
+      // re-bases the restore point to the new view.
+      this.savedView = null;
+    }
+    this.cameraRig.transitionTo(view, opts.transition ?? 0);
+  }
+
+  /** The current camera view (base viewSize, before portrait boost). */
+  getCameraView(): Required<CameraView> {
+    return {
+      yawDegrees: this.cameraRig.getYawDegrees(),
+      pitchDegrees: this.cameraRig.getPitchDegrees(),
+      viewSize: this.cameraRig.getViewSize(),
+    };
+  }
+
+  /** Return from a temporary camera view to the remembered base. */
+  restoreCameraView(): void {
+    if (!this.savedView) return;
+    const target = this.savedView;
+    this.savedView = null;
+    this.cameraRig.transitionTo(target, 0.6);
+  }
+
+  /**
+   * NPC visuals (spec §3): create/update/remove one NPC. Same 4x4
+   * sheet contract and same rendered size as the protagonist;
+   * distant NPCs animate at a reduced rate. Conversation and
+   * movement decisions stay with the game logic — this only draws
+   * the state it is handed. `state.spriteUrl` is loaded once per
+   * URL; until it arrives the NPC wears the placeholder sheet.
+   */
+  setNpcVisualState(id: string, state: NpcVisualState | null): void {
+    if (state === null) {
+      this.character.setNpc(id, null);
+      this.npcWantedUrl.delete(id);
+      return;
+    }
+    const p = toScenePosition(state.position, this.cfg);
+    this.character.setNpc(id, { ...state, position: { x: p.x, z: p.z } });
+    const url = state.spriteUrl;
+    if (url) {
+      this.npcWantedUrl.set(id, url);
+      const cached = this.npcTextureCache.get(url);
+      if (cached) this.character.setNpcSprite(id, cached);
+      else this.loadNpcTexture(id, url);
+    }
+  }
+
+  private npcWantedUrl = new Map<string, string>();
+  private npcTextureCache = new Map<string, THREE.Texture>();
+  private npcTextureLoading = new Set<string>();
+
+  private loadNpcTexture(id: string, url: string): void {
+    if (this.npcTextureLoading.has(url)) return;
+    this.npcTextureLoading.add(url);
+    this.assets.loadTexture(url)
+      .then((tex) => {
+        this.npcTextureCache.set(url, tex);
+        // Apply to every NPC still asking for this URL.
+        for (const [npcId, wanted] of this.npcWantedUrl) {
+          if (wanted === url) this.character.setNpcSprite(npcId, tex);
+        }
+      })
+      .catch(() => { /* NPC keeps the placeholder sheet */ })
+      .finally(() => this.npcTextureLoading.delete(url));
+    void id;
+  }
+
+  /**
+   * Building-placement ghost (spec §4): the candidate model drawn
+   * translucent, green when the game says the spot is valid, red
+   * when not. Pass null to hide. Placement rules stay with the game.
+   */
+  setStructurePreview(state: StructurePreviewState | null): void {
+    if (state === null) {
+      this.structures.setPreview(null);
+      return;
+    }
+    const p = toScenePosition(state.position, this.cfg);
+    this.structures.setPreview({
+      type: state.type,
+      position: { x: p.x, z: p.z, y: state.position.y },
+      rotationY: state.rotationY ?? 0,
+      valid: state.valid,
+    });
+  }
+
+  /**
+   * Area environment (spec §5): blend lighting, sky and fog toward
+   * the areas the player is in, and switch the ambient particles
+   * (snow / ash / sand / spray) by the dominant area. Hand over the
+   * weights from areaWeights() at the player's position, or a single
+   * dominant `area`. Darkness and fog never hide the ground or the
+   * harvest targets near the player.
+   */
+  setEnvironment(state: EnvironmentState): void {
+    const weights: Partial<Record<AreaId, number>> | undefined =
+      state.weights ?? (state.area ? { [state.area]: 1 } : undefined);
+    if (!weights) return;
+    this.lighting.setEnvironmentWeights(weights);
+    const kindByArea: Partial<Record<AreaId, ParticleKind>> = {
+      snow: 'snow', volcano: 'ash', desert: 'sand', coast: 'spray',
+    };
+    let best: ParticleKind = 'none';
+    let bestW = 0.35;
+    for (const [area, kind] of Object.entries(kindByArea) as Array<[AreaId, ParticleKind]>) {
+      const w = weights[area] ?? 0;
+      if (w > bestW) {
+        bestW = w;
+        best = kind;
+      }
+    }
+    this.particles.setKind(best);
+  }
+
+  /**
+   * Runtime quality switch (spec §1.3): terrain chunk radii/detail,
+   * pixel ratio, shadow resolution and the post chain follow the
+   * tier. The game's settings screen can call this at any time.
+   */
+  setQuality(tier: QualityTier): void {
+    if (tier === this.quality) return;
+    this.quality = tier;
+    this.renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio || 1, tier === 'high' ? 2 : 1.3),
+    );
+    const mapSize = tier === 'high' ? 2048 : 1024;
+    this.lighting.sun.shadow.mapSize.set(mapSize, mapSize);
+    if (this.lighting.sun.shadow.map) {
+      this.lighting.sun.shadow.map.dispose();
+      this.lighting.sun.shadow.map = null;
+    }
+    this.world.setQuality(tier);
+    if (tier === 'low' && this.post) {
+      this.post.dispose();
+      this.post = null;
+    } else if (tier === 'high' && !this.post && this.postWanted) {
+      this.post = new PostEffects(this.renderer, this.scene, this.cameraRig.camera);
+      this.post.setPixelRatio(this.renderer.getPixelRatio());
+      this.post.setSize(this.container.clientWidth, this.container.clientHeight);
+    }
   }
 
   setWorldVisualState(state: WorldVisualState): void {
@@ -548,6 +750,7 @@ export class GraphicsEngine {
     canvas.removeEventListener('webglcontextlost', this.onContextLostBound);
     canvas.removeEventListener('webglcontextrestored', this.onContextRestoredBound);
     this.post?.dispose();
+    this.particles.dispose();
     this.character.dispose();
     this.structures.dispose();
     this.resources.dispose();
@@ -589,6 +792,21 @@ export class GraphicsEngine {
       this.world.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
       this.structures.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
       this.resources.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
+      // NPC occlusion fade (Claude §16): NPCs behind trees or
+      // buildings thin to 0.35 like the player-side fade, instead
+      // of staying fully opaque. Floor is higher than the node
+      // fade's 0.22 so townsfolk stay readable.
+      this.character.npcAnchors(NPC_SCRATCH);
+      if (NPC_SCRATCH.length > 0) {
+        const camPos = this.cameraRig.camera.position;
+        for (const n of NPC_SCRATCH) {
+          const blocked = Math.max(
+            this.resources.occlusionAt(camPos, n.pos),
+            this.structures.occlusionAt(camPos, n.pos),
+          );
+          this.character.setNpcFade(n.id, blocked > 0 ? 0.35 : 1);
+        }
+      }
 
       // Ground-cover thinning follows the live node set, applied at
       // most once per frame and only when the set actually changed.
@@ -597,10 +815,12 @@ export class GraphicsEngine {
         this.world.thinGroundCover([...this.nodePoints.values()]);
       }
 
-      this.world.update(time);
+      this.lighting.update(dt);
+      this.world.update(time, rp);
       this.structures.update(time);
       this.resources.update(time);
       this.effects.update(dt);
+      this.particles.update(dt, rp, time);
       if (this.post) this.post.render();
       else this.renderer.render(this.scene, this.cameraRig.camera);
     };
@@ -614,6 +834,7 @@ export class GraphicsEngine {
 }
 
 /** Scratch vector for the per-frame occlusion test (no allocation). */
+const NPC_SCRATCH: Array<{ id: string; pos: THREE.Vector3 }> = [];
 const OCCL_TARGET = new THREE.Vector3();
 
 /** Convenience factory matching the integration spec's naming. */

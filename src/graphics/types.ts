@@ -177,12 +177,85 @@ export interface GraphicsOptions {
   onContextRestored?: () => void;
 }
 
+/** The seven world areas (world expansion, 2026-11-07). The layout
+ *  is SHARED DATA: the game passes the same definitions through
+ *  GraphicsOptions.config and reads the same placement back through
+ *  areaWeights() (utils.ts, re-exported by the game's terrain entry),
+ *  so placement, gathering, sound and rendering can never disagree
+ *  about which area a point belongs to. */
+export type AreaId =
+  | 'forest' | 'lakeside' | 'coast' | 'volcano' | 'snow' | 'desert' | 'town';
+
+export interface AreaDefinition {
+  id: AreaId;
+  /** Centre of the area in scene coordinates. */
+  x: number;
+  z: number;
+  /** Falloff radius: full strength inside ~0.55 r, zero at r. */
+  radius: number;
+}
+
+/** Runtime camera view (spec §2): yaw is free over 360°, pitch is
+ *  clamped to 12–72°, viewSize is the orthographic zoom (visible
+ *  world height in metres, clamped 4–60). */
+export interface CameraView {
+  yawDegrees?: number;
+  pitchDegrees?: number;
+  viewSize?: number;
+}
+
+export interface CameraViewOptions {
+  /** Seconds to animate from the current view to the new one. */
+  transition?: number;
+  /** A temporary (cutscene-style) change: the view in effect before
+   *  the first temporary call is remembered and restored by
+   *  restoreCameraView() / setCameraView(null). A later call without
+   *  `temporary` makes its view the new base view. */
+  temporary?: boolean;
+}
+
+/** Visual state of one NPC, supplied by the game logic. Same 4x4
+ *  sheet contract as the protagonist (rows down/left/right/up,
+ *  columns stand/walk1/passing/walk2). Conversation and movement
+ *  logic stay with the game; this is display only. */
+export interface NpcVisualState {
+  position: Vec3Like;
+  direction: Direction;
+  moving: boolean;
+  /** Sprite sheet URL for this NPC. Loaded once per URL; the NPC is
+   *  drawn with a placeholder sheet until the texture arrives. */
+  spriteUrl?: string;
+}
+
+/** Building-placement ghost (spec §4): the candidate model drawn
+ *  translucent, tinted green (valid) or red (invalid). Casts no
+ *  shadow and is exempt from the occlusion fade. Placement rules
+ *  themselves stay with the game logic. */
+export interface StructurePreviewState {
+  type: StructureType;
+  position: Vec3Like;
+  rotationY?: number;
+  valid: boolean;
+}
+
+/** Area environment request (spec §5): the game hands over the area
+ *  weights at the player's position (from areaWeights()) and the
+ *  module blends lighting, sky, fog and particles accordingly. A
+ *  single dominant `area` is accepted as shorthand. */
+export interface EnvironmentState {
+  weights?: Partial<Record<AreaId, number>>;
+  area?: AreaId;
+}
+
 export interface GraphicsConfig {
   world: {
     /** World is a square of size x size scene units, centred on origin. */
     size: number;
     terrainSegments: number;
     waterLevel: number;
+    /** Shared area layout (see AreaId). Optional: the default layout
+     *  from config.ts is used when a host config predates areas. */
+    areas?: AreaDefinition[];
     /** Flat, buildable meadow plateau (rendering only flattens terrain;
      *  build permission logic belongs to the game logic). */
     plateauCenter: { x: number; z: number };

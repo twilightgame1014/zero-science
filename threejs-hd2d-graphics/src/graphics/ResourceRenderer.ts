@@ -160,6 +160,9 @@ export class ResourceRenderer {
    *  conifer species, snow set, shore plants, lava pair. Missing
    *  entries fall back to the spray set / plain materials. */
   private expansion: Record<string, THREE.Texture>;
+  /** DQ3 density set (assets/gpt-dq3/): broadleaf role sprays and
+   *  the lava-flow pair. Missing entries fall back as documented. */
+  private dq3: Record<string, THREE.Texture>;
   /** World water level (scene Y): floating visuals (lily pads)
    *  anchor to it rather than to the bed height under the node. */
   private waterLevel: number;
@@ -182,11 +185,13 @@ export class ResourceRenderer {
     branch: Record<string, THREE.Texture> = {},
     expansion: Record<string, THREE.Texture> = {},
     waterLevel = 0.32,
+    dq3: Record<string, THREE.Texture> = {},
   ) {
     this.groundHeightAt = groundHeightAt;
     this.gpt = gpt;
     this.branch = branch;
     this.expansion = expansion;
+    this.dq3 = dq3;
     this.waterLevel = waterLevel;
     this.yawRad = THREE.MathUtils.degToRad(yawDegrees);
     const am = new AssetManager();
@@ -199,6 +204,15 @@ export class ResourceRenderer {
   /** The spray set a card build should use: the bundled sheet art
    *  when it decoded, the procedural reserve sprays otherwise. */
   private spraySet(): THREE.Texture[] {
+    // DQ3 density set first: role-differentiated broadleaf art
+    // (deep inner / bright top / droop rim / light tips) — denser
+    // and more varied than the round-11 branch cards, which remain
+    // the fallback together with the procedural reserve sprays.
+    const dq = [
+      this.dq3['broadleaf-deep'], this.dq3['broadleaf-bright'],
+      this.dq3['broadleaf-droop'], this.dq3['broadleaf-light'],
+    ].filter((t): t is THREE.Texture => !!t);
+    if (dq.length >= 3) return dq;
     const real = [
       this.branch.branch_1, this.branch.branch_2,
       this.branch.branch_3, this.branch.branch_4,
@@ -509,6 +523,28 @@ export class ResourceRenderer {
     }
   }
 
+  /** Blockage probe for OTHER subjects (NPCs): 1 when this node
+   *  sits on the camera→point segment, using the same test point
+   *  and radius as the player fade. Stateless. */
+  occlusionAt(cameraPos: THREE.Vector3, point: THREE.Vector3): number {
+    for (const entry of this.entries.values()) {
+      const st = entry.state;
+      if (!entry.group || st.depleted) continue;
+      if (st.type !== 'tree' && st.type !== 'rock' && st.type !== 'ore' && st.type !== 'bush') continue;
+      const spec = RESOURCE_VISUAL_SPECS[st.type];
+      const p = entry.group.position;
+      const radius = (spec?.footprintRadius ?? 0.6) * entry.baseScale + 0.45;
+      OCCL_POINT.set(p.x, p.y + (spec?.height ?? 1) * entry.baseScale * 0.55, p.z);
+      const d = segmentPointDistance(
+        cameraPos.x, cameraPos.y, cameraPos.z,
+        point.x, point.y, point.z,
+        OCCL_POINT.x, OCCL_POINT.y, OCCL_POINT.z,
+      );
+      if (d < radius) return 1;
+    }
+    return 0;
+  }
+
   dispose(): void {
     for (const id of [...this.entries.keys()]) this.removeResource(id);
     for (const pool of this.pools.values()) pool.dispose(this.group);
@@ -546,9 +582,9 @@ export class ResourceRenderer {
   private buildInstanced(state: ResourceVisualState, seed: number): SlotRef[] | null {
     switch (state.type) {
       case 'branch': {
-        // The 'log' variant is a 3D fallen log, not the flat twig
-        // sprite — send it down the group path.
-        if (state.natural?.variant === 'log') return null;
+        // The 'log' / 'driftwood' variants are 3D fallen logs, not
+        // the flat twig sprite — send them down the group path.
+        if (state.natural?.variant === 'log' || state.natural?.variant === 'driftwood') return null;
         const pool = this.spritePool('prop_branch');
         if (!pool) return null;
         return this.allocSlots(pool, [{
@@ -571,8 +607,8 @@ export class ResourceRenderer {
         return this.crossSlots(keys[seed % 3], 2, 0.6, 0.42, WHITE);
       }
       case 'grass': {
-        // Reeds are a 3D shore build, not a flat tuft sprite.
-        if (state.natural?.variant === 'reed') return null;
+        // Reeds and dry tufts are 3D builds, not flat tuft sprites.
+        if (state.natural?.variant === 'reed' || state.natural?.variant === 'dry') return null;
         // Gatherable grass （草むら）: four crossed planes, taller and
         // denser than the scenery tufts (which are now height-capped
         // and thinned around nodes), with a warm-green tint — the
@@ -685,6 +721,9 @@ export class ResourceRenderer {
     const variant = state.natural?.variant ?? null;
     if (variant === 'basalt') rockM.color.set(0x48484f);
     if (variant === 'flint') rockM.color.set(0x5c5c64);
+    // Volcanic rock (world expansion): near-black basalt, a touch
+    // warmer than the 'basalt' tint so the two never read identical.
+    if (variant === 'volcanic') rockM.color.set(0x3a3532);
     /** Upright GPT sprite prop, bottom at the ground contact point,
      *  facing the (fixed) camera azimuth. */
     const sprite = (tex: THREE.Texture | undefined, w: number, h: number,
@@ -1158,31 +1197,37 @@ export class ResourceRenderer {
         break;
       }
       case 'branch': {
-        if (variant === 'log') {
+        if (variant === 'log' || variant === 'driftwood') {
           // Fallen log (world expansion, 2026-11-07): a thick trunk
           // section lying on the ground — bark side, pale cut faces
           // at both ends, moss settling on top. Distinct from the
           // 'branch' pickup twig in both size and silhouette.
+          // Driftwood is the same form bleached by sun and water:
+          // pale grey-tan bark, paler caps, and NO moss.
+          const drift = variant === 'driftwood';
+          if (drift) wood.color.set(0xcfc4ae);
           const yawA = seed * 1.3;
           const axis = { x: -Math.cos(yawA), z: Math.sin(yawA) };
           const log = add(new THREE.Mesh(
             this.geo('logCyl', () => new THREE.CylinderGeometry(0.17, 0.19, 1.7, 9)), wood));
           log.rotation.set(0, yawA, Math.PI / 2);
           log.position.y = 0.15;
-          const capM = std(0xc8a165, 1);
+          const capM = std(drift ? 0xd8c9a8 : 0xc8a165, 1);
           for (const s of [-1, 1]) {
             const cap = add(new THREE.Mesh(
               this.geo('logCap', () => new THREE.CylinderGeometry(0.165, 0.165, 0.04, 9)), capM));
             cap.rotation.set(0, yawA, Math.PI / 2);
             cap.position.set(axis.x * 0.86 * s, 0.15, axis.z * 0.86 * s);
           }
-          const mossM = std(0x51652c, 1);
-          for (const [along, side] of [[-0.4, 0.05], [0.3, -0.06]] as const) {
-            const b = add(new THREE.Mesh(
-              this.geo('logMoss', () => new THREE.IcosahedronGeometry(0.16, 0)), mossM));
-            b.scale.set(1.4, 0.35, 0.9);
-            b.position.set(axis.x * along - axis.z * side, 0.31, axis.z * along + axis.x * side);
-            b.rotation.y = yawA;
+          if (!drift) {
+            const mossM = std(0x51652c, 1);
+            for (const [along, side] of [[-0.4, 0.05], [0.3, -0.06]] as const) {
+              const b = add(new THREE.Mesh(
+                this.geo('logMoss', () => new THREE.IcosahedronGeometry(0.16, 0)), mossM));
+              b.scale.set(1.4, 0.35, 0.9);
+              b.position.set(axis.x * along - axis.z * side, 0.31, axis.z * along + axis.x * side);
+              b.rotation.y = yawA;
+            }
           }
           break;
         }
@@ -1286,6 +1331,19 @@ export class ResourceRenderer {
               cardM.receiveShadow = true;
               g.add(cardM);
             }
+          }
+          break;
+        }
+        if (variant === 'dry') {
+          // Dry grass (world expansion): the same crossed-tuft build
+          // gone straw-pale and shorter — desert / arid ground cover
+          // that still reads as a gatherable clump, not scenery.
+          const tex = this.gpt.grass_wide ?? this.gpt.grass_short;
+          for (let i = 0; i < 3; i++) {
+            const spr = sprite(tex, 1.0, 0.62, new THREE.Color(1.08, 0.94, 0.58));
+            if (!spr) break;
+            spr.rotation.y += (i * Math.PI) / 3;
+            g.add(spr);
           }
           break;
         }
@@ -1452,12 +1510,15 @@ export class ResourceRenderer {
           this.geo('lavaRim', () => new THREE.CylinderGeometry(0.86, 0.95, 0.1, 18)),
           std(0x2e2c2c, 1)));
         rim.position.y = 0.03;
-        const alb = this.expansion.lava_albedo;
-        const emi = this.expansion.lava_emissive;
+        // DQ3 lava-flow pair preferred (round 19): a bright stream
+        // in a dark crust reads as lava at play distance, where the
+        // round-17 crack pair read as a black disc (Claude §16).
+        const alb = this.dq3['lava-flow'] ?? this.expansion.lava_albedo;
+        const emi = this.dq3['lava-flow-emissive'] ?? this.expansion.lava_emissive;
         const m = alb
           ? new THREE.MeshStandardMaterial({
-              map: alb, emissiveMap: emi ?? null, emissive: 0xff5a00,
-              emissiveIntensity: 1.15, roughness: 1,
+              map: alb, emissiveMap: emi ?? null, emissive: 0xff6a00,
+              emissiveIntensity: 1.55, roughness: 1,
             })
           : std(0x35322f, 1);
         pulseMaterials.push(m);
@@ -1528,5 +1589,7 @@ export const RESOURCE_VARIANT_SPECS: Record<string, ResourceVisualSpec> = {
   'tree:winter': { footprintRadius: 1.05, trunkRadius: 0.26, height: 3.4, depletedForm: 'stump' },
   'tree:palm': { footprintRadius: 1.0, trunkRadius: 0.24, height: 4.3, depletedForm: 'stump' },
   'branch:log': { footprintRadius: 0.85, height: 0.35, depletedForm: 'none' },
+  'branch:driftwood': { footprintRadius: 0.85, height: 0.35, depletedForm: 'none' },
   'grass:reed': { footprintRadius: 0.5, height: 1.2, depletedForm: 'cut-patch' },
+  'grass:dry': { footprintRadius: 0.45, height: 0.62, depletedForm: 'cut-patch' },
 };
