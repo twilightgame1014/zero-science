@@ -38,6 +38,7 @@ export class WorldRenderer {
       textures.ground,
       textures.lava,
       textures.decor?.river !== false,
+      textures.decor?.openWater !== false,
     );
     this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, textures.decor ?? {}, textures.branch ?? {}, textures.env ?? {});
     this.group.add(this.terrain.group);

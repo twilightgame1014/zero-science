@@ -161,6 +161,15 @@ export interface DecorOptions {
    */
   river?: boolean;
   /**
+   * The module's open-water plane (one 760 m sheet at the
+   * module water level, depth-graded). Default true. Set
+   * false when the host world draws its own sea / lakes and
+   * has dry inland lowlands below the module water level —
+   * e.g. Claude's wide world (round 22 finding): there the
+   * plane would flood land the game treats as dry.
+   */
+  openWater?: boolean;
+  /**
    * Circular areas kept free of ALL scenery (trees, rocks, shrubs,
    * grass tufts, flowers, herb patches, logs, riverbank pebbles) so
    * game-owned natural objects can stand there alone — e.g. the

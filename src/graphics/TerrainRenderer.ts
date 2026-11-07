@@ -69,6 +69,7 @@ export class TerrainRenderer {
   private quality: QualityTier;
   private waterUniforms: { uTime: { value: number } } | null = null;
   private riverEnabled = true;
+  private openWaterEnabled = true;
   private waterMesh: THREE.Mesh;
   private waterPlane: THREE.Mesh;
   private riverbedMesh: THREE.Mesh;
@@ -88,8 +89,10 @@ export class TerrainRenderer {
     groundTextures?: Record<string, THREE.Texture>,
     lavaTextures?: { albedo?: THREE.Texture; emissive?: THREE.Texture },
     riverEnabled = true,
+    openWaterEnabled = true,
   ) {
     this.riverEnabled = riverEnabled;
+    this.openWaterEnabled = openWaterEnabled;
     this.detailBrightness = detailBrightness;
     this.cfg = cfg;
     this.quality = quality;
@@ -104,7 +107,7 @@ export class TerrainRenderer {
       this.group.add(this.riverbedMesh);
       this.group.add(this.waterMesh);
     }
-    this.group.add(this.waterPlane);
+    if (this.openWaterEnabled) this.group.add(this.waterPlane);
     const lava = this.buildLavaLake(lavaTextures);
     if (lava) this.group.add(lava);
     this.group.add(this.buildIcePond());
@@ -118,8 +121,10 @@ export class TerrainRenderer {
    * pickGround API — display geometry only, no passability meaning.
    */
   pick(raycaster: THREE.Raycaster): { point: THREE.Vector3; surface: 'terrain' | 'water' } | null {
-    const targets: THREE.Object3D[] = this.riverEnabled
-      ? [this.waterMesh, this.waterPlane] : [this.waterPlane];
+    const targets: THREE.Object3D[] = [
+      ...(this.riverEnabled ? [this.waterMesh] : []),
+      ...(this.openWaterEnabled ? [this.waterPlane] : []),
+    ];
     for (const c of this.chunks.values()) targets.push(c.mesh);
     const hits = raycaster.intersectObjects(targets, false);
     if (hits.length === 0) return null;
