@@ -1097,15 +1097,16 @@ function loop3D(ts){
     /* 向き：進もうとしている向き（スティック・キーはカメラ基準の入力、クリック移動は次の通過点。ワールドの角度）。
        壁や木に当たって横へ滑っても、押している向きのまま（滑った分で絵が横を向かない）。カメラを回しても変わらない。
        絵の行は playerVisual がカメラから見て選ぶ。止まったら最後の向きのまま */
-    W3.face = Math.atan2(mx, mz);
+    if(got>0.0001) W3.face = Math.atan2(mx, mz);
   }
   /* 歩行状態：入力や移動予約の有無ではなく、衝突処理のあとに実際に進んだ量と経過時間で決める。
      ワープ・ロード時の補正・初期配置は W3.pos を直接書くので、ここでは数えない（歩行にならない） */
   const moving = updateWalk(dt, got, (ix||iy) || !!(W3.path && W3.path.length));
-  /* speed：実際に進んだ速さ（マス/秒、少しならした値）。今の描画モジュールは使わない（歩く絵の速さは walkFps で一定）。
-     歩く絵の進み方を実際の移動量に合わせる口を Muse に依頼中（CLAUDE-TO-MUSE §22-2）。止まっているときは 0 */
+  /* speed：実際に進んだ速さ（マス/秒、少しならした値）。Muse §31 の歩行位相へ渡す。止まっているときは 0 */
   W3.walkSpeed = moving ? (W3.walkSpeed||0) + ((dt>0?got/dt:0) - (W3.walkSpeed||0)) * damp(12, dt) : 0;
   W3.gfx.setPlayerVisualState(playerVisual({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving, speed:+W3.walkSpeed.toFixed(2), action: W3.work ? "gather" : undefined}));
+  /* Muse §32：注視点は主人公の実際の足元。固定高度やカメラ行列の打ち消しは使わない。 */
+  W3.gfx.setCameraTarget({x:W3.pos.x, z:W3.pos.z, y:groundY(W3.pos.x,W3.pos.z)});
   tickWork(ts);
   // 地域の判定
   const reg = regionAt(W3.pos.x, W3.pos.z);
@@ -1627,17 +1628,15 @@ function intro(){
 document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); applyIcons(); bindHudInput(); renderChrome(); render(); layout(); intro();
 /* ===================== 主人公の向き（ワールドの向き＋カメラから見た絵の行。2026-11-08） =====================
    W3.face：主人公がワールドで向いている角度（atan2(x,z)。0＝+Z、π/2＝+X）。実際に進んだ向きでだけ変わり、カメラを回しても変わらない。
-   絵の行は「向き − カメラの画面下方向」の相対角で選ぶ（描画モジュールの絵は4方向：正面・右・背中・左。斜めの絵はまだない）。
-   境界の前後で絵が細かく入れ替わらないよう、今の行の中心から ±(45°＋FACE_HYST) を超えたときだけ行を変える。
-   描画モジュールは受け取ったワールドの4方向からカメラ基準で行を選ぶ（CharacterRenderer.rowForDirection）ので、
-   選びたい行になるワールドの向きを渡す（カメラの向きが決まれば、4方向のどれか1つが必ずその行になる）。 */
+   8行シートでは連続 facing を描画側へ渡し、カメラ相対の行選びと境界のヒステリシスを任せる（Muse §31）。
+   下のセクター・direction は4行シート・旧API・表示・保存との互換用。 */
 const DIR_ANGLE = {down:0, "down-right":Math.PI/4, right:Math.PI/2, "up-right":Math.PI*3/4, up:Math.PI, "up-left":-Math.PI*3/4, left:-Math.PI/2, "down-left":-Math.PI/4};
 const SECTOR_OF = {down:0, right:1, up:2, left:3}, SECTOR_NAME = ["down","right","up","left"];
 const DIR8 = ["down","down-right","right","up-right","up","up-left","left","down-left"];   // 相対角 0°,45°,… の順（主人公の画面右側を通って回る）
 const FACE_HYST = {4:10, 8:6};   // 度：行の中心から ±(半セクター＋これ) を超えたら切り替える
 const wrapPi = a => { a = (a + Math.PI) % (Math.PI*2); if(a < 0) a += Math.PI*2; return a - Math.PI; };
 /* 8方向の絵を使うか：シートが8行（ASSETS.heroRows）で、描画モジュールの行選びの自己点検（HD2D.diag8Check）に通ったときだけ。
-   通らないとき（今の第23ラウンドの版：カメラ角の約4分の1で行が固まる。CLAUDE-TO-MUSE §22）は、シートの上4行だけを渡して4方向で出す */
+   通らない旧版はシートの上4行だけで表示する。Muse §31 の修正版では自己点検に通り、男女とも8行のまま使う。 */
 function heroDirs(){ if(W3.heroDirs) return W3.heroDirs;
   let n = 4; try{ if((ASSETS.heroRows||4)===8 && window.HD2D && typeof HD2D.diag8Check==="function"){ const r=HD2D.diag8Check(); W3.diag8=r; if(r.ok) n=8; } }catch(e){}
   return W3.heroDirs = n; }
@@ -1663,7 +1662,13 @@ function worldFacing(){
   return names[want];
 }
 /* 画面基準の向き（W3.dir）は4方向の近いほう（表示・保存の互換用） */
-function playerVisual(st){ const d=worldFacing(), n=heroDirs(); if(W3.faceSec!=null) W3.dir = SECTOR_NAME[Math.round(W3.faceSec*4/n)%4]; return Object.assign({}, st, {direction:d}); }
+function playerVisual(st){
+  const d=worldFacing(), n=heroDirs();
+  if(W3.faceSec!=null) W3.dir = SECTOR_NAME[Math.round(W3.faceSec*4/n)%4];
+  /* 8行では連続したワールド角を正本にする（Muse §31）。direction は旧版・4行用の互換値。
+     停止やカメラ回転では face を変えず、描画側がカメラとの相対角から行を選ぶ。 */
+  return Object.assign({}, st, {direction:d}, n===8 && finite(W3.face) ? {facing:W3.face} : {}, st.moving ? {} : {speed:0});
+}
 /* 3D の主人公のシート：8方向を使うなら8行のまま。使わないなら上4行（従来の下・左・右・上）だけを切り出す（その場で作って覚えておく） */
 function heroSheet3D(h){
   const heroCrop = W3.heroCrop || (W3.heroCrop = {});   // start3D から最初の描画前に呼ばれることがあるので、const を使わない

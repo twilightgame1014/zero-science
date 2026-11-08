@@ -5,19 +5,33 @@ import { chromium } from 'playwright';
 import { build } from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const utils = await build({ entryPoints: [path.join(root, 'src/graphics/utils.ts')], bundle: true, format: 'cjs', write: false, logLevel: 'warning' });
 const FAKE = fs.readFileSync(path.join(root, 'tests/e2e/fake-hd2d.js'), 'utf8').replace('/*UTILS*/', utils.outputFiles[0].text);
-const url = pathToFileURL(path.join(root, 'dist/index.html')).href;
+// file:を禁止する管理ブラウザでも、通常のHTTPと同じ保存・再読込を検証する。
+const html = fs.readFileSync(path.join(root, 'dist/index.html'));
+const server = createServer((req, res) => {
+  const pathname = new URL(req.url, 'http://localhost').pathname;
+  if (pathname !== '/' && pathname !== '/index.html') { res.writeHead(404).end(); return; }
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(html);
+});
 
 let fail = 0;
 const ok = (name, cond, extra = '') => { console.log(`${cond ? '✅' : '❌'} ${name} ${cond ? '' : extra}`); if (!cond) fail++; };
 const G = 'window.__GAME__';
 const pos = page => page.evaluate(`({x:${G}.W3.pos.x, z:${G}.W3.pos.z})`);
 const same = (a, b) => Math.hypot(a.x - b.x, a.z - b.z) < 0.01;
-const browser = await chromium.launch();
+let browser;
+try {
+server.listen(0, '127.0.0.1');
+await once(server, 'listening');
+const url = `http://127.0.0.1:${server.address().port}/`;
+browser = await chromium.launch({ executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined });
 
 async function newPage(viewport, touch, { fake = true, query = '' } = {}) {
   const ctx = await browser.newContext({ viewport, hasTouch: touch, isMobile: touch });
@@ -661,26 +675,30 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
 /* ---------------- 8方向の主人公（Muse 第23ラウンド） ---------------- */
 {
   const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
-  /* 描画モジュールの行選びの自己点検に「通った」ことにする（偽モジュール。本物の今の版は通らない＝4方向。下の実WebGL の報告を参照） */
+  /* 偽モジュールで8行の分岐を検証。本物の自己点検・表示行は hero-8dir.mjs と test:8dir で別に確認する。 */
   await page.addInitScript(() => { window.addEventListener('hd2d-ready', () => {}); const t = setInterval(() => { if (window.HD2D) { window.HD2D.diag8Check = () => ({ ok: true, available: true, stuck: [] }); clearInterval(t); } }, 1); });
   await page.reload(); await page.waitForTimeout(500); { const ig = await page.$('#introGo'); if (ig && await ig.isVisible()) await ig.click(); } await page.waitForTimeout(700);
   await page.evaluate(`(()=>{ ${G}.W3.pos={x:-12,z:24}; })()`); await page.waitForTimeout(200);
   const d8 = await page.evaluate(async () => { const G = window.__GAME__, im = new Image(); im.src = __FAKE.sprite; await im.decode(); return { dirs: G.hero.dirs(), h: im.height }; });
   ok('8方向：自己点検に通ると、8行のシートをそのまま渡し、8方向で向きを選ぶ', d8.dirs === 8 && d8.h === 2048, JSON.stringify(d8));
-  /* 偽モジュールの行選び（本物の rowForDirection8 と同じ式。ヒステリシスなし）：渡した向きと今のカメラから8セクターのどれか */
+  /* Muse §31 と同じ優先順：連続 facing があれば direction より優先。セクター中心で検証する。 */
   const sector8 = () => page.evaluate(`(()=>{ const A={down:0,'down-right':Math.PI/4,right:Math.PI/2,'up-right':Math.PI*3/4,up:Math.PI,'up-left':-Math.PI*3/4,left:-Math.PI/2,'down-left':-Math.PI/4}, T=HD2D.THREE, v=new T.Vector3(); ${G}.W3.gfx.getCamera().getWorldDirection(v);
-    const sd=Math.atan2(-v.x,-v.z); let rel=(A[__FAKE.player.direction]-sd)%(Math.PI*2); if(rel<0) rel+=Math.PI*2; return Math.round(rel/(Math.PI/4))%8; })()`);
+    const sd=Math.atan2(-v.x,-v.z), face=typeof __FAKE.player.facing==='number'?__FAKE.player.facing:A[__FAKE.player.direction]; let rel=(face-sd)%(Math.PI*2); if(rel<0) rel+=Math.PI*2; return Math.round(rel/(Math.PI/4))%8; })()`);
   // 画面の右上へ斜めに歩く（↑＋→）：画面で見た向きは「右奥」＝相対角135°（セクター3）。カメラの角度を変えても同じ
   const res = [];
   for (const yaw of [45, 20, 200]) {
     await page.evaluate(`(()=>{ const c=${G}.W3.cam; c.yaw=c.cy+(((${yaw}-c.cy)%360+540)%360-180); })()`); await page.waitForTimeout(500);
     const p0 = await pos(page); await page.keyboard.down('ArrowUp'); await page.keyboard.down('ArrowRight'); await page.waitForTimeout(500);
-    const mid = await page.evaluate(`({dir:__FAKE.player.direction, moving:__FAKE.player.moving, sec:${G}.W3.faceSec})`);
-    await page.keyboard.up('ArrowUp'); await page.keyboard.up('ArrowRight'); await page.waitForTimeout(250);
-    const p1 = await pos(page), st = await page.evaluate(`({dir:__FAKE.player.direction, moving:__FAKE.player.moving})`);
-    res.push({ yaw, sec: await sector8(), mid, stopDir: st.dir, stopMoving: st.moving, d: Math.hypot(p1.x - p0.x, p1.z - p0.z) });
+    const mid = await page.evaluate(`({facing:__FAKE.player.facing, moving:__FAKE.player.moving, sec:${G}.W3.faceSec})`);
+    mid.renderSector = await sector8();
+    await page.keyboard.up('ArrowUp'); await page.keyboard.up('ArrowRight');
+    // 2つのキーを離す間に1フレーム進むことがある。最後の実移動の向きを基準にする。
+    const releasedFace = await page.evaluate(`${G}.W3.face`);
+    await page.waitForTimeout(250);
+    const p1 = await pos(page), st = await page.evaluate(`({facing:__FAKE.player.facing, moving:__FAKE.player.moving})`);
+    res.push({ yaw, mid, releasedFace, stopFacing: st.facing, stopMoving: st.moving, d: Math.hypot(p1.x - p0.x, p1.z - p0.z) });
   }
-  ok('8方向：画面の右上へ歩くと、どのカメラ角でも描画が選ぶのは「右奥」（セクター3）の絵。止まると moving=false で最後の向きのまま', res.every(r => r.sec === 3 && r.mid.sec === 3 && r.mid.moving && !r.stopMoving && r.stopDir === r.mid.dir), JSON.stringify(res));
+  ok('8方向：両キー入力中は右奥（セクター3）の絵。止まると moving=false でキーを離した直後のワールド角を保つ', res.every(r => r.mid.renderSector === 3 && r.mid.sec === 3 && r.mid.moving && !r.stopMoving && Number.isFinite(r.mid.facing) && r.stopFacing===r.releasedFace), JSON.stringify(res));
   // 斜めは縦横より速くならない（同じ時間押して進む距離）
   const dist = async (keys) => { await page.evaluate(`${G}.W3.pos={x:-12,z:24}`); await page.waitForTimeout(200); const a = await pos(page); for (const k of keys) await page.keyboard.down(k); await page.waitForTimeout(700); for (const k of keys) await page.keyboard.up(k); await page.waitForTimeout(150); const b = await pos(page); return Math.hypot(b.x - a.x, b.z - a.z); };
   const dStraight = await dist(['ArrowDown']), dDiag = await dist(['ArrowDown', 'ArrowLeft']);
@@ -964,6 +982,9 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
   await ctx.close();
 }
 
-await browser.close();
+} finally {
+  try { await browser?.close(); }
+  finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
+}
 console.log(fail ? `\n${fail}件失敗` : '\nすべて合格');
 process.exit(fail ? 1 : 0);
