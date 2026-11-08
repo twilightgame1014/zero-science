@@ -19,6 +19,8 @@ import {
 import { buildVillage } from './village';
 import boySpriteUrl from '../assets/characters/player-spritesheet-boy.png?url';
 import girlSpriteUrl from '../assets/characters/player-spritesheet-girl.png?url';
+import girl8SpriteUrl from '../assets/characters/player-spritesheet-girl-8dir.png?url';
+import boy8SpriteUrl from '../assets/characters/player-spritesheet-boy-8dir.png?url';
 import npcGuideUrl from '../../assets/gpt-expansion/npc/guide.png?url';
 import npcResidentUrl from '../../assets/gpt-expansion/npc/resident.png?url';
 import npcCraftsmanUrl from '../../assets/gpt-expansion/npc/craftsman.png?url';
@@ -189,12 +191,28 @@ document.getElementById('btn-deplete')!.addEventListener('click', (e) => {
     : '木を採取済みにする';
 });
 let currentChara: 'boy' | 'girl' = 'boy';
+let use8Dir = false;
 document.getElementById('btn-chara')!.addEventListener('click', async (e) => {
   currentChara = currentChara === 'boy' ? 'girl' : 'boy';
-  await gfx.setPlayerSpriteSheet(currentChara === 'boy' ? boySpriteUrl : girlSpriteUrl);
+  await gfx.setPlayerSpriteSheet(
+    currentChara === 'boy'
+      ? use8Dir ? boy8SpriteUrl : boySpriteUrl
+      : use8Dir ? girl8SpriteUrl : girlSpriteUrl,
+  );
   (e.target as HTMLButtonElement).textContent =
     currentChara === 'boy' ? '主人公を女の子に切替' : '主人公を男の子に切替';
   gfx.playVisualEffect('sparkle', { x: player.x, z: player.z });
+});
+document.getElementById('btn-chara-8dir')!.addEventListener('click', async (e) => {
+  use8Dir = !use8Dir;
+  await gfx.setPlayerSpriteSheet(
+    currentChara === 'boy'
+      ? use8Dir ? boy8SpriteUrl : boySpriteUrl
+      : use8Dir ? girl8SpriteUrl : girlSpriteUrl,
+  );
+  (e.target as HTMLButtonElement).textContent = use8Dir
+    ? '4方向シートに戻す'
+    : '8方向シートにする';
 });
 // Water sample viewpoint: stand on the west bank at z=6, where the
 // channel bends — shallows, bed pebbles, foam edge and deep water all
