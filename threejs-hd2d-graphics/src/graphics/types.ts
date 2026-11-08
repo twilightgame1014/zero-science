@@ -234,12 +234,19 @@ export interface AreaDefinition {
 }
 
 /** Runtime camera view (spec §2): yaw is free over 360°, pitch is
- *  clamped to 12–72°, viewSize is the orthographic zoom (visible
- *  world height in metres, clamped 4–60). */
+ *  clamped to 0–72° (round 24, Claude §21-1: near-level views for
+ *  the drag camera), viewSize is the orthographic zoom (visible
+ *  world height in metres, clamped 4–60). `distance` is the
+ *  camera-to-focus distance in metres (clamped 10–260, default
+ *  90; round 24, Claude §21-2): with an orthographic projection
+ *  it does not change magnification — it moves the camera body
+ *  along the view axis so it can be kept out of terrain and
+ *  buildings. */
 export interface CameraView {
   yawDegrees?: number;
   pitchDegrees?: number;
   viewSize?: number;
+  distance?: number;
 }
 
 export interface CameraViewOptions {
@@ -309,6 +316,18 @@ export interface GraphicsConfig {
      * terrainHeight stays the default and is unchanged.
      */
     heightAt?: (x: number, z: number) => number;
+    /**
+     * Host-supplied dry-land mask for the open-water plane
+     * (Claude §20.1, round 24). Return true where the broad water
+     * surface must NOT appear even though the height function dips
+     * below the water level — e.g. dry inland lowlands in a host
+     * world that draws its own lakes and sea. The mask is sampled
+     * once when the water plane is built (its depth attribute is
+     * baked), so changing it takes effect on the next engine
+     * build, not per frame. This replaces any game-side rewriting
+     * of the plane's depth attribute.
+     */
+    dryMask?: (x: number, z: number) => boolean;
   };
   coordinates: {
     /** scene = (logic - origin) * scale. Adjust at integration time so

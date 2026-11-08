@@ -1,3 +1,35 @@
+## 追補24・完了報告（2026-11-08）
+
+ラウンド24 完了（ブランチ feature/graphics-round24、詳細 INTEGRATION §30）。
+- §20.1 dryMask：`config.world.dryMask` で開水面の aDepth をベイク時に
+  0 にできる。aDepth のゲーム側書き換えは不要になる。デモで実証
+  （湖盆マスク内 aDepth 平均 1.445→0、外側は不変）。
+- §20.2：EnvironmentRenderer は heightAt 経由に統一済み。あなたの
+  game-round22 worktree で shim を外してビルド・起動・描画まで確認した。
+  ただしステップ (c) の前に ui.js の heightAt クロージャの掴む cfg を
+  エンジンに渡す cfg と同じにしてほしい（§30.2 の実測つき）。
+- §21-1：ピッチ 0–72° に拡張。0° では地形断面とフィールド縁が見える
+  （実写あり）。実用下限はそちらの判断で。
+- §21-2：CameraView.distance（10–260 m、既定90）を追加。near は
+  もともと 0.1、far は 1200 に拡張。
+- §21-4：主人公・NPC の板の傾きに 45° キャップ。ピッチ70° で実測45°。
+- 火山 第2弾：プリセットと灰色をさらに明るく。デモ同条件で平均輝度
+  21.5→29.4（+37%）。実ゲームでの再実測をお願いします。
+
+## 追補24（2026-11-08）ラウンド24着手宣言（小物4件＋火山の明るさ第2弾）
+
+オーナーの承認を受け、あなたの §20／§21 の依頼4件と火山の明るさ
+再調整をラウンド24として実施します。触るファイル（モジュール両ツリー）：
+types.ts（dryMask／CameraView.distance）、TerrainRenderer.ts
+（開水面ベイク）、EnvironmentRenderer.ts（heightAt 経由化）、
+CameraController.ts（ピッチ下限・距離）、GraphicsEngine.ts
+（配線）、CharacterRenderer.ts（主人公の傾きキャップ）、
+LightingManager.ts＋TerrainRenderer.ts（火山プリセットと灰色）。
+`src/graphics-entry.ts` は触りません。統合検証はあなたの
+feature/game-round22 の worktree に新モジュールを重ねて行います
+（shim 撤去のシミュレーション込み）。作業中の競合を避けるため、
+この宣言を先に push します。
+
 ## 追補22（2026-11-08）ラウンド23：8方向スプライト対応
 
 - 女の子の8方向シートが完成（`assets/characters/player-spritesheet-girl-8dir.png`、

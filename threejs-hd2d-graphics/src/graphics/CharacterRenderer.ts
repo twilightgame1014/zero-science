@@ -39,6 +39,42 @@ const SECTOR8_CENTRE = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => (i * Math.PI) / 4);
 
 const _camDir = new THREE.Vector3();
 
+/**
+ * Sprite lean cap (Claude §21-4, round 24). The sprite board
+ * normally copies the camera orientation, so at a 70° pitch it
+ * would lie back 70° and its feet would lift off the ground
+ * shadow. The lean therefore stops at this angle: below it the
+ * board matches the camera exactly (the established look), above
+ * it the character stays at the cap and reads upright.
+ */
+const LEAN_CAP = THREE.MathUtils.degToRad(45);
+const _eye = new THREE.Vector3();
+const _origin = new THREE.Vector3();
+const _up = new THREE.Vector3(0, 1, 0);
+const _mat = new THREE.Matrix4();
+
+function cappedBillboard(out: THREE.Quaternion, camera: THREE.Camera): void {
+  camera.getWorldDirection(_camDir);
+  const sinPitch = THREE.MathUtils.clamp(-_camDir.y, -1, 1);
+  const pitch = Math.asin(sinPitch);
+  if (pitch <= LEAN_CAP) {
+    out.copy(camera.quaternion);
+    return;
+  }
+  // Rebuild the view direction with the pitch reduced to the cap,
+  // keeping the camera's yaw: the horizontal component is
+  // rescaled to cos(cap), the vertical set to -sin(cap).
+  const horiz = Math.hypot(_camDir.x, _camDir.z) || 1;
+  const cosCap = Math.cos(LEAN_CAP);
+  _eye.set(
+    (-_camDir.x / horiz) * cosCap,
+    Math.sin(LEAN_CAP),
+    (-_camDir.z / horiz) * cosCap,
+  );
+  _mat.lookAt(_eye, _origin, _up);
+  out.setFromRotationMatrix(_mat);
+}
+
 /** Camera-relative facing angle: 0 = facing the camera (screen
  *  down), growing through the character's screen-right side. */
 function relativeAngle(direction: Direction, camera: THREE.Camera): number {
@@ -274,8 +310,9 @@ class CharSprite {
         bob,
       this.rendered.z,
     );
-    // Billboard: match the camera so the sprite always reads correctly.
-    this.sprite.quaternion.copy(camera.quaternion);
+    // Billboard: match the camera (lean capped, see LEAN_CAP) so
+    // the sprite always reads correctly.
+    cappedBillboard(this.sprite.quaternion, camera);
 
     this.shadow.position.set(this.rendered.x, this.rendered.y + 0.03, this.rendered.z);
   }

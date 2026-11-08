@@ -53,7 +53,7 @@ const VCOLORS = {
   cPath: new THREE.Color(0xa3804f),
   cEarth: new THREE.Color(0x7c6a42),
   cUnderwater: new THREE.Color(0x77683f),
-  cAsh: new THREE.Color(0x7d7061),
+  cAsh: new THREE.Color(0x998a7a),
   cTownStone: new THREE.Color(0xa79c8d),
   cTownEarth: new THREE.Color(0x8a6f52),
   cBasalt: new THREE.Color(0x33302e),
@@ -815,6 +815,7 @@ export class TerrainRenderer {
    */
   private buildWaterPlane(): THREE.Mesh {
     const { waterLevel } = this.cfg.world;
+    const dryMask = this.cfg.world.dryMask;
     const SIZE = 760;
     const SEG = 190;
     const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
@@ -825,7 +826,9 @@ export class TerrainRenderer {
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
       const z = pos.getZ(i);
-      depths[i] = clamp(waterLevel - this.h(x, z), 0, 3);
+      depths[i] = dryMask && dryMask(x, z)
+        ? 0
+        : clamp(waterLevel - this.h(x, z), 0, 3);
       flows[i * 2] = 0.119;
       flows[i * 2 + 1] = 0.993;
     }

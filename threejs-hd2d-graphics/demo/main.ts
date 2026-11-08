@@ -32,6 +32,16 @@ import shadowUrl from '../assets/textures/shadow-blob.png?url';
 const container = document.getElementById('app')!;
 const status = document.getElementById('status')!;
 
+// Round-24 verification hook (demo only): ?drymask masks the
+// lakeside bowl out of the open-water plane via config.world.dryMask.
+const drymaskCfg = new URLSearchParams(location.search).has('drymask')
+  ? (() => {
+      const c = resolveConfig();
+      c.world.dryMask = (x: number, z: number) => Math.hypot(x - 108, z + 6) < 26;
+      return c;
+    })()
+  : undefined;
+
 const gfx: GraphicsEngine = await initializeGraphics(container, {
   playerSpriteUrl: boySpriteUrl,
   grassDetailUrl,
@@ -40,6 +50,7 @@ const gfx: GraphicsEngine = await initializeGraphics(container, {
   // Sample plot (see PLOT_NODES below): a 12 m square kept free of
   // scenery so game-owned natural objects stand there alone.
   decor: { clearings: [{ x: -38, z: 30, r: 9 }] },
+  ...(drymaskCfg ? { config: drymaskCfg } : {}),
   onContextLost: () => {
     status.textContent = 'WebGLコンテキストが失われました（復旧を試みます）';
   },

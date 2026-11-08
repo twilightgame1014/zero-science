@@ -11,7 +11,7 @@ import {
   riverCenterX,
   segmentPointDistance,
   smoothstep,
-  terrainHeight,
+  heightAt,
   areaWeights,
 } from './utils';
 
@@ -439,7 +439,10 @@ export class EnvironmentRenderer {
   }
 
   private groundY(x: number, z: number): number {
-    return terrainHeight(x, z, this.cfg);
+    // Route through heightAt (Claude §20.2, round 24): when the
+    // host supplies config.world.heightAt this follows it, which
+    // is what lets the game drop its build-time terrain shim.
+    return heightAt(x, z, this.cfg);
   }
 
   private dummy = new THREE.Object3D();
