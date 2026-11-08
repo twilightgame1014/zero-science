@@ -1848,6 +1848,7 @@ function camFrame(dt){
   const fdamp = ((W3.cfg && W3.cfg.camera && W3.cfg.camera.followDamping) || 5.5);
   const tgtY = c.freeze ? groundY(c.freeze.x, c.freeze.z) : groundY(c.rp.x, c.rp.z);
   const curNext = cur + (tgtY - cur) * damp(fdamp, dtm); c.prevCur = cur;
+  if(W3.camTrace) W3.camTrace.push({cur, curNext, tgtY, dtm, ry:groundY(W3.pos.x, W3.pos.z)});
   /* 2) 置ける値。角度・ズームが変わるのはユーザーの操作中（ドラッグ・ピンチ・ホイール・視点を戻す、とそのなめらかな続き）だけ。
      操作中：向き・ズームは今の見下ろし角のまま置けるなら進め、駄目ならそこで止める。見下ろし角は希望へ向かって、置ける所まで進める（二分探索）。
      操作が終わったとき、置けずに止まった値を新しい希望の値にする（操作後の状態を基準として保つ）。
