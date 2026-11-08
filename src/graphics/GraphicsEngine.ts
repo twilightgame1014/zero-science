@@ -391,7 +391,7 @@ export class GraphicsEngine {
    * unaffected until they call this. Kept as a thin alias of
    * setCameraView (spec §2) — new integrations should use that.
    */
-  setCameraOrbit(orbit: { yawDegrees?: number; pitchDegrees?: number; viewSize?: number }): void {
+  setCameraOrbit(orbit: { yawDegrees?: number; pitchDegrees?: number; viewSize?: number; distance?: number }): void {
     this.setCameraView(orbit);
   }
 
@@ -435,6 +435,7 @@ export class GraphicsEngine {
       yawDegrees: this.cameraRig.getYawDegrees(),
       pitchDegrees: this.cameraRig.getPitchDegrees(),
       viewSize: this.cameraRig.getViewSize(),
+      distance: this.cameraRig.getDistance(),
     };
   }
 

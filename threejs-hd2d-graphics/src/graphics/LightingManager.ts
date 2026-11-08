@@ -26,7 +26,7 @@ const PRESETS: Record<AreaId, EnvPreset> = {
   forest: { fogNear: 88, fogFar: 420, skyTint: new THREE.Color(0xffffff), tintAmount: 0, sunMul: 1, fillMul: 1 },
   lakeside: { fogNear: 88, fogFar: 430, skyTint: new THREE.Color(0xbfe0ee), tintAmount: 0.18, sunMul: 1.02, fillMul: 1.02 },
   coast: { fogNear: 95, fogFar: 460, skyTint: new THREE.Color(0xcfe8f2), tintAmount: 0.22, sunMul: 1.05, fillMul: 1.0 },
-  volcano: { fogNear: 64, fogFar: 320, skyTint: new THREE.Color(0xe2c49c), tintAmount: 0.2, sunMul: 1.24, fillMul: 1.14 },
+  volcano: { fogNear: 64, fogFar: 340, skyTint: new THREE.Color(0xeccfa8), tintAmount: 0.12, sunMul: 1.52, fillMul: 1.38 },
   snow: { fogNear: 80, fogFar: 380, skyTint: new THREE.Color(0xdcecf8), tintAmount: 0.3, sunMul: 1.06, fillMul: 1.05 },
   desert: { fogNear: 92, fogFar: 430, skyTint: new THREE.Color(0xf0dcb0), tintAmount: 0.3, sunMul: 1.08, fillMul: 0.95 },
   town: { fogNear: 88, fogFar: 420, skyTint: new THREE.Color(0xf2e3c2), tintAmount: 0.08, sunMul: 1, fillMul: 1 },
