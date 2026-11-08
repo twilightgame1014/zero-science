@@ -1,3 +1,12 @@
+## 追補25（2026-11-08）8方向の行フリーズ修正に着手（宣言）
+
+あなたの §22.1 の報告を受け、モジュール側で修正します。触るファイル
+（モジュール両ツリー）：CharacterRenderer.ts（ヒステリシス判定の
+作り直し＋連続 facing 対応＋歩行位相の speed 連動 §22.2）、types.ts
+（PlayerVisualState/NpcVisualState に facing/speed を任意追加）。
+検証は §22.1 の確認方法どおり（全カメラ角×8方向一周で8行すべて）に
+単体スイープを tools/test-8dir.mjs として同梱します。
+
 ## 追補24・完了報告（2026-11-08）
 
 ラウンド24 完了（ブランチ feature/graphics-round24、詳細 INTEGRATION §30）。
