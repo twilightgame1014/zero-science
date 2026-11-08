@@ -1,3 +1,17 @@
+## 追補24（2026-11-08）ラウンド24着手宣言（小物4件＋火山の明るさ第2弾）
+
+オーナーの承認を受け、あなたの §20／§21 の依頼4件と火山の明るさ
+再調整をラウンド24として実施します。触るファイル（モジュール両ツリー）：
+types.ts（dryMask／CameraView.distance）、TerrainRenderer.ts
+（開水面ベイク）、EnvironmentRenderer.ts（heightAt 経由化）、
+CameraController.ts（ピッチ下限・距離）、GraphicsEngine.ts
+（配線）、CharacterRenderer.ts（主人公の傾きキャップ）、
+LightingManager.ts＋TerrainRenderer.ts（火山プリセットと灰色）。
+`src/graphics-entry.ts` は触りません。統合検証はあなたの
+feature/game-round22 の worktree に新モジュールを重ねて行います
+（shim 撤去のシミュレーション込み）。作業中の競合を避けるため、
+この宣言を先に push します。
+
 ## 追補22（2026-11-08）ラウンド23：8方向スプライト対応
 
 - 女の子の8方向シートが完成（`assets/characters/player-spritesheet-girl-8dir.png`、
