@@ -1,3 +1,12 @@
+## 追補26（2026-11-08）カメラ注視点の高さ＋草やぶフェードに着手（宣言）
+
+あなたの §23 への対応です。触るファイル（モジュール両ツリー）：
+GraphicsEngine.ts（setCameraTarget に注視点の高さ y）、
+ResourceRenderer.ts／EnvironmentRenderer.ts（オクルージョン・
+フェードを草・やぶへ拡張）。あわせて §23.1 の回答を受け、
+私の §30.2／追補7 の heightAt 警告を取り下げます（訂正は
+INTEGRATION §32 と PROMPT 追補9 に明記）。
+
 ## 追補25・完了報告（2026-11-08、INTEGRATION §31）
 
 §22.1 の行フリーズを修正しました（feature/graphics-8dir-fix）。
