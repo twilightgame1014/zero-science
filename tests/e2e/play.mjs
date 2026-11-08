@@ -51,7 +51,7 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   ok('スマホ：表示領域の端から端までマップで、ページがスクロールしない', fc.full && fc.noScroll && fc.ui === 'touch', JSON.stringify(fc));
   const init = await page.evaluate(`(()=>{ const W=${G}.WORLD, p=${G}.W3.pos, near=W.objects.filter(o=>Math.hypot(o.x-p.x,o.z-p.z)<30);
     return {state:${G}.W3.state, deps:${G}.NODES.every(n=>__FAKE.resources[n.vid]), nat:near.length, natSent:near.filter(o=>__FAKE.resources[o.id]&&__FAKE.resources[o.id].natural&&__FAKE.resources[o.id].natural.id===o.id).length, natView:near.filter(o=>${G}.onScreenish(o.x,o.z,o.kind==='tree'?2*o.scale:0.3,0.22)).length, natAll:Object.keys(__FAKE.resources).filter(k=>__FAKE.resources[k].natural).length,
-      decor:JSON.stringify(__FAKE.opts.decor), girl:__FAKE.sprite===ASSETS.girl}; })()`);
+      decor:JSON.stringify(__FAKE.opts.decor), girl:null}; })()`);
   ok('3Dフィールドが初期化され、採取地点と、画面に入る自然物（ID・状態・当たり判定つき）だけが描画モジュールに渡る', init.state === 'ready' && init.deps && init.nat > 10 && init.natSent > 10 && init.natSent === init.natView, JSON.stringify(init));
   ok('描画モジュールには、木・岩などを独自の装飾として描かないよう伝える（連携契約）', init.decor === '{"trees":false,"rocks":false,"logs":false,"pebbles":false,"shrubs":false,"stonework":false,"waterfall":false}', init.decor);
   ok('描画モジュールの開水面（湖・海・オアシスを描く）は切らない（統合後の世界。旧世界の低地は render.ts が深さ0にする）', !JSON.parse(init.decor).hasOwnProperty('openWater'), init.decor);
@@ -83,7 +83,9 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   const inside = await page.evaluate(`window.__samples`);
   ok('キー移動（上下左右・WASD）で木の幹や岩の中に入らない', inside.length === 0, inside.join(','));
 
-  ok('主人公の選択（女の子）がスプライトに反映される', init.girl);
+  const girl = await page.evaluate(async () => { const G = window.__GAME__, want = await G.hero.sheet('girl'); const im = new Image(); im.src = __FAKE.sprite; await im.decode();
+    return { same: __FAKE.sprite === want, w: im.width, h: im.height, dirs: G.hero.dirs(), rows: ASSETS.heroRows }; });
+  ok('主人公の選択（女の子）がスプライトに反映される（8方向の絵を使わないときは、8行のシートの上4行＝1024×1024 を渡す）', girl.same && girl.rows === 8 && (girl.dirs === 8 ? girl.h === 2048 : girl.w === 1024 && girl.h === 1024), JSON.stringify(girl));
   const nav = await rect(page, '#nav'), joy = await rect(page, '#joy'), act = await rect(page, '#w3act');
   const navBtns = await page.evaluate(`[...document.querySelectorAll('#nav button')].filter(b=>getComputedStyle(b).display!=='none').map(b=>({t:b.textContent.trim(), h:b.getBoundingClientRect().height}))`);
   ok('スマホの下部ナビは「研究室・工作・メニュー」の3つで、高さ48px以上', navBtns.map(b => b.t).join() === '研究室,工作,☰メニュー' && navBtns.every(b => b.h >= 48), JSON.stringify(navBtns));
@@ -654,6 +656,43 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
   const ta = await page.evaluate(`({stage:getComputedStyle(document.getElementById('view')).touchAction, dock:getComputedStyle(document.getElementById('dock')).touchAction})`);
   ok('マップの上はブラウザのスクロール・ピンチ拡大と競合しない（touch-action:none）。パネルはスクロールできるまま', ta.stage === 'none' && ta.dock !== 'none', JSON.stringify(ta));
   ok('ページでエラーが起きていない（カメラ・スマホ）', errors.length === 0, errors.join('\n'));
+  await ctx.close();
+}
+/* ---------------- 8方向の主人公（Muse 第23ラウンド） ---------------- */
+{
+  const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
+  /* 描画モジュールの行選びの自己点検に「通った」ことにする（偽モジュール。本物の今の版は通らない＝4方向。下の実WebGL の報告を参照） */
+  await page.addInitScript(() => { window.addEventListener('hd2d-ready', () => {}); const t = setInterval(() => { if (window.HD2D) { window.HD2D.diag8Check = () => ({ ok: true, available: true, stuck: [] }); clearInterval(t); } }, 1); });
+  await page.reload(); await page.waitForTimeout(500); { const ig = await page.$('#introGo'); if (ig && await ig.isVisible()) await ig.click(); } await page.waitForTimeout(700);
+  await page.evaluate(`(()=>{ ${G}.W3.pos={x:-12,z:24}; })()`); await page.waitForTimeout(200);
+  const d8 = await page.evaluate(async () => { const G = window.__GAME__, im = new Image(); im.src = __FAKE.sprite; await im.decode(); return { dirs: G.hero.dirs(), h: im.height }; });
+  ok('8方向：自己点検に通ると、8行のシートをそのまま渡し、8方向で向きを選ぶ', d8.dirs === 8 && d8.h === 2048, JSON.stringify(d8));
+  /* 偽モジュールの行選び（本物の rowForDirection8 と同じ式。ヒステリシスなし）：渡した向きと今のカメラから8セクターのどれか */
+  const sector8 = () => page.evaluate(`(()=>{ const A={down:0,'down-right':Math.PI/4,right:Math.PI/2,'up-right':Math.PI*3/4,up:Math.PI,'up-left':-Math.PI*3/4,left:-Math.PI/2,'down-left':-Math.PI/4}, T=HD2D.THREE, v=new T.Vector3(); ${G}.W3.gfx.getCamera().getWorldDirection(v);
+    const sd=Math.atan2(-v.x,-v.z); let rel=(A[__FAKE.player.direction]-sd)%(Math.PI*2); if(rel<0) rel+=Math.PI*2; return Math.round(rel/(Math.PI/4))%8; })()`);
+  // 画面の右上へ斜めに歩く（↑＋→）：画面で見た向きは「右奥」＝相対角135°（セクター3）。カメラの角度を変えても同じ
+  const res = [];
+  for (const yaw of [45, 20, 200]) {
+    await page.evaluate(`(()=>{ const c=${G}.W3.cam; c.yaw=c.cy+(((${yaw}-c.cy)%360+540)%360-180); })()`); await page.waitForTimeout(500);
+    const p0 = await pos(page); await page.keyboard.down('ArrowUp'); await page.keyboard.down('ArrowRight'); await page.waitForTimeout(500);
+    const mid = await page.evaluate(`({dir:__FAKE.player.direction, moving:__FAKE.player.moving, sec:${G}.W3.faceSec})`);
+    await page.keyboard.up('ArrowUp'); await page.keyboard.up('ArrowRight'); await page.waitForTimeout(250);
+    const p1 = await pos(page), st = await page.evaluate(`({dir:__FAKE.player.direction, moving:__FAKE.player.moving})`);
+    res.push({ yaw, sec: await sector8(), mid, stopDir: st.dir, stopMoving: st.moving, d: Math.hypot(p1.x - p0.x, p1.z - p0.z) });
+  }
+  ok('8方向：画面の右上へ歩くと、どのカメラ角でも描画が選ぶのは「右奥」（セクター3）の絵。止まると moving=false で最後の向きのまま', res.every(r => r.sec === 3 && r.mid.sec === 3 && r.mid.moving && !r.stopMoving && r.stopDir === r.mid.dir), JSON.stringify(res));
+  // 斜めは縦横より速くならない（同じ時間押して進む距離）
+  const dist = async (keys) => { await page.evaluate(`${G}.W3.pos={x:-12,z:24}`); await page.waitForTimeout(200); const a = await pos(page); for (const k of keys) await page.keyboard.down(k); await page.waitForTimeout(700); for (const k of keys) await page.keyboard.up(k); await page.waitForTimeout(150); const b = await pos(page); return Math.hypot(b.x - a.x, b.z - a.z); };
+  const dStraight = await dist(['ArrowDown']), dDiag = await dist(['ArrowDown', 'ArrowLeft']);
+  await page.evaluate(`${G}.W3.pos={x:-12,z:24}`); await page.waitForTimeout(200); await page.keyboard.down('ArrowDown'); await page.waitForTimeout(500);
+  const spW = await page.evaluate(`__FAKE.player.speed`); await page.keyboard.up('ArrowDown'); await page.waitForTimeout(300); const spS = await page.evaluate(`({s:__FAKE.player.speed, m:__FAKE.player.moving})`);
+  ok('歩く速さ（実際に進んだ量）を speed として渡す（歩行中はおよそ毎秒7マス、止まると0・moving=false）', spW > 5 && spW < 8 && spS.s === 0 && !spS.m, JSON.stringify({ spW, spS }));
+  ok('斜めの入力は正規化され、縦横より速くならない（同じ時間で進む距離の差が1割未満）', dDiag > 1 && dDiag <= dStraight * 1.1, JSON.stringify({ dStraight, dDiag }));
+  // 静止中にカメラを回すと、8方向の絵が45°ごとに替わる（ワールドの向きは変わらない）
+  await page.evaluate(`(()=>{ const G=${G}; G.W3.face=0; G.W3.faceSec=null; const c=G.W3.cam; c.yaw=c.cy+(((0-c.cy)%360+540)%360-180); })()`); await page.waitForTimeout(500);
+  const seen = []; for (let k = 0; k < 8; k++) { await page.evaluate(`(()=>{ const c=${G}.W3.cam; c.yaw=c.cy+45; })()`); await page.waitForTimeout(450); seen.push(await sector8()); }
+  ok('8方向：静止中にカメラを45°ずつ一周回すと、8つの絵を順に通る（主人公のワールドの向きはそのまま）', new Set(seen).size === 8 && (await page.evaluate(`${G}.W3.face`)) === 0, JSON.stringify(seen));
+  ok('ページでエラーが起きていない（8方向）', errors.length === 0, errors.join('\n'));
   await ctx.close();
 }
 {

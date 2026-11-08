@@ -26,8 +26,10 @@ const terrainCode = terrain.outputFiles[0].text;
 
 const dataUrl = (p, mime) => `data:${mime};base64,${fs.readFileSync(path.join(root, p)).toString('base64')}`;
 const ASSETS = {
-  boy: dataUrl('assets/characters/boy.webp', 'image/webp'),
-  girl: dataUrl('assets/characters/girl.webp', 'image/webp'),
+  /* 主人公：8方向シート（Muse 第23ラウンド。4列×8行、行4-7が斜め。scripts/make-hero-sprites.py で WebP に） */
+  boy: dataUrl('assets/build/hero/boy-8dir.webp', 'image/webp'),
+  girl: dataUrl('assets/build/hero/girl-8dir.webp', 'image/webp'),
+  heroRows: 8,
   grass: dataUrl('assets/textures/grass-detail.png', 'image/png'),
   rock: dataUrl('assets/textures/rock-detail.png', 'image/png'),
   particle: dataUrl('assets/textures/particle-dot.png', 'image/png'),

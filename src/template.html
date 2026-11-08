@@ -455,7 +455,7 @@ textarea{width:100%;min-height:90px;font:inherit;font-size:.75rem;border:1.5px s
 .stage .rnodes{position:absolute;left:calc(var(--sal) + 16px);right:calc(var(--sar) + 16px);top:calc(var(--sat) + 120px);bottom:calc(var(--navh,64px) + 64px)}
 .note2d{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--navh,64px) + 10px);z-index:3;max-width:min(92vw,520px);background:rgba(255,255,255,.95);color:#22305a;border-radius:12px;padding:6px 12px;font-size:.8rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 /* 主人公スプライト（4×4シートの1コマ目） */
-.hero{display:inline-block;width:44px;height:44px;background-size:400% 400%;background-position:0 0;background-repeat:no-repeat;image-rendering:pixelated}
+.hero{display:inline-block;width:44px;height:44px;background-size:400% calc(var(--hero-rows,4)*100%);background-position:0 0;background-repeat:no-repeat;image-rendering:pixelated}
 .hero.big{width:72px;height:72px}
 .avatar.hero{width:40px;height:40px;font-size:0}
 .heropick{border:2px solid var(--line);background:var(--card);border-radius:14px;padding:6px 14px;display:flex;flex-direction:column;align-items:center;font:inherit;font-weight:900;cursor:pointer;color:var(--ink)}

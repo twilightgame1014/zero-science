@@ -928,7 +928,7 @@ async function start3D(){
     const cover = {...(cam?{camera:cam}:{}), world:{heightAt}};
     W3.cfg = HD2D.resolveConfig(cover);
     W3.gfx = await HD2D.initializeGraphics(W3.host, { config:cover,
-      playerSpriteUrl: heroUrl(), grassDetailUrl: ASSETS.grass, rockDetailUrl: ASSETS.rock,
+      playerSpriteUrl: await heroSheet3D(), grassDetailUrl: ASSETS.grass, rockDetailUrl: ASSETS.rock,
       particleTextureUrl: ASSETS.particle, shadowTextureUrl: ASSETS.shadow,
       quality: MOBILE ? "low" : "high", postEffects: !MOBILE,
       /* 連携契約（docs/handoff/NATURAL-OBJECTS-CONTRACT.md）：木・岩・倒木・小石はゲーム側の自然物として渡すので、
@@ -1094,13 +1094,18 @@ function loop3D(ts){
     if(W3.path){ W3.stuck = got < step*0.2 ? (W3.stuck||0)+dt : 0;
       if(W3.stuck>0.5){ W3.stuck=0; const goal=W3.path[W3.path.length-1]; const p=(W3.repath=(W3.repath||0)+1)<=2 ? WORLD.findPath(S,W3.pos,goal) : null;
         if(p) W3.path=p; else { W3.path=null; W3.target=null; W3.intent=null; W3.repath=0; banner("🚫 ここから先へは進めない"); } } }
-    /* 向き：実際に進んだワールドの向き（カメラを回しても変わらない）。絵の行は playerVisual がカメラから見て選ぶ */
-    if(got>0.001){ W3.face = Math.atan2(res.x-before.x, res.z-before.z); }
+    /* 向き：進もうとしている向き（スティック・キーはカメラ基準の入力、クリック移動は次の通過点。ワールドの角度）。
+       壁や木に当たって横へ滑っても、押している向きのまま（滑った分で絵が横を向かない）。カメラを回しても変わらない。
+       絵の行は playerVisual がカメラから見て選ぶ。止まったら最後の向きのまま */
+    W3.face = Math.atan2(mx, mz);
   }
   /* 歩行状態：入力や移動予約の有無ではなく、衝突処理のあとに実際に進んだ量と経過時間で決める。
      ワープ・ロード時の補正・初期配置は W3.pos を直接書くので、ここでは数えない（歩行にならない） */
   const moving = updateWalk(dt, got, (ix||iy) || !!(W3.path && W3.path.length));
-  W3.gfx.setPlayerVisualState(playerVisual({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving, action: W3.work ? "gather" : undefined}));
+  /* speed：実際に進んだ速さ（マス/秒、少しならした値）。今の描画モジュールは使わない（歩く絵の速さは walkFps で一定）。
+     歩く絵の進み方を実際の移動量に合わせる口を Muse に依頼中（CLAUDE-TO-MUSE §22-2）。止まっているときは 0 */
+  W3.walkSpeed = moving ? (W3.walkSpeed||0) + ((dt>0?got/dt:0) - (W3.walkSpeed||0)) * damp(12, dt) : 0;
+  W3.gfx.setPlayerVisualState(playerVisual({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving, speed:+W3.walkSpeed.toFixed(2), action: W3.work ? "gather" : undefined}));
   tickWork(ts);
   // 地域の判定
   const reg = regionAt(W3.pos.x, W3.pos.z);
@@ -1560,8 +1565,8 @@ document.addEventListener("click", ev=>{
       setTab("explore"); if(W3.state==="ready"){ goTo3D(r.w.x,r.w.z+REGION_R*0.2,null); banner(r.icon+" "+r.name+"へ向かう"); } break; }
     case "home": setTab("explore"); if(W3.state==="ready"){ goTo3D(D.base.x,D.base.z,null); banner("🏠 拠点へ戻る"); } break;
     case "rescue": setTab("explore"); if(W3.state==="ready") rescue(); break;
-    case "hero": { S.flags.hero = S.flags.hero==="girl"?"boy":"girl"; save(); if(W3.gfx) W3.gfx.setPlayerSpriteSheet(heroUrl()); banner(S.flags.hero==="girl"?"👧 女の子に交代！":"👦 男の子に交代！"); break; }
-    case "pickhero": S.flags.hero=id; save(); if(W3.gfx) W3.gfx.setPlayerSpriteSheet(heroUrl()); document.querySelectorAll(".heropick").forEach(x=>x.setAttribute("aria-pressed",x.dataset.id===id)); const av=$("#avatar"); if(av) av.style.backgroundImage=`url(${heroUrl()})`; break;
+    case "hero": { S.flags.hero = S.flags.hero==="girl"?"boy":"girl"; save(); if(W3.gfx) heroSheet3D().then(u=>W3.gfx.setPlayerSpriteSheet(u)); banner(S.flags.hero==="girl"?"👧 女の子に交代！":"👦 男の子に交代！"); break; }
+    case "pickhero": S.flags.hero=id; save(); if(W3.gfx) heroSheet3D().then(u=>W3.gfx.setPlayerSpriteSheet(u)); document.querySelectorAll(".heropick").forEach(x=>x.setAttribute("aria-pressed",x.dataset.id===id)); const av=$("#avatar"); if(av) av.style.backgroundImage=`url(${heroUrl()})`; break;
     case "view2d": S.flags.view="2d"; pause3D(); save(); fieldSig=""; renderField(); renderPanel(); break;
     case "view3d": S.flags.view="3d"; save(); fieldSig=""; renderField(); renderPanel(); break;
     case "introagain": S.flags.intro=0; setTab("explore"); intro(); break;
@@ -1626,29 +1631,49 @@ document.getElementById("app").dataset.ui = document.documentElement.dataset.ui 
    境界の前後で絵が細かく入れ替わらないよう、今の行の中心から ±(45°＋FACE_HYST) を超えたときだけ行を変える。
    描画モジュールは受け取ったワールドの4方向からカメラ基準で行を選ぶ（CharacterRenderer.rowForDirection）ので、
    選びたい行になるワールドの向きを渡す（カメラの向きが決まれば、4方向のどれか1つが必ずその行になる）。 */
-const DIR_ANGLE = {down:0, right:Math.PI/2, up:Math.PI, left:-Math.PI/2}, SECTOR_OF = {down:0, right:1, up:2, left:3}, SECTOR_NAME = ["down","right","up","left"];
-const FACE_HYST = 10;   // 度
+const DIR_ANGLE = {down:0, "down-right":Math.PI/4, right:Math.PI/2, "up-right":Math.PI*3/4, up:Math.PI, "up-left":-Math.PI*3/4, left:-Math.PI/2, "down-left":-Math.PI/4};
+const SECTOR_OF = {down:0, right:1, up:2, left:3}, SECTOR_NAME = ["down","right","up","left"];
+const DIR8 = ["down","down-right","right","up-right","up","up-left","left","down-left"];   // 相対角 0°,45°,… の順（主人公の画面右側を通って回る）
+const FACE_HYST = {4:10, 8:6};   // 度：行の中心から ±(半セクター＋これ) を超えたら切り替える
 const wrapPi = a => { a = (a + Math.PI) % (Math.PI*2); if(a < 0) a += Math.PI*2; return a - Math.PI; };
+/* 8方向の絵を使うか：シートが8行（ASSETS.heroRows）で、描画モジュールの行選びの自己点検（HD2D.diag8Check）に通ったときだけ。
+   通らないとき（今の第23ラウンドの版：カメラ角の約4分の1で行が固まる。CLAUDE-TO-MUSE §22）は、シートの上4行だけを渡して4方向で出す */
+function heroDirs(){ if(W3.heroDirs) return W3.heroDirs;
+  let n = 4; try{ if((ASSETS.heroRows||4)===8 && window.HD2D && typeof HD2D.diag8Check==="function"){ const r=HD2D.diag8Check(); W3.diag8=r; if(r.ok) n=8; } }catch(e){}
+  return W3.heroDirs = n; }
 function screenDownAngle(){ const T=HD2D.THREE, v=new T.Vector3(); W3.gfx.getCamera().getWorldDirection(v); return Math.atan2(-v.x, -v.z); }
 /* 画面基準の向き（古いセーブの dir）をワールドの向きへ */
 function faceFromScreen(screenDir){ try{ return wrapPi(screenDownAngle() + SECTOR_OF[screenDir]*Math.PI/2); }catch(e){ return DIR_ANGLE[screenDir]||0; } }
-/* 今の絵の行（0 正面・1 右・2 背中・3 左）。ヒステリシスつき */
+/* 今の絵の行のセクター（n=4：0 正面・1 右・2 背中・3 左。n=8：45°ずつ）。ヒステリシスつき */
 function faceSector(){
-  if(!W3.gfx || typeof W3.gfx.getCamera!=="function") return SECTOR_OF[W3.dir]||0;
+  const n = heroDirs(), w = Math.PI*2/n;
+  if(!W3.gfx || typeof W3.gfx.getCamera!=="function") return (SECTOR_OF[W3.dir]||0) * n/4;
+  if(W3.faceN !== n){ W3.faceN = n; W3.faceSec = null; }
   const rel = wrapPi((W3.face||0) - screenDownAngle()), cur = W3.faceSec;
-  if(cur!=null && Math.abs(wrapPi(rel - cur*Math.PI/2)) < (45+FACE_HYST)*Math.PI/180) return cur;
-  return W3.faceSec = ((Math.round(rel/(Math.PI/2)) % 4) + 4) % 4;
+  if(cur!=null && Math.abs(wrapPi(rel - cur*w)) < w/2 + FACE_HYST[n]*Math.PI/180) return cur;
+  return W3.faceSec = ((Math.round(rel/w) % n) + n) % n;
 }
-/* 描画モジュールへ渡すワールドの向き（モジュールがその行を選ぶもの） */
+/* 描画モジュールへ渡すワールドの向き：モジュールがその行を選ぶもの。
+   モジュールは渡された向きの角度とカメラから行を選ぶので、ワールドの n 方向のうち「狙った行になる1つ」を渡す（カメラ角が決まれば必ず1つある） */
 function worldFacing(){
-  const want = faceSector();
-  if(!W3.gfx || typeof W3.gfx.getCameraYawDegrees!=="function") return SECTOR_NAME[want];
-  const sd = screenDownAngle();
-  for(const d of SECTOR_NAME){ let rel=(DIR_ANGLE[d]-sd)%(Math.PI*2); if(rel<0) rel+=Math.PI*2; if(Math.round(rel/(Math.PI/2))%4===want) return d; }
-  return SECTOR_NAME[want];
+  const n = heroDirs(), want = faceSector(), names = n===8 ? DIR8 : SECTOR_NAME;
+  if(!W3.gfx || typeof W3.gfx.getCameraYawDegrees!=="function") return names[want];
+  const sd = screenDownAngle(), w = Math.PI*2/n;
+  for(const d of names){ let rel=(DIR_ANGLE[d]-sd)%(Math.PI*2); if(rel<0) rel+=Math.PI*2; if(Math.round(rel/w)%n===want) return d; }
+  return names[want];
 }
-/* 画面基準の向き（W3.dir）も絵の行と同じにしておく（表示・保存の互換用） */
-function playerVisual(st){ const d=worldFacing(); W3.dir = SECTOR_NAME[W3.faceSec!=null?W3.faceSec:SECTOR_OF[W3.dir]||0]; return Object.assign({}, st, {direction:d}); }
+/* 画面基準の向き（W3.dir）は4方向の近いほう（表示・保存の互換用） */
+function playerVisual(st){ const d=worldFacing(), n=heroDirs(); if(W3.faceSec!=null) W3.dir = SECTOR_NAME[Math.round(W3.faceSec*4/n)%4]; return Object.assign({}, st, {direction:d}); }
+/* 3D の主人公のシート：8方向を使うなら8行のまま。使わないなら上4行（従来の下・左・右・上）だけを切り出す（その場で作って覚えておく） */
+function heroSheet3D(h){
+  const heroCrop = W3.heroCrop || (W3.heroCrop = {});   // start3D から最初の描画前に呼ばれることがあるので、const を使わない
+  h = h || (S.flags.hero==="girl" ? "girl" : "boy");
+  if((ASSETS.heroRows||4)!==8 || heroDirs()===8) return Promise.resolve(ASSETS[h]);
+  return heroCrop[h] || (heroCrop[h] = new Promise(res=>{ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement("canvas"); c.width=im.width; c.height=im.width;
+      c.getContext("2d").drawImage(im, 0, 0, im.width, im.width, 0, 0, im.width, im.width); res(c.toDataURL("image/png")); }catch(e){ res(ASSETS[h]); } };
+    im.onerror=()=>res(ASSETS[h]); im.src=ASSETS[h]; }));
+}
+document.documentElement.style.setProperty("--hero-rows", String(ASSETS.heroRows||4));
 
 /* ===================== 探索カメラ（ドラッグで回転・上下、ピンチ／ホイールで距離。2026-11-08） =====================
    角度の定義（ゲームとモジュールで同じ）：見下ろし角＝水平から下への角度。0°＝注視点と同じ高さの水平視点、70°＝上から70°。
@@ -2111,5 +2136,5 @@ document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.
 document.addEventListener("change", ev=>{ const b=ev.target; if(b && b.dataset && b.dataset.act==="v-flag") verifyAct("v-flag", b.dataset.id, b); });
 document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="vq"){ vQuery=ev.target.value; const r=$("#vres"); if(r) r.innerHTML=vResults(); } });
 
-window.__GAME__ = {get S(){return S;}, save:()=>save(), cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
+window.__GAME__ = {get S(){return S;}, save:()=>save(), cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim()}, hero:{dirs:()=>heroDirs(), sheet:h=>heroSheet3D(h), facing:()=>worldFacing()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);

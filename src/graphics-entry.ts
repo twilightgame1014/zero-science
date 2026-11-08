@@ -6,6 +6,7 @@ import { initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, RESOU
 import { GPT_TEXTURES } from './graphics/gptTextures';
 import { BRANCH_TEXTURES } from './graphics/branchTextures';
 import { attachWorld } from './world/render';
+import * as CharMod from './graphics/CharacterRenderer';
 /* ---------- 建物の3Dモデル（Muse の GLB。assets/buildings-3d、2026-11-07） ----------
    描画モジュールは StructureRenderer.registerFactory で建物の作り方を差し替えられる（呼び出し側はそのまま）。
    add() はファクトリが返した物をその場でたどって炎・車輪・フェード用の材質を登録するので、
@@ -94,6 +95,24 @@ function npcRemove(gfx: any, id: string): void { const e = npcs.get(id); if (!e)
 function npcTick(gfx: any, dt: number): void { const cam = gfx.getCamera(); npcs.forEach((e) => { if (e.r) e.r.update(dt, cam); }); }
 const npcStatus = () => [...npcs.entries()].map(([id, e]) => ({ id, ready: !!e.r, x: e.r ? e.r.getRenderedPosition().x : null }));
 const buildingModelStatus = () => ({ ready: [...templates.keys()], failed: [...failed], loading: [...loading.keys()].filter((k) => !templates.has(k) && !failed.has(k)) });
-(window as any).HD2D = { attachWorld, initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, THREE, RESOURCE_VISUAL_SPECS, GPT_TEXTURES, BRANCH_TEXTURES,
+/* ---------- 8方向の絵の行選び（Muse 第23ラウンド rowForDirection8）の自己点検 ----------
+   ゲームが渡せる向きはワールドの8方向だけなので、カメラの水平角が 45° の倍数からずれると、モジュールが比べる
+   「セクターの中心からのずれ」が最大 22.5° になる。モジュールのヒステリシス（中心から π/8−0.1 以内でないと切り替えない）より
+   大きくずれる角度では、向きを一周させても最初の行のまま変わらない（2026-11-08 確認。CLAUDE-TO-MUSE §22）。
+   ここで 0〜359° の各カメラ角について「8方向を一周させて8行すべてが出るか」を確かめ、全部出るときだけ8方向の絵を使う。 */
+function diag8Check(): { ok: boolean; available: boolean; stuck: number[] } {
+  const f = (CharMod as any).rowForDirection8 as undefined | ((d: string, c: THREE.Camera, r: number) => number);
+  if (typeof f !== 'function') return { ok: false, available: false, stuck: [] };
+  const dirs = ['down', 'down-right', 'right', 'up-right', 'up', 'up-left', 'left', 'down-left'];
+  const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400), stuck: number[] = [];
+  for (let yaw = 0; yaw < 360; yaw++) {
+    const y = (yaw * Math.PI) / 180; cam.position.set(Math.sin(y) * 90, 40, Math.cos(y) * 90); cam.lookAt(0, 0, 0); cam.updateMatrixWorld();
+    let row = -1; const seen = new Set<number>();
+    for (let lap = 0; lap < 2; lap++) for (const d of dirs) { row = f(d, cam, row); seen.add(row); }
+    if (seen.size !== 8) stuck.push(yaw);
+  }
+  return { ok: stuck.length === 0, available: true, stuck };
+}
+(window as any).HD2D = { attachWorld, diag8Check, initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, THREE, RESOURCE_VISUAL_SPECS, GPT_TEXTURES, BRANCH_TEXTURES,
   ensureBuildingModel, tickBuildingParts, buildingModelStatus, npcSet, npcRemove, npcTick, npcStatus };
 window.dispatchEvent(new Event('hd2d-ready'));
