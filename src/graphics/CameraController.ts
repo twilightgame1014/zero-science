@@ -9,6 +9,11 @@ import { dampFactor } from './utils';
  * orthographic, framing is controlled by the frustum (viewSize), not
  * by the camera distance.
  */
+const PITCH_MIN = 0;
+const PITCH_MAX = 72;
+const DIST_MIN = 10;
+const DIST_MAX = 260;
+
 export class CameraController {
   readonly camera: THREE.OrthographicCamera;
   private cfg: GraphicsConfig['camera'];
@@ -29,6 +34,10 @@ export class CameraController {
 
   private yawDegrees: number;
   private pitchDegrees: number;
+  /** Camera-to-focus distance along the view axis (metres). With
+   *  an orthographic camera this changes clipping and clearance,
+   *  not magnification (Claude §21-2, round 24). */
+  private distance = 90;
 
   constructor(cfg: GraphicsConfig['camera']) {
     this.cfg = cfg;
@@ -36,7 +45,7 @@ export class CameraController {
     this.effectiveViewSize = cfg.viewSize;
     this.yawDegrees = cfg.yawDegrees;
     this.pitchDegrees = cfg.pitchDegrees;
-    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400);
+    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1200);
     this.applyOrientation();
     this.applyFrustum();
     this.snapToTarget();
@@ -45,7 +54,7 @@ export class CameraController {
   private applyOrientation(): void {
     const pitch = THREE.MathUtils.degToRad(this.pitchDegrees);
     const yaw = THREE.MathUtils.degToRad(this.yawDegrees);
-    const dist = 90;
+    const dist = this.distance;
     this.offset.set(
       Math.sin(yaw) * Math.cos(pitch),
       Math.sin(pitch),
@@ -62,16 +71,21 @@ export class CameraController {
    * Orbit the camera at runtime (world-expansion spec, 2026-11-07):
    * the world is authored to be viewed from any side, so yaw/pitch
    * are no longer fixed at construction. Omitted fields keep their
-   * current values. Yaw is free (360°); pitch is clamped to a sane
-   * exploration range so the ground plane never flips.
+   * current values. Yaw is free (360°); pitch is clamped to
+   * 0–72° (round 24, Claude §21-1: the drag camera wants
+   * near-level views; at 0° the ground still never flips because
+   * the screen-up vector stays well-defined).
    */
-  setOrientation(yawDegrees?: number, pitchDegrees?: number): void {
+  setOrientation(yawDegrees?: number, pitchDegrees?: number, distance?: number): void {
     this.transition = null;
     if (yawDegrees !== undefined && Number.isFinite(yawDegrees)) {
       this.yawDegrees = ((yawDegrees % 360) + 360) % 360;
     }
     if (pitchDegrees !== undefined && Number.isFinite(pitchDegrees)) {
-      this.pitchDegrees = THREE.MathUtils.clamp(pitchDegrees, 12, 72);
+      this.pitchDegrees = THREE.MathUtils.clamp(pitchDegrees, PITCH_MIN, PITCH_MAX);
+    }
+    if (distance !== undefined && Number.isFinite(distance)) {
+      this.distance = THREE.MathUtils.clamp(distance, DIST_MIN, DIST_MAX);
     }
     this.applyOrientation();
     this.updateCameraTransform();
@@ -87,6 +101,10 @@ export class CameraController {
     return this.pitchDegrees;
   }
 
+  getDistance(): number {
+    return this.distance;
+  }
+
   /** Current zoom (base viewSize, before the portrait boost). */
   getViewSize(): number {
     return this.viewSize;
@@ -97,6 +115,7 @@ export class CameraController {
     fromYaw: number; toYaw: number;
     fromPitch: number; toPitch: number;
     fromSize: number; toSize: number;
+    fromDistance: number; toDistance: number;
     t: number; duration: number;
   } | null = null;
 
@@ -105,19 +124,22 @@ export class CameraController {
    * travels the short way around the circle. A direct setOrientation
    * / setViewSize call cancels any in-flight transition.
    */
-  transitionTo(view: { yawDegrees?: number; pitchDegrees?: number; viewSize?: number }, transitionSeconds: number): void {
+  transitionTo(view: { yawDegrees?: number; pitchDegrees?: number; viewSize?: number; distance?: number }, transitionSeconds: number): void {
     const toYaw = view.yawDegrees !== undefined
       ? ((view.yawDegrees % 360) + 360) % 360
       : this.yawDegrees;
     const toPitch = view.pitchDegrees !== undefined
-      ? THREE.MathUtils.clamp(view.pitchDegrees, 12, 72)
+      ? THREE.MathUtils.clamp(view.pitchDegrees, PITCH_MIN, PITCH_MAX)
       : this.pitchDegrees;
     const toSize = view.viewSize !== undefined
       ? THREE.MathUtils.clamp(view.viewSize, 4, 60)
       : this.viewSize;
+    const toDistance = view.distance !== undefined && Number.isFinite(view.distance)
+      ? THREE.MathUtils.clamp(view.distance, DIST_MIN, DIST_MAX)
+      : this.distance;
     if (!(transitionSeconds > 0)) {
       this.transition = null;
-      this.setOrientation(toYaw, toPitch);
+      this.setOrientation(toYaw, toPitch, toDistance);
       this.setViewSize(toSize);
       return;
     }
@@ -125,6 +147,7 @@ export class CameraController {
       fromYaw: this.yawDegrees, toYaw,
       fromPitch: this.pitchDegrees, toPitch,
       fromSize: this.viewSize, toSize,
+      fromDistance: this.distance, toDistance,
       t: 0, duration: transitionSeconds,
     };
   }
@@ -141,6 +164,7 @@ export class CameraController {
     this.yawDegrees = ((tr.fromYaw + dy * e) % 360 + 360) % 360;
     this.pitchDegrees = tr.fromPitch + (tr.toPitch - tr.fromPitch) * e;
     this.viewSize = tr.fromSize + (tr.toSize - tr.fromSize) * e;
+    this.distance = tr.fromDistance + (tr.toDistance - tr.fromDistance) * e;
     this.applyOrientation();
     this.applyFrustum();
     this.updateCameraTransform();

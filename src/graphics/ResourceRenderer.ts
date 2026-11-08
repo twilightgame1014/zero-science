@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { ResourceVisualState } from './types';
 import { disposeObject } from './StructureRenderer';
 import { AssetManager } from './AssetManager';
-import { mulberry32, segmentPointDistance } from './utils';
+import { addInstanceFade, mulberry32, segmentPointDistance } from './utils';
 import { fracturedRockGeometry } from './WaterfallKit';
 
 interface SlotRef {
@@ -90,7 +90,18 @@ class InstancedPool {
   private freeList: number[] = [];
   private dummy = new THREE.Object3D();
 
+  private fades: Float32Array;
+  private fadeAttr: THREE.InstancedBufferAttribute;
+
   constructor(geo: THREE.BufferGeometry, mat: THREE.Material, capacity: number, parent: THREE.Group) {
+    // Per-instance occlusion fade (round 26): pools whose material
+    // is patched with addInstanceFade read this attribute; the
+    // vegetation kinds (grass / herb / flowers) are driven by
+    // ResourceRenderer.updateOcclusion, everything else stays 1.
+    this.fades = new Float32Array(capacity).fill(1);
+    this.fadeAttr = new THREE.InstancedBufferAttribute(this.fades, 1);
+    this.fadeAttr.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('aFade', this.fadeAttr);
     this.mesh = new THREE.InstancedMesh(geo, mat, capacity);
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.mesh.frustumCulled = false;
@@ -115,7 +126,14 @@ class InstancedPool {
     return this.freeList.length > 0 ? this.freeList.pop()! : -1;
   }
 
+  setFade(index: number, v: number): void {
+    if (this.fades[index] === v) return;
+    this.fades[index] = v;
+    this.fadeAttr.needsUpdate = true;
+  }
+
   release(index: number): void {
+    this.setFade(index, 1);
     this.dummy.position.set(0, -50, 0);
     this.dummy.rotation.set(0, 0, 0);
     this.dummy.scale.setScalar(0.001);
@@ -269,6 +287,7 @@ export class ResourceRenderer {
       const geo = flat
         ? (() => { const p = new THREE.PlaneGeometry(1, 0.75); p.rotateX(-Math.PI / 2); return p; })()
         : (() => { const p = new THREE.PlaneGeometry(1, 1); p.translate(0, 0.5, 0); return p; })();
+      addInstanceFade(mat);
       pool = new InstancedPool(geo, mat, 224, this.group);
       pool.mesh.receiveShadow = flat;
       this.pools.set(key, pool);
@@ -497,7 +516,7 @@ export class ResourceRenderer {
     for (const entry of this.entries.values()) {
       const st = entry.state;
       if (!entry.group || st.depleted) continue;
-      if (st.type !== 'tree' && st.type !== 'rock' && st.type !== 'ore' && st.type !== 'bush') continue;
+      if (st.type !== 'tree' && st.type !== 'rock' && st.type !== 'ore' && st.type !== 'bush' && st.type !== 'grass') continue;
       const spec = RESOURCE_VISUAL_SPECS[st.type];
       const p = entry.group.position;
       const radius = (spec?.footprintRadius ?? 0.6) * entry.baseScale + 0.45;
@@ -519,6 +538,14 @@ export class ResourceRenderer {
       const interacting = st.highlighted === true || st.phase === 'reacting';
       const floor = interacting ? 0.85 : FADE_MIN;
       let goal = d < radius ? floor : 1;
+      if (goal === 1 && st.type === 'grass' && !interacting) {
+        const dx = p.x - playerPos.x;
+        const dz = p.z - playerPos.z;
+        const hd2 = dx * dx + dz * dz;
+        const reach = radius + 0.6;
+        const camSide = dx * (cameraPos.x - playerPos.x) + dz * (cameraPos.z - playerPos.z) > 0;
+        if (hd2 < 0.09 || (hd2 < reach * reach && camSide)) goal = FADE_MIN;
+      }
       if (goal === 1 && st.type === 'tree' && !interacting) {
         const dx = p.x - playerPos.x;
         const dz = p.z - playerPos.z;
@@ -538,6 +565,52 @@ export class ResourceRenderer {
         // instead of thinning (found on the first card-built trees).
         mat.alphaTest = (entry.baseAlphaTests[i] ?? 0) * next;
       });
+    }
+    // Instanced low vegetation (round 26, Claude §23): grass
+    // clumps, herb patches and flower tufts are pool-rendered, so
+    // they were outside the fade set and could half-hide the
+    // player at low pitch. Same segment test and floors as the
+    // group path (the gather target the player is working on
+    // stays at 0.85); the per-instance screen-door fade lives on
+    // the pools' aFade attribute.
+    for (const entry of this.entries.values()) {
+      const st = entry.state;
+      if (entry.group || entry.slots.length === 0 || st.depleted) continue;
+      if (st.type !== 'grass' && st.type !== 'herb' && st.type !== 'flowers') continue;
+      const spec = RESOURCE_VISUAL_SPECS[st.type];
+      const radius = (spec?.footprintRadius ?? 0.6) * entry.baseScale + 0.45;
+      OCCL_POINT.set(
+        entry.pos.x,
+        entry.pos.y + (spec?.height ?? 0.8) * entry.baseScale * 0.55,
+        entry.pos.z,
+      );
+      const d = segmentPointDistance(
+        cameraPos.x, cameraPos.y, cameraPos.z,
+        playerPos.x, playerPos.y, playerPos.z,
+        OCCL_POINT.x, OCCL_POINT.y, OCCL_POINT.z,
+      );
+      const interacting = st.highlighted === true || st.phase === 'reacting';
+      const floor = interacting ? 0.85 : FADE_MIN;
+      let goal = d < radius ? floor : 1;
+      if (goal === 1) {
+        // Orthographic occlusion is screen overlap, not segment
+        // proximity: low vegetation in FRONT of the player (the
+        // camera side) overlaps the sprite's lower half even
+        // though its top stays below the camera->chest segment.
+        // Fade what stands within reach on the camera side, and
+        // what the player is standing in.
+        const dx = entry.pos.x - playerPos.x;
+        const dz = entry.pos.z - playerPos.z;
+        const hd2 = dx * dx + dz * dz;
+        const reach = radius + 0.6;
+        const camSide = dx * (cameraPos.x - playerPos.x) + dz * (cameraPos.z - playerPos.z) > 0;
+        if (hd2 < 0.09 || (hd2 < reach * reach && camSide)) goal = floor;
+      }
+      if (entry.fade === goal) continue;
+      let next = entry.fade + (goal - entry.fade) * k;
+      if (Math.abs(goal - next) < 0.01) next = goal;
+      entry.fade = next;
+      for (const slot of entry.slots) slot.pool.setFade(slot.index, next);
     }
   }
 

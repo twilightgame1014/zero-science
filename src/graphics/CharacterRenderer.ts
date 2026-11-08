@@ -39,6 +39,42 @@ const SECTOR8_CENTRE = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => (i * Math.PI) / 4);
 
 const _camDir = new THREE.Vector3();
 
+/**
+ * Sprite lean cap (Claude §21-4, round 24). The sprite board
+ * normally copies the camera orientation, so at a 70° pitch it
+ * would lie back 70° and its feet would lift off the ground
+ * shadow. The lean therefore stops at this angle: below it the
+ * board matches the camera exactly (the established look), above
+ * it the character stays at the cap and reads upright.
+ */
+const LEAN_CAP = THREE.MathUtils.degToRad(45);
+const _eye = new THREE.Vector3();
+const _origin = new THREE.Vector3();
+const _up = new THREE.Vector3(0, 1, 0);
+const _mat = new THREE.Matrix4();
+
+function cappedBillboard(out: THREE.Quaternion, camera: THREE.Camera): void {
+  camera.getWorldDirection(_camDir);
+  const sinPitch = THREE.MathUtils.clamp(-_camDir.y, -1, 1);
+  const pitch = Math.asin(sinPitch);
+  if (pitch <= LEAN_CAP) {
+    out.copy(camera.quaternion);
+    return;
+  }
+  // Rebuild the view direction with the pitch reduced to the cap,
+  // keeping the camera's yaw: the horizontal component is
+  // rescaled to cos(cap), the vertical set to -sin(cap).
+  const horiz = Math.hypot(_camDir.x, _camDir.z) || 1;
+  const cosCap = Math.cos(LEAN_CAP);
+  _eye.set(
+    (-_camDir.x / horiz) * cosCap,
+    Math.sin(LEAN_CAP),
+    (-_camDir.z / horiz) * cosCap,
+  );
+  _mat.lookAt(_eye, _origin, _up);
+  out.setFromRotationMatrix(_mat);
+}
+
 /** Camera-relative facing angle: 0 = facing the camera (screen
  *  down), growing through the character's screen-right side. */
 function relativeAngle(direction: Direction, camera: THREE.Camera): number {
@@ -58,25 +94,67 @@ function rowForDirection(direction: Direction, camera: THREE.Camera): number {
 }
 
 /**
- * Row for an 8-row sheet, with boundary hysteresis: once a row is
- * shown, the facing must move ~6° INTO the neighbouring sector
- * before the image switches, so a character walking along a
- * sector boundary does not flicker between two rows.
+ * Row selection for an 8-row sheet (round 25, Claude §22.1).
+ *
+ * The discrete path (rowForDirection8) is a PURE nearest-sector
+ * mapping with no module-side hysteresis: the first version's
+ * candidate-centre hysteresis could never be satisfied at 96 of
+ * 360 camera yaws (the camera-relative angle sits up to 22.5°
+ * off sector centres with 8-way input), and an exit-margin
+ * version still absorbs the first step of a turn at unlucky
+ * yaws. Neither is needed here — the direction only changes
+ * when the game changes it, and the game already de-bounces its
+ * sector choice (§22.3). The row therefore always follows the
+ * direction the game passes, at every camera yaw.
+ *
+ * The continuous path (rowForFacing8) keeps an exit-margin
+ * hysteresis: an analogue facing can hover on a sector edge,
+ * and the row is kept while the facing stays inside the current
+ * sector widened by HYST8, so it cannot flicker.
  */
+const HYST8 = 0.06;
+/** Inverse of ROW8_BY_SECTOR: sheet row -> sector index. */
+const SECTOR8_OF_ROW = [0, 6, 2, 4, 1, 7, 3, 5];
+
+export function rowForRelAngle(rel: number, currentRow: number): number {
+  const sector = Math.round(rel / (Math.PI / 4)) % 8;
+  const candidate = ROW8_BY_SECTOR[sector];
+  if (candidate === currentRow || currentRow < 0) return candidate;
+  const currentSector = SECTOR8_OF_ROW[currentRow];
+  if (currentSector === undefined) return candidate;
+  let d = Math.abs(rel - SECTOR8_CENTRE[currentSector]) % (Math.PI * 2);
+  if (d > Math.PI) d = Math.PI * 2 - d;
+  return d <= Math.PI / 8 + HYST8 ? currentRow : candidate;
+}
+
 export function rowForDirection8(
   direction: Direction,
   camera: THREE.Camera,
   currentRow: number,
 ): number {
+  void currentRow; // discrete input: no hysteresis (see above)
   const rel = relativeAngle(direction, camera);
   const sector = Math.round(rel / (Math.PI / 4)) % 8;
-  const candidate = ROW8_BY_SECTOR[sector];
-  if (candidate === currentRow || currentRow < 0) return candidate;
-  let d = Math.abs(rel - SECTOR8_CENTRE[sector]) % (Math.PI * 2);
-  if (d > Math.PI) d = Math.PI * 2 - d;
-  // Half a sector is π/8 ≈ 0.393; require the facing to be at
-  // least 0.10 rad inside the candidate sector before switching.
-  return d < Math.PI / 8 - 0.1 ? candidate : currentRow;
+  return ROW8_BY_SECTOR[sector];
+}
+
+/**
+ * Row for an 8-row sheet from a CONTINUOUS world facing angle
+ * (radians, atan2(x, z) — 0 = +Z, the game's own convention;
+ * Claude §22.1 option 1). Uses the exit-margin hysteresis core,
+ * so the shown sector never lags the true one by more than one
+ * sector and cannot flicker on a boundary.
+ */
+export function rowForFacing8(
+  facing: number,
+  camera: THREE.Camera,
+  currentRow: number,
+): number {
+  camera.getWorldDirection(_camDir);
+  const screenDown = Math.atan2(-_camDir.x, -_camDir.z);
+  let rel = (facing - screenDown) % (Math.PI * 2);
+  if (rel < 0) rel += Math.PI * 2;
+  return rowForRelAngle(rel, currentRow);
 }
 
 /** Rows in a sprite sheet: cells are square, 4 columns across, so
@@ -123,7 +201,7 @@ class CharSprite {
   private groundHeightAt: (x: number, z: number) => number;
   private state: CharState = { position: { x: 0, z: 0 }, direction: 'down', moving: false };
   private rendered = new THREE.Vector3(0, 0, 0);
-  private animTime = 0;
+  private animPhase = 0;
   private initialized = false;
   private throttleAcc = 0;
   /** Occlusion fade (NPCs standing behind trees / buildings):
@@ -248,21 +326,36 @@ class CharSprite {
     const groundY = this.groundHeightAt(this.rendered.x, this.rendered.z);
     this.rendered.y += (groundY - this.rendered.y) * dampFactor(18, dt);
 
-    // Walk cycle time advances ONLY while the game reports movement.
-    // Standing still freezes the cycle, the frame and the bob.
+    // Walk cycle phase (in frames) advances ONLY while the game
+    // reports movement. Standing still freezes the cycle, the
+    // frame and the bob. When the game supplies its actual speed
+    // (Claude §22.2), the phase advances by distance travelled —
+    // one 4-frame cycle per 1.4 units (two steps) — so slow and
+    // fast walks never slide; otherwise it advances by time at
+    // the configured walkFps, as before.
     const moving = this.state.moving;
-    if (moving) this.animTime += dt;
+    if (moving) {
+      const speed = (this.state as PlayerVisualState).speed;
+      if (typeof speed === 'number' && Number.isFinite(speed)) {
+        this.animPhase += (Math.max(0, speed) * dt) / 0.35;
+      } else {
+        this.animPhase += dt * this.cfg.walkFps;
+      }
+    }
     const frame = moving
-      ? Math.floor(this.animTime * this.cfg.walkFps) % 4
+      ? Math.floor(this.animPhase) % 4
       : STANDING_FRAME;
+    const facing = (this.state as PlayerVisualState).facing;
     const row = this.sheetRows === 8
-      ? rowForDirection8(this.state.direction, camera, this.currentRow)
+      ? (typeof facing === 'number' && Number.isFinite(facing)
+          ? rowForFacing8(facing, camera, this.currentRow)
+          : rowForDirection8(this.state.direction, camera, this.currentRow))
       : rowForDirection(this.state.direction, camera);
     this.currentRow = row;
     this.texture.offset.set(frame / 4, 1 - (row + 1) / this.sheetRows);
 
     const bob = moving
-      ? Math.abs(Math.sin(this.animTime * this.cfg.walkFps * Math.PI * 0.5)) * 0.055
+      ? Math.abs(Math.sin(this.animPhase * Math.PI * 0.5)) * 0.055
       : 0;
 
     this.sprite.position.set(
@@ -274,8 +367,9 @@ class CharSprite {
         bob,
       this.rendered.z,
     );
-    // Billboard: match the camera so the sprite always reads correctly.
-    this.sprite.quaternion.copy(camera.quaternion);
+    // Billboard: match the camera (lean capped, see LEAN_CAP) so
+    // the sprite always reads correctly.
+    cappedBillboard(this.sprite.quaternion, camera);
 
     this.shadow.position.set(this.rendered.x, this.rendered.y + 0.03, this.rendered.z);
   }
