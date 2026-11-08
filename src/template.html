@@ -45,6 +45,8 @@ button{font:inherit;color:inherit}
 [data-ui="touch"] .camctl{top:auto;bottom:calc(var(--navh,64px) + 150px)}
 [data-ui="touch"] .camctl button span{display:none}
 [data-ui="touch"] .camctl button{width:38px;height:38px;padding:0;justify-content:center;font-size:1rem}
+.camdbg{position:absolute;left:calc(var(--sal,0px) + 8px);bottom:calc(var(--navh,64px) + 8px);z-index:4;white-space:pre;font:11px/1.35 ui-monospace,monospace;background:rgba(0,0,0,.62);color:#fff;padding:4px 7px;border-radius:6px;pointer-events:none}
+[data-ui="touch"] .camdbg{bottom:auto;top:calc(var(--sat,0px) + 132px)}
 .camsens{display:grid;grid-template-columns:auto 1fr 2.4em;gap:6px 10px;align-items:center;max-width:420px}
 .camsens input{width:100%;touch-action:pan-x}.camsens output{font-weight:800;text-align:right}
 /* 集落の人との会話 */

@@ -567,12 +567,11 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
   const l0 = await camState(page); await page.mouse.move(300, 420); await page.mouse.down(); await page.mouse.move(500, 420, { steps: 6 }); await page.mouse.up(); await settle(page);
   const l1 = await camState(page);
   ok('研究室などのパネルを開いている間は、ドラッグしてもカメラは動かない', Math.abs(l1.cy - l0.cy) < 1e-6 && l1.ptrs === 0, JSON.stringify({ l0: l0.cy, l1: l1.cy }));
-  // 建物の陰：主人公とカメラの間に小屋（高さ3.16）を置き、低い角度にすると、一時的に角度を上げる（希望の角度は変えない）。どけると戻る
+  // 建物の陰（2026-11-08 改訂）：主人公とカメラの間に小屋を置いて低い角度にしても、見下ろし角を勝手に上げない（希望の角度のまま渡す）
   const bh = await page.evaluate(`(async()=>{ const G=${G}, c=G.W3.cam; c.pitch=G.W3.camPitchMin||0; c.yaw=c.cy; const y=c.cy*Math.PI/180, p=G.W3.pos;
     const prev=G.WORLD.structures(); G.WORLD.setStructures(prev.concat([{id:'t-hut', type:'hut', x:p.x+Math.sin(y)*4, z:p.z+Math.cos(y)*4, rot:0, footprint:{shape:'rect', w:3.8, d:3.4}}]));
-    await new Promise(r=>setTimeout(r,900)); const a={need:c.need, sent:G.W3.camSent.p, pitch:c.pitch};
-    G.WORLD.setStructures(prev); await new Promise(r=>setTimeout(r,2500)); const b={need:c.need, sent:G.W3.camSent.p, pitch:c.pitch}; return {a,b}; })()`);
-  ok('主人公とカメラの間に建物が入ると、見下ろし角を一時的に上げて主人公を見せる（希望の角度は変えず、建物が無くなるとなめらかに戻る）', bh.a.need > 25 && bh.a.sent > 20 && bh.a.pitch === bh.b.pitch && bh.b.sent < bh.a.sent - 10, JSON.stringify(bh));
+    await new Promise(r=>setTimeout(r,900)); const a={sent:G.W3.camSent.p, pitch:c.pitch}; G.WORLD.setStructures(prev); return a; })()`);
+  ok('主人公とカメラの間に建物があっても、見下ろし角を勝手に上げない（送る角度＝ユーザーの希望の角度）', Math.abs(bh.sent - bh.pitch) < 0.01, JSON.stringify(bh));
   ok('ページでエラーが起きていない（カメラ・PC）', errors.length === 0, errors.join('\n'));
   await ctx.close();
 }
