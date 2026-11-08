@@ -33,6 +33,20 @@ export interface PlayerVisualState {
   moving: boolean;
   /** Optional action hint used only for visual flourishes (e.g. 'gather'). */
   action?: string;
+  /**
+   * Continuous world facing (radians, atan2(x, z), 0 = +Z;
+   * round 25, Claude §22.1). On an 8-row sheet this takes
+   * precedence over `direction` for row selection; `direction`
+   * stays as the discrete fallback and for 4-row sheets.
+   */
+  facing?: number;
+  /**
+   * Actual movement speed in units/sec, smoothed (round 25,
+   * Claude §22.2). When present, the walk cycle advances by
+   * distance travelled (4 frames per 1.4 units) instead of by
+   * elapsed time, so the feet match the ground at any speed.
+   */
+  speed?: number;
 }
 
 /** World-level visual state. Purely cosmetic: time of day, weather mood. */
@@ -267,6 +281,12 @@ export interface NpcVisualState {
   position: Vec3Like;
   direction: Direction;
   moving: boolean;
+  /** Continuous world facing, same contract as the player's
+   *  (round 25). Optional; NPCs may keep passing `direction`. */
+  facing?: number;
+  /** Actual movement speed in units/sec, same contract as the
+   *  player's (round 25). Optional. */
+  speed?: number;
   /** Sprite sheet URL for this NPC. Loaded once per URL; the NPC is
    *  drawn with a placeholder sheet until the texture arrives. */
   spriteUrl?: string;
