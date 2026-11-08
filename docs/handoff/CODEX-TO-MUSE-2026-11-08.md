@@ -118,4 +118,26 @@ CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run e2e:camera-focus
 - PR作成用 `api.github.com` への接続が、このクラウドのネットワーク制限で拒否されている。
   必要なドメインだけを環境設定のドラフトへ追加済み。GitHub用の既存環境変数は存在するが、
   API接続が許可される前に認証の可否は判断できない。新しいトークンは要求していない。
-  ブランチpushとドラフトPRの最終結果は、実行後に追記する。
+
+## GitHubへの反映とPRの状態
+
+- `git push -u origin feature/game-codex-integration`：成功。main・ベースは更新していない。
+- 必須ゲート合格後、指定ベースへのドラフト作成を実行したが、
+  `Post "https://api.github.com/graphql": Forbidden`（終了コード1）で拒否された。
+  **ドラフトPRは未作成。PRのURL・番号は発行されていない。**
+- この時点の実行環境は `api.github.com` が許可リスト外。API許可の設定案は保存したが、
+  実行環境には適用されていない。環境設定で確認・保存・適用が必要。再利用する環境設定はレビュー後に公開する。
+- 本文は [CODEX-PR-BODY-2026-11-08.md](CODEX-PR-BODY-2026-11-08.md) に保存。
+  ネットワーク設定の適用後、既存PRがないかを確認し、なければ次を実行する：
+
+```bash
+gh pr list --repo twilightgame1014/science-civilization-game \
+  --base feature/game-8dir --head feature/game-codex-integration --state open
+gh pr create --repo twilightgame1014/science-civilization-game \
+  --base feature/game-8dir --head feature/game-codex-integration --draft \
+  --title 'Muse §31/§32をゲーム側へ統合（8方向・注視点高度・植生フェード）' \
+  --body-file docs/handoff/CODEX-PR-BODY-2026-11-08.md
+```
+
+[指定ベースとの差分・PR作成画面](https://github.com/twilightgame1014/science-civilization-game/compare/feature/game-8dir...feature/game-codex-integration?expand=1)
+も用意できるが、これは作成済みPRのリンクではない。オーナーの最終マージは行っていない。
