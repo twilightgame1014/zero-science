@@ -69,7 +69,7 @@ export class GraphicsEngine {
   private clock = new THREE.Clock();
   private raf = 0;
   private resizeObserver: ResizeObserver | null = null;
-  private cameraOverride: { x: number; z: number } | null = null;
+  private cameraOverride: { x: number; z: number; y?: number } | null = null;
   private disposed = false;
   private onContextLostBound: (e: Event) => void;
   private onContextRestoredBound: () => void;
@@ -379,7 +379,15 @@ export class GraphicsEngine {
     // A malformed target must never poison the camera: a NaN
     // centre is unrecoverable through the damped follow.
     if (!Number.isFinite(p.x) || !Number.isFinite(p.z)) return;
-    this.cameraOverride = { x: p.x, z: p.z };
+    // Focus height inlet (round 26, Claude §23): when the caller
+    // supplies y, the camera focusses at exactly that height
+    // instead of the module's terrain height at (x, z). A game
+    // whose world height differs from the module's (summits,
+    // bridges, interiors) can pass the height it already knows,
+    // so no per-frame cancellation is needed. A non-finite y is
+    // ignored rather than poisoning the follow.
+    const hasY = typeof position.y === 'number' && Number.isFinite(position.y);
+    this.cameraOverride = { x: p.x, z: p.z, ...(hasY ? { y: p.y } : {}) };
   }
 
   /**
@@ -807,7 +815,7 @@ export class GraphicsEngine {
 
       this.character.update(dt, this.cameraRig.camera);
       const focus = this.cameraOverride ?? this.character.getRenderedPosition();
-      const focusY = this.world.getGroundHeight(focus.x, focus.z);
+      const focusY = this.cameraOverride?.y ?? this.world.getGroundHeight(focus.x, focus.z);
       this.cameraRig.setTarget(focus.x, focus.z, focusY);
       this.cameraRig.update(dt);
       this.lighting.updateShadowTarget(focus.x, focus.z);

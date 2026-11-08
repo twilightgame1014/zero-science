@@ -13,6 +13,7 @@ import {
   smoothstep,
   heightAt,
   areaWeights,
+  addInstanceFade,
 } from './utils';
 
 interface WindMaterial {
@@ -58,42 +59,6 @@ interface CanopySet {
 }
 
 /**
- * Per-instance occlusion fade for instanced canopies. Chains onto the
- * wind material's shader patch: an instanced `aFade` attribute drives a
- * screen-door (dithered discard) fade, so the shared material is never
- * mutated per instance, nothing becomes transparent-sorted, and depth
- * writing stays on. Used to thin out trees that block the player at the
- * low exploration camera angle.
- */
-function addInstanceFade(target: WindMaterial | THREE.Material): void {
-  const mat = (target as WindMaterial).material ?? (target as THREE.Material);
-  const prevCompile = mat.onBeforeCompile;
-  mat.onBeforeCompile = (shader, renderer) => {
-    prevCompile(shader, renderer);
-    shader.vertexShader =
-      'attribute float aFade;\nvarying float vFade;\n' +
-      shader.vertexShader.replace(
-        '#include <begin_vertex>',
-        '#include <begin_vertex>\n  vFade = aFade;',
-      );
-    shader.fragmentShader =
-      'varying float vFade;\n' +
-      shader.fragmentShader.replace(
-        '#include <clipping_planes_fragment>',
-        `#include <clipping_planes_fragment>
-         if (vFade < 0.999) {
-           float fadeHash = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
-           if (fadeHash > vFade) discard;
-         }`,
-      );
-  };
-  const prevKey = mat.customProgramCacheKey;
-  mat.customProgramCacheKey = () => `${prevKey.call(mat)}-fade`;
-}
-
-
-
-/**
  * Procedural nature: trees, shrubs, grass, ferns, flowers, rocks,
  * pebbles, fallen logs and drifting pollen. All placement is seeded
  * and purely decorative — resource ownership stays with game logic;
@@ -109,6 +74,9 @@ export class EnvironmentRenderer {
   private pollenBase: Float32Array | null = null;
   private waterfallKit: WaterfallKit | null = null;
   private canopy: CanopySet[] = [];
+  /** Low vegetation fade sets (grass tufts, shrubs, ferns, wildflowers):
+   *  same screen-door fade as the canopies, round 26. */
+  private vegFadeSets: CanopySet[] = [];
   private rng: () => number;
   private barkTex!: THREE.Texture;
   private foliageTex!: THREE.Texture;
@@ -331,10 +299,38 @@ export class EnvironmentRenderer {
    * fully opaque when the line of sight clears. Rendering only — tree
    * placement and any passability rules are untouched.
    */
+  /**
+   * Register an instanced low-vegetation mesh for the occlusion
+   * fade (round 26): items are per-instance centres + radii. The
+   * geometry is cloned when it is shared between meshes, so the
+   * aFade attribute stays per-mesh.
+   */
+  private registerVegFade(
+    mesh: THREE.InstancedMesh,
+    items: Array<{ x: number; y: number; z: number; r: number }>,
+    target: WindMaterial | THREE.Material,
+    cloneGeometry = false,
+  ): void {
+    if (items.length === 0) return;
+    const centers = new Float32Array(items.length * 3);
+    const radii = new Float32Array(items.length);
+    const fades = new Float32Array(items.length).fill(1);
+    items.forEach((it, i) => {
+      centers[i * 3] = it.x; centers[i * 3 + 1] = it.y; centers[i * 3 + 2] = it.z;
+      radii[i] = it.r;
+    });
+    const attr = new THREE.InstancedBufferAttribute(fades, 1);
+    attr.setUsage(THREE.DynamicDrawUsage);
+    if (cloneGeometry) mesh.geometry = mesh.geometry.clone();
+    mesh.geometry.setAttribute('aFade', attr);
+    addInstanceFade(target);
+    this.vegFadeSets.push({ centers, radii, fades, attr });
+  }
+
   updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
     const FADE_MIN = 0.13;
     const k = Math.min(1, dt * 7);
-    for (const set of this.canopy) {
+    for (const set of [...this.canopy, ...this.vegFadeSets]) {
       let dirty = false;
       const n = set.radii.length;
       for (let i = 0; i < n; i++) {
@@ -870,6 +866,9 @@ export class EnvironmentRenderer {
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       mesh.receiveShadow = true;
       this.group.add(mesh);
+      this.registerVegFade(mesh, v.list.map((s) => ({
+        x: s.x, y: this.groundY(s.x, s.z) + 0.22, z: s.z, r: 0.34,
+      })), wind, true);
     }
 
     // Wildflowers as sprite tufts (GPT sheet E: white/yellow/purple).
@@ -901,6 +900,9 @@ export class EnvironmentRenderer {
       });
       mesh.receiveShadow = true;
       this.group.add(mesh);
+      this.registerVegFade(mesh, list.map((s) => ({
+        x: s.x, y: this.groundY(s.x, s.z) + 0.19, z: s.z, r: 0.3,
+      })), mat);
     });
 
     // Decorative herb patches (NOT harvest nodes — those come from
@@ -930,6 +932,9 @@ export class EnvironmentRenderer {
       });
       mesh.receiveShadow = true;
       this.group.add(mesh);
+      this.registerVegFade(mesh, hSpots.map((s) => ({
+        x: s.x, y: this.groundY(s.x, s.z) + 0.21, z: s.z, r: 0.36,
+      })), mat);
     }
   }
 
@@ -959,6 +964,8 @@ export class EnvironmentRenderer {
     const spots = this.scatter(sCount, (x, z) => !isInRiver(x, z, 5.6) && distanceToPath(x, z) > 1.8);
     let bi = 0;
     let ci = 0;
+    const blobItems: Array<{ x: number; y: number; z: number; r: number }> = [];
+    const cardItems: Array<{ x: number; y: number; z: number; r: number }> = [];
     spots.forEach((s) => {
       const sc = 0.6 + this.rng() * 1.1;
       const y = this.groundY(s.x, s.z);
@@ -971,6 +978,7 @@ export class EnvironmentRenderer {
       for (const [dx, dy, dz, ps, shade] of parts) {
         this.setInstance(shrubs, bi, s.x + dx * sc, y + dy * sc, s.z + dz * sc,
           this.rng() * Math.PI, sc * ps, sc * ps * 0.72, sc * ps);
+        blobItems.push({ x: s.x + dx * sc, y: y + dy * sc + 0.2, z: s.z + dz * sc, r: 0.55 * sc * ps + 0.3 });
         shrubs.setColorAt(bi, tmp.copy(cA).lerp(cB, this.rng()).multiplyScalar(shade));
         bi++;
       }
@@ -984,6 +992,7 @@ export class EnvironmentRenderer {
         this.dummy.scale.set(cs, cs, cs);
         this.dummy.updateMatrix();
         cards.setMatrixAt(ci++, this.dummy.matrix);
+        cardItems.push({ x: px, y: y + 0.5 * sc, z: pz, r: 0.5 * sc + 0.3 });
       }
       this.groundDiscs.push({
         x: s.x, z: s.z, r: 0.8 * sc,
@@ -996,6 +1005,10 @@ export class EnvironmentRenderer {
     shrubs.castShadow = true;
     this.group.add(shrubs);
     this.group.add(cards);
+    while (blobItems.length < sCount * 3) blobItems.push({ x: 0, y: -50, z: 0, r: 0 });
+    while (cardItems.length < sCount * 4) cardItems.push({ x: 0, y: -50, z: 0, r: 0 });
+    this.registerVegFade(shrubs, blobItems, shrubMat);
+    this.registerVegFade(cards, cardItems, cards.material as THREE.Material);
 
     // Ferns hug the riverbanks and forest floor — frond cutouts now,
     // not green cones.
@@ -1013,12 +1026,15 @@ export class EnvironmentRenderer {
       const inForest = x + z * 0.2 < -6;
       return (nearRiver || inForest) && !isInRiver(x, z, 4.6);
     });
+    const fernItems: Array<{ x: number; y: number; z: number; r: number }> = [];
     fSpots.forEach((s, i) => {
       const sc = 0.8 + this.rng() * 0.9;
       this.setInstance(ferns, i, s.x, this.groundY(s.x, s.z), s.z,
         this.rng() * Math.PI, sc, sc, sc);
+      fernItems.push({ x: s.x, y: this.groundY(s.x, s.z) + 0.27, z: s.z, r: 0.5 * sc });
     });
     this.group.add(ferns);
+    this.registerVegFade(ferns, fernItems, fernMat);
 
     // Ground decals (soft alpha-masked texture patches, no square
     // borders): leaf litter under the canopy, gravel on the banks,

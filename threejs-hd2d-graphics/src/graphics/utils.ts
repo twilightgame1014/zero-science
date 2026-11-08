@@ -1,3 +1,4 @@
+import type * as THREE from 'three';
 import type { AreaDefinition, AreaId, GraphicsConfig, Vec3Like } from './types';
 
 /* ------------------------------------------------------------------ */
@@ -363,4 +364,39 @@ export function segmentPointDistance(
   t = Math.max(0, Math.min(1, t));
   const dx = px - (ax + abx * t), dy = py - (ay + aby * t), dz = pz - (az + abz * t);
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+/**
+ * Per-instance occlusion fade for instanced meshes (round 26;
+ * moved here from EnvironmentRenderer so ResourceRenderer's pools
+ * share it). An instanced `aFade` attribute drives a screen-door
+ * (dithered discard) fade in the fragment shader, so a shared
+ * material is never mutated per instance, nothing becomes
+ * transparent-sorted, and depth writing stays on. The geometry
+ * must carry an `aFade` InstancedBufferAttribute.
+ */
+export function addInstanceFade(target: THREE.Material | { material: THREE.Material }): void {
+  const mat = (target as { material: THREE.Material }).material ?? (target as THREE.Material);
+  const prevCompile = mat.onBeforeCompile;
+  mat.onBeforeCompile = (shader, renderer) => {
+    prevCompile(shader, renderer);
+    shader.vertexShader =
+      'attribute float aFade;\nvarying float vFade;\n' +
+      shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\n  vFade = aFade;',
+      );
+    shader.fragmentShader =
+      'varying float vFade;\n' +
+      shader.fragmentShader.replace(
+        '#include <clipping_planes_fragment>',
+        `#include <clipping_planes_fragment>
+         if (vFade < 0.999) {
+           float fadeHash = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+           if (fadeHash > vFade) discard;
+         }`,
+      );
+  };
+  const prevKey = mat.customProgramCacheKey;
+  mat.customProgramCacheKey = () => `${prevKey.call(mat)}-fade`;
 }
