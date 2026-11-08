@@ -538,6 +538,14 @@ export class ResourceRenderer {
       const interacting = st.highlighted === true || st.phase === 'reacting';
       const floor = interacting ? 0.85 : FADE_MIN;
       let goal = d < radius ? floor : 1;
+      if (goal === 1 && st.type === 'grass' && !interacting) {
+        const dx = p.x - playerPos.x;
+        const dz = p.z - playerPos.z;
+        const hd2 = dx * dx + dz * dz;
+        const reach = radius + 0.6;
+        const camSide = dx * (cameraPos.x - playerPos.x) + dz * (cameraPos.z - playerPos.z) > 0;
+        if (hd2 < 0.09 || (hd2 < reach * reach && camSide)) goal = FADE_MIN;
+      }
       if (goal === 1 && st.type === 'tree' && !interacting) {
         const dx = p.x - playerPos.x;
         const dz = p.z - playerPos.z;
@@ -582,7 +590,22 @@ export class ResourceRenderer {
         OCCL_POINT.x, OCCL_POINT.y, OCCL_POINT.z,
       );
       const interacting = st.highlighted === true || st.phase === 'reacting';
-      const goal = d < radius ? (interacting ? 0.85 : FADE_MIN) : 1;
+      const floor = interacting ? 0.85 : FADE_MIN;
+      let goal = d < radius ? floor : 1;
+      if (goal === 1) {
+        // Orthographic occlusion is screen overlap, not segment
+        // proximity: low vegetation in FRONT of the player (the
+        // camera side) overlaps the sprite's lower half even
+        // though its top stays below the camera->chest segment.
+        // Fade what stands within reach on the camera side, and
+        // what the player is standing in.
+        const dx = entry.pos.x - playerPos.x;
+        const dz = entry.pos.z - playerPos.z;
+        const hd2 = dx * dx + dz * dz;
+        const reach = radius + 0.6;
+        const camSide = dx * (cameraPos.x - playerPos.x) + dz * (cameraPos.z - playerPos.z) > 0;
+        if (hd2 < 0.09 || (hd2 < reach * reach && camSide)) goal = floor;
+      }
       if (entry.fade === goal) continue;
       let next = entry.fade + (goal - entry.fade) * k;
       if (Math.abs(goal - next) < 0.01) next = goal;
