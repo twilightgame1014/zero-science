@@ -125,6 +125,8 @@ Claude が更新していた claude.ai の非公開ページ（Artifact）は `f
 ## 7. 公開版
 この統合ブランチは公開していない（GitHub Pages は無効。手動の公開ワークフローは未実行）。マージと公開はオーナーの判断。
 
+2026-11-10 追記（オーナーの指示）：claude.ai の非公開ページ（Artifact）を、このブランチ e368d65 のビルドに差し替えた（通常版・検証版の2ページ。GitHub Pages は無効のまま、main は変えていない）。
+
 レビュー用のドラフトPR：https://github.com/twilightgame1014/science-civilization-game/pull/2 （base `main` ← head `feature/game-integration-20261110`。このレポートは PR を作る前にコミットしたため、URL は後から追記した）。
 
 ## 8. オーナーの判断（2026-11-10 受領）
