@@ -1035,7 +1035,8 @@ function screenToGround(cx, cy){
   const rect=$("#w3").getBoundingClientRect();
   /* 広い世界（2026-11-07）：モジュールの pickGround は旧世界の地形の形しか知らないので、旧世界の中で当たったときだけ使う。
      それ以外は、世界の地形関数（描画と同じ）を光線でたどる */
-  if(typeof W3.gfx.pickGround==="function"){ try{ const g=W3.gfx.pickGround(cx-rect.left, cy-rect.top); if(g && Math.abs(g.x)<58 && Math.abs(g.z)<58 && Math.abs(W3.pos.x)<50 && Math.abs(W3.pos.z)<50) return {x:g.x, z:g.z}; }catch(e){} }
+  /* 2026-11-10：モジュールの pickGround は使わない。旧世界の乾いた低地（水位より低い地面）では、見えないようにした全面の水面（深さ0）に当たって、
+     地面から 1〜7 マスずれた点を返していた（低い角度ほど大きい）。ゲームと同じ地形関数を光線でたどる */
   const T=HD2D.THREE, cam=W3.gfx.getCamera();
   const ndc=new T.Vector2((cx-rect.left)/rect.width*2-1, -((cy-rect.top)/rect.height)*2+1);
   const rc=new T.Raycaster(); rc.setFromCamera(ndc, cam);
