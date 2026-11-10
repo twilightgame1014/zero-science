@@ -312,7 +312,8 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await page.waitForFunction(`!${G}.W3.path`, null, { timeout: 15000 }); await since(); await page.waitForTimeout(300);
   ok('歩行（クリック移動）：移動中は歩き、到着すると止まる', midClick && (await track()).every(r => !r.m) && !(await page.evaluate(`${G}.W3.target`)));
   // 角に押し付けて進めない：歩かない（キー・クリック移動の両方）。広い世界（2026-11-07）では北西の角（歩ける範囲の端）
-  const WB = await page.evaluate(`${G}.WORLD.bounds`), CX = WB.minX, CZ = WB.minZ;
+  // 外の野（2026-11-10）：歩ける範囲は円（半径 walkR）。円の南西の端（斜め45°の所）を「角」として使う
+  const WB = await page.evaluate(`({...${G}.WORLD.bounds, r:${G}.WORLD.walkR||0})`), CX = WB.r ? -(WB.r - 0.01) / Math.SQRT2 : WB.minX, CZ = WB.r ? -(WB.r - 0.01) / Math.SQRT2 : WB.minZ;
   await page.evaluate(`${G}.W3.pos={x:${CX},z:${CZ}}`); await page.waitForTimeout(200);
   const kc = await keyToward(-1, -1); await since(); await page.keyboard.down(kc); await page.waitForTimeout(700); await page.keyboard.up(kc);
   const corner = await track();
@@ -790,7 +791,8 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
   // 地図：世界全体が描かれ、今いる所の印がある
   await page.click('[data-tab="world"]'); await page.waitForTimeout(400);
   const map = await page.evaluate(`(()=>{ const c=document.getElementById('wmap'); if(!c) return null; const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data; let blue=0, red=0; for(let i=0;i<d.length;i+=4){ if(d[i+2]>120 && d[i]<90) blue++; if(d[i]>200 && d[i+1]<90 && d[i+2]<100) red++; } return {w:c.width, blue, red}; })()`);
-  ok('地図（世界）に山・海・湖と今いる所が描かれる', map && map.blue > 2000 && map.red > 5, JSON.stringify(map));
+  // 外の野（2026-11-10）で地図の範囲が ±180 から ±256 に広がったので、同じ海でも画素は約 (180/256)²≒0.49 倍になる（しきい値 2000 → 900）
+  ok('地図（世界）に山・海・湖と今いる所が描かれる', map && map.blue > 900 && map.red > 5, JSON.stringify(map));
   // 瞬間移動で拠点へ戻る（動けなくなったとき用）
   await page.click('[data-act="rescue"]'); await page.waitForTimeout(400);
   const back = await page.evaluate(`({p:${G}.W3.pos, s:${G}.S.pos, base:${G}.D.base})`);

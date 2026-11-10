@@ -77,8 +77,10 @@ var NATURE = (function(){
     /* 広い世界（2026-11-07）：歩ける範囲は T.WALK（長方形）。崖（急な斜面）と深い水（海・湖・池・滝つぼ）は地形から止める。
        T に広い世界の関数がない（古い呼び方）ときは、旧世界の範囲と決まりのまま */
     const WIDE = !!(T.WALK && T.waterAt);
-    const WB = WIDE ? T.WALK : {minX:-WORLD_R, maxX:WORLD_R, minZ:-WORLD_R, maxZ:WORLD_R};
-    const inWorld = (x,z,m)=>{ m=m||0; return x >= WB.minX+m && x <= WB.maxX-m && z >= WB.minZ+m && z <= WB.maxZ-m; };
+    /* 外の野（2026-11-10）：T.WALK_R があれば、中心から半径 WALK_R の円の中を歩ける（長方形 T.WALK はその内側。円の外は歩けない） */
+    const WR = WIDE && T.WALK_R ? T.WALK_R : 0;
+    const WB = WR ? {minX:-WR, maxX:WR, minZ:-WR, maxZ:WR} : WIDE ? T.WALK : {minX:-WORLD_R, maxX:WORLD_R, minZ:-WORLD_R, maxZ:WORLD_R};
+    const inWorld = (x,z,m)=>{ m=m||0; if(WR) return x*x + z*z <= (WR-m)*(WR-m); return x >= WB.minX+m && x <= WB.maxX-m && z >= WB.minZ+m && z <= WB.maxZ-m; };
     const rng = mulberry32(SEED);
     const objs = [];
     const deps = [];
@@ -452,13 +454,19 @@ var NATURE = (function(){
       if(Math.min(a.x,b.x)-6>x || Math.max(a.x,b.x)+6<x || Math.min(a.z,b.z)-6>z || Math.max(a.z,b.z)+6<z) continue;
       const dx=b.x-a.x, dz=b.z-a.z, L=dx*dx+dz*dz, t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/L)); best=Math.min(best, Math.hypot(x-(a.x+dx*t), z-(a.z+dz*t))); } return best; }
     const cand3 = new Map();
+    /* 外の野（2026-11-10）を足しても、長方形 T.WALK（±172）の中の自然物の位置と ID を変えない（既存セーブの採取状態を守る）：
+       長方形の中の候補は以前と同じ決まり（長方形の内側 3 マス）で選び、長方形の外（外の野）の候補は円の内側 3 マスで選ぶ。
+       重なりの判定（survives）では、外の野の候補は長方形の中の候補を消さない */
+    const CORE = WIDE ? T.WALK : null;
+    const isCore = (x,z)=> !CORE || (x >= CORE.minX && x <= CORE.maxX && z >= CORE.minZ && z <= CORE.maxZ);
+    const inWorld3 = (x,z)=> (isCore(x,z) && CORE) ? (x >= CORE.minX+3 && x <= CORE.maxX-3 && z >= CORE.minZ+3 && z <= CORE.maxZ-3) : inWorld(x,z,3);
     /* 種類 kind のマス (ci,cj) の候補：{kind,x,z,s,pri,valid,variant} か null（置かない） */
     function candidate(kind, ci, cj){
       const key = kind+":"+ci+","+cj; if(cand3.has(key)) return cand3.get(key);
       const spec = L3[kind], kk = KIDX[kind]*7;
       const x = (ci + hsh(ci,cj,kk+1))*spec.cell, z = (cj + hsh(ci,cj,kk+2))*spec.cell;
       let c = null;
-      if(Math.max(Math.abs(x),Math.abs(z)) >= 53.5 && inWorld(x,z,3)){
+      if(Math.max(Math.abs(x),Math.abs(z)) >= 53.5 && inWorld3(x,z)){
         const roll = hsh(ci,cj,kk+3), s = 0.75 + hsh(ci,cj,kk+4)*0.7;
         const dens = density3(kind, x, z);
         if(roll < dens.p){
@@ -523,7 +531,11 @@ var NATURE = (function(){
     function survives(c){
       for(const k2 of Object.keys(L3)){
         const cell = L3[k2].cell, R = 4.4, i0 = Math.floor((c.x-R)/cell)-1, i1 = Math.floor((c.x+R)/cell)+1, j0 = Math.floor((c.z-R)/cell)-1, j1 = Math.floor((c.z+R)/cell)+1;
-        for(let i=i0;i<=i1;i++) for(let j=j0;j<=j1;j++){ const o = candidate(k2,i,j); if(!o || o===c || o.pri <= c.pri) continue;
+        const cCore = isCore(c.x, c.z);
+        for(let i=i0;i<=i1;i++) for(let j=j0;j<=j1;j++){ const o = candidate(k2,i,j); if(!o || o===c) continue;
+          const oCore = isCore(o.x, o.z);
+          if(cCore && !oCore) continue;                   // 外の野の候補は長方形の中の候補を消さない
+          if(o.pri <= c.pri && !(oCore && !cCore)) continue; // 外の野の候補は、重なる長方形の中の候補に必ず譲る
           if(Math.hypot(o.x-c.x, o.z-c.z) < gapOf(c,o)) return false; }
       }
       if(Math.max(Math.abs(c.x),Math.abs(c.z)) < 62){
@@ -596,6 +608,7 @@ var NATURE = (function(){
         if(!moved) break;
       }
       p.x=Math.max(WB.minX,Math.min(WB.maxX,p.x)); p.z=Math.max(WB.minZ,Math.min(WB.maxZ,p.z));
+      if(WR){ const d=Math.hypot(p.x,p.z); if(d > WR){ p.x*=WR/d; p.z*=WR/d; } }
       return p;
     }
     /* 移動（キー・スティック・クリック移動で共通）。大きな移動は細かく分けて、すり抜けない。
@@ -749,7 +762,7 @@ var NATURE = (function(){
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
             free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids, layer2:L2N,
             setStructures, structures:()=>structs.slice(), sdist, covered, checkPlacement, commitPlacement, removePlacement, toWorld, decos, setNpcs,
-            terrainBlocked, ensure, ensureAll, wide:WIDE, bounds:WB, layer3:()=>gen3, lastPath:()=>lastPath};
+            terrainBlocked, ensure, ensureAll, wide:WIDE, bounds:WB, walkR:WR, inWorld:(x,z,m)=>inWorld(x,z,m), layer3:()=>gen3, lastPath:()=>lastPath};
   }
   return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, SITES, FORMER_STONEWORK};
 })();

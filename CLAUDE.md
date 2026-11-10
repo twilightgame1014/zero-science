@@ -95,7 +95,7 @@
 - 自然物の見た目の違い（`variant`：針葉樹・ヤシ・葦・乾いたやぶ・苔むした岩・倒木。採れる物は元の種類のまま）と飾り（`WORLD.decos`：睡蓮・溶岩）は `nature.js` が生成後に割り当てる。溶岩は通れない円（`kind:"lava"`）で、上とすぐそばに建物を置けない。
 - 集落と人（`data.js` の `village`、`ui.js` の集落セクション）：小屋は hut の GLB、小物は Muse の `assets/gpt-expansion/props.json`（軽量版 `assets/build/props`）。人は `WORLD.setNpcs` の円で当たり判定、絵は `graphics-entry.ts` の `HD2D.npcSet`（`CharacterRenderer` を人数分。シートは `scripts/make-npc-sprites.py` で `assets/build/npc/*.webp`）。会話は案内の枠。売り買いの仕組みがないので取引のボタンは出さない。集落の中は建物を置けない。
 - **広い世界（2026-11-07〜、`docs/world/WIDE-WORLD.md`）**：オーナー決定で **Muse の7エリア（ラウンド18、`DEFAULT_AREAS`）が正**。地形は Muse の `terrainHeight` に、ゲームの山（雪山に足す）・滝・川・道を足したもの（`src/world/shape.ts`）。
-  歩ける範囲は `TERRAIN.WALK`（-172〜172）。探索できる陸地は改修前（±56）の約9.4倍（`tests/world.test.mjs` が毎回計測）。
+  歩ける範囲は `TERRAIN.WALK`（-172〜172）＋外の野（2026-11-10、試験範囲：中心から半径 `TERRAIN.WALK_R`＝250 の円。±180 の外の地形は `render.ts` がモジュールの `buildChunk` で作る。長方形の中の自然物の位置・ID は変えない。`docs/world/WIDE-WORLD.md` §7）。探索できる陸地は改修前（±56）の約9.4倍（`tests/world.test.mjs` が毎回計測）。
   山：頂 (100,-132)・登山道 `TRAILS.main`（凍った池を回る）・見晴らし台。滝（南向き、落ち口 (120.5,-97)）：山の池→上流→落ち口→崖→滝つぼ→下流→湖畔の湖。`TRAILS.falls`・`TRAILS.gorge`。
   崖（`WALK_SLOPE` 0.85 超）・深い水（`WADE_DEPTH` 0.55 超。本流は歩いて渡れる）・火口の溶岩湖は `nature.js` の `terrainBlocked` で止める。凍った池（氷）は歩ける。旧世界（±60）の水位より低い乾いた低地は水にしない（以前どおり）。
   新しい陸地の自然物は第3層（32マスの区画ごとに近づいたら作る。順番に依らず同じ位置・ID）。密度は Muse のエリアの重み（`TERRAIN.areasAt`）。火口のまわり±10 には置かない。

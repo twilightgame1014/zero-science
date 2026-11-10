@@ -5,6 +5,6 @@
 // src/graphics 本体は改変しない。
 export { distanceToRiver, riverCenterX, areaWeights, areaDefinitions, DEFAULT_AREAS } from './graphics/utils';
 export { worldHeight as terrainHeight, waterAt, placeName, biome, streamAt, outerWeight, areasAt, dominantArea, mountainAt,
-  WORLD_VERSION, WALK, WALK_SLOPE, WADE_DEPTH, SEA_LEVEL, OLD_HALF, DRAW_HALF, LAKE, TARN, FALL, LOOKOUT, PEAK, TRAILS, UPSTREAM, DOWNSTREAM,
+  WORLD_VERSION, WALK, WALK_R, WALK_SLOPE, WADE_DEPTH, SEA_LEVEL, OLD_HALF, DRAW_HALF, LAKE, TARN, FALL, LOOKOUT, PEAK, TRAILS, UPSTREAM, DOWNSTREAM,
   FROZEN_POND, LAVA_LAKE, DOWN_SEA_S } from './world/shape';
 export { DEFAULT_CONFIG } from './graphics/config';

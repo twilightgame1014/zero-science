@@ -145,5 +145,38 @@ function polyAt(P, s) { let i = 0; while (i < P.pts.length - 2 && P.cum[i + 1] <
   const ap = W1.approachPoint(S1, tr, { x: tr.x + 4, z: tr.z }); const r = ap && W1.harvest(S1, tr.id, { pos: ap, token: S1.seq });
   ok('新しい陸地の木も、近づいて採取できる（距離の判定は同じ）', r && r.ok && (S1.inv.log || 0) >= 1, JSON.stringify(r)); }
 
+/* ---------- 外の野（2026-11-10、試験範囲：中心から半径 WALK_R） ---------- */
+{ const R = T.WALK_R; ok('外の野の半径がある（長方形 ±172 を含む円）', R > 172 * Math.SQRT2);
+  // 長方形の中の自然物は、外の野を足しても位置・ID が変わらない
+  const envOld = Object.assign({}, env, { WALK_R: 0 }), Wo = N.create(D, E, envOld), Wn = N.create(D, E, env);
+  Wo.ensureAll(); Wn.ensureAll();
+  const inRect = o => Math.abs(o.x) <= 172 && Math.abs(o.z) <= 172;
+  const idsO = Wo.objects.filter(inRect).map(o => o.id).sort().join('|'), idsN = Wn.objects.filter(inRect).map(o => o.id).sort().join('|');
+  ok('長方形（±172）の中の自然物の位置と ID は、外の野を足しても変わらない', idsO === idsN && idsO.length > 0, idsO.length + ' / ' + idsN.length);
+  const fr = Wn.objects.filter(o => o.layer === 3 && !inRect(o));
+  ok('外の野にも自然物がある（区画ごとに作る）', fr.length > 200, String(fr.length));
+  ok('外の野の自然物は円の外にない', fr.every(o => Math.hypot(o.x, o.z) <= R));
+  // 作る順番を変えても同じ（外の野の区画）
+  const A1 = N.create(D, E, env), A2 = N.create(D, E, env);
+  A1.ensure(-215, 40, 40); A1.ensure(30, 225, 40); A2.ensure(30, 225, 40); A2.ensure(-215, 40, 40);
+  const fid = W => W.objects.filter(o => o.layer === 3 && !inRect(o)).map(o => o.id).sort().join('|');
+  ok('外の野の自然物も、区画を作る順番が違っても同じ位置・同じ ID', fid(A1) === fid(A2) && fid(A1).length > 0);
+  // 歩ける／歩けない
+  let land = null; for (let r = 190; r <= 240 && !land; r += 5) for (let a = 0; a < 6.28 && !land; a += 0.2) { const x = r * Math.cos(a), z = r * Math.sin(a); if (Wn.free(E.newState(), x, z)) land = { x, z }; }
+  ok('外の野（±172 の外・円の中）に立てる所がある', !!land, JSON.stringify(land));
+  ok('円の外（半径 WALK_R＋2）には立てない', !Wn.free(E.newState(), (R + 2), 0) && !Wn.free(E.newState(), 0, -(R + 2)) && !Wn.free(E.newState(), -(R + 2) * 0.7071, (R + 2) * 0.7071));
+  // 境目（±172）をまたぐ経路
+  const S0 = E.newState(); let a0 = null, b0 = null;
+  for (let z = -60; z <= 60 && !(a0 && b0); z += 4) { if (!a0 && Wn.free(S0, -165, z)) a0 = { x: -165, z }; if (!b0 && Wn.free(S0, -195, z)) b0 = { x: -195, z }; }
+  const path0 = a0 && b0 ? Wn.findPath(S0, a0, b0) : null;
+  ok('長方形の端（x=-172）をまたいで、外の野へ経路を引ける', !!(path0 && path0.length), JSON.stringify({ a0, b0, n: path0 && path0.length }));
+  // 外の野で採取 → セーブ（JSON）→ 新しい世界で読み込む → 同じ状態
+  const tr = fr.find(o => o.kind === 'grass') || fr.find(o => o.kind === 'twig') || fr[0];
+  const S1 = E.newState(); const ap = Wn.approachPoint(S1, tr, { x: tr.x + 3, z: tr.z }); const r = ap && Wn.harvest(S1, tr.id, { pos: ap, token: S1.seq });
+  const S2 = JSON.parse(JSON.stringify(S1)), W2 = N.create(D, E, env); W2.ensure(tr.x, tr.z, 10);
+  const o2 = W2.byId.get(tr.id);
+  ok('外の野で採取した状態は、セーブして新しく作った世界でも同じ ID の自然物に残る（再訪・再読み込み）', r && r.ok && o2 && JSON.stringify(Wn.visual(S1, tr)) === JSON.stringify(W2.visual(S2, o2)) && W2.visual(S2, o2).state !== Wn.visual(E.newState(), tr).state,
+    JSON.stringify({ r: r && r.ok, id: tr.id, a: Wn.visual(S1, tr), b: o2 && W2.visual(S2, o2) })); }
+
 console.log(`\n${total - fail}/${total} 合格`);
 if (fail) process.exit(1);

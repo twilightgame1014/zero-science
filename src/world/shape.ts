@@ -15,6 +15,14 @@ export const WORLD_VERSION = 3;   // 3＝Muse の7エリア（ラウンド18）�
 export const OLD_HALF = 60;
 /** 歩ける範囲（長方形）。海の深い所・崖・深い水は別に止める */
 export const WALK = { minX: -172, maxX: 172, minZ: -172, maxZ: 172 };
+/**
+ * 外の野（2026-11-10、試験範囲）：中心から半径 WALK_R までは、上の長方形の外も歩ける。
+ * 地形・水・自然物はもとから座標だけで決まる（地形は worldHeight、自然物は第3層の区画とハッシュ）ので、範囲を広げても
+ * 長方形の中の地形・自然物の位置と ID は変わらない。半径は描画の都合で決めた試験範囲：
+ * 描画モジュールの全面の水面は ±380、遠景の山並みは中心から 262 より外にある（INTEGRATION §26/§30）ので、その内側に収める。
+ * 地形のメッシュは ±180 の外を src/world/render.ts が区画ごとに作る（モジュールの区画は ±180 まで）。
+ */
+export const WALK_R = 250;
 /** 地形を描く範囲（歩ける範囲の外に、遠景だけの山並みと沖の海） */
 export const DRAW_HALF = 240;
 /** 歩ける斜面の上限（1マスあたりの高さの差）。これより急な所は崖として止める */
@@ -401,6 +409,7 @@ export function placeName(x: number, z: number, h: number): string | null {
   if (m > 2) return h > 22 ? '山の高所' : h > 13 ? '山の中腹' : '山麓';
   const a = dominantArea(x, z);
   if (a === 'coast' && h < 2.5) return '海岸の浜';
+  if (Math.max(Math.abs(x), Math.abs(z)) > 180) return '外の野（試験範囲）';
   return AREA_NAMES[a] || '外の野';
 }
 /** 地形・水の性格（自然物の配置に使う）：0〜1。エリアの重みは Muse の areaWeights */

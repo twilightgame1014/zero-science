@@ -21,6 +21,8 @@ export interface WorldView {
   prebuild(r?: number): void;
   /** ワープ（瞬間移動）のあと：足もとの地形の区画を今すぐ用意する */
   afterWarp(x: number, z: number): void;
+  /** 外の野の地形区画（±180 の外）の状態（検証用） */
+  outer(): { chunks: number; pending: number; built: number; maxBuildMs: number; keys: string[] };
   dispose(): void;
   readonly group: THREE.Group;
 }
@@ -438,6 +440,41 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
   let time = 0, focus = { x: 0, z: 0 };
   const terr = () => { try { return gfx.world && gfx.world.terrain; } catch (e) { return null; } };
   /* 瞬間移動の準備：モジュールの公開 API prepareTerrainAt（ラウンド22）があればそれ、なければ区画作りを直接まとめて呼ぶ */
+  /* ---------- 外の野の地形（2026-11-10、試験範囲）：モジュールの区画（±180、60マス）の外を、同じ大きさ・同じ作り方で作る ----------
+     モジュールの TerrainRenderer.buildChunk（非公開）は区画の座標を問わず、同じ材質・同じ高さ（heightAt＝worldHeight）・同じ法線で
+     メッシュを作るので、±180 の境目に段差も色の違いも出ない。近い区画から1コマに2つまで作り（読み込みを分散）、遠い区画は捨てる。
+     歩ける円（WS.WALK_R）に掛かる区画だけを作る。モジュールに区画の範囲を広げる公開の口ができたら置き換える（CLAUDE-TO-MUSE §24）。 */
+  type Tt = { buildChunk?: (gx: number, gz: number, seg: number) => THREE.Mesh; radii?: () => { near: number; far: number; nearSeg: number; farSeg: number } };
+  const OC = 60, MOD_MIN = -3, MOD_MAX = 2;
+  const outerGroup = new THREE.Group(); outerGroup.name = 'OuterTerrain'; scene.add(outerGroup);
+  const outer = new Map<string, { mesh: THREE.Mesh; tier: 'near' | 'far' }>();
+  let outerFocus = { x: Infinity, z: Infinity }, outerPending = 0, outerBuildMs = 0, outerBuilt = 0;
+  const outerUpdate = (fx: number, fz: number, force = false, maxBuild = 2) => {
+    const t = terr() as unknown as Tt | null; if (!t || typeof t.buildChunk !== 'function' || typeof t.radii !== 'function') return;
+    if (!force && outerPending === 0 && Math.hypot(fx - outerFocus.x, fz - outerFocus.z) < 12) return;
+    outerFocus = { x: fx, z: fz };
+    const { near, far, nearSeg, farSeg } = t.radii(), R = WS.WALK_R || 0;
+    if (!R) return;
+    const lo = Math.floor(-R / OC) - 1, hi = Math.floor(R / OC) + 1, want = new Map<string, { gx: number; gz: number; tier: 'near' | 'far'; d: number }>();
+    for (let gx = lo; gx <= hi; gx++) for (let gz = lo; gz <= hi; gz++) {
+      if (gx >= MOD_MIN && gx <= MOD_MAX && gz >= MOD_MIN && gz <= MOD_MAX) continue;       // モジュールの区画
+      const x0 = gx * OC, z0 = gz * OC, nx = Math.max(x0, Math.min(0, x0 + OC)), nz = Math.max(z0, Math.min(0, z0 + OC));
+      if (Math.hypot(nx, nz) > R + 8) continue;                                                 // 歩ける円に掛からない
+      const cx = x0 + OC / 2, cz = z0 + OC / 2, d = Math.hypot(cx - fx, cz - fz);
+      if (d > far + OC * 0.7) continue;
+      want.set(gx + ',' + gz, { gx, gz, tier: d < near ? 'near' : 'far', d });
+    }
+    for (const [k, e] of [...outer]) if (!want.has(k)) { outerGroup.remove(e.mesh); e.mesh.geometry.dispose(); outer.delete(k); }
+    const pend = [...want.entries()].filter(([k, w]) => outer.get(k)?.tier !== w.tier).sort((a, b) => a[1].d - b[1].d);
+    const todo = pend.slice(0, maxBuild); outerPending = pend.length - todo.length;
+    for (const [k, w] of todo) {
+      const t0 = performance.now(), old = outer.get(k);
+      if (old) { outerGroup.remove(old.mesh); old.mesh.geometry.dispose(); }
+      const mesh = t.buildChunk(w.gx, w.gz, w.tier === 'near' ? nearSeg : farSeg); mesh.name = 'OuterChunk ' + k;
+      outer.set(k, { mesh, tier: w.tier }); outerGroup.add(mesh);
+      outerBuildMs = Math.max(outerBuildMs, performance.now() - t0); outerBuilt++;
+    }
+  };
   const forceChunks = (x: number, z: number, n = 4) => { const g = gfx as unknown as { prepareTerrainAt?: (x: number, z: number, r?: number) => void };
     if (typeof g.prepareTerrainAt === 'function') { g.prepareTerrainAt(x, z, 90); return; }
     const t = terr(); if (t && typeof t.updateChunks === 'function') for (let i = 0; i < n; i++) { t.lastFocus = { x: Infinity, z: Infinity }; t.updateChunks(x, z, true); } };
@@ -448,6 +485,7 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
       waterUniformsCommon.uTime.value = time;
       if (fallMat) fallMat.uniforms.uTime.value = time;
       if (sprayPts && Math.hypot(f.x - IMPACT.x, f.z - IMPACT.z) < 90) tickSpray(Math.min(dt, 0.05));
+      outerUpdate(f.x, f.z);
       void camera;
     },
     status() {
@@ -455,10 +493,12 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
       return { moduleChunks: chunks, hidden: hidden.map((o) => o.name), openWaterMasked: maskedOpen, river: riverParts.length, quality };
     },
     /** 確認用：足もとのまわりの地形の区画を作り終える（撮影・計測用） */
-    prebuild() { forceChunks(focus.x, focus.z, 6); },
-    afterWarp(x: number, z: number) { forceChunks(x, z); },
+    prebuild() { forceChunks(focus.x, focus.z, 6); outerUpdate(focus.x, focus.z, true, 12); },
+    afterWarp(x: number, z: number) { forceChunks(x, z); outerUpdate(x, z, true, 12); },
+    outer() { return { chunks: outer.size, pending: outerPending, built: outerBuilt, maxBuildMs: +outerBuildMs.toFixed(1), keys: [...outer.keys()] }; },
     setQuality(q: Quality) { quality = q; },
     dispose() {
+      outer.forEach((e) => e.mesh.geometry.dispose()); outer.clear(); scene.remove(outerGroup);
       group.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh && m.geometry) m.geometry.dispose(); });
       scene.remove(group); hidden.forEach((o) => { o.visible = true; });
     },

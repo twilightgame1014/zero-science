@@ -627,7 +627,8 @@ function in3D(){ return S.flags.view!=="2d" && W3.state!=="failed"; }
 let WMAP = null;
 function worldMapImage(){
   if(WMAP) return WMAP; if(!window.TERRAIN || !TERRAIN.waterAt) return null;
-  const N=240, R=180, c=document.createElement("canvas"); c.width=N; c.height=N; const g=c.getContext("2d"), img=g.createImageData(N,N), cfg=TERRAIN.DEFAULT_CONFIG;
+  /* 外の野（試験範囲・半径 WALK_R）まで描く */
+  const N=240, R=TERRAIN.WALK_R ? TERRAIN.WALK_R+6 : 180, c=document.createElement("canvas"); c.width=N; c.height=N; const g=c.getContext("2d"), img=g.createImageData(N,N), cfg=TERRAIN.DEFAULT_CONFIG;
   const H=(x,z)=>TERRAIN.terrainHeight(x,z,cfg);
   for(let j=0;j<N;j++) for(let i=0;i<N;i++){
     const x=-R+(i+0.5)*2*R/N, z=-R+(j+0.5)*2*R/N, h=H(x,z), w=TERRAIN.waterAt(x,z,h), k=(j*N+i)*4;
@@ -643,7 +644,8 @@ function worldMapImage(){
     else if(h > 30) col=[232,236,240];
     else if(h > 16) col=[150,150,128];
     else col=[110+Math.min(40,h*3),160-Math.min(30,h*1.5),90];
-    if(x < TERRAIN.WALK.minX || x > TERRAIN.WALK.maxX || z < TERRAIN.WALK.minZ || z > TERRAIN.WALK.maxZ) col=col.map(v=>v*0.62+70);
+    const outside = TERRAIN.WALK_R ? Math.hypot(x,z) > TERRAIN.WALK_R : (x < TERRAIN.WALK.minX || x > TERRAIN.WALK.maxX || z < TERRAIN.WALK.minZ || z > TERRAIN.WALK.maxZ);
+    if(outside) col=col.map(v=>v*0.62+70);
     img.data[k]=col[0]*shade; img.data[k+1]=col[1]*shade; img.data[k+2]=col[2]*shade; img.data[k+3]=255;
   }
   g.putImageData(img,0,0);
