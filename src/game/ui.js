@@ -1084,12 +1084,15 @@ function loop3D(ts){
   const B = camBasis(); let mx=0, mz=0;
   if(ix||iy){ W3.path=null; W3.target=null; W3.intent=null; const l=Math.hypot(ix,iy); if(l>1){ix/=l; iy/=l;}
     mx = B.r.x*ix - B.f.x*iy; mz = B.r.z*ix - B.f.z*iy; }
-  else if(W3.path && W3.path.length && !W3.work){ const wp=W3.path[0], dx=wp.x-W3.pos.x, dz=wp.z-W3.pos.z, d=Math.hypot(dx,dz);
+  /* クリック移動：1コマで進む距離は、次の通過点までの距離を超えない（遅い端末で1コマの歩幅が 0.2 マスより大きいと、
+     通過点のまわりを行ったり来たりして着かなかった。2026-11-10 SwiftShader で再現） */
+  let stepCap = Infinity;
+  if(!(ix||iy) && W3.path && W3.path.length && !W3.work){ const wp=W3.path[0], dx=wp.x-W3.pos.x, dz=wp.z-W3.pos.z, d=Math.hypot(dx,dz);
     if(d<0.2){ W3.path.shift(); if(!W3.path.length) arrive(); }
-    else { mx=dx/d; mz=dz/d; } }
+    else { mx=dx/d; mz=dz/d; stepCap=d; } }
   const len=Math.hypot(mx,mz); let got=0;
   if(len>0.01 && dt>0){
-    const sp = 7*(owned("steamengine")?1.6:1)*Math.min(1,len), step = sp*dt;
+    const sp = 7*(owned("steamengine")?1.6:1)*Math.min(1,len), step = Math.min(sp*dt, stepCap);
     const before = {x:W3.pos.x, z:W3.pos.z};
     const res = WORLD.move(S, W3.pos, mx/len*step, mz/len*step);
     if(res.locked){ W3.path=null; W3.target=null; W3.intent=null;
@@ -1856,10 +1859,13 @@ function camFrame(dt){
   const want = {y:c.cy, p:c.cp, z:c.cz};
   const opOn = (W3.ptrs && W3.ptrs.size>0) || Math.abs(c.yaw-c.cy)>0.01 || Math.abs(c.pitch-c.cp)>0.01 || Math.abs(c.zoom-c.cz)>0.001 || (performance.now()-(W3.camWheelAt||0) < 350);
   const lp=c.lastPos, posMoved = !lp || Math.hypot(W3.pos.x-lp.x, W3.pos.z-lp.z) > 0.25;
-  const changed = Math.abs(want.y-c.a.y)+Math.abs(want.p-c.a.p)+Math.abs(want.z-c.a.z)*4 > 0.001;
+  /* 制限で止まったまま操作が終わった：止まった値を新しい希望の値にする（このあと「希望と実際の差」は残らない） */
+  if(!opOn && c.opLim){ c.yaw = c.cy = want.y = c.a.y; c.pitch = c.cp = want.p = c.a.p; c.zoom = c.cz = want.z = c.a.z; camStore(true); c.opLim = null; }
+  /* 希望と実際に差があれば（操作中、または平滑化の最後のひと押し・プログラムからの変更）、必ず置けるかを確かめて進める */
+  const changed = Math.abs(want.y-c.a.y)+Math.abs(want.p-c.a.p)+Math.abs(want.z-c.a.z)*4 > 1e-6;
   c.next -= dt;
   const unfreeze = ()=>{ c.freeze=null; };
-  if(opOn && changed){
+  if(changed){
     c.next = CAM.checkEvery; c.lastPos = {x:W3.pos.x, z:W3.pos.z};
     let a = {y:c.a.y, p:c.a.p, z:c.a.z}, lim = "", sol = null;
     const tryA = v => camSolve(v.y, v.p, v.z, W3.pos.x, W3.pos.z, CAM.nearMarginOp);   // 操作で決めるときは余裕を大きく（歩いて小さな起伏に乗っても制限にかからないように）
@@ -1877,9 +1883,7 @@ function camFrame(dt){
     if(sol) camPickDist(sol);
     c.lim = lim || camDistLim(sol);
   } else {
-    if(!opOn && c.opLim!=null){       // 操作が終わった：止まった値を新しい希望の値にする
-      if(c.opLim){ c.yaw = c.cy = c.a.y; c.pitch = c.cp = c.a.p; c.zoom = c.cz = c.a.z; camStore(true); }
-      c.opLim = null; }
+    c.opLim = null;
     if(c.next <= 0 || posMoved || !c.sol){
       c.next = CAM.checkEvery; c.lastPos = {x:W3.pos.x, z:W3.pos.z};
       let sol = camSolve(c.a.y, c.a.p, c.a.z, W3.pos.x, W3.pos.z), lim = "";
