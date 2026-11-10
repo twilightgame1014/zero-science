@@ -949,6 +949,7 @@ async function start3D(){
     camInit();      // 保存した視点を先に（古いセーブの画面基準の向きを、その視点でワールドの向きへ換算するため）
     W3.pos = spawnPos();
     if(W3.spawnMoved) camRebase();     // 安全な場所へ移したときは、その場の足もとを基準の高さに
+    if(W3.cam) W3.cam.snap = true;     // 起動：カメラは主人公の所から始める
     syncAll3D();
     W3.state = "ready";
     npcInit();
@@ -980,6 +981,7 @@ function applySavedPos(){
   if(W3.gfx) W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false}));
   if(W3.world && W3.world.afterWarp) W3.world.afterWarp(W3.pos.x, W3.pos.z);
   if(W3.cam && (!finite(W3.cam.base) || W3.spawnMoved)) camRebase();     // 読み込み：保存した基準の高さを使う。無い・安全な場所へ移したときだけその場の足もとへ
+  if(W3.cam) W3.cam.snap = true;      // どちらでも、カメラは読み込んだ位置へすぐ合わせる
   if(W3.gfx) syncAll3D();
 }
 /* 描画の一時停止：Muse の公開API pauseGraphics / resumeGraphics があれば使い、なければ従来の内部メソッド */
@@ -1767,7 +1769,7 @@ function camSend(yaw, pitch, zoom, dist){
 /* 高さを固定する仕組みが使えるか（本物のモジュール：カメラの位置・視錐台・setViewportInsets・距離がある） */
 function camHeightOk(){ try{ const cam=W3.gfx.getCamera(); return !!(cam && cam.position && finite(cam.top) && typeof W3.gfx.setCameraTarget==="function" && typeof W3.gfx.getCameraView==="function" && finite((W3.gfx.getCameraView()||{}).distance)); }catch(e){ return false; } }
 /* 基準の高さを今の主人公の足もとにする（読み込み・瞬間移動・地域移動・視点を戻す） */
-function camRebase(){ const c=W3.cam; if(!c || !W3.pos) return; c.base = groundY(W3.pos.x, W3.pos.z); c.next = 0; c.freeze = null; camStore(true); }
+function camRebase(){ const c=W3.cam; if(!c || !W3.pos) return; c.base = groundY(W3.pos.x, W3.pos.z); c.next = 0; c.freeze = null; c.snap = true; camStore(true); }
 function camInit(){
   if(!camSupported()){ camUI(); return; }
   /* モジュールの見下ろし角の下限を確かめる（getCameraView があれば。第24ラウンドは 0°、それより前は 12°） */
@@ -1901,6 +1903,8 @@ function camFrame(dt){
   const a=c.a, fx = c.freeze ? c.freeze.x : W3.pos.x, fz = c.freeze ? c.freeze.z : W3.pos.z, lk = camLook(a.y, a.p, a.z, fx, fz);
   try{ W3.gfx.setCameraTarget({x:fx, z:fz, y:lk.yF}); }catch(e){}
   camSend(a.y, a.p, a.z, c.d);
+  /* 読み込み・瞬間移動・地域移動のあとは、カメラを新しい場所へすぐ合わせる（遠くから流れてこない）。モジュールの snapToTarget（非公開）があるときだけ */
+  if(c.snap){ c.snap = false; try{ const r=W3.gfx.cameraRig; if(r && typeof r.setTarget==="function" && typeof r.snapToTarget==="function"){ r.setTarget(fx, fz, lk.yF); r.snapToTarget(); } }catch(e){} }
   W3.camDbg = {camY: cam.position.y, focusY: lk.L.y, targetY: lk.yF, base: c.base, pitch: a.p, want: c.cp, dist: c.d, lim: c.lim || "なし", freeze: !!c.freeze,
     groundAtCam: groundY(cam.position.x, cam.position.z), groundAtHero: groundY(W3.pos.x, W3.pos.z)};
 }
