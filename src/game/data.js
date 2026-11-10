@@ -803,10 +803,10 @@ var DATA = (function(){
 
   /* ---------- チュートリアル／目標 ---------- */
   const missions = [
-    {t:"森林で「木の枝」を拾おう",how:"「探検」→ 地図の「森林」→ 光っている木の枝をタップ。",tab:"explore",done:s=>s.disc.twig},
-    {t:"河原で「火打ち石」と「丸い石」を拾おう",how:"「探検」の地図から「河原」へ移動しよう。",tab:"explore",done:s=>s.disc.flint&&s.disc.cobble},
+    {t:"「落ち枝」を拾って「木の枝」を集めよう",how:"拠点のまわりに落ちている枝を選んで近づき、採取ボタン（PCは E キー）で拾う。森の木の根もとにもたくさんある。",tab:"explore",done:s=>s.disc.twig},
+    {t:"「小石」と「火打ち石」を拾おう",how:"小石は拠点のまわりにある（拾うと「丸い石」になる）。火打ち石は川岸に落ちている。右上の「地図」から「河原」へ行こう。",tab:"explore",done:s=>s.disc.flint&&s.disc.cobble},
     {t:"「石のナイフ」を作ろう",how:"「工作」で石のナイフの「作る」をタップ。",tab:"craft",done:s=>s.disc.knife},
-    {t:"つるで糸を作り、「作業台」を組み立てよう",how:"森林でつるを集めて「植物の糸」を作り、「作業台」へ。",tab:"craft",done:s=>s.disc.bench},
+    {t:"つるで糸を作り、「作業台」を組み立てよう",how:"「やぶ」からつるを集めて「植物の糸」を作り、「作業台」へ。",tab:"craft",done:s=>s.disc.bench},
     {t:"「火おこし棒」で「たき火」を作ろう",how:"草原の草と、森林の落ち葉もいる。",tab:"craft",done:s=>s.disc.campfire},
     {t:"初めての実験！ 木の枝を「燃焼」させよう",how:"「研究室」で木の枝を2本入れ、装置「たき火」→ 操作「燃焼」→ 実験スタート。",tab:"lab",done:s=>s.disc.ash},
     {t:"粘土から「土器」を焼こう",how:"作業台で粘土を「成形」→ たき火で「乾燥」→ たき火で「焼成」。",tab:"lab",done:s=>s.disc.pot},
@@ -827,6 +827,47 @@ var DATA = (function(){
     {t:"図鑑のコンプリートを目指そう！",how:"「図鑑」の？？？にはヒントがある。珍しい発見も探検で探そう。",tab:"book",done:()=>false},
   ];
 
-  return {items, ops, procs, crafts, regions, base, stages, eras, missions, TAGS};
+  /* 小さな集落（2026-11-07）。原始時代に合わせ、草ぶきの小屋2つと生活の小物だけ（近代の街並みは置かない）。
+     座標は集落の中心 c からの相対（x,z）。rot は three.js の rotation.y（建物の正面は +Z）。小物の見た目と占有は Muse の props.json。
+     NPC の会話はセリフだけ（売り買いの仕組みはまだないので、取引のボタンや言葉は出さない）。 */
+  const village = {
+    c:{x:2, z:31}, r:9.5, name:"小さな集落",
+    huts:[{id:"vh:1", type:"hut", x:-4.2, z:-3.6, rot:0.86}, {id:"vh:2", type:"hut", x:4.6, z:-3.4, rot:-0.93}],
+    props:[
+      {id:"vp:well", type:"well", x:0.2, z:0.6, rot:0},
+      {id:"vp:bucket", type:"bucket", x:1.5, z:1.2, rot:0.4},
+      {id:"vp:pot1", type:"pot-large", x:-1.6, z:-1.9, rot:0},
+      {id:"vp:pot2", type:"pot-small", x:-2.4, z:-1.2, rot:0.7},
+      {id:"vp:rack", type:"drying-rack", x:4.2, z:3.2, rot:-0.5},
+      {id:"vp:fish", type:"dried-fish", x:-4.4, z:3.6, rot:0.35},
+      {id:"vp:wood", type:"firewood", x:-6.4, z:-0.8, rot:1.2},
+      {id:"vp:rope", type:"rope-basket", x:-1.5, z:3.0, rot:0.2},
+      {id:"vp:tools", type:"tool-stand", x:6.6, z:0.6, rot:-1.4},
+      {id:"vp:sign", type:"signboard", x:-6.6, z:4.2, rot:-0.9},
+      {id:"vp:fence1", type:"fence", x:6.8, z:4.4, rot:-0.7},
+      {id:"vp:fence2", type:"fence", x:7.6, z:-1.6, rot:1.45},
+    ],
+    npcs:[
+      {id:"guide", name:"ミナ", role:"案内役", sheet:"guide", home:{x:-4.8, z:2.2}, wander:[{x:-4.8,z:2.2},{x:-3.0,z:4.6},{x:-6.0,z:5.8}],
+        talk:[
+          "ようこそ、小さな集落へ。わたしはミナ。旅の人を案内しているの。",
+          "この島には道具も工場もないけれど、石と水と木があれば、少しずつ何でも作れるようになる。",
+          "まずは落ち枝や小石を拾って、「工作」で石のナイフを作ってみて。むずかしくなったら、右上の目標を見てね。"
+        ], hint:true},
+      {id:"resident", name:"ソラ", role:"住民", sheet:"resident", home:{x:1.8, z:2.6}, wander:[{x:1.8,z:2.6},{x:-0.6,z:-1.0},{x:2.4,z:-0.8},{x:0.4,z:3.6}],
+        talk:[
+          "こんにちは。井戸の水は、毎日のくらしに欠かせないんだ。",
+          "川へ行くと、火打ち石が見つかるよ。カチカチとたたくと火花が出る石さ。",
+          "森の奥の木は大きくて、石のおのがないと切れない。道具は大事にね。"
+        ]},
+      {id:"craftsman", name:"ゲン", role:"職人", sheet:"craftsman", home:{x:5.4, z:1.8}, wander:[{x:5.4,z:1.8},{x:4.6,z:0.4},{x:5.8,z:3.0}],
+        talk:[
+          "おれは道具作りの職人ゲン。石を割って刃を作るのが得意だ。",
+          "火打ち石は割ると鋭い刃になる。丸い石でたたいて、少しずつ形を整えるんだ。",
+          "作業台があれば、もっと手の込んだ道具が作れる。つるで糸をよって、木と石を結びつけてみな。"
+        ]},
+    ],
+  };
+  return {items, ops, procs, crafts, regions, base, stages, eras, missions, TAGS, village};
 })();
 if (typeof module!=="undefined") module.exports = DATA;

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { GraphicsConfig, QualityTier } from './types';
+import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
 import { AssetManager } from './AssetManager';
 import { TerrainRenderer } from './TerrainRenderer';
 import { EnvironmentRenderer } from './EnvironmentRenderer';
@@ -17,13 +17,37 @@ export class WorldRenderer {
     cfg: GraphicsConfig,
     quality: QualityTier,
     assets: AssetManager,
-    textures: { terrainDetail: THREE.Texture; particle: THREE.Texture },
+    textures: {
+      terrainDetail: THREE.Texture;
+      particle: THREE.Texture;
+      gpt?: Record<string, THREE.Texture>;
+      branch?: Record<string, THREE.Texture>;
+      ground?: Record<string, THREE.Texture>;
+      lava?: { albedo?: THREE.Texture; emissive?: THREE.Texture };
+      env?: Record<string, THREE.Texture>;
+      detailBrightness?: number;
+      decor?: DecorOptions;
+    },
   ) {
-    void assets;
-    this.terrain = new TerrainRenderer(cfg, textures.terrainDetail);
-    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle);
+    this.terrain = new TerrainRenderer(
+      cfg,
+      textures.terrainDetail,
+      textures.detailBrightness ?? 1,
+      quality,
+      assets.createRiverbedTexture(),
+      textures.ground,
+      textures.lava,
+      textures.decor?.river !== false,
+      textures.decor?.openWater !== false,
+    );
+    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, textures.decor ?? {}, textures.branch ?? {}, textures.env ?? {});
     this.group.add(this.terrain.group);
     this.group.add(this.environment.group);
+  }
+
+  /** Build the terrain around a point immediately (teleports). */
+  prepareTerrainAt(x: number, z: number, radiusM = 90): void {
+    this.terrain.prepareAround(x, z, radiusM);
   }
 
   /** Ground height in scene coordinates (used for grounding sprites
@@ -36,8 +60,29 @@ export class WorldRenderer {
     this.environment.setPollenVisible(visible);
   }
 
-  update(time: number): void {
+  update(time: number, focus?: { x: number; z: number }): void {
     this.terrain.update(time);
+    if (focus) this.terrain.updateChunks(focus.x, focus.z);
     this.environment.update(time);
+  }
+
+  /** Runtime quality switch: chunk radii / detail follow the tier. */
+  setQuality(quality: QualityTier): void {
+    this.terrain.setQuality(quality);
+  }
+
+  /** Fade foreground canopies that block the camera->player sight line. */
+  updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+    this.environment.updateOcclusion(cameraPos, playerPos, dt);
+  }
+
+  /** Hide scenery ground cover around game-owned natural objects. */
+  thinGroundCover(points: Array<{ x: number; z: number; r: number }>): void {
+    this.environment.thinGroundCover(points);
+  }
+
+  /** Raycast helper behind GraphicsEngine.pickGround(). */
+  pick(raycaster: THREE.Raycaster): { point: THREE.Vector3; surface: 'terrain' | 'water' } | null {
+    return this.terrain.pick(raycaster);
   }
 }

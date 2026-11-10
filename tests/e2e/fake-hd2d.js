@@ -6,25 +6,36 @@
   class Vector3{constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;} set(x,y,z){this.x=x;this.y=y;this.z=z;return this;} project(cam){ const p=cam.__project(this); this.x=p.x;this.y=p.y;this.z=p.z; return this; }}
   class Vector2{constructor(x=0,y=0){this.x=x;this.y=y;}}
   class Raycaster{constructor(){this.ray={origin:new Vector3(),direction:new Vector3()};} setFromCamera(ndc,cam){ cam.__ray(ndc,this.ray); }}
-  const yaw=45*Math.PI/180, pitch=50*Math.PI/180;
-  const R={x:Math.cos(yaw),y:0,z:-Math.sin(yaw)}, F={x:-Math.cos(pitch)*Math.sin(yaw),y:-Math.sin(pitch),z:-Math.cos(pitch)*Math.cos(yaw)};
-  const UP={x:R.y*F.z-R.z*F.y, y:R.z*F.x-R.x*F.z, z:R.x*F.y-R.y*F.x};
+  /* カメラの向き（提案中の setCameraView で変えられる。描画モジュール本体に API が入るまでの試験用） */
+  let R, F, UP, VIEW={yawDegrees:45, pitchDegrees:50, viewSize:26};
+  function setAxes(yd,pd){ const yaw=yd*Math.PI/180, pitch=pd*Math.PI/180;
+    R={x:Math.cos(yaw),y:0,z:-Math.sin(yaw)}; F={x:-Math.cos(pitch)*Math.sin(yaw),y:-Math.sin(pitch),z:-Math.cos(pitch)*Math.cos(yaw)};
+    UP={x:R.y*F.z-R.z*F.y, y:R.z*F.x-R.x*F.z, z:R.x*F.y-R.y*F.x}; }
+  setAxes(45,50);
   const dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
-  window.__FAKE={calls:[], resources:{}, structures:{}, effects:[], player:null, sprite:null, loop:true};
-  window.HD2D={ THREE:{Vector3,Vector2,Raycaster}, terrainHeight:U.terrainHeight, DEFAULT_CONFIG:cfgDefault, resolveConfig:()=>JSON.parse(JSON.stringify(cfgDefault)),
-    initializeGraphics: async (el,opts)=>{ const FK=window.__FAKE; FK.opts=opts; FK.sprite=opts.playerSpriteUrl;
+  window.__FAKE={calls:[], resources:{}, structures:{}, effects:[], player:null, sprite:null, loop:true, inits:0, starts:0, stops:0};
+  window.HD2D={ THREE:{Vector3,Vector2,Raycaster}, RESOURCE_VISUAL_SPECS:{tree:{},rock:{},grass:{},mushroom:{}}, GPT_TEXTURES:{}, BRANCH_TEXTURES:{}, terrainHeight:U.terrainHeight, DEFAULT_CONFIG:cfgDefault, resolveConfig:(o)=>{ const c=JSON.parse(JSON.stringify(cfgDefault)); if(o) for(const k of Object.keys(o)) Object.assign(c[k],o[k]); return c; },
+    initializeGraphics: async (el,opts)=>{ const FK=window.__FAKE; FK.inits++; FK.opts=opts; FK.sprite=opts.playerSpriteUrl;
       const c=document.createElement("canvas"); c.style.cssText="width:100%;height:100%;background:linear-gradient(#9cc,#6a6)"; el.appendChild(c);
       const cam={ target:{x:-20,y:0.6,z:20}, getWorldDirection(v){ v.set(F.x,F.y,F.z); return v; },
-        __half(){ const r=el.getBoundingClientRect(); const hh=13; return {hw:hh*(r.width/r.height||1), hh}; },
+        __half(){ const r=el.getBoundingClientRect(); const hh=VIEW.viewSize/2; return {hw:hh*(r.width/r.height||1), hh}; },
         __project(v){ const t=this.target, d={x:v.x-t.x,y:v.y-t.y,z:v.z-t.z}, h=this.__half(); return {x:dot(d,R)/h.hw, y:dot(d,UP)/h.hh, z:0.5}; },
         __ray(ndc,ray){ const t=this.target,h=this.__half(); const ox=t.x+R.x*ndc.x*h.hw+UP.x*ndc.y*h.hh-F.x*60, oy=t.y+R.y*ndc.x*h.hw+UP.y*ndc.y*h.hh-F.y*60, oz=t.z+R.z*ndc.x*h.hw+UP.z*ndc.y*h.hh-F.z*60; ray.origin.set(ox,oy,oz); ray.direction.set(F.x,F.y,F.z); } };
       return {
         getCamera:()=>cam,
-        setPlayerVisualState(s){ FK.player=JSON.parse(JSON.stringify(s)); cam.target={x:s.position.x,y:U.terrainHeight(s.position.x,s.position.z,cfgDefault),z:s.position.z}; },
+        /* Muse 第17ラウンド前段（3b54b61）のカメラ周回 API と同じ形 */
+        ...(window.__FAKE_NO_CAMVIEW ? {} : {
+          setCameraOrbit(v){ Object.assign(VIEW, v||{}); setAxes(VIEW.yawDegrees, VIEW.pitchDegrees); (FK.camCalls=FK.camCalls||[]).push(JSON.parse(JSON.stringify({v}))); },
+          getCameraYawDegrees(){ return VIEW.yawDegrees; } }),
+        /* 本物の描画モジュールが独自に置く石の階段・石積みの壁（"Stonework"）の代わり。decor.stonework:false なら置かない（Muse §19 と同じ） */
+        getScene:()=>{ if(!FK.scene){ const kids=[]; const sw={name:"Stonework", parent:null, traverse(f){ f(this); }}; FK.scene={children:kids,
+            getObjectByName(n){ return kids.find(k=>k.name===n); }, remove(o){ const i=kids.indexOf(o); if(i>=0) kids.splice(i,1); o.parent=null; }}; sw.parent=FK.scene; if(!(FK.opts.decor && FK.opts.decor.stonework===false)) kids.push(sw); }
+          return FK.scene; },
+        setPlayerVisualState(s){ FK.player=JSON.parse(JSON.stringify(s)); (FK.track=FK.track||[]).push({t:performance.now(), m:!!s.moving, x:s.position.x, z:s.position.z, d:s.direction}); if(FK.track.length>3000) FK.track.splice(0,1000); cam.target={x:s.position.x,y:U.terrainHeight(s.position.x,s.position.z,cfgDefault),z:s.position.z}; },
         setWorldVisualState(s){ FK.world=s; }, setCameraTarget(){},
         updateResourceVisual(id,s){ if(s===null) delete FK.resources[id]; else FK.resources[id]=JSON.parse(JSON.stringify(s)); },
         addStructureVisual(id,type,pos,rot){ FK.structures[id]={type,pos,rot}; }, removeStructureVisual(id){ delete FK.structures[id]; },
         playVisualEffect(t,p){ FK.effects.push(t); }, async setPlayerSpriteSheet(u){ FK.sprite=u; },
-        resizeGraphics(){}, disposeGraphics(){}, stopLoop(){ FK.loop=false; }, startLoop(){ FK.loop=true; } };
+        resizeGraphics(){}, disposeGraphics(){}, stopLoop(){ FK.loop=false; FK.stops++; }, startLoop(){ FK.loop=true; FK.starts++; } };
     } };
 })();

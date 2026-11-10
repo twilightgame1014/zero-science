@@ -5,3 +5,6 @@ test-results/
 *.log
 *.zip
 .DS_Store
+
+# regenerable via assets/gpt-dq3/tools/make_blend.py
+assets/gpt-dq3/models/dq3-assets.blend

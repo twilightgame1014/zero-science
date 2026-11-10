@@ -1,0 +1,102 @@
+{
+ "textures": {
+  "sand_beach": {
+   "source_sheet": "ground-sheet.jpg",
+   "quadrant": [
+    0,
+    0
+   ],
+   "native_crop": 627
+  },
+  "riverbank_soil": {
+   "source_sheet": "ground-sheet.jpg",
+   "quadrant": [
+    0,
+    1
+   ],
+   "native_crop": 627
+  },
+  "basalt_ground": {
+   "source_sheet": "ground-sheet.jpg",
+   "quadrant": [
+    1,
+    0
+   ],
+   "native_crop": 627
+  },
+  "red_iron_ground": {
+   "source_sheet": "ground-sheet.jpg",
+   "quadrant": [
+    1,
+    1
+   ],
+   "native_crop": 627
+  },
+  "brick_wall": {
+   "source_sheet": "building-sheet.jpg",
+   "quadrant": [
+    0,
+    0
+   ],
+   "native_crop": 443
+  },
+  "plaster_wall": {
+   "source_sheet": "building-sheet.jpg",
+   "quadrant": [
+    0,
+    1
+   ],
+   "native_crop": 443
+  },
+  "wood_planks": {
+   "source_sheet": "building-sheet.jpg",
+   "quadrant": [
+    1,
+    0
+   ],
+   "native_crop": 443
+  },
+  "stone_wall": {
+   "source_sheet": "building-sheet.jpg",
+   "quadrant": [
+    1,
+    1
+   ],
+   "native_crop": 443
+  }
+ },
+ "file_sizes_bytes": {
+  "basalt_ground.png": 494764,
+  "basalt_ground_256.png": 137150,
+  "basalt_ground_normal.png": 185456,
+  "basalt_ground_normal_256.png": 69527,
+  "brick_wall.png": 428631,
+  "brick_wall_256.png": 127884,
+  "brick_wall_normal.png": 182118,
+  "brick_wall_normal_256.png": 68374,
+  "plaster_wall.png": 347119,
+  "plaster_wall_256.png": 106654,
+  "plaster_wall_normal.png": 135807,
+  "plaster_wall_normal_256.png": 51914,
+  "red_iron_ground.png": 515337,
+  "red_iron_ground_256.png": 138438,
+  "red_iron_ground_normal.png": 181306,
+  "red_iron_ground_normal_256.png": 67992,
+  "riverbank_soil.png": 477589,
+  "riverbank_soil_256.png": 130835,
+  "riverbank_soil_normal.png": 169400,
+  "riverbank_soil_normal_256.png": 64304,
+  "sand_beach.png": 527160,
+  "sand_beach_256.png": 141849,
+  "sand_beach_normal.png": 184898,
+  "sand_beach_normal_256.png": 69429,
+  "stone_wall.png": 447690,
+  "stone_wall_256.png": 136812,
+  "stone_wall_normal.png": 198249,
+  "stone_wall_normal_256.png": 73221,
+  "wood_planks.png": 395903,
+  "wood_planks_256.png": 117269,
+  "wood_planks_normal.png": 156857,
+  "wood_planks_normal_256.png": 59722
+ }
+}

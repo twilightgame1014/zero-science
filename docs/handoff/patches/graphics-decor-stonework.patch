@@ -1,0 +1,26 @@
+diff -ru a/graphics/EnvironmentRenderer.ts b/graphics/EnvironmentRenderer.ts
+--- a/src/graphics/EnvironmentRenderer.ts	2026-11-06 14:21:02.967863164 +0000
++++ b/src/graphics/EnvironmentRenderer.ts	2026-11-06 14:21:02.985959323 +0000
+@@ -157,7 +157,7 @@
+     this.buildPollen(particleTexture, scale);
+     this.buildBackdropMountains();
+     this.buildWaterfall(particleTexture);
+-    this.buildStonework();
++    if (decor.stonework !== false) this.buildStonework();
+     this.buildGrounding();
+   }
+ 
+diff -ru a/graphics/types.ts b/graphics/types.ts
+--- a/src/graphics/types.ts	2026-11-06 14:21:02.968262566 +0000
++++ b/src/graphics/types.ts	2026-11-06 14:21:02.985579244 +0000
+@@ -132,6 +132,10 @@
+   logs?: boolean;
+   pebbles?: boolean;
+   shrubs?: boolean;
++  /** Stone stairs and retaining walls (cut, man-made stonework). The
++   *  game starts in untouched wilderness and places its own buildings,
++   *  so it turns this off (2026-11-06, requested by Claude). */
++  stonework?: boolean;
+ }
+ 
+ export interface GraphicsOptions {

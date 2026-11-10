@@ -1,0 +1,627 @@
+{
+ "cell": 256,
+ "columns": 8,
+ "keyFormat": "category/id (ids collide across categories: facilities/filter vs ops/filter)",
+ "entries": {
+  "tools/pot": {
+   "category": "tools",
+   "name": "土器",
+   "x": 0,
+   "y": 0,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/pot.png",
+   "file128": "icons128/tools/pot.png"
+  },
+  "tools/crucible": {
+   "category": "tools",
+   "name": "るつぼ",
+   "x": 256,
+   "y": 0,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/crucible.png",
+   "file128": "icons128/tools/crucible.png"
+  },
+  "tools/knife": {
+   "category": "tools",
+   "name": "石のナイフ",
+   "x": 512,
+   "y": 0,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/knife.png",
+   "file128": "icons128/tools/knife.png"
+  },
+  "tools/axe": {
+   "category": "tools",
+   "name": "石のおの",
+   "x": 768,
+   "y": 0,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/axe.png",
+   "file128": "icons128/tools/axe.png"
+  },
+  "tools/hammer": {
+   "category": "tools",
+   "name": "石のハンマー",
+   "x": 1024,
+   "y": 0,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/hammer.png",
+   "file128": "icons128/tools/hammer.png"
+  },
+  "tools/pickaxe": {
+   "category": "tools",
+   "name": "石のつるはし",
+   "x": 1280,
+   "y": 0,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/pickaxe.png",
+   "file128": "icons128/tools/pickaxe.png"
+  },
+  "tools/firedrill": {
+   "category": "tools",
+   "name": "火おこし棒",
+   "x": 1536,
+   "y": 0,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/firedrill.png",
+   "file128": "icons128/tools/firedrill.png"
+  },
+  "tools/torch": {
+   "category": "tools",
+   "name": "たいまつ",
+   "x": 1792,
+   "y": 0,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/torch.png",
+   "file128": "icons128/tools/torch.png"
+  },
+  "tools/candle": {
+   "category": "tools",
+   "name": "ろうそく",
+   "x": 0,
+   "y": 256,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/candle.png",
+   "file128": "icons128/tools/candle.png"
+  },
+  "tools/basket": {
+   "category": "tools",
+   "name": "採集かご",
+   "x": 256,
+   "y": 256,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/basket.png",
+   "file128": "icons128/tools/basket.png"
+  },
+  "tools/notebook": {
+   "category": "tools",
+   "name": "研究ノート",
+   "x": 512,
+   "y": 256,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/notebook.png",
+   "file128": "icons128/tools/notebook.png"
+  },
+  "tools/ironpick": {
+   "category": "tools",
+   "name": "鉄のつるはし",
+   "x": 768,
+   "y": 256,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/ironpick.png",
+   "file128": "icons128/tools/ironpick.png"
+  },
+  "tools/ironaxe": {
+   "category": "tools",
+   "name": "鉄のおの",
+   "x": 1024,
+   "y": 256,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/ironaxe.png",
+   "file128": "icons128/tools/ironaxe.png"
+  },
+  "tools/balance": {
+   "category": "tools",
+   "name": "てんびん",
+   "x": 1280,
+   "y": 256,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/balance.png",
+   "file128": "icons128/tools/balance.png"
+  },
+  "tools/thermometer": {
+   "category": "tools",
+   "name": "温度計",
+   "x": 1536,
+   "y": 256,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/thermometer.png",
+   "file128": "icons128/tools/thermometer.png"
+  },
+  "tools/bottle": {
+   "category": "tools",
+   "name": "ガラスのびん",
+   "x": 1792,
+   "y": 256,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/bottle.png",
+   "file128": "icons128/tools/bottle.png"
+  },
+  "tools/bellows": {
+   "category": "tools",
+   "name": "ふいご",
+   "x": 0,
+   "y": 512,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/bellows.png",
+   "file128": "icons128/tools/bellows.png"
+  },
+  "tools/battery": {
+   "category": "tools",
+   "name": "ボルタ電池",
+   "x": 256,
+   "y": 512,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/battery.png",
+   "file128": "icons128/tools/battery.png"
+  },
+  "tools/cylinder": {
+   "category": "tools",
+   "name": "鋼のボンベ",
+   "x": 512,
+   "y": 512,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/cylinder.png",
+   "file128": "icons128/tools/cylinder.png"
+  },
+  "tools/rig": {
+   "category": "tools",
+   "name": "掘削やぐら",
+   "x": 768,
+   "y": 512,
+   "w": 256,
+   "h": 256,
+   "file": "icons/tools/rig.png",
+   "file128": "icons128/tools/rig.png"
+  },
+  "facilities/bench": {
+   "category": "facilities",
+   "name": "作業台",
+   "x": 1024,
+   "y": 512,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/bench.png",
+   "file128": "icons128/facilities/bench.png"
+  },
+  "facilities/campfire": {
+   "category": "facilities",
+   "name": "たき火",
+   "x": 1280,
+   "y": 512,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/campfire.png",
+   "file128": "icons128/facilities/campfire.png"
+  },
+  "facilities/rack": {
+   "category": "facilities",
+   "name": "乾燥台",
+   "x": 1536,
+   "y": 512,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/rack.png",
+   "file128": "icons128/facilities/rack.png"
+  },
+  "facilities/filter": {
+   "category": "facilities",
+   "name": "ろ過器",
+   "x": 1792,
+   "y": 512,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/filter.png",
+   "file128": "icons128/facilities/filter.png"
+  },
+  "facilities/mill": {
+   "category": "facilities",
+   "name": "石臼",
+   "x": 0,
+   "y": 768,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/mill.png",
+   "file128": "icons128/facilities/mill.png"
+  },
+  "facilities/kiln": {
+   "category": "facilities",
+   "name": "かまど",
+   "x": 256,
+   "y": 768,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/kiln.png",
+   "file128": "icons128/facilities/kiln.png"
+  },
+  "facilities/charkiln": {
+   "category": "facilities",
+   "name": "炭焼き窯",
+   "x": 512,
+   "y": 768,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/charkiln.png",
+   "file128": "icons128/facilities/charkiln.png"
+  },
+  "facilities/fermenter": {
+   "category": "facilities",
+   "name": "発酵つぼ",
+   "x": 768,
+   "y": 768,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/fermenter.png",
+   "file128": "icons128/facilities/fermenter.png"
+  },
+  "facilities/furnace": {
+   "category": "facilities",
+   "name": "簡易炉",
+   "x": 1024,
+   "y": 768,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/furnace.png",
+   "file128": "icons128/facilities/furnace.png"
+  },
+  "facilities/still": {
+   "category": "facilities",
+   "name": "蒸留器",
+   "x": 1280,
+   "y": 768,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/still.png",
+   "file128": "icons128/facilities/still.png"
+  },
+  "facilities/storehouse": {
+   "category": "facilities",
+   "name": "倉庫",
+   "x": 1536,
+   "y": 768,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/storehouse.png",
+   "file128": "icons128/facilities/storehouse.png"
+  },
+  "facilities/electrolyzer": {
+   "category": "facilities",
+   "name": "電気分解装置",
+   "x": 1792,
+   "y": 768,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/electrolyzer.png",
+   "file128": "icons128/facilities/electrolyzer.png"
+  },
+  "facilities/waterwheel": {
+   "category": "facilities",
+   "name": "水車",
+   "x": 0,
+   "y": 1024,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/waterwheel.png",
+   "file128": "icons128/facilities/waterwheel.png"
+  },
+  "facilities/generator": {
+   "category": "facilities",
+   "name": "水力発電機",
+   "x": 256,
+   "y": 1024,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/generator.png",
+   "file128": "icons128/facilities/generator.png"
+  },
+  "facilities/blastfurnace": {
+   "category": "facilities",
+   "name": "高炉",
+   "x": 512,
+   "y": 1024,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/blastfurnace.png",
+   "file128": "icons128/facilities/blastfurnace.png"
+  },
+  "facilities/steamengine": {
+   "category": "facilities",
+   "name": "蒸気機関",
+   "x": 768,
+   "y": 1024,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/steamengine.png",
+   "file128": "icons128/facilities/steamengine.png"
+  },
+  "facilities/refinery": {
+   "category": "facilities",
+   "name": "精留塔",
+   "x": 1024,
+   "y": 1024,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/refinery.png",
+   "file128": "icons128/facilities/refinery.png"
+  },
+  "facilities/reactor": {
+   "category": "facilities",
+   "name": "化学反応装置",
+   "x": 1280,
+   "y": 1024,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/reactor.png",
+   "file128": "icons128/facilities/reactor.png"
+  },
+  "facilities/eaf": {
+   "category": "facilities",
+   "name": "電気炉",
+   "x": 1536,
+   "y": 1024,
+   "w": 256,
+   "h": 256,
+   "file": "icons/facilities/eaf.png",
+   "file128": "icons128/facilities/eaf.png"
+  },
+  "ops/crush": {
+   "category": "ops",
+   "name": "破砕",
+   "x": 1792,
+   "y": 1024,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/crush.png",
+   "file128": "icons128/ops/crush.png"
+  },
+  "ops/grind": {
+   "category": "ops",
+   "name": "粉砕",
+   "x": 0,
+   "y": 1280,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/grind.png",
+   "file128": "icons128/ops/grind.png"
+  },
+  "ops/mix": {
+   "category": "ops",
+   "name": "混合",
+   "x": 256,
+   "y": 1280,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/mix.png",
+   "file128": "icons128/ops/mix.png"
+  },
+  "ops/wash": {
+   "category": "ops",
+   "name": "水洗",
+   "x": 512,
+   "y": 1280,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/wash.png",
+   "file128": "icons128/ops/wash.png"
+  },
+  "ops/filter": {
+   "category": "ops",
+   "name": "ろ過",
+   "x": 768,
+   "y": 1280,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/filter.png",
+   "file128": "icons128/ops/filter.png"
+  },
+  "ops/settle": {
+   "category": "ops",
+   "name": "沈降",
+   "x": 1024,
+   "y": 1280,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/settle.png",
+   "file128": "icons128/ops/settle.png"
+  },
+  "ops/heat": {
+   "category": "ops",
+   "name": "加熱",
+   "x": 1280,
+   "y": 1280,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/heat.png",
+   "file128": "icons128/ops/heat.png"
+  },
+  "ops/cool": {
+   "category": "ops",
+   "name": "冷却",
+   "x": 1536,
+   "y": 1280,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/cool.png",
+   "file128": "icons128/ops/cool.png"
+  },
+  "ops/evaporate": {
+   "category": "ops",
+   "name": "蒸発",
+   "x": 1792,
+   "y": 1280,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/evaporate.png",
+   "file128": "icons128/ops/evaporate.png"
+  },
+  "ops/crystallize": {
+   "category": "ops",
+   "name": "結晶化",
+   "x": 0,
+   "y": 1536,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/crystallize.png",
+   "file128": "icons128/ops/crystallize.png"
+  },
+  "ops/dry": {
+   "category": "ops",
+   "name": "乾燥",
+   "x": 256,
+   "y": 1536,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/dry.png",
+   "file128": "icons128/ops/dry.png"
+  },
+  "ops/dissolve": {
+   "category": "ops",
+   "name": "溶解",
+   "x": 512,
+   "y": 1536,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/dissolve.png",
+   "file128": "icons128/ops/dissolve.png"
+  },
+  "ops/burn": {
+   "category": "ops",
+   "name": "燃焼",
+   "x": 768,
+   "y": 1536,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/burn.png",
+   "file128": "icons128/ops/burn.png"
+  },
+  "ops/fire": {
+   "category": "ops",
+   "name": "焼成",
+   "x": 1024,
+   "y": 1536,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/fire.png",
+   "file128": "icons128/ops/fire.png"
+  },
+  "ops/char": {
+   "category": "ops",
+   "name": "炭化",
+   "x": 1280,
+   "y": 1536,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/char.png",
+   "file128": "icons128/ops/char.png"
+  },
+  "ops/shape": {
+   "category": "ops",
+   "name": "成形",
+   "x": 1536,
+   "y": 1536,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/shape.png",
+   "file128": "icons128/ops/shape.png"
+  },
+  "ops/smelt": {
+   "category": "ops",
+   "name": "製錬",
+   "x": 1792,
+   "y": 1536,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/smelt.png",
+   "file128": "icons128/ops/smelt.png"
+  },
+  "ops/melt": {
+   "category": "ops",
+   "name": "溶融",
+   "x": 0,
+   "y": 1792,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/melt.png",
+   "file128": "icons128/ops/melt.png"
+  },
+  "ops/ferment": {
+   "category": "ops",
+   "name": "発酵",
+   "x": 256,
+   "y": 1792,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/ferment.png",
+   "file128": "icons128/ops/ferment.png"
+  },
+  "ops/distill": {
+   "category": "ops",
+   "name": "蒸留",
+   "x": 512,
+   "y": 1792,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/distill.png",
+   "file128": "icons128/ops/distill.png"
+  },
+  "ops/electrolyze": {
+   "category": "ops",
+   "name": "電気分解",
+   "x": 768,
+   "y": 1792,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/electrolyze.png",
+   "file128": "icons128/ops/electrolyze.png"
+  },
+  "ops/crack": {
+   "category": "ops",
+   "name": "熱分解",
+   "x": 1024,
+   "y": 1792,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/crack.png",
+   "file128": "icons128/ops/crack.png"
+  },
+  "ops/polymerize": {
+   "category": "ops",
+   "name": "重合",
+   "x": 1280,
+   "y": 1792,
+   "w": 256,
+   "h": 256,
+   "file": "icons/ops/polymerize.png",
+   "file128": "icons128/ops/polymerize.png"
+  }
+ }
+}

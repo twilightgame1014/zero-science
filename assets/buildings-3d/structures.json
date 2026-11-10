@@ -1,0 +1,388 @@
+{
+ "convention": {
+  "collision_note": "footprint is the walk-blocking ground shape of the actual structure. Roof overhang, chimneys, flames, smoke and decoration are NOT included. Do not wrap the whole visual bounding box.",
+  "entrance": "[x, z] local point where the player steps in / the doorway centre, or null for equipment without entry",
+  "front": "+Z in Three.js local space (doors, fire mouths, operate points face +Z). The GLB exports from Blender with front = -Y, which the glTF exporter maps to +Z.",
+  "operate": "[x, z] local point the player stands at to use the facility (in front of the working face)",
+  "origin": "ground contact centre of the model",
+  "units": "meters"
+ },
+ "structures": [
+  {
+   "entrance": null,
+   "facilityId": "bench",
+   "footprint": {
+    "d": 1.05,
+    "shape": "rect",
+    "w": 2.2
+   },
+   "id": "workbench",
+   "materials": "丸太の脚+厚板の天板、縄の結束。天板には石のハンマー・打製石刃・石材入りのかご（初期型の石器のみ、現代工具なし）",
+   "model": "models/workbench.glb",
+   "movingParts": [],
+   "name": "作業台",
+   "notes": "下段棚に丸太を収納。脚まわりは通行不可、占有は天板の投影そのまま。",
+   "operate": [
+    0,
+    1.05
+   ],
+   "size": {
+    "d": 1.05,
+    "h": 1.23,
+    "w": 2.2
+   }
+  },
+  {
+   "entrance": null,
+   "facilityId": "campfire",
+   "footprint": {
+    "r": 0.82,
+    "shape": "circle"
+   },
+   "id": "campfire",
+   "materials": "不規則な石組みの炉、灰床、焦げた薪。炎は独立ノード",
+   "model": "models/campfire.glb",
+   "movingParts": [
+    {
+     "kind": "effect-node",
+     "name": "Flame",
+     "note": "炎は本体と分離したノード。モジュールの既存アニメーション（scaleのゆらぎ）がそのまま使える。炎自体は歩行障害物に含めないが、石組みの円は含める"
+    }
+   ],
+   "name": "たき火",
+   "notes": "占有は石組みの外径まで。炎・煙は含めない。",
+   "operate": [
+    0,
+    1.25
+   ],
+   "size": {
+    "d": 1.47,
+    "h": 0.83,
+    "w": 1.52
+   }
+  },
+  {
+   "entrance": null,
+   "facilityId": "kiln",
+   "footprint": {
+    "r": 1.15,
+    "shape": "circle"
+   },
+   "id": "kiln",
+   "materials": "粘土レンガのドーム窯、石の基礎リング、木の筋交いと縄。焚き口（前面）に炎の明かり、頂部に排気口",
+   "model": "models/kiln.glb",
+   "movingParts": [],
+   "name": "窯（かまど）",
+   "notes": "data.js の設備名は「かまど」。発酵つぼ等と統合しないこと。",
+   "operate": [
+    0,
+    1.55
+   ],
+   "size": {
+    "d": 2.28,
+    "h": 1.6,
+    "w": 2.46
+   }
+  },
+  {
+   "entrance": [
+    0.45,
+    1.35
+   ],
+   "facilityId": null,
+   "footprint": {
+    "d": 2.7,
+    "shape": "rect",
+    "w": 3.3
+   },
+   "id": "hut",
+   "materials": "石の基礎、土壁、木骨（丸太の柱・梁）、草葺き屋根。前面に出入口と格子窓",
+   "model": "models/hut.glb",
+   "movingParts": [],
+   "name": "小屋",
+   "notes": "占有は基礎の範囲。屋根の張り出し（w3.7側）は歩行障害物に含めない。entrance は前面ドア中心（Three.js ローカル、前面=+Z）",
+   "operate": [
+    0.45,
+    1.95
+   ],
+   "size": {
+    "d": 3.4,
+    "h": 3.16,
+    "w": 3.8
+   }
+  },
+  {
+   "entrance": null,
+   "facilityId": "furnace",
+   "footprint": {
+    "d": 2.2,
+    "shape": "rect",
+    "w": 3.3
+   },
+   "id": "smelter",
+   "materials": "石積み基礎の上に耐火粘土の塔状炉、煤けた上部、前面に焚き口と出湯溝、側方に木枠の大型ふいご、炭かご",
+   "model": "models/smelter.glb",
+   "movingParts": [
+    {
+     "kind": "group",
+     "name": "Bellows",
+     "note": "ふいご一式（板+革+ノズル）は分離グループ。アニメーションする場合は上下の板を開閉させる想定"
+    }
+   ],
+   "name": "製錬炉（簡易炉）",
+   "notes": "占有は炉本体+ふいご台の合成範囲（rect近似）。出湯溝の先端は含めない。",
+   "operate": [
+    0,
+    1.7
+   ],
+   "size": {
+    "d": 2.75,
+    "h": 2.29,
+    "w": 3.65
+   }
+  },
+  {
+   "entrance": [
+    0,
+    2.1
+   ],
+   "facilityId": null,
+   "footprint": {
+    "d": 3.1,
+    "shape": "rect",
+    "w": 4.3
+   },
+   "id": "laboratory",
+   "materials": "木骨+土壁の開放型実験小屋。実験台、フラスコ、銅の蒸留器、棚の瓶類、小さな炉、瓦屋根",
+   "model": "models/laboratory.glb",
+   "movingParts": [],
+   "name": "研究施設（実験小屋）",
+   "notes": "前面は開放部（柱のみ）で、占有は床石の範囲。屋根の張り出しは含めない。stage>=3 で拠点に出現する想定は従来どおり。",
+   "operate": [
+    -0.5,
+    1.6
+   ],
+   "size": {
+    "d": 3.22,
+    "h": 3.8,
+    "w": 4.6
+   }
+  },
+  {
+   "entrance": null,
+   "facilityId": "steamengine",
+   "footprint": {
+    "d": 1.35,
+    "shape": "rect",
+    "w": 2.7
+   },
+   "id": "steam-engine",
+   "materials": "石の台座、鉄のボイラー（真鍮バンド）、煙突、火室（発光は分離マテリアル）、圧力計、銅配管",
+   "model": "models/steam-engine.glb",
+   "movingParts": [
+    {
+     "axis": "local Z (Three.js)",
+     "kind": "rotate",
+     "name": "Wheel",
+     "note": "フライホイール。据え置き型の水平ボイラー+ピストン構成で、機関車ではない"
+    },
+    {
+     "amplitude": 0.18,
+     "axis": "local X (Three.js)",
+     "kind": "slide",
+     "name": "Piston",
+     "note": "ピストンロッド+クロスヘッド。Wheel の回転と位相を合わせる想定"
+    }
+   ],
+   "name": "蒸気機関",
+   "notes": "占有は台座そのまま。煙はモデルに含めていない（エフェクト側）。",
+   "operate": [
+    0.4,
+    1.2
+   ],
+   "size": {
+    "d": 1.38,
+    "h": 2.28,
+    "w": 2.93
+   }
+  },
+  {
+   "entrance": null,
+   "facilityId": "refinery",
+   "footprint": {
+    "d": 1.3,
+    "shape": "rect",
+    "w": 1.5
+   },
+   "id": "distillation-tower",
+   "materials": "鋼の縦型塔（段リング+真鍮バンド）、梯子と点検台、銅の凝縮器、回収タンク。電波塔状のアンテナ類はなし",
+   "model": "models/distillation-tower.glb",
+   "movingParts": [],
+   "name": "精留塔",
+   "notes": "占有は基礎台のみ。点検台の張り出しは頭上なので含めない。",
+   "operate": [
+    0,
+    1.15
+   ],
+   "size": {
+    "d": 1.44,
+    "h": 3.97,
+    "w": 1.71
+   }
+  },
+  {
+   "entrance": [
+    0.35,
+    2.5
+   ],
+   "facilityId": null,
+   "footprint": {
+    "d": 4.2,
+    "shape": "rect",
+    "w": 5.2
+   },
+   "id": "factory",
+   "materials": "赤レンガ壁、鋸屋根（金属板+ガラス帯）、高い煙突、前面に搬入ドック（両開き扉・荷台・木箱）",
+   "model": "models/factory.glb",
+   "movingParts": [],
+   "name": "工場",
+   "notes": "占有は壁+ドック台まで。搬入ドックの庇と煙突は含めない。",
+   "operate": [
+    0.35,
+    2.9
+   ],
+   "size": {
+    "d": 4.25,
+    "h": 5.04,
+    "w": 5.2
+   }
+  },
+  {
+   "entrance": [
+    -2.2,
+    2.0
+   ],
+   "facilityId": null,
+   "footprint": {
+    "d": 3.4,
+    "shape": "rect",
+    "w": 5.6
+   },
+   "id": "power-plant",
+   "materials": "タービン建屋（アーチ窓+内部にタービン）、ボイラー棟、縞模様の煙突、変圧器（放熱フィン+ブッシング）と配管",
+   "model": "models/power-plant.glb",
+   "movingParts": [],
+   "name": "発電所",
+   "notes": "方式は原画どおり火力型の建屋として造形。オーナー決定（2026-11-07）: 火力のまま、段階建物（新設コンテンツ）として扱う。現行ゲーム設定の発電は水力発電機 generator のみのため、設定上の整合（登場段階・位置づけ）は Claude/GPT 側で確認・決定すること。モデルは建屋+発電設備一式で、原野への自動配置はしない前提。占有は建屋と変圧器の合成範囲の rect 近似。",
+   "operate": [
+    1.7,
+    2.2
+   ],
+   "size": {
+    "d": 3.46,
+    "h": 5.32,
+    "w": 5.53
+   }
+  },
+  {
+   "entrance": [
+    1.85,
+    2.0
+   ],
+   "facilityId": null,
+   "footprint": {
+    "d": 3.6,
+    "shape": "rect",
+    "w": 5.4
+   },
+   "id": "research-institute",
+   "materials": "淡色タイル壁の2階建て、前面ガラス帯（内部に実験台とフラスコのシルエット）、玄関庇と階段、屋上の空調・ダクト、植栽",
+   "model": "models/research-institute.glb",
+   "movingParts": [],
+   "name": "研究施設（研究所）",
+   "notes": "占有は建物基礎。庇・植栽ポットは含めない。",
+   "operate": [
+    1.85,
+    2.5
+   ],
+   "size": {
+    "d": 4.2,
+    "h": 4.68,
+    "w": 5.65
+   }
+  },
+  {
+   "entrance": null,
+   "facilityId": "waterwheel",
+   "footprint": {
+    "d": 0.85,
+    "shape": "rect",
+    "w": 2.3
+   },
+   "id": "waterwheel",
+   "materials": "木の車輪（羽根板8枚）、丸太の軸、A型木枠、石の脚台、上部の導水板",
+   "model": "models/waterwheel.glb",
+   "movingParts": [
+    {
+     "axis": "local Z (Three.js)",
+     "kind": "rotate",
+     "name": "Wheel",
+     "note": "羽根板付きの車輪。既存の手続きモデルの 'Wheel' 規約と同一"
+    }
+   ],
+   "name": "水車",
+   "notes": "原画の水車小屋は参考扱いとし、既存仕様どおり水車単体で造形（小屋は追加していない）。占有は脚台の範囲で、車輪の回転域は頭上〜水面側。",
+   "operate": [
+    1.6,
+    0.8
+   ],
+   "size": {
+    "d": 1.73,
+    "h": 2.56,
+    "w": 2.3
+   }
+  },
+  {
+   "entrance": [
+    0.35,
+    1.5
+   ],
+   "facilityId": "rig",
+   "footprint": {
+    "d": 2.2,
+    "shape": "rect",
+    "w": 2.6
+   },
+   "id": "drilling-rig",
+   "materials": "木のやぐら（鉄バンド補強）、頂部の滑車、巻き上げ機、掘削パイプ、小型エンジン小屋（やぐら自身の付属）",
+   "model": "models/drilling-rig.glb",
+   "movingParts": [
+    {
+     "axis": "local Y (Three.js, vertical)",
+     "kind": "rotate",
+     "name": "DrillPipe",
+     "note": "垂直の掘削軸+ビット"
+    },
+    {
+     "axis": "local Z (Three.js)",
+     "kind": "rotate",
+     "name": "Winch",
+     "note": "巻き上げドラム。ケーブルは静止メッシュ"
+    }
+   ],
+   "name": "掘削やぐら",
+   "notes": "占有はデッキ全体。やぐらの脚の内側は掘削孔まわりで、プレイヤーは入らない前提。",
+   "operate": [
+    -0.6,
+    1.3
+   ],
+   "size": {
+    "d": 2.55,
+    "h": 3.56,
+    "w": 2.9
+   }
+  }
+ ],
+ "version": "2026-11-07",
+ "textureRevision": "2026-11-07 round 14: all 13 rebuilt on the owner's GPT material sheets (12 materials in textures/: albedo 512px, structure-derived normal + absolute roughness at 256px, world-scale UVs for uniform texel density). Windows are dark glass with single lit accents; each model gained a soft 'ContactShadow' gradient plane (named node, safe to strip). Sizes re-measured in three.js with the shadow plane excluded; footprints/entrance/operate unchanged. See README.md for the per-building material table."
+}

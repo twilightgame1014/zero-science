@@ -1,0 +1,884 @@
+{
+ "sheets": {
+  "1": {
+   "file": "sheet1-nature.jpg",
+   "kind": "jpg",
+   "fringe_pixels_fixed": 0,
+   "components_total": 108
+  },
+  "2": {
+   "file": "sheet2-sea-minerals.png",
+   "kind": "png",
+   "fringe_pixels_fixed": 2406,
+   "components_total": 17
+  },
+  "3": {
+   "file": "sheet3-elements.jpg",
+   "kind": "jpg",
+   "fringe_pixels_fixed": 0,
+   "components_total": 48
+  },
+  "4": {
+   "file": "sheet4-salts.jpg",
+   "kind": "jpg",
+   "fringe_pixels_fixed": 0,
+   "components_total": 31
+  },
+  "5": {
+   "file": "sheet5-compounds.png",
+   "kind": "png",
+   "fringe_pixels_fixed": 5,
+   "components_total": 20
+  },
+  "6": {
+   "file": "sheet6-ceramics-metals.jpg",
+   "kind": "jpg",
+   "fringe_pixels_fixed": 0,
+   "components_total": 88
+  },
+  "7": {
+   "file": "sheet7-metals.jpg",
+   "kind": "jpg",
+   "fringe_pixels_fixed": 0,
+   "components_total": 30
+  },
+  "8": {
+   "file": "sheet8-organic.jpg",
+   "kind": "jpg",
+   "fringe_pixels_fixed": 0,
+   "components_total": 37
+  },
+  "9": {
+   "file": "sheet9-modern.jpg",
+   "kind": "jpg",
+   "fringe_pixels_fixed": 0,
+   "components_total": 50
+  }
+ },
+ "icons": {
+  "twig": {
+   "sheet": 1,
+   "row": 0,
+   "col": 0,
+   "components": 1
+  },
+  "leaves": {
+   "sheet": 1,
+   "row": 0,
+   "col": 1,
+   "components": 1
+  },
+  "vine": {
+   "sheet": 1,
+   "row": 0,
+   "col": 2,
+   "components": 1
+  },
+  "resin": {
+   "sheet": 1,
+   "row": 0,
+   "col": 3,
+   "components": 1
+  },
+  "seed": {
+   "sheet": 1,
+   "row": 1,
+   "col": 0,
+   "components": 1
+  },
+  "log": {
+   "sheet": 1,
+   "row": 1,
+   "col": 1,
+   "components": 1
+  },
+  "wax": {
+   "sheet": 1,
+   "row": 1,
+   "col": 2,
+   "components": 1
+  },
+  "grass": {
+   "sheet": 1,
+   "row": 1,
+   "col": 3,
+   "components": 1
+  },
+  "grape": {
+   "sheet": 1,
+   "row": 2,
+   "col": 0,
+   "components": 1
+  },
+  "ochre": {
+   "sheet": 1,
+   "row": 2,
+   "col": 1,
+   "components": 1
+  },
+  "rain": {
+   "sheet": 1,
+   "row": 2,
+   "col": 2,
+   "components": 1
+  },
+  "river": {
+   "sheet": 1,
+   "row": 2,
+   "col": 3,
+   "components": 1
+  },
+  "clay": {
+   "sheet": 1,
+   "row": 3,
+   "col": 0,
+   "components": 1
+  },
+  "sand": {
+   "sheet": 1,
+   "row": 3,
+   "col": 1,
+   "components": 1
+  },
+  "cobble": {
+   "sheet": 1,
+   "row": 3,
+   "col": 2,
+   "components": 1
+  },
+  "flint": {
+   "sheet": 1,
+   "row": 3,
+   "col": 3,
+   "components": 1
+  },
+  "bark": {
+   "sheet": 2,
+   "row": 0,
+   "col": 0,
+   "components": 1
+  },
+  "seawater": {
+   "sheet": 2,
+   "row": 0,
+   "col": 1,
+   "components": 1
+  },
+  "shell": {
+   "sheet": 2,
+   "row": 0,
+   "col": 2,
+   "components": 1
+  },
+  "seaweed": {
+   "sheet": 2,
+   "row": 0,
+   "col": 3,
+   "components": 1
+  },
+  "limestone": {
+   "sheet": 2,
+   "row": 1,
+   "col": 0,
+   "components": 1
+  },
+  "granite": {
+   "sheet": 2,
+   "row": 1,
+   "col": 1,
+   "components": 1
+  },
+  "basalt": {
+   "sheet": 2,
+   "row": 1,
+   "col": 2,
+   "components": 1
+  },
+  "quartz": {
+   "sheet": 2,
+   "row": 1,
+   "col": 3,
+   "components": 1
+  },
+  "spring": {
+   "sheet": 2,
+   "row": 2,
+   "col": 0,
+   "components": 1
+  },
+  "coal": {
+   "sheet": 2,
+   "row": 2,
+   "col": 1,
+   "components": 1
+  },
+  "rocksalt": {
+   "sheet": 2,
+   "row": 2,
+   "col": 2,
+   "components": 1
+  },
+  "hematite": {
+   "sheet": 2,
+   "row": 2,
+   "col": 3,
+   "components": 1
+  },
+  "malachite": {
+   "sheet": 2,
+   "row": 3,
+   "col": 0,
+   "components": 1
+  },
+  "cassiterite": {
+   "sheet": 2,
+   "row": 3,
+   "col": 1,
+   "components": 1
+  },
+  "sphalerite": {
+   "sheet": 2,
+   "row": 3,
+   "col": 2,
+   "components": 1
+  },
+  "bauxite": {
+   "sheet": 2,
+   "row": 3,
+   "col": 3,
+   "components": 1
+  },
+  "sulfur": {
+   "sheet": 3,
+   "row": 0,
+   "col": 0,
+   "components": 1
+  },
+  "obsidian": {
+   "sheet": 3,
+   "row": 0,
+   "col": 1,
+   "components": 1
+  },
+  "crude": {
+   "sheet": 3,
+   "row": 0,
+   "col": 2,
+   "components": 1
+  },
+  "amber": {
+   "sheet": 3,
+   "row": 0,
+   "col": 3,
+   "components": 1
+  },
+  "meteorite": {
+   "sheet": 3,
+   "row": 1,
+   "col": 0,
+   "components": 1
+  },
+  "gold": {
+   "sheet": 3,
+   "row": 1,
+   "col": 1,
+   "components": 1
+  },
+  "fossil": {
+   "sheet": 3,
+   "row": 1,
+   "col": 2,
+   "components": 1
+  },
+  "crystal": {
+   "sheet": 3,
+   "row": 1,
+   "col": 3,
+   "components": 1
+  },
+  "supernatant": {
+   "sheet": 3,
+   "row": 2,
+   "col": 0,
+   "components": 1
+  },
+  "mud": {
+   "sheet": 3,
+   "row": 2,
+   "col": 1,
+   "components": 1
+  },
+  "water": {
+   "sheet": 3,
+   "row": 2,
+   "col": 2,
+   "components": 1
+  },
+  "steam": {
+   "sheet": 3,
+   "row": 2,
+   "col": 3,
+   "components": 1
+  },
+  "co2": {
+   "sheet": 3,
+   "row": 3,
+   "col": 0,
+   "components": 1
+  },
+  "so2": {
+   "sheet": 3,
+   "row": 3,
+   "col": 1,
+   "components": 1
+  },
+  "hydrogen": {
+   "sheet": 3,
+   "row": 3,
+   "col": 2,
+   "components": 1
+  },
+  "oxygen": {
+   "sheet": 3,
+   "row": 3,
+   "col": 3,
+   "components": 1
+  },
+  "chlorine": {
+   "sheet": 4,
+   "row": 0,
+   "col": 0,
+   "components": 1
+  },
+  "crudesalt": {
+   "sheet": 4,
+   "row": 0,
+   "col": 1,
+   "components": 1
+  },
+  "saltpowder": {
+   "sheet": 4,
+   "row": 0,
+   "col": 2,
+   "components": 1
+  },
+  "brine": {
+   "sheet": 4,
+   "row": 0,
+   "col": 3,
+   "components": 1
+  },
+  "cleanbrine": {
+   "sheet": 4,
+   "row": 1,
+   "col": 0,
+   "components": 1
+  },
+  "salt": {
+   "sheet": 4,
+   "row": 1,
+   "col": 1,
+   "components": 1
+  },
+  "nigari": {
+   "sheet": 4,
+   "row": 1,
+   "col": 2,
+   "components": 1
+  },
+  "ash": {
+   "sheet": 4,
+   "row": 1,
+   "col": 3,
+   "components": 1
+  },
+  "lye": {
+   "sheet": 4,
+   "row": 2,
+   "col": 0,
+   "components": 1
+  },
+  "potash": {
+   "sheet": 4,
+   "row": 2,
+   "col": 1,
+   "components": 1
+  },
+  "seaash": {
+   "sheet": 4,
+   "row": 2,
+   "col": 2,
+   "components": 1
+  },
+  "seajuice": {
+   "sheet": 4,
+   "row": 2,
+   "col": 3,
+   "components": 1
+  },
+  "soda": {
+   "sheet": 4,
+   "row": 3,
+   "col": 0,
+   "components": 1
+  },
+  "naoh": {
+   "sheet": 4,
+   "row": 3,
+   "col": 1,
+   "components": 1
+  },
+  "quicklime": {
+   "sheet": 4,
+   "row": 3,
+   "col": 2,
+   "components": 1
+  },
+  "slaked": {
+   "sheet": 4,
+   "row": 3,
+   "col": 3,
+   "components": 1
+  },
+  "plaster": {
+   "sheet": 5,
+   "row": 0,
+   "col": 0,
+   "components": 1
+  },
+  "stronglye": {
+   "sheet": 5,
+   "row": 0,
+   "col": 1,
+   "components": 1
+  },
+  "caco3": {
+   "sheet": 5,
+   "row": 0,
+   "col": 2,
+   "components": 1
+  },
+  "cement": {
+   "sheet": 5,
+   "row": 0,
+   "col": 3,
+   "components": 1
+  },
+  "concrete": {
+   "sheet": 5,
+   "row": 1,
+   "col": 0,
+   "components": 1
+  },
+  "crushedseed": {
+   "sheet": 5,
+   "row": 1,
+   "col": 1,
+   "components": 1
+  },
+  "oil": {
+   "sheet": 5,
+   "row": 1,
+   "col": 2,
+   "components": 1
+  },
+  "soap": {
+   "sheet": 5,
+   "row": 1,
+   "col": 3,
+   "components": 1
+  },
+  "glycerinwater": {
+   "sheet": 5,
+   "row": 2,
+   "col": 0,
+   "components": 1
+  },
+  "charcoal": {
+   "sheet": 5,
+   "row": 2,
+   "col": 1,
+   "components": 4
+  },
+  "woodvinegar": {
+   "sheet": 5,
+   "row": 2,
+   "col": 2,
+   "components": 1
+  },
+  "coke": {
+   "sheet": 5,
+   "row": 2,
+   "col": 3,
+   "components": 2
+  },
+  "coaltar": {
+   "sheet": 5,
+   "row": 3,
+   "col": 0,
+   "components": 1
+  },
+  "greenware": {
+   "sheet": 5,
+   "row": 3,
+   "col": 1,
+   "components": 1
+  },
+  "driedware": {
+   "sheet": 5,
+   "row": 3,
+   "col": 2,
+   "components": 1
+  },
+  "pot": {
+   "sheet": 5,
+   "row": 3,
+   "col": 3,
+   "components": 1
+  },
+  "greenbrick": {
+   "sheet": 6,
+   "row": 0,
+   "col": 0,
+   "components": 1
+  },
+  "sunbrick": {
+   "sheet": 6,
+   "row": 0,
+   "col": 1,
+   "components": 1
+  },
+  "brick": {
+   "sheet": 6,
+   "row": 0,
+   "col": 2,
+   "components": 1
+  },
+  "greencrucible": {
+   "sheet": 6,
+   "row": 0,
+   "col": 3,
+   "components": 1
+  },
+  "crucible": {
+   "sheet": 6,
+   "row": 1,
+   "col": 0,
+   "components": 1
+  },
+  "quartzpowder": {
+   "sheet": 6,
+   "row": 1,
+   "col": 1,
+   "components": 1
+  },
+  "cleansand": {
+   "sheet": 6,
+   "row": 1,
+   "col": 2,
+   "components": 1
+  },
+  "glass": {
+   "sheet": 6,
+   "row": 2,
+   "col": 0,
+   "components": 1
+  },
+  "oremalachite": {
+   "sheet": 6,
+   "row": 2,
+   "col": 1,
+   "components": 1
+  },
+  "orehematite": {
+   "sheet": 6,
+   "row": 2,
+   "col": 2,
+   "components": 1
+  },
+  "orecass": {
+   "sheet": 6,
+   "row": 2,
+   "col": 3,
+   "components": 1
+  },
+  "orezinc": {
+   "sheet": 6,
+   "row": 3,
+   "col": 0,
+   "components": 1
+  },
+  "zno": {
+   "sheet": 6,
+   "row": 3,
+   "col": 1,
+   "components": 1
+  },
+  "copper": {
+   "sheet": 6,
+   "row": 3,
+   "col": 2,
+   "components": 1
+  },
+  "iron": {
+   "sheet": 6,
+   "row": 3,
+   "col": 3,
+   "components": 1
+  },
+  "tin": {
+   "sheet": 7,
+   "row": 0,
+   "col": 0,
+   "components": 1
+  },
+  "zinc": {
+   "sheet": 7,
+   "row": 0,
+   "col": 1,
+   "components": 1
+  },
+  "bronze": {
+   "sheet": 7,
+   "row": 0,
+   "col": 2,
+   "components": 1
+  },
+  "slag": {
+   "sheet": 7,
+   "row": 0,
+   "col": 3,
+   "components": 1
+  },
+  "copperplate": {
+   "sheet": 7,
+   "row": 1,
+   "col": 0,
+   "components": 1
+  },
+  "wire": {
+   "sheet": 7,
+   "row": 1,
+   "col": 1,
+   "components": 1
+  },
+  "ironrod": {
+   "sheet": 7,
+   "row": 1,
+   "col": 2,
+   "components": 1
+  },
+  "rust": {
+   "sheet": 7,
+   "row": 1,
+   "col": 3,
+   "components": 1
+  },
+  "pigiron": {
+   "sheet": 7,
+   "row": 2,
+   "col": 0,
+   "components": 1
+  },
+  "steel": {
+   "sheet": 7,
+   "row": 2,
+   "col": 1,
+   "components": 1
+  },
+  "electromagnet": {
+   "sheet": 7,
+   "row": 2,
+   "col": 2,
+   "components": 1
+  },
+  "crushedgrape": {
+   "sheet": 7,
+   "row": 2,
+   "col": 3,
+   "components": 1
+  },
+  "wine": {
+   "sheet": 7,
+   "row": 3,
+   "col": 0,
+   "components": 1
+  },
+  "ethanol": {
+   "sheet": 7,
+   "row": 3,
+   "col": 1,
+   "components": 1
+  },
+  "vinegar": {
+   "sheet": 7,
+   "row": 3,
+   "col": 2,
+   "components": 1
+  },
+  "turpentine": {
+   "sheet": 7,
+   "row": 3,
+   "col": 3,
+   "components": 1
+  },
+  "rosin": {
+   "sheet": 8,
+   "row": 0,
+   "col": 0,
+   "components": 1
+  },
+  "redpigment": {
+   "sheet": 8,
+   "row": 0,
+   "col": 1,
+   "components": 1
+  },
+  "blackpigment": {
+   "sheet": 8,
+   "row": 0,
+   "col": 2,
+   "components": 1
+  },
+  "redpaint": {
+   "sheet": 8,
+   "row": 0,
+   "col": 3,
+   "components": 1
+  },
+  "pulp": {
+   "sheet": 8,
+   "row": 1,
+   "col": 0,
+   "components": 2
+  },
+  "paper": {
+   "sheet": 8,
+   "row": 1,
+   "col": 1,
+   "components": 1
+  },
+  "gasoline": {
+   "sheet": 8,
+   "row": 1,
+   "col": 2,
+   "components": 1
+  },
+  "kerosene": {
+   "sheet": 8,
+   "row": 1,
+   "col": 3,
+   "components": 1
+  },
+  "naphtha": {
+   "sheet": 8,
+   "row": 2,
+   "col": 0,
+   "components": 1
+  },
+  "heavyoil": {
+   "sheet": 8,
+   "row": 2,
+   "col": 1,
+   "components": 1
+  },
+  "ethylene": {
+   "sheet": 8,
+   "row": 2,
+   "col": 2,
+   "components": 1
+  },
+  "pe": {
+   "sheet": 8,
+   "row": 2,
+   "col": 3,
+   "components": 1
+  },
+  "plasticbox": {
+   "sheet": 8,
+   "row": 3,
+   "col": 0,
+   "components": 1
+  },
+  "orebauxite": {
+   "sheet": 8,
+   "row": 3,
+   "col": 1,
+   "components": 1
+  },
+  "aluminate": {
+   "sheet": 8,
+   "row": 3,
+   "col": 2,
+   "components": 1
+  },
+  "redmud": {
+   "sheet": 8,
+   "row": 3,
+   "col": 3,
+   "components": 1
+  },
+  "aloh": {
+   "sheet": 9,
+   "row": 0,
+   "col": 0,
+   "components": 1
+  },
+  "alumina": {
+   "sheet": 9,
+   "row": 0,
+   "col": 1,
+   "components": 1
+  },
+  "aluminum": {
+   "sheet": 9,
+   "row": 0,
+   "col": 2,
+   "components": 1
+  },
+  "silicon": {
+   "sheet": 9,
+   "row": 1,
+   "col": 0,
+   "components": 1
+  },
+  "pure_si": {
+   "sheet": 9,
+   "row": 1,
+   "col": 1,
+   "components": 1
+  },
+  "bulb": {
+   "sheet": 9,
+   "row": 1,
+   "col": 2,
+   "components": 1
+  },
+  "solarcell": {
+   "sheet": 9,
+   "row": 2,
+   "col": 0,
+   "components": 1
+  },
+  "thread": {
+   "sheet": 9,
+   "row": 2,
+   "col": 1,
+   "components": 1
+  },
+  "cloth": {
+   "sheet": 9,
+   "row": 2,
+   "col": 2,
+   "components": 1
+  },
+  "moltenglass": {
+   "sheet": "separate crucible image",
+   "fringe_pixels_fixed": 377
+  }
+ },
+ "corrections": [
+  "sheet6 moltenglass: bottle icon skipped (replaced by crucible image per owner spec)",
+  "moltenglass: separate crucible image used (owner spec), haze binarized at alpha>=128"
+ ]
+}
