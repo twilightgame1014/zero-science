@@ -488,8 +488,8 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
   const { page, errors, ctx } = await newPage({ width: 1366, height: 768 }, false);
   await page.click('#introGo'); await page.waitForTimeout(700);
   await page.evaluate(`(()=>{ ${G}.W3.pos={x:-12,z:24}; })()`); await page.waitForTimeout(300);
-  const ui = await page.evaluate(`({hidden:document.getElementById('camctl').hidden, btns:[...document.querySelectorAll('#camctl button')].map(b=>b.dataset.id), slider:!!document.getElementById('camZoom')})`);
-  ok('カメラの操作ボタン（上下左右・近づく・離れる・距離）は撤去し、「視点を戻す」だけを小さく残す', !ui.hidden && ui.btns.length === 1 && ui.btns[0] === 'reset' && !ui.slider, JSON.stringify(ui));
+  const ui = await page.evaluate(`({hidden:document.getElementById('camctl').hidden, btns:[...document.querySelectorAll('#camctl button')].map(b=>b.dataset.id), shown:[...document.querySelectorAll('#camctl button')].filter(b=>!b.hidden).map(b=>b.dataset.id), slider:!!document.getElementById('camZoom')})`);
+  ok('カメラの操作ボタン（上下左右・近づく・離れる・距離）は撤去し、「視点を戻す」だけを小さく残す（「主人公に合わせる」は主人公が中央から大きく外れたときだけ出る）', !ui.hidden && ui.shown.length === 1 && ui.shown[0] === 'reset' && ui.btns.every(b => b === 'reset' || b === 'recenter') && !ui.slider, JSON.stringify(ui));
   ok('初回だけ「ドラッグで視点変更／ホイールでズーム」の案内を出す（出したことを保存）', await page.evaluate(`${G}.S.flags.camHint===1`));
   const c0 = await camState(page), fp = await frontPoint(page), f0 = await screenOf(page, fp);
   // 左ボタンで右へドラッグ：回転（移動先は決まらない）。景色を引っ張る向き＝主人公の手前の地面が右へ動く
@@ -581,12 +581,11 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
   const l0 = await camState(page); await page.mouse.move(300, 420); await page.mouse.down(); await page.mouse.move(500, 420, { steps: 6 }); await page.mouse.up(); await settle(page);
   const l1 = await camState(page);
   ok('研究室などのパネルを開いている間は、ドラッグしてもカメラは動かない', Math.abs(l1.cy - l0.cy) < 1e-6 && l1.ptrs === 0, JSON.stringify({ l0: l0.cy, l1: l1.cy }));
-  // 建物の陰：主人公とカメラの間に小屋（高さ3.16）を置き、低い角度にすると、一時的に角度を上げる（希望の角度は変えない）。どけると戻る
+  // 建物の陰（2026-11-08 改訂）：主人公とカメラの間に小屋を置いて低い角度にしても、見下ろし角を勝手に上げない（希望の角度のまま渡す）
   const bh = await page.evaluate(`(async()=>{ const G=${G}, c=G.W3.cam; c.pitch=G.W3.camPitchMin||0; c.yaw=c.cy; const y=c.cy*Math.PI/180, p=G.W3.pos;
     const prev=G.WORLD.structures(); G.WORLD.setStructures(prev.concat([{id:'t-hut', type:'hut', x:p.x+Math.sin(y)*4, z:p.z+Math.cos(y)*4, rot:0, footprint:{shape:'rect', w:3.8, d:3.4}}]));
-    await new Promise(r=>setTimeout(r,900)); const a={need:c.need, sent:G.W3.camSent.p, pitch:c.pitch};
-    G.WORLD.setStructures(prev); await new Promise(r=>setTimeout(r,2500)); const b={need:c.need, sent:G.W3.camSent.p, pitch:c.pitch}; return {a,b}; })()`);
-  ok('主人公とカメラの間に建物が入ると、見下ろし角を一時的に上げて主人公を見せる（希望の角度は変えず、建物が無くなるとなめらかに戻る）', bh.a.need > 25 && bh.a.sent > 20 && bh.a.pitch === bh.b.pitch && bh.b.sent < bh.a.sent - 10, JSON.stringify(bh));
+    await new Promise(r=>setTimeout(r,900)); const a={sent:G.W3.camSent.p, pitch:c.pitch}; G.WORLD.setStructures(prev); return a; })()`);
+  ok('主人公とカメラの間に建物があっても、見下ろし角を勝手に上げない（送る角度＝ユーザーの希望の角度）', Math.abs(bh.sent - bh.pitch) < 0.01, JSON.stringify(bh));
   ok('ページでエラーが起きていない（カメラ・PC）', errors.length === 0, errors.join('\n'));
   await ctx.close();
 }
@@ -666,7 +665,7 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
   await touch('touchStart', [{ x: 200, y: 330, id: 12 }]); await touch('touchMove', [{ x: 240, y: 330, id: 12 }]); await touch('touchCancel', []); await page.waitForTimeout(80);
   const cc = await camState(page);
   ok('pointercancel（指の取り消し）で操作の状態が残らない', cc.ptrs === 0 && !cc.pinch && !cc.target, JSON.stringify(cc));
-  ok('スマホ：「視点を戻す」は小さなボタン1つ（指が届く大きさ）', (await rect(page, '#camctl [data-id="reset"]')).w >= 36 && (await page.evaluate(`document.querySelectorAll('#camctl button').length`)) === 1);
+  ok('スマホ：「視点を戻す」は小さなボタン1つ（指が届く大きさ）', (await rect(page, '#camctl [data-id="reset"]')).w >= 36 && (await page.evaluate(`[...document.querySelectorAll('#camctl button')].filter(b=>!b.hidden).length`)) === 1);
   const ta = await page.evaluate(`({stage:getComputedStyle(document.getElementById('view')).touchAction, dock:getComputedStyle(document.getElementById('dock')).touchAction})`);
   ok('マップの上はブラウザのスクロール・ピンチ拡大と競合しない（touch-action:none）。パネルはスクロールできるまま', ta.stage === 'none' && ta.dock !== 'none', JSON.stringify(ta));
   ok('ページでエラーが起きていない（カメラ・スマホ）', errors.length === 0, errors.join('\n'));

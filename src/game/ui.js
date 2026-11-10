@@ -134,7 +134,8 @@ function layout(){
   const a=app.getBoundingClientRect(), r=n.getBoundingClientRect();
   app.style.setProperty("--navh", Math.max(0, Math.round(a.bottom - r.top))+"px");
   /* HUD に隠れない範囲を描画モジュールへ伝える（公開API setViewportInsets がある場合だけ） */
-  if(typeof W3!=="undefined" && W3.gfx && typeof W3.gfx.setViewportInsets==="function"){ try{ W3.gfx.setViewportInsets(hudInsets()); }catch(e){} }
+  /* カメラの高さを固定しているときは、カメラ（camFrame）がずらしと合わせて渡す。それ以外はここで渡す */
+  if(typeof W3!=="undefined"){ W3.camHudIns = hudInsets(); if(W3.gfx && typeof W3.gfx.setViewportInsets==="function"){ try{ W3.gfx.setViewportInsets(W3.camHudIns); }catch(e){} } }
 }
 function hudInsets(){
   const app=$("#app"), tl=$(".hud-tl"), n=$("#nav"); if(!app||!tl||!n) return {top:0,bottom:0,left:0,right:0};
@@ -669,6 +670,7 @@ function rescue(){
   W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false}));
   try{ if(W3.gfx.cameraRig && W3.gfx.cameraRig.snapToTarget) W3.gfx.cameraRig.snapToTarget(); }catch(e){}
   if(W3.world && W3.world.afterWarp) W3.world.afterWarp(W3.pos.x, W3.pos.z);     // 足もとの地形の区画を今すぐ用意（読み込み待ちで地面が抜けないように）
+  camRebase();     // カメラの高さの基準を新しい場所の足もとへ
   syncAll3D(); banner("🛟 拠点へ瞬間移動した");
 }
 /* 広い世界の地名（山麓・中腹・海岸・滝つぼ など。旧世界の中は null） */
@@ -944,6 +946,7 @@ async function start3D(){
       images:{particle:ASSETS.particle}}); }catch(e){ console.error("広い世界の描画を始められなかった", e); } }
     camInit();      // 保存した視点を先に（古いセーブの画面基準の向きを、その視点でワールドの向きへ換算するため）
     W3.pos = spawnPos();
+    if(W3.spawnMoved) camRebase();     // 安全な場所へ移したときは、その場の足もとを基準の高さに
     syncAll3D();
     W3.state = "ready";
     npcInit();
@@ -963,6 +966,7 @@ function spawnPos(){
      念のため、位置が崖・深い水・木や岩の中なら近くの安全な場所へ移す（建物は消さない）。版を記録して保存する */
   const oldWorld = window.TERRAIN && TERRAIN.WORLD_VERSION && (S.worldVer||1) < TERRAIN.WORLD_VERSION;
   const q = WORLD.safeSpawn(S, p);
+  W3.spawnMoved = !!q.moved;
   if(q.moved){ S.pos={x:+q.x.toFixed(2), z:+q.z.toFixed(2), dir:W3.dir}; save(); setTimeout(()=>banner("🧭 歩ける安全な場所へ移動した（木や岩・崖・深い水と重ならない所）"), 600); }
   if(oldWorld){ S.worldVer = TERRAIN.WORLD_VERSION; save(); setTimeout(()=>banner("🗺️ 世界が広くなった！ 北東の山・東と南の海岸・山の滝へ行ける（地図で見られる）"), q.moved ? 3600 : 900); }
   return {x:q.x, z:q.z};
@@ -973,6 +977,7 @@ function applySavedPos(){
   haltField();
   if(W3.gfx) W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false}));
   if(W3.world && W3.world.afterWarp) W3.world.afterWarp(W3.pos.x, W3.pos.z);
+  if(W3.cam && (!finite(W3.cam.base) || W3.spawnMoved)) camRebase();     // 読み込み：保存した基準の高さを使う。無い・安全な場所へ移したときだけその場の足もとへ
   if(W3.gfx) syncAll3D();
 }
 /* 描画の一時停止：Muse の公開API pauseGraphics / resumeGraphics があれば使い、なければ従来の内部メソッド */
@@ -1064,9 +1069,8 @@ function loop3D(ts){
   /* 大きなフレーム間隔でも進む距離を保つ（すり抜けは nature.move が細かく分けて防ぐ） */
   const dt = W3.lastTs ? Math.min(0.1,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
   if(W3.world && W3.pos) W3.world.update(dt, W3.pos, W3.gfx.getCamera());   // 外側の地形の区画（近いほど細かく・少しずつ作る）と水・滝の動き
-  camFrame(dt);
   /* 地名（山麓・海岸など）が変わったら左上の表示を更新、エリアの照明・空・霧・粒子を Muse の setEnvironment へ（0.5秒ごと） */
-  W3.plT=(W3.plT||0)+dt; if(W3.plT>0.5 && W3.pos){ W3.plT=0; const pn=placeHere(); if(pn!==W3.placeName){ W3.placeName=pn; updateLoc(); }
+  W3.plT=(W3.plT||0)+dt; if(W3.plT>0.5 && W3.pos){ W3.plT=0; camRecenterUI(); const pn=placeHere(); if(pn!==W3.placeName){ W3.placeName=pn; updateLoc(); }
     if(typeof W3.gfx.setEnvironment==="function" && TERRAIN.areaWeights){ try{ W3.gfx.setEnvironment({weights: TERRAIN.areaWeights(W3.pos.x, W3.pos.z, W3.cfg)}); }catch(e){} } }
   let ix=0, iy=0;
   const active = fieldInputActive();
@@ -1097,16 +1101,15 @@ function loop3D(ts){
     /* 向き：進もうとしている向き（スティック・キーはカメラ基準の入力、クリック移動は次の通過点。ワールドの角度）。
        壁や木に当たって横へ滑っても、押している向きのまま（滑った分で絵が横を向かない）。カメラを回しても変わらない。
        絵の行は playerVisual がカメラから見て選ぶ。止まったら最後の向きのまま */
-    if(got>0.0001) W3.face = Math.atan2(mx, mz);
+    if(got>0.0001) W3.face = Math.atan2(mx, mz);     // 実際に進まないコマ（壁に押し付けているだけ等）では向きを変えない（Codex 58f2b0b）
   }
   /* 歩行状態：入力や移動予約の有無ではなく、衝突処理のあとに実際に進んだ量と経過時間で決める。
      ワープ・ロード時の補正・初期配置は W3.pos を直接書くので、ここでは数えない（歩行にならない） */
   const moving = updateWalk(dt, got, (ix||iy) || !!(W3.path && W3.path.length));
-  /* speed：実際に進んだ速さ（マス/秒、少しならした値）。Muse §31 の歩行位相へ渡す。止まっているときは 0 */
+  /* speed：実際に進んだ速さ（マス/秒、少しならした値）。Muse §31 の歩行位相（進んだ距離 ÷ 0.35 マスで1コマ）へ渡す。止まっているときは 0 */
   W3.walkSpeed = moving ? (W3.walkSpeed||0) + ((dt>0?got/dt:0) - (W3.walkSpeed||0)) * damp(12, dt) : 0;
   W3.gfx.setPlayerVisualState(playerVisual({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving, speed:+W3.walkSpeed.toFixed(2), action: W3.work ? "gather" : undefined}));
-  /* Muse §32：注視点は主人公の実際の足元。固定高度やカメラ行列の打ち消しは使わない。 */
-  W3.gfx.setCameraTarget({x:W3.pos.x, z:W3.pos.z, y:groundY(W3.pos.x,W3.pos.z)});
+  camFrame(dt);     // カメラは主人公の位置を渡したあと（モジュールが次のコマで使う位置で、注視点の高さの変化を打ち消す）
   tickWork(ts);
   // 地域の判定
   const reg = regionAt(W3.pos.x, W3.pos.z);
@@ -1328,6 +1331,7 @@ function bind3DInput(){
   };
   ["pointerup","pointercancel","lostpointercapture"].forEach(t=>w.addEventListener(t, ptrEnd));
   w.addEventListener("wheel", e=>{ if(!camSupported() || !fieldInputActive() || !W3.cam) return; e.preventDefault();
+    W3.camWheelAt = performance.now();      // ホイールも「操作中」（カメラの高さの基準を変えてよい間）
     const n = Math.max(-4, Math.min(4, (e.deltaMode===1 ? e.deltaY/3 : e.deltaY/100))) || Math.sign(e.deltaY);
     camZoomTo(W3.cam.zoom * Math.pow(CAM.wheelStep, n)); clearTimeout(W3.wheelT); W3.wheelT=setTimeout(()=>camStore(true),300); }, {passive:false});
   /* iOS Safari のページのピンチ拡大（gesture* イベント）をマップの上だけ止める */
@@ -1628,15 +1632,17 @@ function intro(){
 document.getElementById("app").dataset.ui = document.documentElement.dataset.ui = detectUi(); applyIcons(); bindHudInput(); renderChrome(); render(); layout(); intro();
 /* ===================== 主人公の向き（ワールドの向き＋カメラから見た絵の行。2026-11-08） =====================
    W3.face：主人公がワールドで向いている角度（atan2(x,z)。0＝+Z、π/2＝+X）。実際に進んだ向きでだけ変わり、カメラを回しても変わらない。
-   8行シートでは連続 facing を描画側へ渡し、カメラ相対の行選びと境界のヒステリシスを任せる（Muse §31）。
-   下のセクター・direction は4行シート・旧API・表示・保存との互換用。 */
+   絵の行は「向き − カメラの画面下方向」の相対角で選ぶ（描画モジュールの絵は4方向：正面・右・背中・左。斜めの絵はまだない）。
+   境界の前後で絵が細かく入れ替わらないよう、今の行の中心から ±(45°＋FACE_HYST) を超えたときだけ行を変える。
+   描画モジュールは受け取ったワールドの4方向からカメラ基準で行を選ぶ（CharacterRenderer.rowForDirection）ので、
+   選びたい行になるワールドの向きを渡す（カメラの向きが決まれば、4方向のどれか1つが必ずその行になる）。 */
 const DIR_ANGLE = {down:0, "down-right":Math.PI/4, right:Math.PI/2, "up-right":Math.PI*3/4, up:Math.PI, "up-left":-Math.PI*3/4, left:-Math.PI/2, "down-left":-Math.PI/4};
 const SECTOR_OF = {down:0, right:1, up:2, left:3}, SECTOR_NAME = ["down","right","up","left"];
 const DIR8 = ["down","down-right","right","up-right","up","up-left","left","down-left"];   // 相対角 0°,45°,… の順（主人公の画面右側を通って回る）
 const FACE_HYST = {4:10, 8:6};   // 度：行の中心から ±(半セクター＋これ) を超えたら切り替える
 const wrapPi = a => { a = (a + Math.PI) % (Math.PI*2); if(a < 0) a += Math.PI*2; return a - Math.PI; };
 /* 8方向の絵を使うか：シートが8行（ASSETS.heroRows）で、描画モジュールの行選びの自己点検（HD2D.diag8Check）に通ったときだけ。
-   通らない旧版はシートの上4行だけで表示する。Muse §31 の修正版では自己点検に通り、男女とも8行のまま使う。 */
+   通らない旧版はシートの上4行だけで表示する。Muse §31（第25ラウンド）の修正版では自己点検に通り、男女とも8行のまま使う。 */
 function heroDirs(){ if(W3.heroDirs) return W3.heroDirs;
   let n = 4; try{ if((ASSETS.heroRows||4)===8 && window.HD2D && typeof HD2D.diag8Check==="function"){ const r=HD2D.diag8Check(); W3.diag8=r; if(r.ok) n=8; } }catch(e){}
   return W3.heroDirs = n; }
@@ -1666,7 +1672,7 @@ function playerVisual(st){
   const d=worldFacing(), n=heroDirs();
   if(W3.faceSec!=null) W3.dir = SECTOR_NAME[Math.round(W3.faceSec*4/n)%4];
   /* 8行では連続したワールド角を正本にする（Muse §31）。direction は旧版・4行用の互換値。
-     停止やカメラ回転では face を変えず、描画側がカメラとの相対角から行を選ぶ。 */
+     停止やカメラ回転では face を変えず、描画側がカメラとの相対角から行を選ぶ（Codex 58f2b0b）。 */
   return Object.assign({}, st, {direction:d}, n===8 && finite(W3.face) ? {facing:W3.face} : {}, st.moving ? {} : {speed:0});
 }
 /* 3D の主人公のシート：8方向を使うなら8行のまま。使わないなら上4行（従来の下・左・右・上）だけを切り出す（その場で作って覚えておく） */
@@ -1683,10 +1689,26 @@ document.documentElement.style.setProperty("--hero-rows", String(ASSETS.heroRows
 /* ===================== 探索カメラ（ドラッグで回転・上下、ピンチ／ホイールで距離。2026-11-08） =====================
    角度の定義（ゲームとモジュールで同じ）：見下ろし角＝水平から下への角度。0°＝注視点と同じ高さの水平視点、70°＝上から70°。
    モジュールの CameraController も pitchDegrees を「水平からの仰角」（offset.y＝sin(pitch)）で持つので換算はいらない（極角ではない）。
-   モジュールは見下ろし角を 12°〜72° に制限しているので、実際に使える下限は max(0, モジュールの下限)（起動時に確かめる。W3.camPitchMin）。
-   カメラは正投影（距離は表示範囲 viewSize。小さいほど近い）。注視点はモジュールが主人公の足もと（地形の高さ、歩行の上下動を含まない）へ
-   なめらかに追従させる。ゲームは向き・角度・距離だけを、毎フレーム1か所（camFrame）から setCameraOrbit で渡す（二重に適用しない）。
-   操作の値（S.camera）：yaw・pitch・zoom（ユーザーの希望）と sx・sy（感度）。地形を避けるための一時的な角度は保存しない。 */
+   カメラは正投影：見え方の大きさは表示範囲 viewSize（ズーム）で決まり、カメラ本体の距離（distance）は「どこまで手前を描くか」だけを変える。
+
+   【高さを固定する（2026-11-08 改訂。それまでの「地形の高さの変化に追従」を置き換え）】
+   - 描画モジュールは毎フレーム、注視点の高さを主人公の足もとの地面の高さへなめらかに合わせる（GraphicsEngine の loop：
+     setTarget(x, z, getGroundHeight(x, z))）。これが「坂・起伏でカメラが勝手に上下する」原因。モジュールは変えられないので、
+     ゲームが毎フレーム、モジュールの注視点の高さの変化をちょうど打ち消す：画面の上下方向のずらし（setViewportInsets の差）と
+     カメラ本体の距離（distance、第24ラウンド）。正投影なので、これで「決めた高さに置いたカメラ」と同じ絵・同じ本体の位置になる。
+   - 基準の高さ（W3.cam.base）は、読み込み・瞬間移動・地域移動・「視点を戻す」のときだけ、その時の主人公の足もとの高さにする。
+     歩いている間は変えない。主人公への追従は水平だけ（モジュールの水平のなめらかな追従をそのまま使う）。歩く絵の上下動は元から入らない。
+   - 低い角度：見下ろし角が CAM.lowBlend 以下になるほど、注視点（画面の中心）を基準＋CAM.lowFocus（足もと＋0.3、主人公の身長1.7の約18%）
+     へ下げ、モジュールの「主人公を画面の少し下に置く」ずらし（anchorOffset 0.09×表示範囲）を弱める。角度はユーザーのドラッグだけで変わる。
+   - 地形で角度を勝手に上げる処理（旧 camNeed）は廃止。
+   【衝突（地形・建物の中にカメラを入れない）】
+   - 正投影では、カメラ本体の面（近い面）より手前は描かれない。近い面が地形・建物と交わると、その断面が画面に出る（地表の貫通）。
+     希望の値（W3.cam の yaw・pitch・zoom、距離 CAM.dist）と、実際に置く値（W3.cam.a）を分ける。
+   - まず距離だけを変えて、近い面の四角が地形・建物＋余裕より上にあり（必須）、主人公からカメラへの線が地形・建物で隠れない（できれば）距離を
+     希望の距離に近い順に探す（短くする方を先に）。
+   - 置ける距離がないとき：ユーザーの操作で角度・ズームが変わった分を止める（安全な直前の値のまま。希望の値は書き換えない）。
+     それでも駄目なら、注視点の水平の追従を止める（setCameraTarget で直前の安全な位置に留める）。置けるようになったら戻す（なめらか）。
+     勝手に角度を上げない・地面や壁をすり抜けさせない。 */
 const CAM = {
   tapSlop: 8,          // タップとドラッグの境（CSSピクセル）
   tapTime: 450,        // これより長く押したままなら、動かさなくてもタップにしない（ミリ秒）
@@ -1698,16 +1720,19 @@ const CAM = {
   zoomMul: [0.55, 1.9],// 距離（表示範囲）の範囲：標準に対する倍率
   wheelStep: 1.12,     // ホイール1段の倍率
   sens: [0.3, 2.5],    // 感度の範囲（設定画面）
-  clearHead: 0.3,      // 見通しを確かめる高さ（足もと＋。足まで見えるように低め）
-  clearMargin: 0.6,    // 地形からの余裕（マス。地形メッシュの粗さの分も含む）
-  clearSide: 1.4,      // 線の左右にも同じ余裕を見る（マス）
-  clearRise: 30,       // 障害物で角度を上げる速さ（毎秒。速く＝斜面に主人公が隠れる時間を作らない）
-  clearFall: 2.2,      // 障害物を離れて希望の角度へ戻る速さ（毎秒）
+  lowFocus: 0.3,       // 見下ろし角0°での注視点（画面の中心の高さ）：基準の足もと＋（マス）。主人公の身長1.7の約18%
+  lowBlend: 25,        // この見下ろし角より低いほど、注視点を下げ、画面の下寄せを弱める（度）
+  dist: 90,            // 希望するカメラ本体の距離（マス。モジュールの既定と同じ）
+  distSteps: [90, 75, 60, 45, 32, 22, 15, 10, 110, 140],   // 置ける距離を探す順（短くする方を先に）。正投影では本体より手前の物がすべて重なって描かれるので、140 より遠くには置かない（遠くの山が画面を覆うため）
+  nearMargin: 0.3,     // 近い面と地形・建物との余裕（マス）
+  segSide: 1.0,        // 主人公からカメラへの線の左右にも見る幅（マス）
+  checkEvery: 0.1,     // 衝突を調べる間隔（秒。角度・ズーム・位置が大きく変わったらすぐ）
 };
 const camSupported = ()=> !!(W3.gfx && typeof W3.gfx.setCameraOrbit==="function");
 const clampN = (v,a,b)=> Math.max(a, Math.min(b, v));
 const finite = v => typeof v==="number" && isFinite(v);
 const damp = (rate, dt)=> 1 - Math.exp(-rate*dt);    // フレームレートに依存しない平滑化の割合
+const sstep = (a,b,x)=>{ const t=clampN((x-a)/(b-a),0,1); return t*t*(3-2*t); };
 function camDefaults(){ const c=(W3.cfg && W3.cfg.camera)||{}; return {yaw:c.yawDegrees!=null?c.yawDegrees:45, pitch:c.pitchDegrees!=null?c.pitchDegrees:32, zoom:c.viewSize!=null?c.viewSize:13}; }
 function camPitchLim(){ return [Math.max(CAM.pitch[0], W3.camPitchMin||0), CAM.pitch[1]]; }
 function camZoomLim(){ const z=camDefaults().zoom; return [+(z*CAM.zoomMul[0]).toFixed(2), +(z*CAM.zoomMul[1]).toFixed(2)]; }
@@ -1719,68 +1744,165 @@ function camUser(){
 }
 /* 希望の値（W3.cam の yaw・pitch・zoom）を S.camera へ。yaw は何周しても連続した値で持ち、保存と送信のときだけ 0〜360 にする */
 function camStore(persist){ const c=W3.cam; if(!c) return; const u=camUser();
-  S.camera = Object.assign({}, S.camera, {yaw:+(((c.yaw%360)+360)%360).toFixed(2), pitch:+c.pitch.toFixed(2), zoom:+c.zoom.toFixed(2), sx:u.sx, sy:u.sy});
+  S.camera = Object.assign({}, S.camera, {yaw:+(((c.yaw%360)+360)%360).toFixed(2), pitch:+c.pitch.toFixed(2), zoom:+c.zoom.toFixed(2), sx:u.sx, sy:u.sy}, finite(c.base) ? {base:+c.base.toFixed(3)} : {});
   if(persist){ clearTimeout(W3.camSaveT); W3.camSaveT=setTimeout(save, 250); } }
-function camSend(yaw, pitch, zoom){
+/* カメラの向きの単位ベクトル：B＝注視点からカメラ本体へ、U＝画面の上、R＝画面の右（モジュールの applyOrientation と同じ式） */
+function camAxes(yawDeg, pitchDeg){ const y=yawDeg*Math.PI/180, p=pitchDeg*Math.PI/180;
+  return {B:{x:Math.sin(y)*Math.cos(p), y:Math.sin(p), z:Math.cos(y)*Math.cos(p)}, U:{x:-Math.sin(y)*Math.sin(p), y:Math.cos(p), z:-Math.cos(y)*Math.sin(p)}, R:{x:Math.cos(y), y:0, z:-Math.sin(y)}}; }
+/* モジュールへ送る（向き・角度・ズーム・距離と、画面の上下のずらし）。setViewportInsets を先に、setCameraOrbit を後に
+   （setCameraOrbit がその場で変換を作り直すので、送った値とカメラの位置がいつも一致する） */
+function camSend(yaw, pitch, zoom, dist){
   const y=((yaw%360)+360)%360, L=W3.camSent;
-  if(L && Math.abs(L.y-y)<0.005 && Math.abs(L.p-pitch)<0.005 && Math.abs(L.z-zoom)<0.0005) return;
-  try{ W3.gfx.setCameraOrbit({yawDegrees:y, pitchDegrees:pitch, viewSize:zoom}); }catch(e){}
-  W3.camSent = {y, p:pitch, z:zoom};
+  if(L && Math.abs(L.y-y)<0.002 && Math.abs(L.p-pitch)<0.002 && Math.abs(L.z-zoom)<0.0005 && Math.abs((L.d||0)-(dist||0))<0.001) return;
+  try{ W3.gfx.setCameraOrbit(Object.assign({yawDegrees:y, pitchDegrees:pitch, viewSize:zoom}, dist ? {distance:dist} : {})); }catch(e){}
+  W3.camSent = {y, p:pitch, z:zoom, d:dist||null};
   W3.camView = {yaw:y, pitch, zoom}; W3.camPitchNow = pitch;
 }
+/* 高さを固定する仕組みが使えるか（本物のモジュール：カメラの位置・視錐台・setViewportInsets・距離がある） */
+function camHeightOk(){ try{ const cam=W3.gfx.getCamera(); return !!(cam && cam.position && finite(cam.top) && typeof W3.gfx.setCameraTarget==="function" && typeof W3.gfx.getCameraView==="function" && finite((W3.gfx.getCameraView()||{}).distance)); }catch(e){ return false; } }
+/* 基準の高さを今の主人公の足もとにする（読み込み・瞬間移動・地域移動・視点を戻す） */
+function camRebase(){ const c=W3.cam; if(!c || !W3.pos) return; c.base = groundY(W3.pos.x, W3.pos.z); c.next = 0; c.freeze = null; camStore(true); }
 function camInit(){
   if(!camSupported()){ camUI(); return; }
-  /* モジュールの見下ろし角の下限を確かめる（getCameraView があれば。今の版は 12°） */
+  /* モジュールの見下ろし角の下限を確かめる（getCameraView があれば。第24ラウンドは 0°、それより前は 12°） */
   W3.camPitchMin = 0;
   if(typeof W3.gfx.getCameraView==="function"){ try{ W3.gfx.setCameraOrbit({pitchDegrees:0}); const v=W3.gfx.getCameraView(); if(v && finite(v.pitchDegrees)) W3.camPitchMin = Math.max(0, v.pitchDegrees); }catch(e){} }
   const u=camUser();
-  W3.cam = {yaw:u.yaw, pitch:u.pitch, zoom:u.zoom, cy:u.yaw, cp:u.pitch, cz:u.zoom, rate:CAM.smooth, clr:0, need:0, clrT:1};
-  W3.camSent = null; camSend(u.yaw, u.pitch, u.zoom);
-  camUI(); camHint();
+  W3.cam = {yaw:u.yaw, pitch:u.pitch, zoom:u.zoom, cy:u.yaw, cp:u.pitch, cz:u.zoom, rate:CAM.smooth,
+    a:{y:u.yaw, p:u.pitch, z:u.zoom}, d:CAM.dist, dSel:CAM.dist, dHold:0, base:(S.camera && finite(S.camera.base)) ? clampN(S.camera.base, -50, 200) : null, next:0, lim:"", freeze:null, ok:camHeightOk()};
+  W3.camSent = null; camSend(u.yaw, u.pitch, u.zoom, W3.cam.ok ? CAM.dist : 0);
+  camUI(); camHint(); camDebugInit();
 }
 /* 回転（度）。何周しても連続。上下は範囲で止める（跳ね返らない） */
 function camRotate(dYaw, dPitch){ const c=W3.cam; if(!c) return; const pl=camPitchLim();
   c.yaw += dYaw; c.pitch = clampN(c.pitch + dPitch, pl[0], pl[1]); c.rate = CAM.smooth; camStore(false); }
 function camZoomTo(z){ const c=W3.cam; if(!c) return; const zl=camZoomLim(); c.zoom = clampN(z, zl[0], zl[1]); c.rate = CAM.smooth; camStore(false); }
-/* 視点を戻す：標準の角度と距離へなめらかに（回る向きは近いほう）。感度はそのまま */
+/* 視点を戻す：標準の角度と距離へなめらかに（回る向きは近いほう）。高さの基準も今の主人公の足もとへ。感度はそのまま */
 function camReset(){
   const c=W3.cam, d=camDefaults(); if(!c) return;
   c.yaw = c.cy + (((d.yaw - c.cy) % 360 + 540) % 360 - 180); c.pitch = clampN(d.pitch, ...camPitchLim()); c.zoom = d.zoom; c.rate = CAM.resetRate;
+  camRebase();
   const u=camUser(); S.camera = {sx:u.sx, sy:u.sy}; save(); banner("🎥 視点を標準の角度と距離に戻した");
 }
-/* 地形（山の斜面など）がカメラと主人公の間に入るときに必要な見下ろし角。注視点の少し上へ向かう線と、その左右（clearSide）を見て、
-   地形＋余裕（clearMargin）より上を通る角度を求める。正投影のカメラはモジュールの中で注視点から90マス離れているので、その距離まで見る。
-   木は描画モジュールの遮蔽フェード（updateOcclusion）で薄くなるので見ない。建物は高さも見る（下） */
-function camNeed(yawDeg, pitchDeg){
-  if(!W3.pos) return 0;
-  const yaw=yawDeg*Math.PI/180, bx=Math.sin(yaw), bz=Math.cos(yaw), rx=bz, rz=-bx, py=groundY(W3.pos.x, W3.pos.z) + CAM.clearHead;
-  const far = Math.max(8, 90*Math.cos(pitchDeg*Math.PI/180));
-  /* 建物（作った設備・集落の小屋）：占有範囲（footprint）の上は、地面＋建物の高さ（structures.json の size.h）として扱う。
-     描画モジュールの遮蔽フェードは建物を半透明にするだけで、低い角度では主人公が隠れたままになるため */
-  const bl = (world() && WORLD.structures ? WORLD.structures() : []).map(o=>{ const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[o.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[o.type]);
-      return {o, h: sp && sp.size && finite(sp.size.h) ? sp.size.h : 0}; })
-    .filter(b=>b.h>0.4 && Math.hypot(b.o.x-W3.pos.x, b.o.z-W3.pos.z) < far+6);
-  const hAt = (x,z)=>{ let h=groundY(x,z); for(const b of bl){ if(WORLD.sdist(b.o, x, z) < 0.3){ const top=groundY(b.o.x, b.o.z)+b.h; if(top>h) h=top; } } return h; };
-  let need = 0;
-  for(let d=0.8; d<=far; d+=(d<6?0.6:d<20?1.5:3)){
-    for(const s of [-CAM.clearSide, 0, CAM.clearSide]){ const h=hAt(W3.pos.x + bx*d + rx*s, W3.pos.z + bz*d + rz*s);
-      const a = Math.atan2(h + CAM.clearMargin - py, d)*180/Math.PI; if(a > need) need = a; } }
-  return need;
+/* 地形＋建物の高さ（建物の占有範囲の上は、地面＋建物の高さ structures.json の size.h） */
+function camBuildings(cx, cz, r){
+  return (world() && WORLD.structures ? WORLD.structures() : []).map(o=>{ const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[o.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[o.type]);
+      return {o, h: sp && sp.size && finite(sp.size.h) ? sp.size.h : 0, g: groundY(o.x, o.z)}; })
+    .filter(b=>b.h>0.4 && Math.hypot(b.o.x-cx, b.o.z-cz) < r);
 }
-/* 毎フレーム1回だけ：希望の値へなめらかに近づけ、地形を避ける一時的な角度を足して、モジュールへ渡す */
+function camHeightAt(x, z, bl){ let h=groundY(x,z); for(const b of bl){ if(WORLD.sdist(b.o, x, z) < 0.3){ const top=b.g+b.h; if(top>h) h=top; } } return h; }
+/* 置けるか：注視点 L（モジュールの注視点ではなく、ゲームが狙う位置）・向き・表示範囲・距離 d で、
+   near＝近い面の四角が地形・建物＋余裕より上にあるか（必須）、clear＝主人公からカメラへの線が隠れないか（できれば） */
+function camFits(L, ax, evs, aspect, d, player, bl, margin){
+  const nm = finite(margin) ? margin : CAM.nearMargin;
+  const W=evs*aspect, H=evs, body={x:L.x+ax.B.x*d, y:L.y+ax.B.y*d, z:L.z+ax.B.z*d};
+  for(const v of [-H/2, -H/4, 0, H/4]) for(let i=0;i<=6;i++){ const u=(i/6-0.5)*W;
+    const px=body.x+ax.R.x*u+ax.U.x*v, py=body.y+ax.U.y*v, pz=body.z+ax.R.z*u+ax.U.z*v;
+    if(py < camHeightAt(px, pz, bl) + nm) return {near:false, clear:false}; }
+  /* 主人公（足もと＋0.3〜胸）からカメラの向き B へ、近い面まで。正投影なので、主人公を隠すのはこの線の上の物 */
+  const tMax = (body.x-player.x)*ax.B.x + (body.y-player.y)*ax.B.y + (body.z-player.z)*ax.B.z;
+  for(let t=0.8; t<tMax; t+=(t<6?0.6:t<24?1.5:4)) for(const s of (t<24?[-CAM.segSide, 0, CAM.segSide]:[0])) for(const hh of [0.3, 1.2]){
+    const px=player.x+ax.B.x*t+ax.R.x*s, py=player.y+hh+ax.B.y*t, pz=player.z+ax.B.z*t+ax.R.z*s;
+    if(py < camHeightAt(px, pz, bl) + 0.15) return {near:true, clear:false}; }
+  return {near:true, clear:true};
+}
+/* 狙う注視点（高さは基準＋低い角度での下げ）と、置ける距離を決める。null＝この向き・角度・ズーム・位置ではどの距離でも置けない */
+function camSolve(yaw, pitch, zoom, fx, fz, margin){
+  const lk = camLook(yaw, pitch, zoom, fx, fz), cam=W3.gfx.getCamera();
+  const aspect = (cam.right-cam.left)/(cam.top-cam.bottom) || 16/9;
+  const pl = {x:fx, y:groundY(fx, fz), z:fz}, bl = camBuildings(fx, fz, 300);
+  let pick=null, nearOnly=null;
+  for(const d of CAM.distSteps){ const r=camFits(lk.L, lk.ax, lk.evs, aspect, d, pl, bl, margin);
+    if(r.near && r.clear){ pick=d; break; } if(r.near && nearOnly==null) nearOnly=d; }
+  const d = pick!=null ? pick : nearOnly;
+  return d==null ? null : {d, clear:pick!=null, L:lk.L, ax:lk.ax, evs:lk.evs, yF:lk.yF};
+}
+/* 注視点の高さ（正本）：基準の高さ c.base から決める。地形の高さは使わない。
+   モジュールは画面の中心を「注視点＋画面の上方向×ずらし（anchorOffset と HUD の余白から。主人公を少し下に置く）」にするので、
+   低い角度ほど（w→0）その縦の分を差し引き、画面の中心の高さを 基準＋lowFocus（足もと＋0.3）へ下げる。
+   返す値：yF＝setCameraTarget へ渡す高さ、L＝実際の画面の中心（衝突の判定用）、ax＝向きの単位ベクトル、evs＝表示範囲の高さ */
+function camLook(yaw, pitch, zoom, fx, fz){
+  const c=W3.cam, cam=W3.gfx.getCamera(), ax=camAxes(yaw, pitch), w=sstep(0, CAM.lowBlend, pitch);
+  const boost = (cam.top-cam.bottom)/((W3.camSent && W3.camSent.z) || zoom), evs = zoom*(finite(boost)&&boost>0?boost:1);
+  const hud = camHud(), sMod = (camAnchor() - (hud.bottom-hud.top)/(2*hud.h))*evs;
+  const yF = c.base + (1-w)*(CAM.lowFocus - sMod*ax.U.y);
+  return {yF, ax, evs, L:{x:fx + ax.U.x*sMod, y:yF + ax.U.y*sMod, z:fz + ax.U.z*sMod}};
+}
+function camAnchor(){ const c=(W3.cfg && W3.cfg.camera)||{}; return finite(c.anchorOffset) ? c.anchorOffset : 0.09; }
+function camHud(){ const h=($("#view") && $("#view").clientHeight) || innerHeight; const i=W3.camHudIns || hudInsets(); return {top:i.top||0, bottom:i.bottom||0, h:Math.max(1,h)}; }
+/* 距離の選び方：縮める（好ましくない距離へ移る）のはすぐ。好ましい距離へ戻すのは 0.4 秒続けて置けたときだけ（出たり消えたりしない） */
+function camPickDist(sol){ const c=W3.cam, rank=d=>CAM.distSteps.indexOf(d), cur=rank(c.dSel), nw=rank(sol.d);
+  if(nw > cur || c.dSel==null){ c.dSel = sol.d; c.dHold = 0; }
+  else if(nw < cur){ c.dHold = (c.dHold||0) + CAM.checkEvery; if(c.dHold >= 0.4){ c.dSel = sol.d; c.dHold = 0; } }
+  else c.dHold = 0; }
+function camDistLim(sol){ const c=W3.cam; if(!sol) return "置けない"; if(!sol.clear) return "見通しなし（地形・建物が主人公の手前）"; return c.dSel!==CAM.dist ? "距離を"+c.dSel+"に" : ""; }
+/* 毎フレーム1回だけ：希望の値をなめらかにし、置ける値を決め、モジュールの注視点の高さの変化を打ち消して渡す */
 function camFrame(dt){
   const c=W3.cam; if(!c || !camSupported() || !(dt>0)) return;
   const k = damp(c.rate, dt);
   c.cy += (c.yaw - c.cy) * k; c.cp += (c.pitch - c.cp) * k; c.cz += (c.zoom - c.cz) * k;
   if(Math.abs(c.yaw-c.cy)<0.01 && Math.abs(c.pitch-c.cp)<0.01 && Math.abs(c.zoom-c.cz)<0.001){ c.cy=c.yaw; c.cp=c.pitch; c.cz=c.zoom; c.rate=CAM.smooth; }
-  /* 角度が大きく回る数値の誤差を避けるため、両方を同じだけ戻す（見た目は変わらない） */
-  if(Math.abs(c.cy) > 3600){ const s=Math.round(c.cy/360)*360; c.cy-=s; c.yaw-=s; }
-  c.clrT += dt; if(c.clrT >= 0.1){ c.clrT = 0; c.need = camNeed(c.cy, c.cp); }
-  const want = Math.max(0, Math.min(CAM.pitch[1], c.need) - c.cp);
-  c.clr += (want - c.clr) * damp(want > c.clr ? CAM.clearRise : CAM.clearFall, dt);
-  if(c.clr < 0.01) c.clr = 0;
-  W3.camRaised = c.clr > 0.5;
-  camSend(c.cy, Math.min(CAM.pitch[1], c.cp + c.clr), c.cz);
+  /* 角度が大きく回る数値の誤差を避けるため、同じだけ戻す（見た目は変わらない） */
+  if(Math.abs(c.cy) > 3600){ const s=Math.round(c.cy/360)*360; c.cy-=s; c.yaw-=s; c.a.y-=s; }
+  if(!c.ok || !W3.pos){ c.a={y:c.cy, p:c.cp, z:c.cz}; camSend(c.cy, c.cp, c.cz, 0); return; }      // 偽モジュール・古い版：高さの固定なし
+  if(c.base==null) camRebase();
+  const cam = W3.gfx.getCamera();
+  /* 2) 置ける値。角度・ズームが変わるのはユーザーの操作中（ドラッグ・ピンチ・ホイール・視点を戻す、とそのなめらかな続き）だけ。
+     操作中：向き・ズームは今の見下ろし角のまま置けるなら進め、駄目ならそこで止める。見下ろし角は希望へ向かって、置ける所まで進める（二分探索）。
+     操作が終わったとき、置けずに止まった値を新しい希望の値にする（操作後の状態を基準として保つ）。
+     操作していない間（歩いているとき）：角度・ズームは変えない。置けなければ距離を変え、それでも駄目なら水平の追従を止める（勝手に上げない） */
+  const want = {y:c.cy, p:c.cp, z:c.cz};
+  const opOn = (W3.ptrs && W3.ptrs.size>0) || Math.abs(c.yaw-c.cy)>0.01 || Math.abs(c.pitch-c.cp)>0.01 || Math.abs(c.zoom-c.cz)>0.001 || (performance.now()-(W3.camWheelAt||0) < 350);
+  const lp=c.lastPos, posMoved = !lp || Math.hypot(W3.pos.x-lp.x, W3.pos.z-lp.z) > 0.25;
+  const changed = Math.abs(want.y-c.a.y)+Math.abs(want.p-c.a.p)+Math.abs(want.z-c.a.z)*4 > 0.001;
+  c.next -= dt;
+  const unfreeze = ()=>{ c.freeze=null; };
+  if(opOn && changed){
+    c.next = CAM.checkEvery; c.lastPos = {x:W3.pos.x, z:W3.pos.z};
+    let a = {y:c.a.y, p:c.a.p, z:c.a.z}, lim = "", sol = null;
+    const tryA = v => camSolve(v.y, v.p, v.z, W3.pos.x, W3.pos.z, CAM.nearMarginOp);   // 操作で決めるときは余裕を大きく（歩いて小さな起伏に乗っても制限にかからないように）
+    /* 向きとズーム（今の見下ろし角のまま） */
+    if((sol = tryA({y:want.y, p:a.p, z:want.z}))){ a.y = want.y; a.z = want.z; }
+    else if((sol = tryA({y:a.y, p:a.p, z:want.z}))){ a.z = want.z; lim = "回転を止めた"; }
+    else if((sol = tryA({y:want.y, p:a.p, z:a.z}))){ a.y = want.y; lim = "ズームを止めた"; }
+    else { sol = tryA(a); lim = sol ? "回転・ズームを止めた" : ""; }
+    /* 見下ろし角：希望の角度まで置けるならそこへ。置けないなら、今の角度から希望の側へ置ける所まで */
+    if(Math.abs(want.p - a.p) > 0.001){ const full = tryA({y:a.y, p:want.p, z:a.z});
+      if(full){ a.p = want.p; sol = full; }
+      else { let ok = a.p, ng = want.p; for(let i=0;i<6;i++){ const m=(ok+ng)/2, r=tryA({y:a.y, p:m, z:a.z}); if(r){ ok=m; sol=r; } else ng=m; } a.p = ok; lim = lim || "角度を止めた（これより低いと地面を切る）"; } }
+    if(sol){ unfreeze(); c.lastOk = {x:W3.pos.x, z:W3.pos.z}; }
+    c.a = a; c.opLim = lim; c.sol = sol || c.sol;
+    if(sol) camPickDist(sol);
+    c.lim = lim || camDistLim(sol);
+  } else {
+    if(!opOn && c.opLim!=null){       // 操作が終わった：止まった値を新しい希望の値にする
+      if(c.opLim){ c.yaw = c.cy = c.a.y; c.pitch = c.cp = c.a.p; c.zoom = c.cz = c.a.z; camStore(true); }
+      c.opLim = null; }
+    if(c.next <= 0 || posMoved || !c.sol){
+      c.next = CAM.checkEvery; c.lastPos = {x:W3.pos.x, z:W3.pos.z};
+      let sol = camSolve(c.a.y, c.a.p, c.a.z, W3.pos.x, W3.pos.z), lim = "";
+      if(sol){ unfreeze(); c.lastOk = {x:W3.pos.x, z:W3.pos.z}; }
+      else { const f=c.freeze || c.lastOk || {x:W3.pos.x, z:W3.pos.z}; sol=camSolve(c.a.y, c.a.p, c.a.z, f.x, f.z); lim="水平の追従を止めた";
+        if(!c.freeze){ c.freeze={x:f.x, z:f.z}; } }
+      if(sol){ c.sol = sol; camPickDist(sol); }
+      c.lim = lim || camDistLim(sol);
+    }
+  }
+  c.d = c.dSel || CAM.dist;
+  /* 3) モジュールへ渡す（毎フレーム1か所）：注視点＝水平は主人公（凍結中はその位置）、高さは camLook が決めた値（基準の高さから。地形は見ない）。
+     向き・角度・ズーム・距離は変わったときだけ setCameraOrbit。モジュールは水平・高さともなめらかに注視点へ寄せる（第26ラウンド §32.1） */
+  const a=c.a, fx = c.freeze ? c.freeze.x : W3.pos.x, fz = c.freeze ? c.freeze.z : W3.pos.z, lk = camLook(a.y, a.p, a.z, fx, fz);
+  try{ W3.gfx.setCameraTarget({x:fx, z:fz, y:lk.yF}); }catch(e){}
+  camSend(a.y, a.p, a.z, c.d);
+  W3.camDbg = {camY: cam.position.y, focusY: lk.L.y, targetY: lk.yF, base: c.base, pitch: a.p, want: c.cp, dist: c.d, lim: c.lim || "なし", freeze: !!c.freeze,
+    groundAtCam: groundY(cam.position.x, cam.position.z), groundAtHero: groundY(W3.pos.x, W3.pos.z)};
+}
+/* 検証用の表示（検証モードか URL に ?camdebug=1）：カメラ本体の高さ・注視点の高さ・見下ろし角（実際／希望）・距離・制限 */
+function camDebugInit(){
+  if(!(VERIFY || /[?&]camdebug=1/.test(location.search)) || $("#camdbg")) return;
+  const el=document.createElement("div"); el.id="camdbg"; el.className="camdbg"; el.setAttribute("aria-hidden","true"); ($("#hud")||document.body).appendChild(el);
+  setInterval(()=>{ const d=W3.camDbg; if(!d || U.tab!=="explore"){ el.hidden=true; return; } el.hidden=false;
+    el.textContent=`カメラY ${d.camY.toFixed(2)}／注視点Y ${d.focusY.toFixed(2)}（基準 ${d.base.toFixed(2)}）\n俯角 ${d.pitch.toFixed(1)}°（希望 ${d.want.toFixed(1)}°）距離 ${d.dist.toFixed(0)}\n制限：${d.lim}`; }, 250);
 }
 function camUI(){ const box=$("#camctl"); if(box) box.hidden = !camSupported(); }
 /* 初回だけ、操作の案内を出す */
@@ -1792,7 +1914,16 @@ function camHint(){
 /* 古い呼び出し（右クリックドラッグ等の互換）：希望の値を直接変える */
 function camSet(ch){ const c=W3.cam; if(!c) return; if(finite(ch.yaw)) c.yaw = c.cy + (((ch.yaw - c.cy) % 360 + 540) % 360 - 180);
   if(finite(ch.pitch)) c.pitch = clampN(ch.pitch, ...camPitchLim()); if(finite(ch.zoom)) camZoomTo(ch.zoom); camStore(true); }
-document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.closest("[data-act='cam']"); if(!b) return; ev.preventDefault(); if(b.dataset.id==="reset") camReset(); });
+document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.closest("[data-act='cam']"); if(!b) return; ev.preventDefault();
+  if(b.dataset.id==="reset") camReset(); else if(b.dataset.id==="recenter") camRecenter(); });
+/* 主人公に合わせる（明示の再センタリング）：角度・ズームはそのまま、基準の高さだけを今の足もとへ。高さの固定で、大きく登り下りして
+   主人公が画面の中央から大きく外れたときにだけボタンを出す（自動では合わせない） */
+function camRecenter(){ if(!W3.cam) return; camRebase(); banner("🎯 カメラの高さを今の主人公の足もとに合わせた"); }
+function camRecenterUI(){
+  const b=$("#camRecenter"); if(!b) return; let off=false;
+  try{ if(W3.cam && W3.cam.ok && W3.pos){ const r=$("#w3").getBoundingClientRect(), sp=toScreen(W3.pos.x, groundY(W3.pos.x,W3.pos.z)+0.8, W3.pos.z); off = !sp.ok || Math.abs(sp.y - r.height/2) > r.height*0.3 || Math.abs(sp.x - r.width/2) > r.width*0.38; } }catch(e){}
+  if(b.hidden === off) b.hidden = !off;
+}
 /* 設定画面の感度 */
 document.addEventListener("input", ev=>{ const t=ev.target; if(!t || !t.dataset || !t.dataset.camsens) return;
   const v=clampN(+t.value, CAM.sens[0], CAM.sens[1]); S.camera=Object.assign({}, S.camera, {[t.dataset.camsens]:v});
@@ -2121,7 +2252,7 @@ function verifyAct(act, id, b){
     case "v-warp": { if(id==="base"){ setTab("explore"); if(W3.state==="ready"){ W3.pos=WORLD.safeSpawn(S,{x:D.base.x,z:D.base.z}); haltField(); syncAll3D(); } return true; }
       const r=D.regions.find(x=>x.id===id); if(!r) return true; if(!E.regionOpen(S,r)){ banner("🔒 "+r.name+"：鍵がかかっている（バイパスOFF）"); return true; }
       setTab("explore"); U.region=r.id;
-      if(W3.state==="ready"){ const q=WORLD.safeSpawn(S,{x:r.w.x, z:r.w.z+REGION_R*0.2}); W3.pos={x:q.x,z:q.z}; haltField(); W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false})); syncAll3D(); }
+      if(W3.state==="ready"){ const q=WORLD.safeSpawn(S,{x:r.w.x, z:r.w.z+REGION_R*0.2}); W3.pos={x:q.x,z:q.z}; haltField(); W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false})); camRebase(); syncAll3D(); }
       else { fieldSig=""; renderField(); }
       banner(r.icon+" "+r.name+"へ移動した"); return true; }
     case "v-stage": v.stage = id==="auto" ? null : +id; lastStage=stage(); fieldSig=""; sceneSig=""; save(); renderChrome(); render(); return true;
@@ -2141,5 +2272,5 @@ document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.
 document.addEventListener("change", ev=>{ const b=ev.target; if(b && b.dataset && b.dataset.act==="v-flag") verifyAct("v-flag", b.dataset.id, b); });
 document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="vq"){ vQuery=ev.target.value; const r=$("#vres"); if(r) r.innerHTML=vResults(); } });
 
-window.__GAME__ = {get S(){return S;}, save:()=>save(), cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim()}, hero:{dirs:()=>heroDirs(), sheet:h=>heroSheet3D(h), facing:()=>worldFacing()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
+window.__GAME__ = {get S(){return S;}, save:()=>save(), cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim(), rebase:()=>camRebase(), debug:()=>W3.camDbg, solve:(y,p,z,x,zz)=>camSolve(y,p,z,x,zz), axes:(y,p)=>camAxes(y,p), CAM}, hero:{dirs:()=>heroDirs(), sheet:h=>heroSheet3D(h), facing:()=>worldFacing()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);

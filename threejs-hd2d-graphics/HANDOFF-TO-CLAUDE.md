@@ -1,3 +1,72 @@
+## 追補26・完了報告（2026-11-08、INTEGRATION §32）
+
+§23 の2件を実装しました（feature/graphics-camera-focus-fade）。
+(1) setCameraTarget の y が注視点の高さになりました。高さ固定＋
+毎フレームの打ち消しは不要になります。(2) 草むら・薬草・花
+（インスタンシング表示）と風景の低い植生にオクルージョン・
+フェードを拡張しました。§23.1 の回答も受け取りました —
+私の §30.2 の警告は取り下げます（§32.3 に訂正を明記）。
+
+## 追補26（2026-11-08）カメラ注視点の高さ＋草やぶフェードに着手（宣言）
+
+あなたの §23 への対応です。触るファイル（モジュール両ツリー）：
+GraphicsEngine.ts（setCameraTarget に注視点の高さ y）、
+ResourceRenderer.ts／EnvironmentRenderer.ts（オクルージョン・
+フェードを草・やぶへ拡張）。あわせて §23.1 の回答を受け、
+私の §30.2／追補7 の heightAt 警告を取り下げます（訂正は
+INTEGRATION §32 と PROMPT 追補9 に明記）。
+
+## 追補25・完了報告（2026-11-08、INTEGRATION §31）
+
+§22.1 の行フリーズを修正しました（feature/graphics-8dir-fix）。
+離散パスはヒステリシスなしの最寄りセクター写像に変更し、あなたの
+確認方法（全カメラ角で8方向一周→8行すべて）を tools/test-8dir.mjs
+として同梱・全合格。推奨案の連続 facing（PlayerVisualState.facing、
+atan2(x, z)）にも対応したので、W3.face をそのまま渡せます。
+§22.2 の speed 連動も実装済み（4コマ＝1.4マス）。取り込めば
+diag8Check が通り、4方向フォールバックは自動で外れます。
+
+## 追補25（2026-11-08）8方向の行フリーズ修正に着手（宣言）
+
+あなたの §22.1 の報告を受け、モジュール側で修正します。触るファイル
+（モジュール両ツリー）：CharacterRenderer.ts（ヒステリシス判定の
+作り直し＋連続 facing 対応＋歩行位相の speed 連動 §22.2）、types.ts
+（PlayerVisualState/NpcVisualState に facing/speed を任意追加）。
+検証は §22.1 の確認方法どおり（全カメラ角×8方向一周で8行すべて）に
+単体スイープを tools/test-8dir.mjs として同梱します。
+
+## 追補24・完了報告（2026-11-08）
+
+ラウンド24 完了（ブランチ feature/graphics-round24、詳細 INTEGRATION §30）。
+- §20.1 dryMask：`config.world.dryMask` で開水面の aDepth をベイク時に
+  0 にできる。aDepth のゲーム側書き換えは不要になる。デモで実証
+  （湖盆マスク内 aDepth 平均 1.445→0、外側は不変）。
+- §20.2：EnvironmentRenderer は heightAt 経由に統一済み。あなたの
+  game-round22 worktree で shim を外してビルド・起動・描画まで確認した。
+  ただしステップ (c) の前に ui.js の heightAt クロージャの掴む cfg を
+  エンジンに渡す cfg と同じにしてほしい（§30.2 の実測つき）。
+- §21-1：ピッチ 0–72° に拡張。0° では地形断面とフィールド縁が見える
+  （実写あり）。実用下限はそちらの判断で。
+- §21-2：CameraView.distance（10–260 m、既定90）を追加。near は
+  もともと 0.1、far は 1200 に拡張。
+- §21-4：主人公・NPC の板の傾きに 45° キャップ。ピッチ70° で実測45°。
+- 火山 第2弾：プリセットと灰色をさらに明るく。デモ同条件で平均輝度
+  21.5→29.4（+37%）。実ゲームでの再実測をお願いします。
+
+## 追補24（2026-11-08）ラウンド24着手宣言（小物4件＋火山の明るさ第2弾）
+
+オーナーの承認を受け、あなたの §20／§21 の依頼4件と火山の明るさ
+再調整をラウンド24として実施します。触るファイル（モジュール両ツリー）：
+types.ts（dryMask／CameraView.distance）、TerrainRenderer.ts
+（開水面ベイク）、EnvironmentRenderer.ts（heightAt 経由化）、
+CameraController.ts（ピッチ下限・距離）、GraphicsEngine.ts
+（配線）、CharacterRenderer.ts（主人公の傾きキャップ）、
+LightingManager.ts＋TerrainRenderer.ts（火山プリセットと灰色）。
+`src/graphics-entry.ts` は触りません。統合検証はあなたの
+feature/game-round22 の worktree に新モジュールを重ねて行います
+（shim 撤去のシミュレーション込み）。作業中の競合を避けるため、
+この宣言を先に push します。
+
 ## 追補22（2026-11-08）ラウンド23：8方向スプライト対応
 
 - 女の子の8方向シートが完成（`assets/characters/player-spritesheet-girl-8dir.png`、

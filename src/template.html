@@ -39,12 +39,15 @@ button{font:inherit;color:inherit}
 .wmapbox{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin:4px 0 10px}
 #wmap{width:240px;height:240px;max-width:100%;border-radius:10px;border:2px solid rgba(0,0,0,.25);image-rendering:auto;background:#5a8a4a}
 .wmapkey{list-style:none;margin:0;padding:0;font-size:12px;line-height:1.7}.wmapkey i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
-.camctl{position:absolute;right:calc(var(--sar,0px) + 10px);top:calc(var(--sat,0px) + 70px);z-index:4;pointer-events:auto}
+.camctl{position:absolute;right:calc(var(--sar,0px) + 10px);top:calc(var(--sat,0px) + 70px);z-index:4;pointer-events:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.camctl button[hidden]{display:none}
 .camctl[hidden]{display:none}
 .camctl button{height:32px;padding:0 9px;border-radius:16px;border:1.5px solid var(--line);background:rgba(255,255,255,.88);font:inherit;font-size:.74rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:4px;touch-action:manipulation}
 [data-ui="touch"] .camctl{top:auto;bottom:calc(var(--navh,64px) + 150px)}
 [data-ui="touch"] .camctl button span{display:none}
 [data-ui="touch"] .camctl button{width:38px;height:38px;padding:0;justify-content:center;font-size:1rem}
+.camdbg{position:absolute;left:calc(var(--sal,0px) + 8px);bottom:calc(var(--navh,64px) + 8px);z-index:4;white-space:pre;font:11px/1.35 ui-monospace,monospace;background:rgba(0,0,0,.62);color:#fff;padding:4px 7px;border-radius:6px;pointer-events:none}
+[data-ui="touch"] .camdbg{bottom:auto;top:calc(var(--sat,0px) + 132px)}
 .camsens{display:grid;grid-template-columns:auto 1fr 2.4em;gap:6px 10px;align-items:center;max-width:420px}
 .camsens input{width:100%;touch-action:pan-x}.camsens output{font-weight:800;text-align:right}
 /* 集落の人との会話 */
@@ -535,7 +538,7 @@ textarea{width:100%;min-height:90px;font:inherit;font-size:.75rem;border:1.5px s
     <div class="combo" id="combo"></div><div class="banner" id="banner" role="status"></div>
     <div class="joy" id="joy" aria-label="移動スティック"><div class="knob"></div></div>
     <button class="w3act idle" id="w3act" data-act="g3" hidden></button>
-    <div class="camctl" id="camctl" hidden><button data-act="cam" data-id="reset" title="視点を標準の角度と距離に戻す（ドラッグで回転・ホイール／2本指で距離）" aria-label="視点を戻す">🎥<span>視点を戻す</span></button></div>
+    <div class="camctl" id="camctl" hidden><button data-act="cam" data-id="recenter" id="camRecenter" hidden title="カメラの高さを今の主人公の足もとに合わせる（角度・距離はそのまま）" aria-label="主人公に合わせる">🎯<span>主人公に合わせる</span></button><button data-act="cam" data-id="reset" title="視点を標準の角度と距離に戻す（ドラッグで回転・ホイール／2本指で距離）" aria-label="視点を戻す">🎥<span>視点を戻す</span></button></div>
     <div class="buildbar" id="buildbar" hidden role="group" aria-label="建物の置き場所を決める">
       <div class="bbtitle" id="bbTitle"></div><div class="bbmsg" id="bbMsg" role="status"></div>
       <div class="bbrow"><button data-act="b-rot" data-id="-90" title="左へ90度（Shift+R）">⟲90°</button><button data-act="b-rot" data-id="-15" title="左へ15度">⟲15°</button><button data-act="b-rot" data-id="15" title="右へ15度（R）">⟳15°</button><button data-act="b-rot" data-id="90" title="右へ90度">⟳90°</button>

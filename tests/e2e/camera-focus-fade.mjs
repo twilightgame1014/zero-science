@@ -1,4 +1,5 @@
-// 本物のゲーム・WebGLで高さ追随とインスタンスフェードを確認する。
+// 本物のゲーム・WebGLで、カメラの高さの固定（2026-11-10 オーナー仕様：地形でカメラを上下させない）とインスタンスフェードを確認する。
+// 以前の版は「注視点の高さ＝足もとの地形の高さ（追随）」「希望12°が地形回避で約20.5°」を期待していたが、新しい仕様で置き換えた。
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { once } from 'node:events';
@@ -10,7 +11,7 @@ import { chromium } from 'playwright';
 const root=fileURLToPath(new URL('../../',import.meta.url));
 const require=createRequire(import.meta.url), E=require('../../src/game/engine.js');
 const save=E.newState(); save.flags={intro:1,hero:'girl'}; save.pos={x:58,z:-66};
-  // 希望角は保存設定で12度。既存camNeedは平地でも約20.56度へ上げるので、実角も記録する。
+  // 希望角は保存設定で12度。自動の引き上げは廃止したので、実角も12度のままであることを確かめる。
 save.camera={yaw:45,pitch:12,zoom:13};
 const html=await fs.readFile(path.join(root,'dist/index.html'));
 const server=createServer((req,res)=>{res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);});
@@ -35,9 +36,9 @@ try {
   await page.waitForFunction(()=>__GAME__.W3.state==='ready');
   await page.waitForFunction(()=>{
     const w=__GAME__.W3, o=w.gfx.cameraOverride, r=w.gfx.cameraRig;
-    return o && Math.abs(o.y-TERRAIN.terrainHeight(w.pos.x,w.pos.z,w.cfg))<0.0001 && r.current.distanceTo(r.target)<0.05;
+    return o && Number.isFinite(o.y) && w.cam && __GAME__.cam.debug() && Math.abs(o.y-__GAME__.cam.debug().targetY)<1e-9 && r.current.distanceTo(r.target)<0.05 && Math.abs(r.current.y-r.target.y)<1e-6;
   });
-  console.log('PASS actual game camera override uses worldHeight');
+  console.log('PASS camera target height comes from the stored base height (not the terrain)');
   await page.evaluate(()=>{
     const samples=[]; window.__focusRun={samples,active:true};
     const tick=ts=>{
@@ -45,8 +46,7 @@ try {
       const w=__GAME__.W3, gfx=w.gfx, o=gfx.cameraOverride, p=gfx.character.getRenderedPosition();
       const screen=p.clone().project(gfx.getCamera());
       samples.push({ts,x:w.pos.x,z:w.pos.z,y:TERRAIN.terrainHeight(w.pos.x,w.pos.z,w.cfg),
-        overrideError:Math.abs(o.y-TERRAIN.terrainHeight(o.x,o.z,w.cfg)),
-        heightLag:Math.abs(gfx.cameraRig.target.y-gfx.cameraRig.current.y),
+        targetY:o.y, camY:gfx.getCamera().position.y, lookY:gfx.cameraRig.current.y,
         screenX:screen.x,screenY:screen.y,pitch:gfx.getCameraView().pitchDegrees});
       requestAnimationFrame(tick);
     }; requestAnimationFrame(tick);
@@ -63,13 +63,17 @@ try {
   });
   const metrics=await page.evaluate(()=>{
     __focusRun.active=false; const s=__focusRun.samples;
+    const rng=k=>Math.max(...s.map(p=>p[k]))-Math.min(...s.map(p=>p[k]));
     return {frames:s.length,observedFps:(s.length-1)*1000/(s.at(-1).ts-s[0].ts),
-      maxHeightLag:Math.max(...s.map(p=>p.heightLag)),maxOverrideError:Math.max(...s.map(p=>p.overrideError)),
-      heightRange:Math.max(...s.map(p=>p.y))-Math.min(...s.map(p=>p.y)),
+      groundRange:rng('y'), targetYRange:rng('targetY'), camYRange:rng('camY'), lookYRange:rng('lookY'),
       pitchRange:[Math.min(...s.map(p=>p.pitch)),Math.max(...s.map(p=>p.pitch))],
       outside:s.filter(p=>Math.abs(p.screenX)>1||Math.abs(p.screenY)>1).length};
   });
-  assert.equal(metrics.maxOverrideError,0); assert.equal(metrics.outside,0); assert.ok(metrics.heightRange>1);
+  // 坂を上り下りしても（足もとの差 >1 マス）、注視点の高さ・カメラの実際の高さ・実際の俯角は変わらない
+  assert.ok(metrics.groundRange>1); assert.equal(metrics.targetYRange,0);
+  assert.ok(metrics.camYRange<1e-6, 'camera world Y changed: '+metrics.camYRange); assert.ok(metrics.lookYRange<1e-6);
+  assert.ok(Math.abs(metrics.pitchRange[0]-12)<1e-6 && Math.abs(metrics.pitchRange[1]-12)<1e-6, 'pitch changed: '+metrics.pitchRange);
+  assert.equal(metrics.outside,0);
   console.log('ACTUAL RAF METRICS',JSON.stringify(metrics));
 
   // 坂の地面による遮蔽と植生フェードを混同しないよう、平らな拠点で植生を確認する。
@@ -78,15 +82,16 @@ try {
     w.keys={}; w.joy=null; w.path=null; w.target=null; w.intent=null;
     w.pos={x:p.x,z:p.z};
     if(w.world?.afterWarp) w.world.afterWarp(p.x,p.z);
+    g.cam.rebase();     // 瞬間移動：基準の高さをその場の足もとへ（ゲームの瞬間移動と同じ）
   });
   await page.waitForFunction(()=>{
     const w=__GAME__.W3, r=w.gfx.cameraRig, p=w.gfx.character.getRenderedPosition();
     return Math.hypot(p.x-w.pos.x,p.z-w.pos.z)<0.03 && r.current.distanceTo(r.target)<0.03
-      && w.gfx.getCameraView().pitchDegrees<=21;
+      && Math.abs(w.gfx.getCameraView().pitchDegrees-12)<0.01;
   });
   const vegetationPitch=await page.evaluate(()=>__GAME__.W3.gfx.getCameraView().pitchDegrees);
-  assert.ok(vegetationPitch>=20.5 && vegetationPitch<=21);
-  console.log('VEGETATION PITCH',vegetationPitch,'(requested 12; existing terrain clearance raises it)');
+  assert.ok(Math.abs(vegetationPitch-12)<0.01);
+  console.log('VEGETATION PITCH',vegetationPitch,'(requested 12; no automatic raise)');
   await page.evaluate(()=>{
     const w=__GAME__.W3, cam=w.gfx.getCamera(), p=w.gfx.character.getRenderedPosition();
     const dx=cam.position.x-p.x,dz=cam.position.z-p.z,l=Math.hypot(dx,dz);
