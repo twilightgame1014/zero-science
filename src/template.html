@@ -6,33 +6,41 @@
 <title>ゼロからの科学 〜石と水と木から〜</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#eaf1ea; --card:#ffffff; --ink:#22305a; --muted:#5c6878; --line:#cbd8cd;
-  --meadow:#3e6b4a; --meadow-ink:#ffffff; --sun:#f2b632; --clay:#b4483b; --soft:#f4f8f3;
+  /* デザイン（2026-11-11）：「自然の中で文明を再建する科学者のフィールドノートと実験器具」。
+     濃紺・チャコール（枠・ナビ）／生成り（紙）／青緑（選択中）／控えめな琥珀（実行する操作）。古い名前（--meadow・--sun など）はこの色へ割り当てる */
+  --navy:#17212c; --navy2:#202d3b; --navy3:#2c3b4c; --cream:#f3eee2; --cream2:#e9e2d1;
+  --teal:#1d7f7b; --teal-ink:#ffffff; --teal-soft:#dcecea; --amber:#c38a2e; --amber-ink:#241703; --amber-soft:#f4e6c6;
+  --paper:#f3eee2; --card:#fbf8f1; --ink:#1c2631; --muted:#566271; --line:#d5cdbb; --line2:#bfb6a2;
+  --meadow:var(--teal); --meadow-ink:var(--teal-ink); --sun:#d29b3c; --clay:#a3463b; --soft:#f0eadc;
   --sky1:#bfe3f2; --sky2:#eef8f1; --hill:#9cc49a; --hill2:#7fae80; --ground:#c9b88c; --tree:#4f7d4f; --trunk:#7a5a3c;
   --land:#a9cf8e; --land2:#c3d9a5; --sea:#6fb3d6; --wall:#efe7d6; --wall2:#ddd0b6; --floor:#b7a07a; --wood:#8a643f; --wood2:#6e4e30; --stone:#9a9c98; --stone2:#7b7d79;
-  --shadow:0 2px 0 rgba(34,48,90,.08);
+  --r1:6px; --r2:10px; --r3:14px; --bw:1px; --tap:44px;
+  --shadow:0 1px 0 rgba(23,33,44,.06);
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",monospace;
   box-sizing:border-box;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --paper:#131b18; --card:#1b2521; --ink:#e3eaf3; --muted:#9eabb8; --line:#2d3b35; --meadow:#7fbf8f; --meadow-ink:#10201a; --soft:#18221e;
+    --paper:#131a22; --card:#1a232d; --ink:#e9e4d7; --muted:#a3adb8; --line:#2d3a48; --line2:#3a4a5c; --soft:#18212b;
+    --teal:#3fb0aa; --teal-ink:#08201f; --teal-soft:#183533; --amber:#d9a54e; --amber-ink:#1f1503; --amber-soft:#3a2f1a; --clay:#e08a7c;
     --sky1:#22385a; --sky2:#3a4f63; --hill:#2f4a3a; --hill2:#26402f; --ground:#4a4232; --tree:#24402c; --trunk:#4f3a28;
-    --land:#2f4a36; --land2:#3a5640; --sea:#2c5a78; --wall:#3a3428; --wall2:#2f2a20; --floor:#3f3526; --wood:#6a4d33; --wood2:#4e3824; --stone:#6f716d; --stone2:#5a5c58; --clay:#e08a7c;
+    --land:#2f4a36; --land2:#3a5640; --sea:#2c5a78; --wall:#3a3428; --wall2:#2f2a20; --floor:#3f3526; --wood:#6a4d33; --wood2:#4e3824; --stone:#6f716d; --stone2:#5a5c58;
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --paper:#131b18; --card:#1b2521; --ink:#e3eaf3; --muted:#9eabb8; --line:#2d3b35; --meadow:#7fbf8f; --meadow-ink:#10201a; --soft:#18221e;
+  --paper:#131a22; --card:#1a232d; --ink:#e9e4d7; --muted:#a3adb8; --line:#2d3a48; --line2:#3a4a5c; --soft:#18212b;
+  --teal:#3fb0aa; --teal-ink:#08201f; --teal-soft:#183533; --amber:#d9a54e; --amber-ink:#1f1503; --amber-soft:#3a2f1a; --clay:#e08a7c;
   --sky1:#22385a; --sky2:#3a4f63; --hill:#2f4a3a; --hill2:#26402f; --ground:#4a4232; --tree:#24402c; --trunk:#4f3a28;
-  --land:#2f4a36; --land2:#3a5640; --sea:#2c5a78; --wall:#3a3428; --wall2:#2f2a20; --floor:#3f3526; --wood:#6a4d33; --wood2:#4e3824; --stone:#6f716d; --stone2:#5a5c58; --clay:#e08a7c;
+  --land:#2f4a36; --land2:#3a5640; --sea:#2c5a78; --wall:#3a3428; --wall2:#2f2a20; --floor:#3f3526; --wood:#6a4d33; --wood2:#4e3824; --stone:#6f716d; --stone2:#5a5c58;
 }
 *,*::before,*::after{box-sizing:inherit}
 html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
-body{background:#1f2d24;color:var(--ink);font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+body{background:#17212c;color:var(--ink);font-family:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
   font-weight:500;line-height:1.7;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
 button{font:inherit;color:inherit}
 /* カメラの操作（描画モジュールに setCameraView があるときだけ出す） */
@@ -523,6 +531,139 @@ textarea{width:100%;min-height:90px;font:inherit;font-size:.75rem;border:1.5px s
 @keyframes twinkle{0%{transform:scale(0);opacity:0}50%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:.9}}
 @keyframes squash{from{transform:scale(1,1)}to{transform:scale(1.08,.9)}}
 @media (prefers-reduced-motion:reduce){ .fx{transition:none} .cnt{transition:none} }
+
+/* ===================== デザイン（2026-11-11）：フィールドノートと実験器具 =====================
+   線は 1px、角丸は 6／10／14px、アイコンは 24px（ナビ）・20px（一覧）。影は使わず、紙の面と線で区切る。
+   状態は色だけに頼らない：選択中＝青緑＋「✓」、実行する操作＝琥珀、未発見＝点線＋「？」、加工できない＝🧰＋文字、材料不足＝「✕ 不足」＋数。
+   科学の飾りは見出しの細い線と番号だけ（文字の背景に模様を入れない） */
+.btn{border:var(--bw) solid var(--navy2);border-radius:var(--r2);padding:9px 16px;min-height:var(--tap);font-weight:700;letter-spacing:.02em;background:var(--navy2);color:var(--cream);box-shadow:none}
+.btn:active{transform:translateY(1px);box-shadow:none}
+.btn.sub{background:var(--card);color:var(--ink);border:var(--bw) solid var(--line2);box-shadow:none}
+.btn.small{padding:6px 12px;min-height:38px;font-size:.84rem;border-radius:var(--r1)}
+.btn.big,.btn[data-act="run"],.btn[data-act="craft"],.bbrow .bbok{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
+.btn.big:disabled,.btn[data-act="craft"]:disabled{background:var(--soft);border-color:var(--line);color:var(--muted);opacity:1}
+.btn:disabled{opacity:.5}
+/* HUD：濃紺の半透明の札。文字は生成り */
+.loc{background:rgba(23,33,44,.86);color:var(--cream);border-radius:var(--r1);padding:4px 10px;border:1px solid rgba(243,238,226,.18);font-weight:700}
+.hbtn{min-width:48px;min-height:48px;border:1px solid rgba(243,238,226,.22);border-radius:var(--r2);background:rgba(23,33,44,.86);color:var(--cream);box-shadow:none;font-size:.68rem;font-weight:700;gap:1px}
+.hbtn[aria-expanded="true"]{background:var(--teal);border-color:var(--teal);color:var(--teal-ink)}
+.mission{background:var(--card);color:var(--ink);border:1px solid var(--line2);border-left:4px solid var(--teal);border-radius:var(--r2);box-shadow:none}
+.mission .lab{color:var(--teal);font-family:var(--mono);letter-spacing:.04em;font-size:.66rem}
+.mission .how{color:var(--muted)}
+/* 下部ナビ：濃紺の帯。今開いている画面は青緑の下線と文字色 */
+.nav{background:var(--navy);box-shadow:none;border:1px solid rgba(243,238,226,.12)}
+.nav button{color:#c9d2db;border-radius:var(--r1);font-weight:700}
+.nav button[aria-current="page"],.nav button[aria-expanded="true"]{color:#ffffff;background:var(--navy3);box-shadow:inset 0 -3px 0 var(--teal)}
+[data-ui="pc"] .nav{border-radius:var(--r3);padding:4px;gap:2px}
+[data-ui="pc"] .nav button{min-height:var(--tap);padding:0 14px;font-size:.88rem}
+[data-ui="pc"] .nav img.ico{width:24px;height:24px}
+[data-ui="touch"] .nav{border-radius:0;border-width:1px 0 0}
+[data-ui="touch"] .nav button{min-height:54px;font-size:.72rem}
+[data-ui="touch"] .nav img.ico{width:26px;height:26px}
+.nav button:focus-visible,.hbtn:focus-visible,button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+/* パネル：生成りの紙。見出しの下に青緑の細い線（フィールドノートの罫） */
+.dock{background:var(--paper);box-shadow:0 0 0 1px rgba(23,33,44,.25),0 12px 32px rgba(10,16,24,.28)}
+.dockhd{background:var(--paper);border-bottom:1px solid var(--line);padding:8px 10px 8px 16px;position:relative}
+.dockhd::after{content:"";position:absolute;left:16px;right:16px;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--teal) 0 56px,transparent 56px)}
+.dockhd h2{display:flex;align-items:center;gap:8px;font-size:1.05rem;font-weight:900;letter-spacing:.03em}
+.dockhd h2 img.ico{width:24px;height:24px}
+.dockhd h2 .ico.emo{font-size:1.1rem}
+.dockx{min-height:var(--tap);min-width:var(--tap);border:1px solid var(--line2);background:var(--card);border-radius:var(--r2);font-weight:700}
+.dockbody{padding:6px 16px 18px}
+[data-ui="pc"] .dock{width:min(480px,40vw);border-radius:var(--r3)}
+[data-ui="pc"] .dock[data-size="side-l"]{width:min(880px,62vw)}
+[data-ui="pc"] .dock[data-size="side-l"] .labgrid{grid-template-columns:1.05fr .95fr;align-items:start}
+[data-ui="pc"] .dock[data-size="side-l"] .labgrid .benchcol{position:sticky;top:8px}
+/* PC の右側パネルでは、探索のマップを暗くしない（左に見えたまま。クリックすると閉じて探索に戻る） */
+[data-ui="pc"] .game[data-dock="side"] .scrim,[data-ui="pc"] .game[data-dock="side-l"] .scrim{background:transparent}
+/* スマホ：下からのシート。つまみを付け、下の安全領域を空ける */
+[data-ui="touch"] .dock{border-radius:var(--r3) var(--r3) 0 0}
+[data-ui="touch"] .dockhd{padding-top:14px}
+[data-ui="touch"] .dockhd::before{content:"";position:absolute;left:50%;top:5px;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--line2)}
+.sec{font-size:.98rem;font-weight:900;letter-spacing:.02em;margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.sec small{font-weight:500;color:var(--muted)}
+.desc{color:var(--muted)}
+/* カード・パネル・ノート：線で区切る（影なし） */
+.card,.panel,.note,.regioncard,.era,.opc,.vsec,.bar,.dx,.bigitem{border:1px solid var(--line);border-radius:var(--r2);background:var(--card);box-shadow:none}
+.panel h3 .n{width:22px;height:22px;border-radius:var(--r1);background:var(--navy2);color:var(--cream);font-family:var(--mono);font-size:.74rem}
+.note.good{border-color:var(--teal);border-left-width:4px}
+.note.new{border-color:var(--amber);border-left-width:4px;box-shadow:none}
+.note.bad{border-color:var(--clay);border-left-width:4px}
+.why{background:var(--soft);border-radius:var(--r1);border:1px solid var(--line)}
+.why b{color:var(--teal)}
+.tag{background:var(--amber-soft);color:var(--amber-ink);border:1px solid var(--amber);border-radius:var(--r1)}
+/* 選べる物（材料・装置・操作・地域・分類）：選択中は青緑＋✓ */
+.opt,.mat,.chip,.tchip,.auto,.tn{border:1px solid var(--line2);border-radius:var(--r1);background:var(--card);color:var(--ink);box-shadow:none}
+.opt,.mat,.tchip{min-height:40px}
+.opt[aria-pressed="true"],.tchip[aria-pressed="true"],.bar[aria-pressed="true"],.auto[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:var(--teal-ink)}
+.opt[aria-pressed="true"]::before,.tchip[aria-pressed="true"]::before,.bar[aria-pressed="true"]::before,.auto[aria-pressed="true"]::before{content:"✓ ";font-weight:900}
+.mat.intray{background:var(--teal);border-color:var(--teal);color:var(--teal-ink)}
+.mat .q{font-family:var(--mono);color:var(--teal);font-weight:600}
+.mat.intray .q{color:inherit}
+.mat.noproc{border-style:dashed}
+.mat .np{font-size:.8rem;margin-left:2px}
+.tray{border:1px dashed var(--line2);border-radius:var(--r2);background:var(--soft)}
+.needline{margin:0 0 6px;font-size:.84rem;color:var(--ink);background:var(--amber-soft);border:1px solid var(--amber);border-radius:var(--r1);padding:6px 10px}
+.tchip.here{border-color:var(--teal);box-shadow:none;background:var(--teal-soft)}
+/* 材料の過不足：✓／✕ と数で示す（色だけにしない） */
+.need span{border-radius:var(--r1);border:1px solid var(--line2);background:var(--card);font-weight:700}
+.need span.ok{border-color:var(--teal);color:var(--teal)}
+.need span.ok::before{content:"✓ "}
+.need span.ng{border-color:var(--clay);color:var(--clay);border-style:dashed}
+.need span.ng::before{content:"✕ 不足 "}
+ul.needs{list-style:none;padding:0}
+ul.needs li{border:1px solid var(--line);border-radius:var(--r1);padding:6px 8px;margin:4px 0;background:var(--card)}
+ul.needs li.ng{border-style:dashed;border-color:var(--clay)}
+ul.needs .nst{font-weight:900;font-size:.8rem}
+ul.needs li small{display:block;color:var(--clay);font-weight:700}
+/* 図鑑：未発見は点線＋？、ヒントありは点線の琥珀＋「ヒント」 */
+.dx{border-radius:var(--r2)}
+.dx.hidden{border-style:dashed;background:var(--soft)}
+.dx.hinted{border-style:dashed;border-color:var(--amber)}
+.dx.hinted .n::after{content:"ヒント";display:block;font-size:.62rem;color:var(--amber);font-weight:900}
+.bar .m,.lv .m{background:var(--cream2)}
+.bar .m i{background:var(--teal)}
+.tn.done{background:var(--teal-soft);border-color:var(--teal)}
+.tn.done::after{content:"✓";margin-left:auto;color:var(--teal);font-weight:900}
+.tn.can{border-color:var(--amber);background:var(--amber-soft)}
+.tn.hint{border-style:dashed}
+.card h3 .i,.res .i{font-size:1.25rem}
+.res{border-top:1px solid var(--line)}
+.bigitem{min-height:64px;font-weight:700}
+.bigitem img.ico{width:32px;height:32px}
+/* 案内（モーダル）：生成りの紙。スマホはつまみ付きのシート */
+.sheet{background:var(--paper);border-radius:var(--r3) var(--r3) 0 0;border:1px solid var(--line)}
+@media (min-width:700px){ .sheet{border-radius:var(--r3)} }
+.kidbox{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:var(--r1)}
+.close{background:var(--card);border:1px solid var(--line2);border-radius:var(--r2)}
+.kv dt{font-family:var(--mono);font-size:.78rem;letter-spacing:.03em}
+/* 通知 */
+.toast{background:var(--paper);border:1px solid var(--amber);border-left:4px solid var(--amber);border-radius:var(--r2);box-shadow:0 6px 20px rgba(10,16,24,.25)}
+.toast.small{border-color:var(--teal)}
+.toast .k{color:var(--amber);font-family:var(--mono);letter-spacing:.04em}
+.banner{background:rgba(23,33,44,.94);border:1px solid rgba(243,238,226,.3);border-left:4px solid var(--amber);border-radius:var(--r2);font-weight:700}
+/* 行動ボタン（採る＝実行する操作なので琥珀。待機は濃紺の枠） */
+.w3act{background:var(--amber);color:var(--amber-ink);box-shadow:0 2px 0 rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.15)}
+.w3act.idle{background:rgba(23,33,44,.86);color:var(--cream);border-color:rgba(243,238,226,.25)}
+.w3act.lock{background:rgba(233,226,209,.95);color:var(--ink);border:1px dashed var(--clay)}
+.w3act.busy{background:linear-gradient(90deg,var(--amber) var(--p,0%),var(--amber-soft) var(--p,0%));color:var(--amber-ink)}
+.w3lab{background:rgba(251,248,241,.95);color:var(--ink);border:1px solid rgba(23,33,44,.2);box-shadow:0 1px 4px rgba(0,0,0,.25);border-radius:var(--r1)}
+.w3lab.near{outline:2px solid var(--amber)}
+.w3lab.lock{background:rgba(233,226,209,.92);border-style:dashed}
+.camctl button{border:1px solid rgba(243,238,226,.25);background:rgba(23,33,44,.86);color:var(--cream);border-radius:var(--r2)}
+.buildbar{background:var(--paper);border:1px solid var(--line2);border-radius:var(--r3)}
+.bbrow button{border:1px solid var(--line2);border-radius:var(--r1);background:var(--card)}
+.joy{background:rgba(23,33,44,.25);border:1px solid rgba(243,238,226,.6)}
+.joy .knob{background:rgba(243,238,226,.92)}
+/* スマホ：押せる所はすべて 44px 以上 */
+[data-ui="touch"] .opt,[data-ui="touch"] .mat,[data-ui="touch"] .tchip,[data-ui="touch"] .btn.small,[data-ui="touch"] .auto,[data-ui="touch"] .tn,[data-ui="touch"] .bar,[data-ui="touch"] .chip[data-act]{min-height:var(--tap)}
+[data-ui="touch"] .auto{padding:6px 10px}
+[data-ui="touch"] .dx{min-height:80px}
+[data-ui="touch"] .camctl button{width:var(--tap);height:var(--tap)}
+[data-ui="touch"] .vbadge{min-height:var(--tap);display:flex;align-items:center}
+[data-ui="touch"] .vbadge[hidden]{display:none}
+/* パネルを開いたときに見出しへ移すフォーカスは、読み上げのため。枠は出さない（キーボードで動かしたフォーカスには枠を出す） */
+#dockTitle:focus{outline:none}
 </style>
 </head>
 <body>

@@ -22,10 +22,12 @@ ok('IDが重ならない', new Set(W.objects.map(o => o.id)).size === W.objects.
 // 水面は川の帯だけ（描画の buildWater：中心から約3.9マス）。川の外の低い土地は乾いた地面なので置いてよい（2026-11-07〜）
 const wet = W.objects.filter(o => T.distanceToRiver(o.x, o.z, T.DEFAULT_CONFIG) < 4.0);
 ok('川の水面の中には置かれていない', wet.length === 0, wet.map(o => o.id).join(','));
-const locked = D.regions.filter(r => r.unlock);
-/* 鍵のかかった地域を全部開けた状態（たいまつ・鉄のつるはし・掘削やぐらを持つ） */
+/* 道具をいくつか持った状態（2026-11-11 から地域の鍵はないので、入れる場所は新しいゲームと同じ） */
 const SU = E.newState(); ['torch', 'ironpick', 'pickaxe', 'rig', 'candle'].forEach(id => { SU.inv[id] = 1; SU.disc[id] = { first: 0, made: 1, total: 1, routes: [], best: 0 }; });
-ok('鍵のかかった地域は、開放するまで中の自然物へ入れない', locked.every(r => !W.findPath(E.newState(), { x: D.base.x, z: D.base.z }, { x: r.w.x, z: r.w.z })));
+ok('地域の鍵はない（データにも unlock がない）', D.regions.every(r => !r.unlock));
+{ /* 生成の入力（地域の配置）を 2026-11-10 の写しに固定したので、旧世界の自然物の数と ID は以前と同じ（鍵の廃止・火山地帯の移動・かけらの追加で変わらない） */
+  const ids = W.objects.filter(o => !o.layer).map(o => o.id);
+  ok('旧世界の自然物（第1層・第2層）の生成は、地域データの変更に左右されない（固定の写し GEN_REGIONS）', N.GEN_REGIONS.length === 9 && N.GEN_REGIONS.filter(r => r.lock).map(r => r.id).join() === 'cave,mine,volcano,oilfield' && ids.length > 500, ids.length + ''); }
 const t0gen = Date.now(); N.create(D, E, env); const genMs = Date.now() - t0gen;
 ok('マップ全体の自然物の生成は速い（1秒未満）', genMs < 1000, genMs + 'ms');
 const L2 = W.layer2 || {};
@@ -83,7 +85,7 @@ const rk = rocks[0];
 const g = W.nearestFree(S0, { x: rk.x, z: rk.z });
 ok('岩の中を目的地にすると、岩の外の立てる場所へ向かう', g && Math.hypot(g.x - rk.x, g.z - rk.z) >= rk.r + PR - 0.01);
 const cave = D.regions.find(r => r.id === 'cave');
-ok('入れない地域の中心へは経路がない', W.findPath(S0, { x: D.base.x, z: D.base.z }, { x: cave.w.x, z: cave.w.z }) === null);
+ok('地域の鍵はないので、洞窟（以前は鍵があった）の中心へも経路がある', !!W.findPath(S0, { x: D.base.x, z: D.base.z }, { x: cave.w.x, z: cave.w.z }));
 const ap = W.approachPoint(S0, t0, { x: t0.x - 5, z: t0.z });
 ok('採取対象へは中心ではなく外周の立てる位置へ向かう', ap && W.free(S0, ap.x, ap.z) && W.reachGap(t0, ap) <= E.REACH && Math.hypot(ap.x - t0.x, ap.z - t0.z) > t0.r);
 
@@ -194,10 +196,17 @@ ok('最初の目標（木の枝）と2番目（丸い石・火打ち石）を新
     fsw.flat().length >= 4 && fsw.every(k => k.filter(x => x === 'rock' || x === 'tree').length <= 1), JSON.stringify(fsw));
   const blocked = N.FORMER_STONEWORK.filter(f => !W.findPath(S0, { x: D.base.x + 4, z: D.base.z }, { x: f.at[0], z: f.at[1] }));
   ok('旧「石の階段・壁」の跡へも拠点から歩いて行ける（階段を外しても進行不能にならない）', blocked.length === 0, JSON.stringify(blocked.map(f => f.at)));
-  const open = D.regions.filter(r => r.w && !r.unlock), noWay = open.filter(r => !W.findPath(S0, { x: D.base.x + 4, z: D.base.z }, { x: r.w.x, z: r.w.z }));
-  ok('開始地点（拠点）から、最初から行けるすべての地域へ経路がある', noWay.length === 0, noWay.map(r => r.id).join(','));
-  const noWay2 = D.regions.filter(r => r.w).filter(r => !W.findPath(SU, { x: D.base.x + 4, z: D.base.z }, { x: r.w.x, z: r.w.z }));
-  ok('鍵を開けたあとは、拠点からすべての地域（洞窟・鉱山・火山・油田も）へ経路がある', noWay2.length === 0, noWay2.map(r => r.id).join(','));
+  const noWay = D.regions.filter(r => r.w && !r.future).filter(r => !W.findPath(S0, { x: D.base.x + 4, z: D.base.z }, { x: r.w.x, z: r.w.z }));
+  ok('新しいゲームで、拠点からすべての地域（洞窟・鉱山・火山・油田も。初期装備のまま）へ陸の経路がある', noWay.length === 0, noWay.map(r => r.id).join(','));
+  /* 地域の採取地点（落ちているかけら・火山の散らばった地点を含む）は、ふさぐ自然物と重ならず、拠点から歩いて近づける */
+  const depBad = [], depFar = [];
+  D.regions.forEach(r => r.res.forEach(x => { const p = E.depositPos(r, x), k = E.resKey(x);
+    if (W.objects.some(o => o.block && Math.hypot(o.x - p.x, o.z - p.z) < o.r + 0.9)) depBad.push(r.id + ':' + k);
+    if (!W.pathToDeposit(S0, p, (N.depShape(x) || {}).r || 0, { x: D.base.x + 4, z: D.base.z })) depFar.push(r.id + ':' + k); }));
+  ok('地域の採取地点（かけら・火山の地点も）は、木や岩と重ならない', depBad.length === 0, depBad.join(','));
+  ok('地域の採取地点（かけら・火山の地点も）へは、新しいゲームで拠点から歩いて行ける', depFar.length === 0, depFar.join(','));
+  const loose = D.regions.flatMap(r => r.res.filter(x => x.loose).map(x => ({ r, x })));
+  ok('落ちているかけらは踏める小石の姿（当たり判定なし）で、道具がなくても拾える', loose.length >= 7 && loose.every(({ r, x }) => N.depShape(x).r === 0 && N.depShape(x).vis === 'pebble' && E.gatherInfo(S0, r, x).ok && !W.statics.some(t => t.id === E.depositId(r.id, E.resKey(x)))));
   const vm = await import('node:vm'); let synErr = '';
   for (const f of ['ui.js', 'engine.js', 'data.js', 'nature.js']) { try { new vm.Script(fs.readFileSync(new URL('../src/game/' + f, import.meta.url), 'utf8'), { filename: f }); } catch (e) { synErr += f + ': ' + e.message + ' '; } }
   ok('ゲームのスクリプトに構文エラーがない（ui.js・engine.js・data.js・nature.js）', !synErr, synErr);
@@ -215,12 +224,12 @@ ok('最初の目標（木の枝）と2番目（丸い石・火打ち石）を新
   const logs = W.objects.filter(o => o.kind === 'twig' && o.variant === 'log');
   ok('倒木（branch:log）が森にあり、得られる素材は落ち枝と同じ・木や岩と重ならない', logs.length >= 5 && logs.every(o => JSON.stringify(W.yieldsOf(o)) === JSON.stringify(N.KINDS.twig.yields) && W.nameOf(o) === '倒木' && W.objects.every(q => q === o || ['grass', 'twig', 'pebble'].includes(q.kind) || Math.hypot(q.x - o.x, q.z - o.z) >= 0.85 + q.r + 0.35 - 1e-6)), logs.length + '');
   const lavas = W.decos.filter(d => d.kind === 'lava'), lilies = W.decos.filter(d => d.kind === 'lily');
-  const vol = D.regions.find(r => r.id === 'volcano');
-  ok('溶岩は火山地帯の中にあり、通れない（固定の障害物）', lavas.length >= 3 && lavas.every(l => Math.hypot(l.x - vol.w.x, l.z - vol.w.z) < 9.5 && !W.free(SU, l.x, l.z) && W.statics.some(s => s.id === l.id && s.kind === 'lava')), lavas.length + '');
-  ok('溶岩の上・すぐそばに自然物はない', W.objects.every(o => lavas.every(l => Math.hypot(o.x - l.x, o.z - l.z) >= 0.8 * l.scale + o.r + 0.4 - 1e-6)));
-  ok('溶岩は採取できる物の一覧に入らない（見た目と通行止めだけ）', lavas.every(l => !W.byId.get(l.id)) && W.objects.every(o => o.kind !== 'lava'));
-  const lv = lavas[0], wbspec = { id: 't', type: 'workbench', footprint: { shape: 'rect', w: 2.2, d: 1.05 }, x: lv.x + 0.5, z: lv.z, rot: 0 };
-  ok('溶岩の上・すぐそばには建物を置けない（理由つき）', /溶岩/.test(W.checkPlacement(SU, wbspec, { player: { x: -200, z: -200 } }).reasons.join('/')));
+  /* 2026-11-11：溶岩は南西の火山の火口の溶岩湖だけ（地形と描画）。旧世界の中の飾りの溶岩の池は置かない */
+  const LL = T.LAVA_LAKE;
+  ok('溶岩の池（飾り）は置かない。溶岩は火口の溶岩湖で、歩けない', lavas.length === 0 && W.terrainBlocked(LL.x, LL.z) && !W.free(SU, LL.x, LL.z) && !W.free(SU, LL.x + LL.r - 0.5, LL.z));
+  ok('火口の溶岩湖のまわりに自然物・採取地点はない', W.objects.filter(o => Math.hypot(o.x - LL.x, o.z - LL.z) < LL.r + 1.5).length === 0 && D.regions.every(r => r.res.every(x => { const p = E.depositPos(r, x); return Math.hypot(p.x - LL.x, p.z - LL.z) > LL.r + 2; })));
+  const wbspec = { id: 't', type: 'workbench', footprint: { shape: 'rect', w: 2.2, d: 1.05 }, x: LL.x + 2, z: LL.z, rot: 0 };
+  ok('溶岩湖の上には建物を置けない（理由つき）', /溶岩/.test(W.checkPlacement(SU, wbspec, { player: { x: -200, z: -200 } }).reasons.join('/')));
   ok('睡蓮は川の水面にあり（水位より低い所）、歩くのを妨げない', lilies.length >= 8 && lilies.every(l => T.terrainHeight(l.x, l.z, T.DEFAULT_CONFIG) < T.DEFAULT_CONFIG.world.waterLevel && T.distanceToRiver(l.x, l.z, T.DEFAULT_CONFIG) < 3.9 && W.free(S9, l.x, l.z)));
   const W3b = N.create(D, E, env);
   ok('見た目の違いと飾りは毎回同じ（位置から決める）', JSON.stringify(W3b.decos) === JSON.stringify(W.decos) && W3b.objects.every((o, i) => o.id === W.objects[i].id && o.variant === W.objects[i].variant));

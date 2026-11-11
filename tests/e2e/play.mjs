@@ -71,7 +71,7 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   ok('描画モジュールの開水面（湖・海・オアシスを描く）は切らない（統合後の世界。旧世界の低地は render.ts が深さ0にする）', !JSON.parse(init.decor).hasOwnProperty('openWater'), init.decor);
   const pre = await page.evaluate(`({stonework: __FAKE.opts.decor.stonework, structs: Object.keys(__FAKE.structures).filter(k=>!/^v[hp]:/.test(k))})`);
   ok('開始時の拠点まわりに人工物がない（石の階段・石積みの壁は decor.stonework:false で描かせず、プレイヤーの建物は1つもない。集落は別）', pre.stonework === false && pre.structs.length === 0, JSON.stringify(pre));
-  ok('ボタン共通のスタイルが効いている', await page.evaluate(`getComputedStyle(document.querySelector('#nav button')).cursor==='pointer' && getComputedStyle(document.createElement('div')).color!==undefined`) && await page.evaluate(`(()=>{ const b=document.createElement('button'); b.className='btn'; document.body.appendChild(b); const c=getComputedStyle(b).backgroundColor; b.remove(); return c==='rgb(62, 107, 74)'; })()`));
+  ok('ボタン共通のスタイルが効いている', await page.evaluate(`getComputedStyle(document.querySelector('#nav button')).cursor==='pointer' && getComputedStyle(document.createElement('div')).color!==undefined`) && await page.evaluate(`(()=>{ const b=document.createElement('button'); b.className='btn'; document.body.appendChild(b); const c=getComputedStyle(b).backgroundColor; b.remove(); return c==='rgb(32, 45, 59)'; })()`));   // 2026-11-11 のデザイン：ふつうのボタンは濃紺（--navy2）
 
   // 見えている自然物（拠点のまわりの小石）を選んで、近づいて採取する。連打しても1回だけ
   const peb = await page.evaluate(`(()=>{ const W=${G}.WORLD, p=${G}.W3.pos; const o=W.objects.filter(o=>o.kind==='pebble'&&!o.variant).sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z))[0]; ${G}.selectAndGo({o}); return o.id; })()`);
@@ -112,7 +112,7 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
 
   await page.click('.hud-tr [data-tab="world"]'); await page.waitForTimeout(200);
   const lockTxt = await page.evaluate(`document.querySelector('.tchip[data-id="cave"]').textContent`);
-  ok('地図ボタンで地域選択が開き、行けない地域には理由が書いてある', /が必要/.test(lockTxt), lockTxt);
+  ok('地図ボタンで地域選択が開き、すべての地域を選べる（2026-11-11 地域の鍵を廃止。洞窟にも鍵の印・条件がない）', !/が必要|🔒/.test(lockTxt) && /洞窟/.test(lockTxt) && await page.evaluate(`document.querySelectorAll('.tchip').length === ${G}.D.regions.filter(r=>!r.future).length`), lockTxt);
   await page.click('.tchip[data-id="forest"]'); await page.waitForTimeout(5500);
   ok('地域を選ぶとパネルが閉じ、森林まで歩ける', await page.evaluate(`${G}.U.tab==='explore' && ${G}.W3.region && ${G}.W3.region.id === 'forest'`));
   await page.click('.w3lab[data-n="forest:twig"]'); await page.waitForFunction(`(${G}.S.inv.twig||0)>0`, null, { timeout: 15000 }).catch(()=>{}); await page.waitForTimeout(200);
@@ -218,9 +218,9 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   ok('回転後（844×390）もマップは画面いっぱいでスクロールしない', fc2.full && fc2.noScroll && fc2.ui === 'touch', JSON.stringify(fc2));
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(300);
 
-  const lockGo = await page.evaluate(`${G}.goTo3D(42,-34,null)`);
-  await page.evaluate(`(()=>{const W=${G}.W3; W.pos={x:42,z:-22}; W.path=[{x:42,z:-34}];})()`); await page.waitForTimeout(2500);
-  ok('未開放の地域（洞窟）へは移動先にできず、無理に向かっても入れない', lockGo === false && await page.evaluate(`Math.hypot(${G}.W3.pos.x-42, ${G}.W3.pos.z+34) >= 9`));
+  await page.evaluate(`(()=>{ const x=document.querySelector('.dockx'); if(x && x.offsetParent) x.click(); const W=${G}.W3; W.pos=${G}.WORLD.nearestFree(${G}.S,{x:42,z:-20},Date.now(),8); W.keys={}; W.joy=null; })()`); await page.waitForTimeout(300);
+  const lockGo = await page.evaluate(`${G}.goTo3D(42,-34,null)`); await page.waitForTimeout(4500);
+  ok('以前は鍵があった洞窟へも、新しいゲームのまま歩いて入れる（地域の鍵の廃止）', lockGo === true && await page.evaluate(`Math.hypot(${G}.W3.pos.x-42, ${G}.W3.pos.z+34) < 9`), await page.evaluate(`JSON.stringify({pos:${G}.W3.pos, tab:${G}.U.tab, modal:document.getElementById('modal').className, lockGo:${JSON.stringify(lockGo)}})`));
   await page.waitForTimeout(2200); await page.reload(); await page.waitForTimeout(600);
   const rl = await page.evaluate(`({pos:!!${G}.S.pos, hero:${G}.S.flags.hero, tab:${G}.U.tab, dock:document.getElementById('dock').hidden, at:${G}.W3.pos && Math.hypot(${G}.W3.pos.x-${G}.S.pos.x, ${G}.W3.pos.z-${G}.S.pos.z)})`);
   ok('再読込直後（ロード時の位置補正を含む）は歩かない', await page.evaluate(`(__FAKE.track||[]).every(r=>!r.m)`));
@@ -268,8 +268,8 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   await page.keyboard.press('e'); await page.waitForTimeout(800);
   ok('Eキーで採取できる', (await page.evaluate(`${G}.S.inv.twig||0`)) > tw0);
   await page.click('nav [data-tab="lab"]'); await page.waitForTimeout(200);
-  const lab = await page.evaluate(`(()=>{ const d=document.getElementById('dock').getBoundingClientRect(), g=getComputedStyle(document.querySelector('#dockBody .labgrid')).gridTemplateColumns.split(' ').length; return {loop:__FAKE.loop, w:d.width, cols:g, size:document.getElementById('dock').dataset.size}; })()`);
-  ok('PCの研究室は、実験台と材料・操作を左右に並べる広い画面', lab.size === 'wide' && lab.cols === 2 && lab.w > 1200, JSON.stringify(lab));
+  const lab = await page.evaluate(`(()=>{ const d=document.getElementById('dock').getBoundingClientRect(), g=getComputedStyle(document.querySelector('#dockBody .labgrid')).gridTemplateColumns.split(' ').length; return {loop:__FAKE.loop, w:d.width, left:d.left, cols:g, size:document.getElementById('dock').dataset.size}; })()`);
+  ok('PCの研究室は右側の広いパネル（実験台と材料・操作を左右に並べ、左に探索のマップが見えたまま）', lab.size === 'side-l' && lab.cols === 2 && lab.w > 800 && lab.left > 300, JSON.stringify(lab));
   await page.click('nav [data-tab="craft"]'); await page.waitForTimeout(200);
   const cr = await page.evaluate(`(()=>{ const d=document.getElementById('dock').getBoundingClientRect(); return {loop:__FAKE.loop, w:d.width, left:d.left, size:document.getElementById('dock').dataset.size}; })()`);
   ok('PCの工作は右側のパネルで、後ろのマップは描画を続ける', cr.loop && cr.size === 'side' && cr.left > 683 && cr.w <= 600, JSON.stringify(cr));
@@ -333,7 +333,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
     let t0=null; for(const t of W.objects.filter(o=>o.kind==='tree')){ t0=t; let good=true; for(let s=-3; s<=3; s+=0.25){ const x=t.x+k.x*s+px*0.25, z=t.z+k.z*s+pz*0.25; if(Math.abs(s)>t.r+0.5 && !ok(x,z)){ good=false; break; } } if(good) break; t0=null; }
     ${G}.W3.pos={x:t0.x-k.x*3+px*0.25, z:t0.z-k.z*3+pz*0.25}; return {x:t0.x, z:t0.z}; })()`);
   await page.waitForTimeout(150);
-  await since(); await page.keyboard.down('ArrowRight'); await page.waitForTimeout(800);
+  await since(); await page.keyboard.down('ArrowRight'); await page.waitForTimeout(1300);   // 2026-11-11：歩く速さを約65%にしたので長めに押す
   const tUp = await page.evaluate(`performance.now()`); await page.keyboard.up('ArrowRight');
   const slide = (await track()).filter(r => r.t < tUp - 20);
   const moving = slide.filter((r, i) => i > 0 && Math.hypot(r.x - slide[i - 1].x, r.z - slide[i - 1].z) > 0.02);
@@ -704,7 +704,7 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
   const dStraight = await dist(['ArrowDown']), dDiag = await dist(['ArrowDown', 'ArrowLeft']);
   await page.evaluate(`${G}.W3.pos={x:-12,z:24}`); await page.waitForTimeout(200); await page.keyboard.down('ArrowDown'); await page.waitForTimeout(500);
   const spW = await page.evaluate(`__FAKE.player.speed`); await page.keyboard.up('ArrowDown'); await page.waitForTimeout(300); const spS = await page.evaluate(`({s:__FAKE.player.speed, m:__FAKE.player.moving})`);
-  ok('歩く速さ（実際に進んだ量）を speed として渡す（歩行中はおよそ毎秒7マス、止まると0・moving=false）', spW > 5 && spW < 8 && spS.s === 0 && !spS.m, JSON.stringify({ spW, spS }));
+  ok('歩く速さ（実際に進んだ量）を speed として渡す（歩行中はおよそ毎秒4.55マス＝以前の約65%、止まると0・moving=false）', spW > 3.6 && spW < 5.2 && spS.s === 0 && !spS.m, JSON.stringify({ spW, spS }));
   ok('斜めの入力は正規化され、縦横より速くならない（同じ時間で進む距離の差が1割未満）', dDiag > 1 && dDiag <= dStraight * 1.1, JSON.stringify({ dStraight, dDiag }));
   // 静止中にカメラを回すと、8方向の絵が45°ごとに替わる（ワールドの向きは変わらない）
   await page.evaluate(`(()=>{ const G=${G}; G.W3.face=0; G.W3.faceSec=null; const c=G.W3.cam; c.yaw=c.cy+(((0-c.cy)%360+540)%360-180); })()`); await page.waitForTimeout(500);
@@ -873,15 +873,12 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
   const tbl = await page.evaluate(`[...document.querySelectorAll('.vtbl tr')].map(r=>r.textContent)`);
   const wantRows = await page.evaluate(`(()=>{ const D=${G}.D; return {procs:D.procs.length, crafts:D.crafts.length, regions:D.regions.length}; })()`);
   ok('検証メニュー：件数の表はいまのデータから作られる（研究・工作・地域）', tbl.some(t => t.includes('研究（反応）') && t.endsWith(String(wantRows.procs))) && tbl.some(t => t.includes('工作') && t.endsWith(String(wantRows.crafts))) && tbl.some(t => t.startsWith('地域') && t.endsWith(String(wantRows.regions))), JSON.stringify(tbl.slice(0, 6)));
-  // 鍵のバイパスを切ると洞窟へ行けない（たいまつを捨てて確かめる）→ 戻すと行ける
+  // 2026-11-11：地域の鍵を廃止したので、検証メニューに鍵の切り替えはない。たいまつがなくても洞窟へ瞬間移動できる
   await page.evaluate(`(()=>{ const S=${G}.S; delete S.inv.torch; delete S.inv.candle; })()`);
-  await page.click('input[data-act="v-flag"][data-id="locks"]'); await page.waitForTimeout(150);
-  await page.click('[data-act="v-warp"][data-id="cave"]'); await page.waitForTimeout(300);
-  const refused = await page.evaluate(`({tab:${G}.U.tab, far:Math.hypot(${G}.W3.pos.x-42, ${G}.W3.pos.z+34) > 9, banner:document.getElementById('banner').textContent})`);
-  await page.click('input[data-act="v-flag"][data-id="locks"]'); await page.waitForTimeout(150);
+  const noLockToggle = await page.evaluate(`!document.querySelector('input[data-act="v-flag"][data-id="locks"]')`);
   await page.click('[data-act="v-warp"][data-id="cave"]'); await page.waitForTimeout(400);
   const went = await page.evaluate(`({tab:${G}.U.tab, d:Math.hypot(${G}.W3.pos.x-42, ${G}.W3.pos.z+34)})`);
-  ok('検証メニュー：鍵のバイパスを切ると洞窟へは移動できず、入れると移動できる', refused.far && /鍵/.test(refused.banner) && went.tab === 'explore' && went.d < 9, JSON.stringify({ refused, went }));
+  ok('検証メニュー：地域の鍵の切り替えはなく、たいまつがなくても洞窟へ移動できる', noLockToggle && went.tab === 'explore' && went.d < 9, JSON.stringify({ noLockToggle, went }));
   // 素材の検索と追加・保管できない物はトレイへ
   await page.click('#vbadge'); await page.waitForTimeout(300);
   await page.fill('#vq', 'flint'); await page.fill('#vn', '5'); await page.waitForTimeout(100);

@@ -88,10 +88,13 @@ function afterChange(news){
 /* ---------- 共通 ---------- */
 /* 探索フィールドがホーム。ほかの画面は下部タブから「パネル」として上に重ねて開く。
    U.tab==="explore" はパネルが閉じている状態を表す。フィールドのDOMと3D描画は保ったまま。 */
-const TABS = {explore:"🗺️ 探索", lab:"🧪 研究室", craft:"🔨 工作", book:"📖 図鑑", map:"🕸️ 技術マップ", log:"📓 記録",
-  world:"🗺️ 地図・地域", menu:"☰ メニュー", settings:"⚙️ 設定・ヘルプ", verify:"🧪 検証モード", build:"🏗️ 建築"};
+const TABS = {explore:"探索", lab:"研究室", craft:"工作", book:"図鑑", map:"技術マップ", log:"記録",
+  world:"地図・地域", menu:"メニュー", settings:"設定・ヘルプ", verify:"検証モード", build:"建築"};
+/* パネルの見出しのアイコン（Muse の UI アイコン。ないものは絵文字。必ず文字と組み合わせる。2026-11-11） */
+const TAB_ICON = {lab:"lab", craft:"craft", book:"book", map:"tech", log:"log", world:"map", menu:"menu", settings:"settings", build:"home"};
 /* パネルの大きさ。PC：右側のパネル（side）か大きなオーバーレイ（wide）。スマホ：下からのシート（sheet）か全高近く（tall） */
-const PC_SIZE = {book:"wide", map:"wide", lab:"wide"};   /* 研究室は材料・操作と実験台を並べる */
+/* 2026-11-11：PC の研究室は、探索のマップを左に見せたまま右側の広いパネル（side-l）で、材料・操作と実験台を並べる。図鑑・技術は大きなオーバーレイ */
+const PC_SIZE = {book:"wide", map:"wide", lab:"side-l"};
 const TOUCH_SIZE = {lab:"tall", craft:"tall", book:"tall", map:"tall", log:"tall", verify:"tall", build:"tall"};
 const MENU_TABS = ["menu","book","map","log","settings","verify","build"];   /* スマホでは「メニュー」の中にある画面 */
 /* 画面幅だけでなく入力方法（タッチかマウスか）も見て、PC用とスマホ用の配置を切り替える */
@@ -187,10 +190,11 @@ function renderField(){ renderExplore($("#view")); }
 function renderPanel(){
   const dock=$("#dock"), body=$("#dockBody"), open = U.tab!=="explore";
   dock.hidden = !open; $("#scrim").hidden = !open; $("#view").inert = open; $("#hud").inert = open; $("#app").classList.toggle("docked", open);
-  if(!open) return;
+  if(!open){ delete $("#app").dataset.dock; return; }
   dock.dataset.size = uiMode()==="pc" ? (PC_SIZE[U.tab]||"side") : (TOUCH_SIZE[U.tab]||"sheet");
+  $("#app").dataset.dock = dock.dataset.size;
   if(U.dockTab!==U.tab){ body.innerHTML=""; body.scrollTop=0; U.dockTab=U.tab; sceneSig=""; }
-  $("#dockTitle").textContent = TABS[U.tab];
+  $("#dockTitle").innerHTML = (TAB_ICON[U.tab] ? iconHTML(TAB_ICON[U.tab]) : "")+`<span>${TABS[U.tab]}</span>`;
   if(U.tab==="lab") renderLab(body);
   else if(U.tab==="craft") body.innerHTML = viewCraft();
   else if(U.tab==="book") body.innerHTML = viewBook();
@@ -216,29 +220,30 @@ function viewSettings(){
   return `<div class="sec" style="font-size:1.15rem">ゼロからの科学 〜石と水と木から〜</div>
   <p class="desc" style="margin-top:0">石・水・木といった自然の資源だけから、実験と工作を積み重ねて、文明を作り直していくゲーム。</p>
   ${stageSummary()}
-  <div class="sec">👤 主人公</div>
+  <div class="sec">主人公</div>
   <div class="row">${["boy","girl"].map(h=>`<button class="heropick" data-act="pickhero" data-id="${h}" aria-pressed="${(S.flags.hero||"boy")===h}"><span class="hero big" style="background-image:url(${ASSETS[h]})"></span>${h==="boy"?"男の子":"女の子"}</button>`).join("")}</div>
-  <div class="sec">🖥️ フィールドの表示</div>
+  <div class="sec">フィールドの表示</div>
   ${failed?`<p class="desc">3D表示が使えないため、2Dで表示しています。${W3.err||""}</p>`:
     `<div class="row"><button class="opt" data-act="view3d" aria-pressed="${S.flags.view!=="2d"}">🌄 3D</button><button class="opt" data-act="view2d" aria-pressed="${S.flags.view==="2d"}">🗺️ 2D（軽い）</button></div>`}
-  ${camSupported()?(()=>{ const u=camUser(); return `<div class="sec">🎥 カメラ（視点）</div>
+  ${camSupported()?(()=>{ const u=camUser(); return `<div class="sec">カメラ（視点）</div>
   <p class="desc" style="margin-top:0">${touch?"マップの何もない所を1本指でドラッグすると回る（左右で一周、上下で見下ろす角度）。2本指を広げると近づき、すぼめると離れる。":"マップを左ボタンでドラッグすると回る（左右で一周、上下で見下ろす角度）。ホイールで近づく・離れる。短いクリックは今までどおり移動・採取。"}</p>
   <div class="camsens">${[["sx","横の感度（回転）"],["sy","縦の感度（見下ろす角度）"]].map(([k,l])=>`<label for="camSens-${k}">${l}</label><input type="range" id="camSens-${k}" data-camsens="${k}" min="${CAM.sens[0]}" max="${CAM.sens[1]}" step="0.1" value="${u[k]}"><output id="camSensOut-${k}">${u[k].toFixed(1)}</output>`).join("")}</div>
   <div class="row mt"><button class="btn small sub" data-act="cam" data-id="reset">🎥 視点を標準に戻す</button></div>`; })():""}
-  <div class="sec">🎮 遊び方</div>
+  <div class="sec">遊び方</div>
   <ul class="helplist">${touch?
     `<li>左下のスティックで歩く。地面をタップすると、そこへ歩く</li><li>資源の名札をタップすると、歩いて行って採取する</li><li>近くに資源があると、右下のボタンが「採る」に変わる</li><li>地域の移動は右上の「地図」、研究と工作は下のボタンから</li>`:
     `<li><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span> か矢印キーで歩く。地面をクリックすると、そこへ歩く</li><li>資源に近づいて <span class="kbd">E</span> かスペースで採取。名札をクリックすると歩いて行って採取する</li><li><span class="kbd">Esc</span> で開いているメニューを閉じる</li><li>地域の移動は右上の「地図」、研究・工作・図鑑などは下のメニューから</li>`}</ul>
   <div class="row mt"><button class="btn small sub" data-act="introagain">🦉 はじめの説明をもう一度見る</button></div>
-  <div class="sec">🧪 検証モード（全解放）</div>
+  <div class="sec">検証モード（全解放）</div>
   ${VERIFY ? `<p class="desc" style="margin-top:0">いまは検証モードです（通常のセーブとは別のデータ）。</p><div class="row"><button class="btn small" data-tab="verify">検証メニューを開く</button><button class="btn small sub" data-act="v-exit">通常のセーブに戻る</button></div>`
     : `<p class="desc" style="margin-top:0">動作の確認用に、すべての物質・道具・設備・地域・アセットを使える別のデータで遊べます。通常のセーブは書き換えません。</p>
        <div class="row"><button class="btn small sub" data-act="v-enter" data-id="keep">検証モードを始める</button><button class="btn small sub" data-act="v-enter" data-id="copy">今のセーブを写して始める</button></div>`}
   <p class="desc">セーブは自動でこのブラウザに保存されます。別の端末へ移すときは「記録」から。</p>`;
 }
 function travelChips(){
-  return D.regions.map(r=>{ const open=E.regionOpen(S,r), here=in3D()? W3.region===r : U.region===r.id;
-    return `<button class="chip tchip ${open?"":"lockc"} ${here?"here":""}" data-act="travel" data-id="${r.id}" ${open?"":`aria-describedby="why-${r.id}"`}>${open?r.icon:"🔒"} ${r.name}${here?"（今ここ）":""}${open?"":`<small id="why-${r.id}" style="font-weight:500">：${r.unlock?"「"+r.unlock.map(nm).join("」か「")+"」が必要":"まだ行けない"}</small>`}</button>`; }).join("");
+  /* 地域の鍵は 2026-11-11 に廃止：すべての地域へ最初から行ける（準備中の地域だけ押せない） */
+  return D.regions.filter(r=>!r.future).map(r=>{ const here=in3D()? W3.region===r : U.region===r.id;
+    return `<button class="chip tchip ${here?"here":""}" data-act="travel" data-id="${r.id}" aria-pressed="${here}">${r.icon} ${r.name}${here?"（今ここ）":""}</button>`; }).join("");
 }
 function viewWorld(){
   const st=stage(), r=D.regions.find(x=>x.id===U.region)||D.regions[0];
@@ -250,7 +255,7 @@ function viewWorld(){
     <div class="travel">${travelChips()}</div><div id="regionBox"></div>`;
   return `<div class="sec">地域を選んで移動 <small>地図のピンを選ぶと、その地域へ移動する</small></div>
     <div class="field" id="field">${fieldSVG(st)}
-      ${D.regions.map(x=>{ const open=E.regionOpen(S,x); return `<button class="pin ${open?"":"lock"} ${x.id===U.region?"here":""}" style="left:${x.x}%;top:${x.y}%" data-act="go" data-id="${x.id}" aria-label="${x.name}${open?"":"（未開放）"}"><span class="pi">${open?x.icon:"🔒"}</span><span class="pn">${x.name}</span></button>`; }).join("")}
+      ${D.regions.filter(x=>!x.future).map(x=>`<button class="pin ${x.id===U.region?"here":""}" style="left:${x.x}%;top:${x.y}%" data-act="go" data-id="${x.id}" aria-label="${x.name}"><span class="pi">${x.icon}</span><span class="pn">${x.name}</span></button>`).join("")}
       <div class="avatar hero" id="avatar" style="left:${r.x}%;top:${r.y}%;background-image:url(${heroUrl()})" aria-hidden="true"></div>
     </div><div id="regionBox"></div>`;
 }
@@ -459,7 +464,8 @@ function drawLabCtl(){
   <div class="panel">
     <h3><span class="n">1</span>材料を選ぶ <small style="font-weight:700;color:var(--muted)">（タップで1つずつ入る）</small></h3>
     <div class="tray">${trayIds.length? trayIds.map(id=>`<button class="mat intray" data-act="sub" data-id="${id}" aria-label="${nm(id)}を減らす"><span class="i">${ic(id)}</span>${nm(id)} <span class="q">×${U.tray[id]}</span></button>`).join("") : `<span class="ph">ここに材料が入るよ</span>`}</div>
-    <div class="shelf">${mats.length? mats.map(id=>{ const left=S.inv[id]-(U.tray[id]||0); return `<button class="mat" data-act="add" data-id="${id}" ${(left<=0&&!E.vflag(S,"free"))||U.busy?"disabled":""}><span class="i">${ic(id)}</span>${nm(id)} <span class="q">${left}</span></button>`; }).join("") : `<span class="desc">材料がない。探索フィールドで集めよう。</span>`}</div>
+    ${trayIds.map(id=>E.processBlock(S,id)).filter(Boolean).map(b=>`<p class="needline" role="note">🧰 ${b.text}</p>`).join("")}
+    <div class="shelf">${mats.length? mats.map(id=>{ const left=S.inv[id]-(U.tray[id]||0); const blk = E.processBlock(S,id); return `<button class="mat${blk?" noproc":""}" data-act="add" data-id="${id}" ${(left<=0&&!E.vflag(S,"free"))||U.busy?"disabled":""} ${blk?`title="${blk.text}"`:""}><span class="i">${ic(id)}</span>${nm(id)} <span class="q">${left}</span>${blk?`<span class="np" aria-label="まだ加工できない">🧰</span>`:""}</button>`; }).join("") : `<span class="desc">材料がない。探索フィールドで集めよう。</span>`}</div>
   </div>
   <div class="panel mt">
     <h3><span class="n">2</span>装置を選ぶ</h3>
@@ -471,6 +477,15 @@ function drawLabCtl(){
     <div class="runbar"><button class="btn big" data-act="run" ${canRun?"":"disabled"}>🧪 実験スタート</button><button class="btn sub" data-act="hint">💡 ヒント</button></div>
   </div>
   <div id="labResult" aria-live="polite">${U.last||""}</div>`;
+}
+/* 加工の条件（2026-11-11）：この素材を使う反応ごとに、設備・道具がそろっているか、足りない物は何か。
+   色だけに頼らず、記号と文字（✅そろっている／🧰足りない：〜）で示す。できる物は発見済みのものだけ名前を出す */
+function procNeedsHTML(id){
+  const ns = E.processNeeds(S,id); if(!ns.length) return "";
+  const row = n => { const fac = D.procs.find(p=>p.id===n.proc).at.map(f=>nm(f)).join("／"), outs = n.out.map(k=>S.disc[k]?nm(k):"？？？").join("・");
+    return `<li class="need ${n.ready?"ok":"ng"}"><span class="nst">${n.ready?"✅ そろっている":"🧰 足りない"}</span> ${opIc(n.op)}${OPS[n.op].name}（${fac}${n.tools.length||D.procs.find(p=>p.id===n.proc).tools.length?"・道具："+D.procs.find(p=>p.id===n.proc).tools.map(nm).join("と"):""}）→ ${outs}
+      ${n.ready?"":`<small>必要：${[n.at.length?"設備「"+n.at.map(nm).join("」か「")+"」":"", n.tools.length?"道具「"+n.tools.map(nm).join("」と「")+"」":""].filter(Boolean).join("と")}</small>`}</li>`; };
+  return `<h5>🧰 加工の条件 <small style="font-weight:600">（採れても、設備と道具がないと加工できない）</small></h5><ul class="needs">${ns.slice(0,6).map(row).join("")}</ul>`;
 }
 function runLab(){
   if(U.busy) return;
@@ -692,17 +707,17 @@ function drawRegion(){
       <div class="lv"><b>探索Lv${lv}</b><div class="m"><i style="width:${nx?Math.min(100,(nx.now-base)/(nx.need-base)*100):100}%"></i></div><small>${nx?nx.now+"/"+nx.need:"最大"}</small></div></div>
     <p class="desc" style="margin:0 0 6px">${lv?"⭐ "+lvText.slice(0,lv).join("／"):"たくさん採取すると探索Lvが上がり、ごほうびがあるよ。"}</p>
     <div class="reslist">${r.res.map(x=>{ const g=E.gatherInfo(S,r,x), k=S.disc[x.id], au=S.auto.some(a=>a.r===r.id&&a.id===x.id);
-      return `<div class="res"><span class="i">${k?ic(x.id):"❔"}</span><span class="nm">${k?nm(x.id):"何かありそう…"} ${k?`<small>${IT[x.id].kid}</small>`:""}${!g.ok?`<small style="color:var(--clay)">🔒 ${g.reason}</small>`:`<small>1回で${g.n}個・所持${E.cnt(S,x.id)}個</small>`}</span>
+      return `<div class="res"><span class="i">${k?ic(x.id):"❔"}</span><span class="nm">${k?nm(x.id):"何かありそう…"} ${k?`<small>${IT[x.id].kid}</small>`:""}${!g.ok?`<small style="color:var(--clay)">🛠️ ${g.reason}</small>`:`<small>1回で${g.n}個・所持${E.cnt(S,x.id)}個</small>`}</span>
       ${k&&slots&&g.ok?`<button class="auto" data-act="auto" data-r="${r.id}" data-id="${x.id}" aria-pressed="${au}">🧺 自動</button>`:""}</div>`; }).join("")}
     ${(r.rare||[]).length?`<div class="res"><span class="i">✨</span><span class="nm">珍しい発見 <small>${r.rare.map(x=>S.disc[x.id]?ic(x.id)+nm(x.id):"❔？？？").join("・")}</small></span></div>`:""}
     ${slots?`<p class="desc">🧺 自動採取：${S.auto.length}/${slots}枠（ページを開いている間、10秒ごとに集める）</p>`:""}
     </div></div>`;
 }
 function nodeHTML(r,x){
-  const g = E.gatherInfo(S,r,x), k=S.disc[x.id], n=depInfo(r.id,x.id), regrow = g.ok && n.left<=0;
-  const rule = E.depositRule(S,r.id,x.id), pct = regrow && n.until ? Math.max(0,Math.min(100,100-(n.until-Date.now())/rule.regrow*100)) : 100;
-  return `<button class="node ${g.ok?"":"nlock"} ${regrow?"regrow":""}" id="n-${x.id}" style="left:${x.p[0]}%;top:${x.p[1]}%;--p:${pct}" data-act="gather" data-r="${r.id}" data-id="${x.id}" aria-label="${k?nm(x.id):"未発見の資源"}">
-    <span class="ni">${g.ok?(k?ic(x.id):"❔"):"🔒"}</span><span class="nl">${k?nm(x.id):"？"}</span><span class="pips">${regrow||!isFinite(n.left)?"":"●".repeat(Math.min(n.left,8))}</span></button>`;
+  const key = E.resKey(x), g = E.gatherInfo(S,r,x), k=S.disc[x.id], n=depInfo(r.id,key), regrow = g.ok && n.left<=0;
+  const rule = E.depositRule(S,r.id,key), pct = regrow && n.until ? Math.max(0,Math.min(100,100-(n.until-Date.now())/rule.regrow*100)) : 100;
+  return `<button class="node ${g.ok?"":"nlock"} ${regrow?"regrow":""}" id="n-${key}" style="left:${x.p[0]}%;top:${x.p[1]}%;--p:${pct}" data-act="gather" data-r="${r.id}" data-id="${key}" aria-label="${k?nm(x.id):"未発見の資源"}${g.ok?"":"（"+g.reason+"）"}">
+    <span class="ni">${g.ok?(k?ic(x.id):"❔"):"🛠️"}</span><span class="nl">${k?nm(x.id):"？"}</span><span class="pips">${regrow||!isFinite(n.left)?"":"●".repeat(Math.min(n.left,8))}</span></button>`;
 }
 function floatText(el, text, cls){
   const sc=$("#rnodes"); if(!sc||!el) return;
@@ -714,7 +729,7 @@ const TOOLFX = {forest:"🪓",mountain:"⛏️",mine:"⛏️",cave:"⛏️",volc
 /* 2D表示での採取（地域の採取地点。残量・二重取得防止はエンジン） */
 function doGather(rid, id){
   if(U.tab!=="explore" || modalOpen()) return;
-  const r = D.regions.find(x=>x.id===rid), res=r.res.find(x=>x.id===id), el=$("#n-"+id);
+  const r = D.regions.find(x=>x.id===rid), res=r.res.find(x=>E.resKey(x)===id), el=$("#n-"+id), item=res?res.id:id;
   const inf = depInfo(rid,id);
   if(!inf.ok){ floatText(el, inf.kind==="empty"?"もうすぐ戻る…":inf.reason, "ng"); return; }
   const now=Date.now(); U.combo = (now-U.lastGather<1600) ? U.combo+1 : 1; U.lastGather=now;
@@ -724,25 +739,28 @@ function doGather(rid, id){
   const sc=$("#rnodes");
   const sw=document.createElement("span"); sw.className="swing"; sw.textContent=owned("steamengine")&&["mine","mountain"].includes(rid)?"⚙️":TOOLFX[rid]||"✋";
   if(el&&sc){ sw.style.left=el.style.left; sw.style.top=el.style.top; sc.appendChild(sw); setTimeout(()=>sw.remove(),500); }
-  floatText(el, (out.crit?"会心！ ":"")+ic(id)+"＋"+out.n, out.crit?"crit":"");
+  floatText(el, (out.crit?"会心！ ":"")+ic(item)+"＋"+out.n, out.crit?"crit":"");
   const cb=$("#combo"); if(cb){ cb.textContent = U.combo>=2 ? "コンボ×"+U.combo+(U.combo%5===0?"　おまけ＋1！":"") : ""; cb.classList.toggle("on",U.combo>=2); }
   afterChange(out.news);
   if(E.exploreLv(S,rid)!==lvBefore || out.news.length){ fieldSig=""; renderField(); drawRegion(); }
   else { const ne=$("#n-"+id); if(ne){ ne.outerHTML = nodeHTML(r,res); const nn=$("#n-"+id); if(nn&&!RM) nn.classList.add("hit"); } }
   if(out.rares.length) banner("✨ 珍しい発見！ "+out.rares.map(nm).join("・"));
   else if(out.lvUp) banner("⭐ 探索Lv"+out.lvUp+"に上がった！");
+  else processHint(out.news);
+}
+/* 新しく見つけた素材を、まだ加工できないとき：足りない設備・道具を具体的に知らせる（採れる＝加工できる、ではない） */
+function processHint(news){
+  const id = (news||[]).find(k=>IT[k] && IT[k].tags.includes("天然資源") && E.processBlock(S,k)); if(!id) return false;
+  banner("🧰 "+E.processBlock(S,id).text+"（"+nm(id)+"は持ち物に保管した）"); return true;
 }
 function travel(rid){
   const r = D.regions.find(x=>x.id===rid);
-  if(!E.regionOpen(S,r)){
-    const p=document.querySelector(`.pin[data-id="${rid}"]`); if(p){ p.classList.remove("shake"); void p.offsetWidth; p.classList.add("shake"); }
-    const rb=$("#regionBox"); if(rb){ const n=document.createElement("div"); n.className="note bad"; n.innerHTML=`<h4>🔒 ${r.name}</h4><p style="margin:0">${r.kid}${r.unlock?"<br>入るには「"+r.unlock.map(nm).join("」か「")+"」が必要。":""}</p>`; rb.prepend(n); setTimeout(()=>n.remove(),3500); }
-    return; }
+  if(!E.regionOpen(S,r)) return;     // 準備中の地域だけ（地域の鍵は 2026-11-11 に廃止）
   U.region=rid; U.combo=0; fieldSig="";
   setTab("explore"); renderField(); banner(r.icon+" "+r.name+"に着いた");
 }
 setInterval(()=>{ if(!$("#rscene")) return; const r=D.regions.find(x=>x.id===U.region); if(!r) return;
-  r.res.forEach(x=>{ const el=$("#n-"+x.id); if(!el) return; const html=nodeHTML(r,x); if(el._h!==html){ el.outerHTML=html; const ne=$("#n-"+x.id); if(ne) ne._h=html; } });
+  r.res.forEach(x=>{ const key=E.resKey(x), el=$("#n-"+key); if(!el) return; const html=nodeHTML(r,x); if(el._h!==html){ el.outerHTML=html; const ne=$("#n-"+key); if(ne) ne._h=html; } });
 }, 1000);
 
 /* ===================== 3Dフィールド（HD-2D描画モジュールとの連携） =====================
@@ -765,13 +783,13 @@ function buildNodes(){
   NODES = [];
   D.regions.forEach(r=>{ if(!r.w) return;
     r.res.forEach((res,i)=>{
-      const pos = E.depositPos(r,res);
-      NODES.push({key:r.id+":"+res.id, vid:E.depositId(r.id,res.id), r, res, pos,
-        type:(NATURE.DEPOSIT_SHAPE[res.id]||{}).vis||RES_VIS[res.id]||"rock", rot:(i*1.7)%6.28, scale: (NATURE.DEPOSIT_SHAPE[res.id]||{}).vis==="tree"?1.1:1});
+      const pos = E.depositPos(r,res), key = E.resKey(res), sh = NATURE.depShape(res)||{};
+      NODES.push({key:r.id+":"+key, rk:key, vid:E.depositId(r.id,key), r, res, pos,
+        type:sh.vis||RES_VIS[res.id]||"rock", rot:(i*1.7)%6.28, scale: res.loose ? 0.7 : sh.vis==="tree"?1.1:1});
     }); });
 }
 function nodeVisual(n){
-  const inf = depInfo(n.r.id, n.res.id);
+  const inf = depInfo(n.r.id, n.rk);
   const t={n}; return {position:n.pos, type:n.type, rotationY:n.rot, scale:n.scale, depleted: inf.left<=0, highlighted: tSame(W3.near,t) || tSame(W3.sel,t), visible:true,
     phase: W3.work && tSame(W3.work.t,t) ? "reacting" : "idle"};
 }
@@ -968,10 +986,14 @@ function spawnPos(){
   /* 地形の版が古いセーブ（広い世界より前）：旧世界の地形は変わっていないので位置も建物もそのまま。
      念のため、位置が崖・深い水・木や岩の中なら近くの安全な場所へ移す（建物は消さない）。版を記録して保存する */
   const oldWorld = window.TERRAIN && TERRAIN.WORLD_VERSION && (S.worldVer||1) < TERRAIN.WORLD_VERSION;
-  const q = WORLD.safeSpawn(S, p);
+  /* 地形の版4（2026-11-11）：南西の火山を登れる山にした。版3以前のセーブの位置が火山の変わった所なら、登山道の近い所（歩ける・つながっている）へ移す */
+  let volcMoved = false;
+  if(oldWorld && (S.worldVer||1) < 4 && TERRAIN.volcanoSafeSpot){ const v = TERRAIN.volcanoSafeSpot(p.x, p.z); if(v){ p.x=v.x; p.z=v.z; volcMoved=true; } }
+  const q0 = WORLD.safeSpawn(S, p), q = volcMoved ? Object.assign({}, q0, {moved:true}) : q0;
   W3.spawnMoved = !!q.moved;
-  if(q.moved){ S.pos={x:+q.x.toFixed(2), z:+q.z.toFixed(2), dir:W3.dir}; save(); setTimeout(()=>banner("🧭 歩ける安全な場所へ移動した（木や岩・崖・深い水と重ならない所）"), 600); }
-  if(oldWorld){ S.worldVer = TERRAIN.WORLD_VERSION; save(); setTimeout(()=>banner("🗺️ 世界が広くなった！ 北東の山・東と南の海岸・山の滝へ行ける（地図で見られる）"), q.moved ? 3600 : 900); }
+  if(q.moved){ S.pos={x:+q.x.toFixed(2), z:+q.z.toFixed(2), dir:W3.dir}; save(); setTimeout(()=>banner(volcMoved ? "🌋 火山の形が変わったので、近くの登山道へ移動した" : "🧭 歩ける安全な場所へ移動した（木や岩・崖・深い水と重ならない所）"), 600); }
+  if(oldWorld){ const was=S.worldVer||1; S.worldVer = TERRAIN.WORLD_VERSION; save();
+    setTimeout(()=>banner(was < 3 ? "🗺️ 世界が広くなった！ 北東の山・東と南の海岸・山の滝へ行ける（地図で見られる）" : "🌋 南西の火山に登山道ができた！ 麓から火口の縁まで歩いて登れる（地図で見られる）"), q.moved ? 3600 : 900); }
   return {x:q.x, z:q.z};
 }
 function applySavedPos(){
@@ -1057,7 +1079,7 @@ function tGap(t,p){ return t.o ? WORLD.reachGap(t.o,p) : Math.max(0, Math.hypot(
 function tSame(a,b){ return !!a && !!b && (a.o ? a.o===b.o : a.n===b.n); }
 function tInfo(t){
   if(t.o) return WORLD.info(S,t.o);
-  const n=t.n, inf=depInfo(n.r.id,n.res.id), k=S.disc[n.res.id];
+  const n=t.n, inf=depInfo(n.r.id,n.rk), k=S.disc[n.res.id];
   return {ok:inf.ok, kind:inf.kind, reason:inf.kind==="empty"?"取り尽くした（少し待つと戻る）":inf.reason, name:k?nm(n.res.id):"何か", icon:k?ic(n.res.id):"❔", verb:"採る",
     yields:{[n.res.id]:inf.n||n.res.n}, left:inf.left, until:inf.until};
 }
@@ -1071,8 +1093,8 @@ function loop3D(ts){
   if(W3.state!=="ready" || W3.lost) return;
   if(window.HD2D && HD2D.tickBuildingParts) HD2D.tickBuildingParts(ts/1000);   // 建物の可動部（ピストン・掘削軸など）
   if(W3.place || $("#buildov")) drawPlaceOverlay();
-  /* 大きなフレーム間隔でも進む距離を保つ（すり抜けは nature.move が細かく分けて防ぐ） */
-  const dt = W3.lastTs ? Math.min(0.1,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
+  /* 大きなフレーム間隔でも進む距離を保つ（すり抜けは nature.move が細かく分けて防ぐ）。毎秒5コマまでは、進む速さがフレームレートに依らない */
+  const dt = W3.lastTs ? Math.min(MAX_DT,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
   if(W3.world && W3.pos) W3.world.update(dt, W3.pos, W3.gfx.getCamera());   // 外側の地形の区画（近いほど細かく・少しずつ作る）と水・滝の動き
   /* 地名（山麓・海岸など）が変わったら左上の表示を更新、エリアの照明・空・霧・粒子を Muse の setEnvironment へ（0.5秒ごと） */
   W3.plT=(W3.plT||0)+dt; if(W3.plT>0.5 && W3.pos){ W3.plT=0; camRecenterUI(); const pn=placeHere(); if(pn!==W3.placeName){ W3.placeName=pn; updateLoc(); }
@@ -1095,11 +1117,9 @@ function loop3D(ts){
     else { mx=dx/d; mz=dz/d; stepCap=d; } }
   const len=Math.hypot(mx,mz); let got=0;
   if(len>0.01 && dt>0){
-    const sp = 7*(owned("steamengine")?1.6:1)*Math.min(1,len), step = Math.min(sp*dt, stepCap);
+    const sp = WALK_SPEED*(owned("steamengine")?1.6:1)*Math.min(1,len), step = Math.min(sp*dt, stepCap);
     const before = {x:W3.pos.x, z:W3.pos.z};
     const res = WORLD.move(S, W3.pos, mx/len*step, mz/len*step);
-    if(res.locked){ W3.path=null; W3.target=null; W3.intent=null;
-      if(ts-W3.blockAt>2500){ W3.blockAt=ts; banner("🔒 "+res.locked.name+"：入るには「"+res.locked.unlock.map(nm).join("」か「")+"」が必要"); } }
     W3.pos.x=res.x; W3.pos.z=res.z;
     got = Math.hypot(res.x-before.x, res.z-before.z);
     /* クリック移動で進めなくなったら、経路を引き直す。それでも進めなければ止める */
@@ -1130,6 +1150,11 @@ function loop3D(ts){
   updateLabels3D(); npcUpdate(dt); npcLabels();
   if(ts-W3.lastSave>2000 && (!S.pos || Math.abs(S.pos.x-W3.pos.x)>0.01 || Math.abs(S.pos.z-W3.pos.z)>0.01 || Math.abs((S.pos.face||0)-(W3.face||0))>0.01)){ W3.lastSave=ts; S.pos={x:+W3.pos.x.toFixed(2), z:+W3.pos.z.toFixed(2), dir:W3.dir, face:+(W3.face||0).toFixed(3)}; save(); }
 }
+/* 歩く速さ（マス/秒）。キー・スティック（倒しきったとき）・タップ移動で同じ。斜めは入力を長さ1にそろえるので速くならない。
+   2026-11-11：毎秒7 → 4.55（約65%）。歩く絵の足の動きは描画モジュールが「実際に進んだ距離」で進める（Muse §31：0.35マスで1コマ、4コマ＝1.4マスで一周）ので、
+   速さを下げるだけで一周の時間も 0.20秒 → 0.31秒（約1.54倍）になる。足の動きに別の倍率は重ねない（重ねると足がすべって見える）。
+   ゲーム全体の時間や描画のコマ数は変えない。採取の作業時間・集落の人の速さ（NPC_SPEED）も変えない */
+const WALK_SPEED = 4.55, MAX_DT = 0.2;
 /* 歩き始め：毎秒0.9マス以上。止まる：毎秒0.35マス未満が0.12秒続く（小さな揺れでちらつかない）。
    入力も移動予約もなければ、その場で止まる。止まっても向き（W3.dir）は変えない */
 const WALK_START = 0.9, WALK_STOP = 0.35, WALK_STOP_HOLD = 0.12;
@@ -1156,10 +1181,9 @@ function goTo3D(x,z,t){
   if(W3.work) cancelWork("別の場所へ向かうので、採取をやめた");
   W3.intent = t||null; W3.repath=0; W3.stuck=0;
   if(t && tGap(t,W3.pos)<=E.REACH){ W3.path=null; W3.target=null; arrive(); return true; }
-  const lk = !t && D.regions.find(r=>r.w && r.unlock && !E.regionOpen(S,r) && Math.hypot(x-r.w.x,z-r.w.z)<REGION_R);
-  if(lk){ banner("🔒 "+lk.name+"：入るには「"+lk.unlock.map(nm).join("」か「")+"」が必要"); W3.intent=null; return false; }
-  const dest = t ? (t.o ? WORLD.approachPoint(S,t.o,W3.pos) : WORLD.nearestFree(S,t.n.pos,undefined,4)) : WORLD.nearestFree(S,{x,z},undefined,6);
-  const path = dest && WORLD.findPath(S,W3.pos,dest);
+  let path;
+  if(t && t.n){ const sh=NATURE.depShape(t.n.res)||{}; path = WORLD.pathToDeposit(S, t.n.pos, sh.r||0, W3.pos); }    // 採取地点：まわりの、歩いて行ける立てる場所へ
+  else { const dest = t ? WORLD.approachPoint(S,t.o,W3.pos) : WORLD.nearestFree(S,{x,z},undefined,6); path = dest && WORLD.findPath(S,W3.pos,dest); }
   if(!path){ banner("🚫 そこへは行けない（道がない）"); W3.path=null; W3.target=null; W3.intent=null; return false; }
   W3.path=path; W3.target=path[path.length-1];
   return true;
@@ -1174,7 +1198,7 @@ function startWork(t){
   if(W3.work) return;                         // 作業中の連打・長押しは受け付けない
   if(tGap(t,W3.pos) > E.REACH){ banner("遠すぎる。もっと近づこう"); return; }
   const inf=tInfo(t);
-  if(!inf.ok){ banner((inf.kind==="tool"?"🔒 ":"")+inf.name+"："+inf.reason); return; }
+  if(!inf.ok){ banner((inf.kind==="tool"?"🛠️ ":"")+inf.name+"："+inf.reason); return; }
   W3.sel=t; W3.path=null; W3.target=null; W3.intent=null;
   W3.work={t, start:performance.now(), dur:RM?150:tWork(t), token:S.seq, pos:{x:W3.pos.x, z:W3.pos.z}};
   syncWorkVisual(t); updateAction3D();
@@ -1192,7 +1216,7 @@ function finishWork(){
   syncWorkVisual(w.t);
   const t=w.t, now=Date.now(); U.combo=(now-U.lastGather<2500)?U.combo+1:1; U.lastGather=now;
   const out = t.o ? WORLD.harvest(S, t.o.id, {pos:W3.pos, token:w.token, combo:U.combo})
-                  : E.harvestDeposit(S, t.n.r.id, t.n.res.id, {pos:W3.pos, token:w.token, combo:U.combo});
+                  : E.harvestDeposit(S, t.n.r.id, t.n.rk, {pos:W3.pos, token:w.token, combo:U.combo});
   if(!out.ok){ banner(out.reason||"採れなかった"); updateAction3D(); return; }
   const got = out.got || {[t.n.res.id]:out.n};
   const pos = tPos(t), kind = t.o ? t.o.kind : t.n.type;
@@ -1203,6 +1227,7 @@ function finishWork(){
   const cb=$("#combo"); if(cb){ cb.textContent = U.combo>=2 ? "コンボ×"+U.combo+(U.combo%5===0?"　おまけ＋1！":"") : ""; cb.classList.toggle("on",U.combo>=2); }
   if(out.rares && out.rares.length) banner("✨ 珍しい発見！ "+out.rares.map(nm).join("・"));
   else if(out.lvUp) banner("⭐ 探索Lv"+out.lvUp+"に上がった！");
+  else if(!(t.o && out.depleted)) processHint(out.news);
   if(t.n) syncNode(t.n); syncNature(true);
   if(t.o && out.depleted){ W3.sel=null; }
   afterChange(out.news); updateAction3D(); updateLoc(); drawRegion();
@@ -1218,7 +1243,7 @@ function updateAction3D(){
   else if(!t){ const sel=W3.sel; mode="look"; html = pc ? "" : `<span class="ai">🔍</span><span>調べる</span>`;
     if(sel && W3.path){ const inf=tInfo(sel); mode="go"; html=`<span class="ai">${inf.icon}</span><span>${inf.name}へ移動中</span>`; } }
   else { const inf=tInfo(t);
-    if(!inf.ok){ mode="lock"; html=`<span class="ai">${inf.kind==="tool"?"🔒":inf.kind==="empty"?"⏳":"🔒"}</span><span>${inf.name}：${inf.reason}</span>`; }
+    if(!inf.ok){ mode="lock"; html=`<span class="ai">${inf.kind==="tool"?"🛠️":inf.kind==="empty"?"⏳":"🚫"}</span><span>${inf.name}：${inf.reason}</span>`; }
     else { mode="gather"; html=`${pc?'<span class="kbd">E</span>':""}<span class="ai">${inf.icon}</span><span>${inf.name}を${inf.verb} <small>→ ${yieldText(inf.yields)}</small></span>`; } }
   const sig=mode+"|"+html; if(b._sig===sig && !b.hidden) return; b._sig=sig;
   b.hidden=false; b.dataset.mode=mode; b.className="w3act"+(mode==="look"?" idle":mode==="gather"||mode==="talk"?"":mode==="work"||mode==="go"?" busy":" lock"); b.innerHTML=html;
@@ -1253,16 +1278,16 @@ function updateLabels3D(){
     /* 名札は、近い（6マス以内）・手が届く・選んだ・技術画面で目標にした素材のときだけ（遠くの採取地点に常に名札を出さない） */
     const wanted = isNear || isSel || d<6 || (U.target===n.res.id && d<17);
     if(!wanted){ const el=W3.labelEls[n.key]; if(el) el.style.display="none"; return; }
-    const g=E.gatherInfo(S,n.r,n.res), k=S.disc[n.res.id], inf=depInfo(n.r.id,n.res.id);
+    const g=E.gatherInfo(S,n.r,n.res), k=S.disc[n.res.id], inf=depInfo(n.r.id,n.rk);
     labelFor(n.key, "w3go", {n:n.key}, n.pos.x, groundY(n.pos.x,n.pos.z)+(n.type==="tree"?2.6:1.5), n.pos.z,
-      `<span>${g.ok?(k?ic(n.res.id):"❔"):"🔒"}</span>${k?nm(n.res.id):"？"}${inf.left>0&&g.ok&&isFinite(inf.left)?`<i>${"●".repeat(Math.min(inf.left,8))}</i>`:""}`,
+      `<span>${g.ok?(k?ic(n.res.id):"❔"):"🛠️"}</span>${k?nm(n.res.id):"？"}${inf.left>0&&g.ok&&isFinite(inf.left)?`<i>${"●".repeat(Math.min(inf.left,8))}</i>`:""}`,
       (g.ok?"":" lock")+(g.ok&&inf.left<=0?" regrow":"")+(isNear?" near":""), (k?nm(n.res.id):"未発見の資源")+"へ行って採取する");
   });
   const want = new Set();
   [W3.sel, W3.near].forEach(t=>{ if(!t || !t.o) return; const o=t.o; want.add("o:"+o.id);
     const inf=WORLD.info(S,o), K=NATURE.KINDS[o.kind], h = o.kind==="tree" ? 3.2*o.scale : o.kind==="rock" ? 1.4*o.scale : 0.9;
     labelFor("o:"+o.id, "w3pick", {o:o.id}, o.x, groundY(o.x,o.z)+h, o.z,
-      `<span>${inf.ok?inf.icon:"🔒"}</span>${inf.name}<small style="font-weight:700;margin-left:4px">${inf.ok?"→ "+yieldText(inf.yields):inf.reason}</small>`,
+      `<span>${inf.ok?inf.icon:"🛠️"}</span>${inf.name}<small style="font-weight:700;margin-left:4px">${inf.ok?"→ "+yieldText(inf.yields):inf.reason}</small>`,
       (inf.ok?"":" lock")+(W3.near&&W3.near.o===o?" near":""), inf.name+"："+(inf.ok?K.verb+"と"+yieldText(inf.yields,true):inf.reason)); });
   Object.keys(W3.labelEls).forEach(k=>{ if(k.startsWith("o:") && !want.has(k)){ W3.labelEls[k].remove(); delete W3.labelEls[k]; } });
 }
@@ -1289,7 +1314,7 @@ function pickAt(cx, cy){
 function selectAndGo(t){
   W3.sel=t; syncNature(); if(t.n) syncNode(t.n);
   const inf=tInfo(t);
-  if(!inf.ok && inf.kind==="tool"){ banner("🔒 "+inf.name+"："+inf.reason); }
+  if(!inf.ok && inf.kind==="tool"){ banner("🛠️ "+inf.name+"："+inf.reason); }
   goTo3D(0,0,t); updateAction3D();
 }
 
@@ -1427,22 +1452,22 @@ function viewCraft(){
   const todo = vis.filter(c=>!(IT[c.out].unique&&owned(c.out))).sort((a,b)=>(E.planCraft(S,b).ok?1:0)-(E.planCraft(S,a).ok?1:0));
   const done = vis.filter(c=>IT[c.out].unique&&owned(c.out)).filter((c,i,a)=>a.findIndex(x=>x.out===c.out)===i);
   const hidden = D.crafts.length - vis.length;
-  return `<div class="sec">🔨 工作 <small>材料を組み立てて道具や設備を作る（化学変化ではない作業）</small></div>
+  return `<div class="sec">工作 <small>材料を組み立てて道具や設備を作る（化学変化ではない作業）</small></div>
   <div class="grid2">${todo.map(craftCard).join("")||`<p class="desc">今作れるものはないよ。</p>`}</div>
   ${hidden?`<p class="desc mt">🔒 まだ${hidden}個の設計図が隠れている。新しい材料を見つけると現れるよ。</p>`:""}
-  ${done.length?`<div class="sec">✅ 持っている道具・設備</div><div class="grid2">${done.map(craftCard).join("")}</div>`:""}`;
+  ${done.length?`<div class="sec">持っている道具・設備</div><div class="grid2">${done.map(craftCard).join("")}</div>`:""}`;
 }
 
 /* ===================== 図鑑 ===================== */
 function viewBook(){
   const prog = E.tagProgress(S), all = Object.keys(IT), total = all.length, got = all.filter(k=>S.disc[k]).length;
   const list = U.filter==="すべて"? all : all.filter(k=>IT[k].tags.includes(U.filter));
-  return `<div class="sec">📖 物質・製品図鑑 <small>発見${got}／収録${total}</small></div>
+  return `<div class="sec">物質・製品図鑑 <small>発見${got}／収録${total}</small></div>
   <div class="bars"><button class="bar" data-act="filter" data-id="すべて" aria-pressed="${U.filter==="すべて"}">すべて ${got}/${total}<div class="m"><i style="width:${got/total*100}%"></i></div></button>
     ${prog.map(p=>`<button class="bar" data-act="filter" data-id="${p.tag}" aria-pressed="${U.filter===p.tag}">${p.tag} ${p.got}/${p.total}<div class="m"><i style="width:${p.got/p.total*100}%"></i></div></button>`).join("")}</div>
   <p class="desc">点線の❔はヒントが見られるよ。分類は重なることがある（例：銅は「元素」と「金属・合金」の両方）。</p>
   <div class="dex">${list.map(k=>{ const st=E.status(S,k); return `<button class="dx ${st}" data-act="item" data-id="${k}"><span class="i">${st==="known"?ic(k):"❔"}</span><span class="n">${st==="known"?IT[k].name:"？？？"}</span></button>`; }).join("")}</div>
-  <div class="sec">🧪 実験操作の図鑑 <small>どんな操作があるのか</small></div>
+  <div class="sec">実験操作の図鑑 <small>どんな操作があるのか</small></div>
   <div class="oplist">${Object.keys(OPS).map(o=>{ const fs=Object.keys(IT).filter(f=>IT[f].facility&&IT[f].ops.includes(o)); const can=fs.some(owned);
     return `<div class="opc"><b>${opIc(o)} ${OPS[o].name}</b>（${OPS[o].yomi}）${can?"":' <span class="tag" style="background:var(--line);color:var(--muted)">未解放</span>'}<br>${OPS[o].kid}<br><small style="color:var(--muted)">使える装置：${fs.map(f=>S.disc[f]?nm(f):"？？？").join("・")}</small></div>`; }).join("")}</div>`;
 }
@@ -1479,6 +1504,7 @@ function openItem(id){
     <h5>🧭 見つけた作り方</h5><ul>${knownRoutes.map(x=>`<li>${x}</li>`).join("")}</ul>
     ${otherRoutes?`<p class="desc">ほかにも${otherRoutes}通りの作り方があるみたい…</p>`:""}
     <h5>🔗 これを使うとできるもの</h5><ul>${usesL.length?usesL.map(k=>`<li>${S.disc[k]?ic(k)+" "+nm(k):"❔ ？？？"}</li>`).join(""):"<li>今のところなし</li>"}</ul>
+    ${procNeedsHTML(id)}
     <div class="row mt"><button class="btn small sub" data-act="target" data-id="${id}">🕸️ 技術マップで見る</button></div>`;
   }
   sh.scrollTop=0; openModal(sh.querySelector(".close"));
@@ -1514,11 +1540,11 @@ function tree(id, depth, seen){
 function viewMap(){
   const opts = Object.keys(IT).filter(k=>E.status(S,k)!=="hidden");
   if(!U.target || !opts.includes(U.target)) U.target = opts.find(k=>!S.disc[k]) || opts[0];
-  return `<div class="sec">🕸️ 技術マップ <small>技術と物質のつながり</small></div>
+  return `<div class="sec">技術マップ <small>技術と物質のつながり</small></div>
   <div class="legend"><span>🟩 開発済み</span><span>🟨 今作れる</span><span>⬜ 点線：手がかりあり</span><span>灰色：未開発</span></div>
   <div class="eras">${D.eras.map(e=>`<div class="era ${e.future?"future":""}"><h4>${e.name}</h4><p>${e.kid}</p>
     ${e.techs.map(t=>{ const s=techStatus(t); return `<button class="tn ${s}" data-act="target" data-id="${t}">${s!=="none"?ic(t):"❔"} ${s==="none"?"？？？":nm(t)}</button>`; }).join("")||"<p>🚧 準備中</p>"}</div>`).join("")}</div>
-  <div class="sec">🎯 目標から探す <small>選んだものに必要な材料・装置をたどる</small></div>
+  <div class="sec">目標から探す <small>選んだものに必要な材料・装置をたどる</small></div>
   <div class="card"><select data-act="pick" aria-label="目標を選ぶ">${opts.map(k=>`<option value="${k}" ${k===U.target?"selected":""}>${S.disc[k]?IT[k].icon+" "+IT[k].name:"❔ ？？？（"+IT[k].tags[0]+"）"}</option>`).join("")}</select>
     ${U.target?`<p class="desc">${S.disc[U.target]?IT[U.target].kid:"🦉 "+E.hint(S,U.target)}</p><div class="tree"><ul>${tree(U.target,0,new Set())}</ul></div>
     <h5 style="margin:12px 0 4px">🔗 これを使うとできるもの</h5><div class="need">${(()=>{ const us=E.usesOf(U.target); const l=us.procs.map(p=>Object.keys(p.out)).flat().concat(us.crafts.map(c=>c.out)).filter((v,i,a)=>a.indexOf(v)===i);
@@ -1529,20 +1555,20 @@ function viewMap(){
 /* ===================== 記録 ===================== */
 function viewLog(){
   const tests = E.runTests(), passN = tests.filter(t=>t.pass).length;
-  return `<div class="sec">📓 実験の記録 <small>新しい順（最大200件）</small></div>
+  return `<div class="sec">実験の記録 <small>新しい順（最大200件）</small></div>
   <div class="card hist">${S.hist.slice(0,30).map(h=>{ const p = h.k==="exp"? D.procs.find(x=>x.id===h.proc):null;
     return `<div class="h"><span>${p?opIc(p.op):"🔨"}</span><span class="t">${Object.keys(h.inp).map(k=>nm(k)+"×"+h.inp[k]).join("＋")} → ${Object.keys(h.out).map(k=>nm(k)+"×"+h.out[k]).join("＋")}<br><small style="color:var(--muted)">${new Date(h.t).toLocaleTimeString("ja-JP")}${p?"・"+nm(h.fac):""}</small></span>
       ${p&&owned("notebook")?`<button class="btn small sub" data-act="again" data-proc="${p.id}" data-fac="${h.fac}">もう一度</button>`:""}</div>`; }).join("") || "<p class='desc'>まだ記録がないよ。</p>"}
     ${!owned("notebook")?`<p class="desc">📓 研究ノートを作ると、ここから同じ実験をすぐ繰り返せるようになるよ。</p>`:""}</div>
-  <div class="sec">💾 セーブデータ <small>自動でブラウザに保存されています（スキーマv${E.SCHEMA}）</small></div>
+  <div class="sec">セーブデータ <small>自動でブラウザに保存されています（スキーマv${E.SCHEMA}）</small></div>
   <div class="card"><p class="desc" style="margin-top:0">別の端末に移すときは、下の文字をコピーして、移した先で「読み込む」に貼り付けてね。クラウド同期はまだありません。</p>
     <textarea id="exportBox" readonly>${E.serialize(S).replace(/</g,"&lt;")}</textarea>
     <div class="row mt"><button class="btn small sub" data-act="copy">📋 コピー</button></div>
     <textarea id="importBox" class="mt" placeholder="ここにセーブデータを貼り付ける"></textarea>
     <div class="row mt"><button class="btn small" data-act="import">📥 読み込む</button><button class="btn small sub" data-act="reset">🗑️ 最初からやり直す</button><span class="desc" id="saveMsg"></span></div></div>
-  <div class="sec">🧪 動作テスト <small>${passN}/${tests.length}合格（このタブを開くたびに実行）</small></div>
+  <div class="sec">動作テスト <small>${passN}/${tests.length}合格（このタブを開くたびに実行）</small></div>
   <div class="card"><ul class="tests">${tests.map(t=>`<li>${t.pass?"✅":"❌"} ${t.name}${t.pass?"":"："+t.detail}</li>`).join("")}</ul></div>
-  <div class="sec">🚧 このバージョンでできること・まだできないこと</div>
+  <div class="sec">このバージョンでできること・まだできないこと</div>
   <div class="card status"><ul>
     <li>✅ 探検できる地域：${D.regions.length}か所・物質と道具と設備あわせて${Object.keys(IT).length}種（珍しい発見${Object.values(IT).filter(i=>i.tags.includes("珍しい発見")).length}種を含む）</li>
     <li>✅ 実験操作${Object.keys(OPS).length}種・反応${D.procs.length}通り・工作${D.crafts.length}通り（同じものへの別ルートあり）</li>
@@ -2195,12 +2221,12 @@ function viewVerify(){
     <p class="desc" style="margin-top:0">通常のセーブとは別のデータです（${v.from==="copy"?"通常セーブの写しから作成":"新しく作成"}）。ここで増やした素材や進行は、通常のセーブには入りません。</p>
     <div class="vgrid"><button class="btn small" data-act="v-exit">通常のセーブに戻る</button><button class="btn small sub" data-act="v-reset" data-id="new">全解放で作り直す</button><button class="btn small sub" data-act="v-reset" data-id="copy">通常セーブを写して作り直す</button></div></div>
   <div class="vsec"><h4>条件のバイパス（OFFにすると通常の判定で確かめられる）</h4>
-    ${tog("free","材料を減らさない"," 足りなくても実験・工作できる")}${tog("tools","道具・設備の条件を満たす"," 採取・実験・工作")}${tog("locks","鍵のかかった地域に入れる"," 洞窟・鉱山など")}${tog("instant","待ち時間を短く"," 採取の作業・実験の観察")}</div>
+    ${tog("free","材料を減らさない"," 足りなくても実験・工作できる")}${tog("tools","道具・設備の条件を満たす"," 採取・実験・工作")}${tog("instant","待ち時間を短く"," 採取の作業・実験の観察")}</div>
   <div class="vsec"><h4>素材</h4>
     <div class="vrow"><input type="search" id="vq" placeholder="名前・よみ・IDで探す" value="${vQuery.replace(/"/g,"&quot;")}" aria-label="素材を探す"><input type="number" id="vn" value="10" min="1" max="999" aria-label="追加する数"></div>
     <div class="vlist mt" id="vres">${vResults()}</div>
     <div class="vgrid mt"><button class="btn small" data-act="v-fill">保管できる全素材を99個に補充（${c.store.length}種）</button></div></div>
-  <div class="vsec"><h4>移動</h4><div class="vgrid">${D.regions.map(r=>`<button class="btn small sub" data-act="v-warp" data-id="${r.id}">${E.regionOpen(S,r)?r.icon:"🔒"} ${r.name}</button>`).join("")}<button class="btn small sub" data-act="v-warp" data-id="base">🏠 拠点</button></div></div>
+  <div class="vsec"><h4>移動</h4><div class="vgrid">${D.regions.map(r=>`<button class="btn small sub" data-act="v-warp" data-id="${r.id}">${r.icon} ${r.name}</button>`).join("")}<button class="btn small sub" data-act="v-warp" data-id="base">🏠 拠点</button></div></div>
   <div class="vsec"><h4>時代の切り替え（いま：${D.stages[stage()].era}・${D.stages[stage()].name}）</h4><div class="vgrid">
     <button class="btn small ${v.stage==null?"":"sub"}" data-act="v-stage" data-id="auto">自動（持っている設備から）</button>${D.stages.map(st=>`<button class="btn small ${v.stage===st.n?"":"sub"}" data-act="v-stage" data-id="${st.n}">${st.n}：${st.name}</button>`).join("")}</div></div>
   <div class="vsec"><h4>建物・設備の配置（原野には自動で置かない）</h4>
@@ -2261,7 +2287,7 @@ function verifyAct(act, id, b){
     case "v-tray": U.tray[id]=(U.tray[id]||0)+1; U.last=null; banner(nm(id)+" を研究室のトレイに入れた"); setTab("lab"); return true;
     case "v-fill": { const n=E.fillStorable(S,99); save(); banner("保管できる "+n+" 種を補充した"); renderPanel(); return true; }
     case "v-warp": { if(id==="base"){ setTab("explore"); if(W3.state==="ready"){ W3.pos=WORLD.safeSpawn(S,{x:D.base.x,z:D.base.z}); haltField(); syncAll3D(); } return true; }
-      const r=D.regions.find(x=>x.id===id); if(!r) return true; if(!E.regionOpen(S,r)){ banner("🔒 "+r.name+"：鍵がかかっている（バイパスOFF）"); return true; }
+      const r=D.regions.find(x=>x.id===id); if(!r || !E.regionOpen(S,r)) return true;
       setTab("explore"); U.region=r.id;
       if(W3.state==="ready"){ const q=WORLD.safeSpawn(S,{x:r.w.x, z:r.w.z+REGION_R*0.2}); W3.pos={x:q.x,z:q.z}; haltField(); W3.gfx.setPlayerVisualState(playerVisual({position:W3.pos, direction:W3.dir, moving:false})); camRebase(); syncAll3D(); }
       else { fieldSig=""; renderField(); }
@@ -2283,5 +2309,5 @@ document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.
 document.addEventListener("change", ev=>{ const b=ev.target; if(b && b.dataset && b.dataset.act==="v-flag") verifyAct("v-flag", b.dataset.id, b); });
 document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="vq"){ vQuery=ev.target.value; const r=$("#vres"); if(r) r.innerHTML=vResults(); } });
 
-window.__GAME__ = {get S(){return S;}, save:()=>save(), cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim(), rebase:()=>camRebase(), debug:()=>W3.camDbg, solve:(y,p,z,x,zz)=>camSolve(y,p,z,x,zz), axes:(y,p)=>camAxes(y,p), CAM}, hero:{dirs:()=>heroDirs(), sheet:h=>heroSheet3D(h), facing:()=>worldFacing()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
+window.__GAME__ = {get S(){return S;}, save:()=>save(), walk:{speed:WALK_SPEED, maxDt:MAX_DT, stride:1.4}, cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim(), rebase:()=>camRebase(), debug:()=>W3.camDbg, solve:(y,p,z,x,zz)=>camSolve(y,p,z,x,zz), axes:(y,p)=>camAxes(y,p), CAM}, hero:{dirs:()=>heroDirs(), sheet:h=>heroSheet3D(h), facing:()=>worldFacing()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);

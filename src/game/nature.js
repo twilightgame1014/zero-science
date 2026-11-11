@@ -24,6 +24,12 @@ var NATURE = (function(){
     {at:[22.6,2.7], put:[["pebble",1.0,"flint"],["pebble",0.9],["grass",0.9]]},
   ];
   const MIN = 60000;
+  /* 自然物の生成に使う地域の配置は、2026-11-10 の時点の値で固定する（2026-11-11：地域の鍵の廃止・火山地帯の移動・鉱石のかけらの追加）。
+     第1層・第2層は乱数を順に使い、置いた物どうしの間隔で次の物を決めるので、地域の中心・採取地点・鍵の有無が変わると
+     旧世界の自然物の位置と ID（＝既存セーブの採取状態）がずれる。生成の入力だけをこの写しに固定し、ずれないようにする。
+     lock：当時鍵がかかっていた地域（その中心のまわりには第1層の物を置かなかった）。p：当時の採取地点（地域画面の配置） */
+  const GEN_REGIONS = [{"id":"forest","w":{"x":-44,"z":40},"lock":false,"p":[[14,72],[34,82],[56,50],[78,62],[24,46],[46,66],[86,38]]},{"id":"grassland","w":{"x":4,"z":-6},"lock":false,"p":[[18,74],[44,60],[76,70],[60,36]]},{"id":"river","w":{"x":14,"z":12},"lock":false,"p":[[14,80],[32,70],[52,82],[72,78],[50,52],[86,46]]},{"id":"coast","w":{"x":36,"z":44},"lock":false,"p":[[22,78],[56,62],[40,86],[76,50]]},{"id":"mountain","w":{"x":36,"z":-8},"lock":false,"p":[[16,78],[36,64],[58,74],[76,52],[44,40]]},{"id":"cave","w":{"x":42,"z":-34},"lock":true,"p":[[28,70],[66,64]]},{"id":"mine","w":{"x":20,"z":-46},"lock":true,"p":[[16,72],[36,58],[56,74],[74,56],[88,76]]},{"id":"volcano","w":{"x":-38,"z":-38},"lock":true,"p":[[34,66],[66,76]]},{"id":"oilfield","w":{"x":0,"z":50},"lock":true,"p":[[50,66]]}];
+  const genDepositPos = (w, p)=>({x: w.x + (p[0]-50)/50*6.5, z: w.z + (p[1]-62)/38*5});   // 当時の engine.depositPos と同じ式
 
   /* 種類ごとの決まり。
      r：地面上の当たり判定の半径（大きさ1のとき）。block：歩行を妨げるか（採取後は妨げない）。
@@ -67,6 +73,10 @@ var NATURE = (function(){
     quartz:T_("ore",0.9), coal:T_("ore",0.9), rocksalt:T_("ore",0.9), hematite:T_("ore",0.9), malachite:T_("ore",0.9),
     cassiterite:T_("ore",0.9), sphalerite:T_("ore",0.9), bauxite:T_("ore",0.9), sulfur:T_("ore",0.9), obsidian:T_("ore",0.9),
   };
+  /* 落ちている鉱石のかけら（loose：道具がなくても拾える少しの量）は、地面の小石の姿で、歩行を妨げない */
+  const LOOSE_SHAPE = {vis:"pebble", r:0};
+  /* solid:false は踏める平たい採取地点（火口縁の硫黄の皮など。見た目は元の種類のまま、当たり判定なし） */
+  const depShape = res => { if(!res) return null; if(res.loose) return LOOSE_SHAPE; const b = DEPOSIT_SHAPE[res.id]; return b && res.solid===false ? {vis:b.vis, r:0} : b; };
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
   const smooth = (a,b,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); };
 
@@ -83,9 +93,9 @@ var NATURE = (function(){
     const inWorld = (x,z,m)=>{ m=m||0; if(WR) return x*x + z*z <= (WR-m)*(WR-m); return x >= WB.minX+m && x <= WB.maxX-m && z >= WB.minZ+m && z <= WB.maxZ-m; };
     const rng = mulberry32(SEED);
     const objs = [];
-    const deps = [];
-    D.regions.forEach(r=>{ if(r.w) r.res.forEach(res=>{ const p=E.depositPos(r,res); deps.push({x:p.x, z:p.z}); }); });
-    const lockedRegions = D.regions.filter(r=>r.w && r.unlock);
+    const deps = [];     // 生成用（固定の写し）。今の採取地点の当たり判定は statics（下）
+    GEN_REGIONS.forEach(r=>r.p.forEach(p=>deps.push(genDepositPos(r.w,p))));
+    const lockedRegions = GEN_REGIONS.filter(r=>r.lock);
     const base = D.base;
     const regionAt = (x,z)=>{ let best=null, bd=1e9; D.regions.forEach(r=>{ if(!r.w) return; const d=Math.hypot(x-r.w.x,z-r.w.z); if(d<bd){bd=d;best=r;} }); return bd<=REGION_R+3?best:null; };
     const near = (ax,az,bx,bz)=>Math.hypot(ax-bx,az-bz);
@@ -130,7 +140,7 @@ var NATURE = (function(){
       }
       return placed;
     }
-    const R = id=>D.regions.find(r=>r.id===id).w;
+    const R = id=>GEN_REGIONS.find(r=>r.id===id).w;
     const fw = R("forest"), gw = R("grassland"), mw = R("mountain"), rw = R("river");
     const g2 = (x,z,c,s)=>Math.exp(-((x-c.x)**2+(z-c.z)**2)/(2*s*s));
     const highland = (x,z)=>smooth(14,40,x - z*0.35);
@@ -186,7 +196,7 @@ var NATURE = (function(){
     const coastal = (x,z)=> g2(x,z,cw,13);
     const lowland = (x,z)=> smooth(wl+0.2, wl-0.25, H(x,z));      // 湿った低地（1 に近いほど低い）
     /* 通り道：拠点から、最初から行ける地域と鍵のかかった地域の中心まで（壁になる物を置かない幅） */
-    const corridors = D.regions.filter(r=>r.w).map(r=>({a:{x:base.x,z:base.z}, b:{x:r.w.x,z:r.w.z}}));
+    const corridors = GEN_REGIONS.map(r=>({a:{x:base.x,z:base.z}, b:{x:r.w.x,z:r.w.z}}));
     const segD = (x,z,s)=>{ const dx=s.b.x-s.a.x, dz=s.b.z-s.a.z, L=dx*dx+dz*dz; const t=Math.max(0,Math.min(1,((x-s.a.x)*dx+(z-s.a.z)*dz)/L)); return Math.hypot(x-(s.a.x+dx*t), z-(s.a.z+dz*t)); };
     const onCorridor = (x,z,w)=> corridors.some(s=>segD(x,z,s) < w);
     /* 第2層の置ける場所：第1層の規則に加えて、通り道を空ける。鍵のかかった地域の中にも置く（開放後に森や岩場がある） */
@@ -253,16 +263,15 @@ var NATURE = (function(){
 
     /* ---------- 飾り（採れない・見た目だけ）と溶岩 ----------
        睡蓮：川の水面（川の中心から 2.3〜3.5。描画が水面に浮かべる）。歩行は妨げない。
-       溶岩：火山地帯の中心のまわりに数か所。見た目は描画、通れない決まりはゲーム（固定の障害物にする。建物も置けない）。 */
+       溶岩：2026-11-11 からは置かない（下）。 */
     const decos = [];
     for(let k=0, n=0; k<400 && n<16; k++){ const z=-50+vhash(k,3,91)*100, side=vhash(k,5,92)<0.5?-1:1, off=2.3+vhash(k,7,93)*1.2;
       const x = riverX(z) + side*off; if(!inOld(x,z,3) || H(x,z) > wl-0.05) continue;
       if(decos.some(d=>Math.hypot(d.x-x,d.z-z) < 5)) continue;
       decos.push({id:"lily:"+Math.round(x*10)+","+Math.round(z*10), kind:"lily", type:"lily", x:+x.toFixed(2), z:+z.toFixed(2), rot:+(vhash(k,9,94)*6.28).toFixed(3), scale:+(0.8+vhash(k,11,95)*0.5).toFixed(2)}); n++; }
+    /* 溶岩の池（飾り）：2026-11-11 から置かない。火山は南西の本物の山（src/world/shape.ts の VOLCANO）になり、溶岩は火口の溶岩湖だけ
+       （地形と描画の溶岩湖。歩けない決まりは terrainBlocked）。以前は旧世界の中の「火山地帯」（-38,-38）のまわりに置いていた */
     const lavas = [];
-    for(let k=0, n=0; k<200 && n<7; k++){ const a=vhash(k,13,96)*Math.PI*2, d=2.5+vhash(k,15,97)*6, x=vw.x+Math.cos(a)*d, z=vw.z+Math.sin(a)*d, sc=1.1+vhash(k,17,98)*0.9;
-      if(deps.some(p=>near(x,z,p.x,p.z) < 0.8*sc+2.0) || lavas.some(l=>near(x,z,l.x,l.z) < 0.8*(sc+l.scale)+1.6)) continue;
-      lavas.push({id:"lava:"+Math.round(x*10)+","+Math.round(z*10), kind:"lava", type:"lava", x:+x.toFixed(2), z:+z.toFixed(2), rot:+(vhash(k,19,99)*6.28).toFixed(3), scale:+sc.toFixed(2)}); n++; }
     /* 集落（data.js の village）の中の自然物は取り除く（人の家や通り道。生成のあとで外すので、ほかの ID は変わらない） */
     const VIL = D.village;
     if(VIL) for(let i=objs.length-1;i>=0;i--){ const o=objs[i]; if(near(o.x,o.z,VIL.c.x,VIL.c.z) < VIL.r + o.r) objs.splice(i,1); }
@@ -277,8 +286,10 @@ var NATURE = (function(){
     function oldNear(x, z, rad){ const out=[]; for(let i=Math.floor((x-rad)/AG); i<=Math.floor((x+rad)/AG); i++) for(let j=Math.floor((z-rad)/AG); j<=Math.floor((z+rad)/AG); j++){ const c=agrid.get(i+","+j); if(c) for(const o of c) if(!o.layer) out.push(o); } return out; }
     /* 地域の採取地点のうち、木・岩・鉱石の姿のものは固定の障害物（見た目の幹・占有範囲に合わせる） */
     const statics = [];
-    D.regions.forEach(r=>{ if(r.w) r.res.forEach(res=>{ const sh=DEPOSIT_SHAPE[res.id]; if(!sh || !sh.r) return; const p=E.depositPos(r,res);
-      statics.push({id:E.depositId(r.id,res.id), kind:"deposit", x:p.x, z:p.z, r:sh.r, block:true, static:true}); }); });
+    /* 今の採取地点（第3層の自然物をそばに置かない。旧世界の第1層・第2層は生成用の固定の写し deps を使う） */
+    const depNow = []; D.regions.forEach(r=>{ if(r.w) r.res.forEach(res=>depNow.push(E.depositPos(r,res))); });
+    D.regions.forEach(r=>{ if(r.w) r.res.forEach(res=>{ const sh=depShape(res); if(!sh || !sh.r) return; const p=E.depositPos(r,res);
+      statics.push({id:E.depositId(r.id,E.resKey(res)), kind:"deposit", x:p.x, z:p.z, r:sh.r, block:true, static:true}); }); });
     /* 溶岩は通れない（描画の占有 0.8×大きさ） */
     decos.filter(d=>d.kind==="lava").forEach(d=>statics.push({id:d.id, kind:"lava", x:d.x, z:d.z, r:+(0.8*d.scale).toFixed(3), block:true, static:true}));
 
@@ -327,12 +338,13 @@ var NATURE = (function(){
       opts=opts||{}; now=now||Date.now();
       const t = shapeOf(p), pts = samples(t), why = new Set(), ignore = "struct:"+p.id;
       if(pts.some(q=>!inWorld(q.x,q.z,1.2))) why.add("世界の端に近すぎる");
-      if(lockedNow(S).some(r=>pts.some(q=>Math.hypot(q.x-r.w.x,q.z-r.w.z) < REGION_R))) why.add("まだ入れない地域の中");
       const hs = pts.map(q=>H(q.x,q.z)), hmin=Math.min(...hs), hmax=Math.max(...hs);
       const diag = t.shape==="rect" ? Math.hypot(t.w,t.d) : t.r*2;          // 大きい建物ほど端と端の高さの差は大きくてよい（なだらかなら置ける）
       if(hmax-hmin > Math.max(0.8, 0.3*diag) || pts.some(q=>slope(q.x,q.z) > 0.6)) why.add("地面が傾きすぎている（平らな所へ）");
       const dr = pts.map(q=>T.distanceToRiver(q.x,q.z));
-      if(WIDE && pts.some(q=>{ const w=T.waterAt(q.x,q.z,H(q.x,q.z)); return w.kind && w.kind!=="river"; })) why.add("海・湖・池・川の中には置けない");
+      if(WIDE){ const ws = pts.map(q=>T.waterAt(q.x,q.z,H(q.x,q.z)).kind);
+        if(ws.includes("lava")) why.add("溶岩の上・すぐそばには置けない");
+        if(ws.some(k=>k && k!=="river" && k!=="lava")) why.add("海・湖・池・川の中には置けない"); }
       if(WIDE && p.rule!=="waterside" && pts.some(q=>terrainBlocked(q.x,q.z))) why.add("崖や深い水にかかっている");
       if(p.rule==="waterside"){        // 水車：川の水ぎわ（一部が水にかかり、中心は岸の上）
         const dc = T.distanceToRiver(t.x,t.z);
@@ -522,6 +534,11 @@ var NATURE = (function(){
       // Muse の依頼：火口の溶岩湖（半径 8.2）のまわり ±10 には置かない。凍った池の氷の上にも置かない
       if(T.LAVA_LAKE && Math.hypot(x-T.LAVA_LAKE.x, z-T.LAVA_LAKE.z) < 10 + K.r*sc) return false;
       if(T.FROZEN_POND && Math.hypot(x-T.FROZEN_POND.x, z-T.FROZEN_POND.z) < T.FROZEN_POND.r + 1.2) return false;
+      // 火山（2026-11-11）：登山道の岩棚と、火口縁（尾根）には道をふさぐ物を置かない。今の採取地点のそばにも置かない
+      if(T.VOLCANO){ const rv = Math.hypot(x-T.VOLCANO.x, z-T.VOLCANO.z);
+        if(K.block && rv < T.VOLCANO.rimOutR + 2.5) return false;
+        if(T.VOLC_LEDGES.some(L=>Math.hypot(x-L.x, z-L.z) < L.r + (K.block ? 1.2 + K.r*sc : 0.3))) return false; }
+      if(depNow.some(p=>Math.hypot(x-p.x, z-p.z) < 2.4)) return false;
       const st = T.streamAt(x,z); if(st.which && st.d < (K.block ? 3.6 : 2.3)) return false;
       if(terrainBlocked(x,z)) return false;
       return true;
@@ -588,12 +605,11 @@ var NATURE = (function(){
       for(const n of npcCols) if(n.id!==moveIgnore && Math.abs(n.x-x) < CELL && Math.abs(n.z-z) < CELL) out.push(n);
       return out;
     }
-    const lockedNow = S=>lockedRegions.filter(r=>!E.regionOpen(S,r));
+    /* 地域の鍵は 2026-11-11 に廃止（すべての地域へ最初から入れる。止めるのは崖・深い水・溶岩などの物理的な通行止めだけ） */
     /* その場所に主人公が立てるか */
     function free(S, x, z, now){
       if(!inWorld(x,z)) return false;
       if(terrainBlocked(x,z)) return false;
-      for(const r of lockedNow(S)) if(Math.hypot(x-r.w.x,z-r.w.z) < REGION_R) return false;
       for(const o of nearbySolids(S,x,z,now)) if(sdist(o,x,z) < PLAYER_R) return false;
       return true;
     }
@@ -642,8 +658,6 @@ var NATURE = (function(){
           else if(Math.abs(vz) > 1e-6 && !terrainBlocked(p.x, p.z+vz)) q = {x:p.x, z:p.z+vz};
           else break;
         }
-        const lk = lockedNow(S).find(r=>Math.hypot(q.x-r.w.x,q.z-r.w.z) < REGION_R);
-        if(lk){ lockedHit=lk; hit=true; break; }
         depenetrate(S,q,now);
         if(terrainBlocked(q.x,q.z) && !terrainBlocked(p.x,p.z)) break;       // 押し出された先が崖なら、その場にとどまる
         p=q;
@@ -663,7 +677,7 @@ var NATURE = (function(){
     }
     function blockGrid(S, now, win){
       ensure((win.ox + win.ox + win.nx*GRID)/2, (win.oz + win.oz + win.nz*GRID)/2, Math.max(win.nx, win.nz)*GRID/2 + 2);
-      const sig = win.ox+","+win.oz+","+win.nx+","+win.nz+"|"+lockedNow(S).map(r=>r.id).join(",")+"|"+gen3+"|"+objs.filter(o=>o.block && !present(S,o,now)).map(o=>o.id).join(",")+"|"+structSig+"|"+npcCols.length;
+      const sig = win.ox+","+win.oz+","+win.nx+","+win.nz+"|"+"|"+gen3+"|"+objs.filter(o=>o.block && !present(S,o,now)).map(o=>o.id).join(",")+"|"+structSig+"|"+npcCols.length;
       if(gridCache && sig===gridSig) return gridCache;
       const {ox, oz, nx, nz} = win, g = new Uint8Array(nx*nz);
       const gi = v=>Math.round((v-ox)/GRID), gj = v=>Math.round((v-oz)/GRID), gx = i=>ox+i*GRID, gz = j=>oz+j*GRID;
@@ -676,7 +690,6 @@ var NATURE = (function(){
       statics.forEach(o=>{ if(inWin(o)) mark(o.x,o.z,o.r+PLAYER_R+0.08); });
       structs.forEach(t=>{ if(!inWin(t)) return; const R=t.r+PLAYER_R+0.1, a=gi(t.x-R), b=gi(t.x+R), c=gj(t.z-R), d=gj(t.z+R);
         for(let i=Math.max(0,a);i<=Math.min(nx-1,b);i++) for(let j=Math.max(0,c);j<=Math.min(nz-1,d);j++){ if(sdist(t,gx(i),gz(j)) < PLAYER_R+0.08) g[i*nz+j]=1; } });
-      lockedNow(S).forEach(r=>mark(r.w.x,r.w.z,REGION_R+0.2));
       gridCache={g, win, gi, gj, gx, gz}; gridSig=sig; return gridCache;
     }
     const cellFree = (G,i,j)=> i>=0 && j>=0 && i<G.win.nx && j<G.win.nz && !G.g[i*G.win.nz+j];
@@ -747,6 +760,16 @@ var NATURE = (function(){
         const p={x:o.x+Math.cos(a)*d, z:o.z+Math.sin(a)*d}; if(free(S,p.x,p.z,now)) return p; }
       return nearestFree(S,{x:o.x,z:o.z},now,4);
     }
+    /* 地域の採取地点（中心 p・当たり判定の半径 r）へ向かう経路：まわりの立てる場所を、主人公に近い側から順に試し、歩いて行ける最初の所。
+       （中心のいちばん近い空きを目的地にすると、岩と採取地点のすき間の、外から入れない小さな空きを選ぶことがあった。2026-11-11） */
+    function pathToDeposit(S, p, r, from, now){
+      const base = Math.atan2(from.z-p.z, from.x-p.x);
+      for(const d of [r + PLAYER_R + 0.35, r + PLAYER_R + 0.9, r + PLAYER_R + 1.6]) for(let k=0;k<16;k++){
+        const a = base + (k%2?1:-1)*Math.ceil(k/2)*Math.PI/8, q = {x:p.x+Math.cos(a)*d, z:p.z+Math.sin(a)*d};
+        if(!free(S,q.x,q.z,now) || Math.hypot(q.x-p.x, q.z-p.z) - 0.6 > E.REACH) continue;
+        const path = findPath(S, from, q, now); if(path) return path; }
+      return null;
+    }
     /* 古いセーブの位置が岩などに埋まっていたら、近くの立てる場所へ */
     function safeSpawn(S, p, now){
       if(free(S,p.x,p.z,now)) return {x:p.x, z:p.z, moved:false};
@@ -762,8 +785,8 @@ var NATURE = (function(){
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
             free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids, layer2:L2N,
             setStructures, structures:()=>structs.slice(), sdist, covered, checkPlacement, commitPlacement, removePlacement, toWorld, decos, setNpcs,
-            terrainBlocked, ensure, ensureAll, wide:WIDE, bounds:WB, walkR:WR, inWorld:(x,z,m)=>inWorld(x,z,m), layer3:()=>gen3, lastPath:()=>lastPath};
+            terrainBlocked, pathToDeposit, ensure, ensureAll, wide:WIDE, bounds:WB, walkR:WR, inWorld:(x,z,m)=>inWorld(x,z,m), layer3:()=>gen3, lastPath:()=>lastPath};
   }
-  return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, SITES, FORMER_STONEWORK};
+  return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, depShape, SITES, FORMER_STONEWORK, GEN_REGIONS};
 })();
 if (typeof module!=="undefined") module.exports = NATURE;

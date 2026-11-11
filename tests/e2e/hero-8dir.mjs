@@ -127,7 +127,7 @@ try {
           if (run && args[1] === w.pos) {
             run.distance += Math.hypot(result.x - args[1].x, result.z - args[1].z);
             run.requested += Math.hypot(args[2], args[3]);
-            run.seconds += Math.min(0.1, (w.lastTs-run.lastTs)/1000); run.lastTs=w.lastTs; run.frames++;
+            run.seconds += Math.min(__GAME__.walk.maxDt, (w.lastTs-run.lastTs)/1000); run.lastTs=w.lastTs; run.frames++;
           }
           return result;
         };
@@ -142,31 +142,35 @@ try {
         await page.evaluate(() => { __measure8.active = null; __GAME__.W3.joy = null; });
       }
       const runs = await page.evaluate(() => __measure8.runs);
-      const rates = runs.map(r => r.requested / r.seconds);
-      assert.ok(rates.every(r => Math.abs(r-7) < 0.1) && Math.abs(rates[1]/rates[0]-1)<0.01, JSON.stringify(runs));
+      const rates = runs.map(r => r.requested / r.seconds), WS = await page.evaluate(() => __GAME__.walk.speed);
+      assert.ok(rates.every(r => Math.abs(r-WS) < 0.1) && Math.abs(rates[1]/rates[0]-1)<0.01, JSON.stringify(runs));
       console.log(`${hero}: diagonal speed normalized PASS`);
 
-      // 未開放地域の壁へ押し続ける（実際の衝突判定）。動けない間は最後の向きを保つ。
+      // 行き止まり（崖・岩・水に正面から当たり、横にも滑れない所）へ押し続ける（実際の衝突判定）。動けない間は最後の向きを保つ。
+      // 2026-11-11：地域の鍵を廃止したので、以前の「未開放地域の壁」の代わりに、移動の処理で進めない所を探す
       await page.evaluate(() => {
         const g = __GAME__, w = g.W3, world = g.WORLD;
-        for (const r of g.D.regions.filter(r => r.w && !g.E.regionOpen(g.S, r))) for (let a = 0; a < Math.PI*2; a += Math.PI/8) {
-          const mx = -Math.cos(a), mz = -Math.sin(a);
-          const from = { x: r.w.x - mx*9.001, z: r.w.z - mz*9.001 };
-          const q = world.move(g.S, from, mx*0.1, mz*0.1);
-          if (q.locked && Math.hypot(q.x-from.x, q.z-from.z) < 0.0001) {
-            w.pos = from; w.face = 1.234; w.keys = {}; w.path = null;
-            // 入力はカメラ基準なので、ワールド-Xへの成分を逆変換する。
-            const v = new HD2D.THREE.Vector3(); w.gfx.getCamera().getWorldDirection(v);
-            const l = Math.hypot(v.x, v.z); const fx = v.x/l, fz = v.z/l;
-            w.joy = { x: -mx*fz+mz*fx, y: -mx*fx-mz*fz }; return;
-          }
-        }
+        for (let x = -40; x <= 40; x += 1.3) for (let z = -40; z <= 40; z += 1.3) { if (!world.free(g.S, x, z)) continue;
+          for (let a = 0; a < Math.PI*2; a += Math.PI/8) {
+            const mx = Math.cos(a), mz = Math.sin(a); let from = { x, z };
+            for (let i = 0; i < 12; i++) { const r = world.move(g.S, from, mx*0.3, mz*0.3); from = { x: r.x, z: r.z }; }
+            const q = world.move(g.S, from, mx*0.1, mz*0.1);
+            if (Math.hypot(q.x-from.x, q.z-from.z) < 0.000001) {
+              w.pos = from; w.face = 1.234; w.keys = {}; w.path = null;
+              // 入力はカメラ基準なので、ワールドの向き (mx,mz) を逆変換する。
+              const v = new HD2D.THREE.Vector3(); w.gfx.getCamera().getWorldDirection(v);
+              const l = Math.hypot(v.x, v.z); const fx = v.x/l, fz = v.z/l;
+              w.joy = { x: mx*-fz+mz*fx, y: -(mx*fx+mz*fz) };
+            // 最初の数コマで壁に寄り切ってから（ここでは少し進むので向きが変わってよい）、向きを決まった値にして押し続ける
+            setTimeout(() => { w.face = 1.234; }, 600); return;
+            }
+          } }
         throw new Error('wall test position not found');
       });
       await page.waitForFunction(() => {
         const p = __GAME__.W3.gfx.character.player;
         return !p.state.moving && p.state.speed === 0 && p.state.facing === 1.234;
-      });
+      }, null, { timeout: 60000 }).catch(async e => { console.log('blocked-state', JSON.stringify(await page.evaluate(() => { const w = __GAME__.W3, p = w.gfx.character.player; return { pos: w.pos, joy: w.joy, face: w.face, st: { m: p.state.moving, s: p.state.speed, f: p.state.facing }, tab: __GAME__.U.tab, act: !!w.work }; }))); throw e; });
       const blocked = await state();
       assert.equal(blocked.moving, false);
       assert.equal(blocked.speed, 0);

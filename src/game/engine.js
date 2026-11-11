@@ -2,7 +2,7 @@
 var ENGINE = (function(D){
   const SCHEMA = 4;
   /* 地形の版（広い世界の形。src/world/shape.ts の WORLD_VERSION と同じ値。テストで検査）。セーブの worldVer がこれより古ければ、UI が位置を確かめて直す */
-  const WORLD_VER = 3;
+  const WORLD_VER = 4;
   const IT = D.items;
   const BASKET_RES = ["twig","leaves","vine","seed","grass","grape","shell","seaweed","cobble","sand","clay"];
   const AIR = ["O","N","C","H"]; // 空気中の酸素・窒素・二酸化炭素・水蒸気
@@ -40,13 +40,18 @@ var ENGINE = (function(D){
 
   /* ---------- 探索 ---------- */
   const LV = [0,15,40,90];               // 探索度のしきい値
-  function regionOpen(S,r){ return !r.future && (!r.unlock || vflag(S,"locks") || r.unlock.some(t=>has(S,t))); }
+  /* 地域の鍵は 2026-11-11 に廃止：準備中（r.future）でない地域はすべて最初から入れる。
+     進み方は「採る → 持ち帰る → 道具・設備をそろえる → 加工する」。止めるのは各レシピ・採取地点の実際の条件（道具・設備・材料）だけ */
+  function regionOpen(S,r){ return !!r && !r.future; }
+  /* 採取地点の鍵（同じ素材の採取地点が1つの地域にいくつかあるときは key で区別する。ないときは素材ID＝以前のセーブと同じ） */
+  const resKey = res => res.key || res.id;
+  const findRes = (r,key) => r && r.res.find(x=>resKey(x)===key);
   function exploreLv(S,rid){ const n=(S.explore&&S.explore[rid])||0; let lv=0; LV.forEach((t,i)=>{ if(n>=t) lv=i; }); return lv; }
   function nextLv(S,rid){ const n=(S.explore&&S.explore[rid])||0; const t=LV.find(t=>t>n); return t===undefined?null:{need:t,now:n}; }
   const RAIL = ["mine","mountain","cave","oilfield","volcano"];
   function gatherInfo(S,r,res){
-    if(!regionOpen(S,r)) return {ok:false, reason:"まだ入れない場所"};
-    if(res.need && !res.need.some(t=>hasTool(S,t))) return {ok:false, need:res.need, reason:"「"+res.need.map(t=>IT[t].name).join("」か「")+"」が必要"};
+    if(!regionOpen(S,r)) return {ok:false, reason:"準備中の場所"};
+    if(res.need && !res.need.some(t=>hasTool(S,t))) return {ok:false, need:res.need, reason:"「"+res.need.map(t=>IT[t].name).join("」か「")+"」が必要"+(r.res.some(x=>x.loose && x.id===res.id) ? "（落ちているかけらなら手で拾える）" : "")};
     let n = res.n;
     if(res.bonus && has(S,res.bonus)) n += 1;
     if(BASKET_RES.includes(res.id) && has(S,"basket")) n += 1;
@@ -81,10 +86,10 @@ var ENGINE = (function(D){
   function gather(S, regionId, resId, opt){
     opt = opt||{};
     const r = D.regions.find(x=>x.id===regionId); if(!r) return {ok:false, reason:"地域がない"};
-    const res = r.res.find(x=>x.id===resId); if(!res) return {ok:false, reason:"資源がない"};
+    const res = findRes(r,resId); if(!res) return {ok:false, reason:"資源がない"};
     const g = gatherInfo(S,r,res); if(!g.ok) return g;
-    const c = collect(S, regionId, {[resId]:g.n}, opt);
-    return {ok:true, n:c.got[resId], crit:c.crit, rares:c.rares, lvUp:c.lvUp, news:c.news, isNew:c.news.includes(resId)};
+    const c = collect(S, regionId, {[res.id]:g.n}, opt);
+    return {ok:true, n:c.got[res.id], crit:c.crit, rares:c.rares, lvUp:c.lvUp, news:c.news, isNew:c.news.includes(res.id)};
   }
 
   /* ---------- 残量と再生（地域の資源・自然物で共通。状態は S.nature に保存） ----------
@@ -109,15 +114,19 @@ var ENGINE = (function(D){
   const WATER = ["rain","river","spring","seawater"];
   const PLANT_RES = ["twig","leaves","vine","seed","grass","grape","resin","wax","bark","shell","seaweed","log"];
   const depositId = (rid,resId)=> "d:"+rid+":"+resId;
-  function depositRule(S, rid, resId){
-    if(WATER.includes(resId)) return {uses:Infinity, regrow:null};
-    return {uses: 5 + exploreLv(S,rid), regrow: PLANT_RES.includes(resId) ? 20000 : 90000};
+  /* resKey：採取地点の鍵（ふつうは素材ID）。落ちている鉱石のかけら（res.loose）は少しだけ（2回）で、戻るのもゆっくり（3分） */
+  function depositRule(S, rid, resKey_){
+    const r = D.regions.find(x=>x.id===rid), res = findRes(r, resKey_), id = res ? res.id : resKey_;
+    if(WATER.includes(id)) return {uses:Infinity, regrow:null};
+    if(res && res.loose) return {uses:2, regrow:180000};
+    return {uses: 5 + exploreLv(S,rid), regrow: PLANT_RES.includes(id) ? 20000 : 90000};
   }
-  /* 採取地点の3D上の位置（地域の中心 w と地域画面での配置 p から決める） */
-  function depositPos(r, res){ return {x: r.w.x + (res.p[0]-50)/50*6.5, z: r.w.z + (res.p[1]-62)/38*5}; }
+  /* 採取地点の3D上の位置：res.at（ワールド座標。火山のように広い地域で、地点を散らして置くとき）か、
+     地域の中心 w と地域画面での配置 p から決める */
+  function depositPos(r, res){ if(res.at) return {x:res.at.x, z:res.at.z}; return {x: r.w.x + (res.p[0]-50)/50*6.5, z: r.w.z + (res.p[1]-62)/38*5}; }
   const REACH = 1.6;   // 採取できる距離（対象の外周から）
   function depositInfo(S, rid, resId, now){
-    const r = D.regions.find(x=>x.id===rid), res = r && r.res.find(x=>x.id===resId);
+    const r = D.regions.find(x=>x.id===rid), res = findRes(r, resId);
     if(!res) return {ok:false, reason:"資源がない"};
     const g = gatherInfo(S,r,res), rule = depositRule(S,rid,resId), k = stockOf(S, depositId(rid,resId), rule.uses, rule.regrow, now);
     if(!g.ok) return Object.assign({left:k.left, until:k.until, uses:rule.uses}, g);
@@ -129,22 +138,40 @@ var ENGINE = (function(D){
   function harvestDeposit(S, rid, resId, opt){
     opt = opt||{}; const now = opt.now||Date.now();
     if(!opt.auto && opt.token!==undefined && opt.token!==S.seq) return {ok:false, kind:"dup", reason:"もう採取した"};
-    const r = D.regions.find(x=>x.id===rid), res = r && r.res.find(x=>x.id===resId);
+    const r = D.regions.find(x=>x.id===rid), res = findRes(r, resId);
     if(!res) return {ok:false, reason:"資源がない"};
     if(opt.pos){ const p=depositPos(r,res); if(Math.hypot(opt.pos.x-p.x, opt.pos.z-p.z) > REACH+0.6) return {ok:false, kind:"far", reason:"遠すぎる。もっと近づこう"}; }
     const inf = depositInfo(S, rid, resId, now); if(!inf.ok) return inf;
     if(!opt.auto) S.seq++;
     const rule = depositRule(S,rid,resId);
     useStock(S, depositId(rid,resId), rule.uses, rule.regrow, now);
-    const c = collect(S, rid, {[resId]:inf.n}, opt);
+    const c = collect(S, rid, {[res.id]:inf.n}, opt);
     const k = stockOf(S, depositId(rid,resId), rule.uses, rule.regrow, now);
-    return {ok:true, n:c.got[resId], crit:c.crit, rares:c.rares, lvUp:c.lvUp, news:c.news, left:k.left, until:k.until};
+    return {ok:true, n:c.got[res.id], id:res.id, crit:c.crit, rares:c.rares, lvUp:c.lvUp, news:c.news, left:k.left, until:k.until};
   }
   function autoSlots(S){ return ["basket","storehouse","steamengine","generator"].filter(t=>has(S,t)).length*2; }
   function autoTick(S){
     const out=[]; S.auto = S.auto.slice(0, autoSlots(S));
     for(const a of S.auto){ const g = harvestDeposit(S,a.r,a.id,{auto:true}); if(g.ok) out.push({id:a.id,n:g.n,news:g.news}); }
     return out;
+  }
+
+  /* ---------- 加工の条件（2026-11-11） ----------
+     「地域に入れない」とは別に、「採れても加工できない」を具体的に示す。素材 id を使う反応ごとに、
+     足りない設備（at のどれも持っていない）・道具を返す。文明の段階（stageOf）は見ない（材料と設備・道具がそろえば、段階が低くてもできる） */
+  function processNeeds(S, id){
+    return D.procs.filter(p=>p.inp[id]).map(p=>{
+      const at = p.at.some(f=>hasTool(S,f)) ? [] : p.at.slice();
+      const tools = p.tools.filter(t=>!hasTool(S,t));
+      return {proc:p.id, op:p.op, at, tools, ready: !at.length && !tools.length, inp:p.inp, out:Object.keys(p.out), temp:p.temp};
+    });
+  }
+  /* 素材をまだどれにも加工できないとき、いちばん近い（足りない物が少ない）条件を文章で返す。加工できるか、使い道がなければ null */
+  function processBlock(S, id){
+    const ns = processNeeds(S, id); if(!ns.length || ns.some(n=>n.ready)) return null;
+    const best = ns.slice().sort((a,b)=>(a.at.length?1:0)+a.tools.length-((b.at.length?1:0)+b.tools.length))[0];
+    const parts = []; if(best.at.length) parts.push("設備「"+best.at.map(f=>IT[f].name).join("」か「")+"」"); if(best.tools.length) parts.push("道具「"+best.tools.map(t=>IT[t].name).join("」と「")+"」");
+    return {need:best, text:"「"+IT[id].name+"」を加工する（"+D.ops[best.op].name+"）には、"+parts.join("と")+"が必要"};
   }
 
   /* ---------- 実験 ---------- */
@@ -247,7 +274,7 @@ var ENGINE = (function(D){
       if(p){ const k = Object.keys(p.inp).find(x=>S.disc[x]); if(k) return "「"+IT[k].name+"」が関係しているみたい。もっと研究を進めよう。"; }
       return "まだ手がかりがない…。ほかのものを先に見つけよう。";
     }
-    if(pr.regions.length){ const r = pr.regions.find(r=>regionOpen(S,r))||pr.regions[0]; const res = r.res.find(x=>x.id===id);
+    if(pr.regions.length){ const r = pr.regions.find(r=>regionOpen(S,r))||pr.regions[0]; const all = r.res.filter(x=>x.id===id), free = all.find(x=>!x.need) , res = free||all[0];
       return r.name+"で見つかるかも。"+(res.need?"（「"+res.need.map(t=>IT[t].name).join("」か「")+"」が必要）":""); }
     const p = pr.procs.find(p=>Object.keys(p.inp).every(k=>S.disc[k]));
     if(p) return "「"+Object.keys(p.inp).map(k=>IT[k].name).join("」と「")+"」を「"+D.ops[p.op].name+"」してみよう。";
@@ -367,15 +394,33 @@ var ENGINE = (function(D){
       Object.keys(p.out).forEach(k=>IT[k].el.forEach(e=>{ if(!src.has(e)) viol.push(p.id+"→"+k+":"+e); })); });
     ok("元素保存チェック（原料にない元素が生成物に現れない）", viol.length===0, viol.join(" "));
     // 4 到達可能性
-    const reach = new Set(); D.regions.filter(r=>!r.future).forEach(r=>{ r.res.forEach(x=>reach.add(x.id)); (r.rare||[]).forEach(x=>reach.add(x.id)); });
+    /* 採取地点の道具の条件（need）も入れる：道具がいる地点は、その道具のどれかが作れるようになってから。地域の鍵はない */
+    const reach = new Set(); D.regions.filter(r=>!r.future).forEach(r=>{ r.res.forEach(x=>{ if(!x.need) reach.add(x.id); }); (r.rare||[]).forEach(x=>reach.add(x.id)); });
     let grew=true;
     while(grew){ grew=false;
+      D.regions.filter(r=>!r.future).forEach(r=>r.res.forEach(x=>{ if(!reach.has(x.id) && x.need && x.need.some(t=>reach.has(t))){ reach.add(x.id); grew=true; } }));
       D.crafts.forEach(c=>{ if(!reach.has(c.out) && Object.keys(c.inp).every(k=>reach.has(k)) && c.tools.every(t=>reach.has(t)) && (!c.at||reach.has(c.at))){ reach.add(c.out); grew=true; } });
       D.procs.forEach(p=>{ if(Object.keys(p.inp).every(k=>reach.has(k)) && p.tools.every(t=>reach.has(t)) && p.at.some(f=>reach.has(f))){ Object.keys(p.out).forEach(o=>{ if(!reach.has(o)){ reach.add(o); grew=true; } }); } });
     }
-    // 地域の解放条件・採取条件も反映した上で再確認
     const unreach = Object.keys(IT).filter(id=>!reach.has(id));
-    ok("すべての物質・道具が自然資源から到達できる", unreach.length===0, unreach.join(","));
+    ok("すべての物質・道具が自然資源から到達できる（採取地点の道具の条件も入れて。条件の循環で行き止まりにならない）", unreach.length===0, unreach.join(","));
+    // 4b 地域の鍵の廃止と、加工能力による進行（2026-11-11）
+    const N0 = newState();
+    ok("新しいゲームで、すべての地域（準備中を除く）へ最初から入れる", D.regions.filter(r=>!r.future).every(r=>regionOpen(N0,r)) && D.regions.every(r=>!r.unlock));
+    ok("地域が理由で採取を断らない（道具のいらない採取地点は、新しいゲームでどこでも採れる）", D.regions.every(r=>r.res.every(x=>x.need || gatherInfo(N0,r,x).ok)));
+    const mine = D.regions.find(r=>r.id==="mine"), hard = mine.res.filter(x=>x.need);
+    ok("硬い鉱脈には道具がいるが、同じ鉱石の落ちているかけらは手で拾える", hard.length>0 && hard.every(x=>!gatherInfo(N0,mine,x).ok && /かけら/.test(gatherInfo(N0,mine,x).reason) && mine.res.some(y=>y.loose && y.id===x.id && gatherInfo(N0,mine,y).ok)));
+    const NS = newState(); const hv = harvestDeposit(NS,"mine","hematite",{token:NS.seq, rng:()=>0.99});
+    ok("最初から鉱石（赤鉄鉱）を採って持ち帰れる。拾っただけで金属・設備は増えない", hv.ok && NS.inv.hematite>=1 && !NS.inv.iron && !NS.inv.pigiron && !NS.inv.furnace && !NS.inv.bench && Object.keys(NS.inv).length===1, JSON.stringify(NS.inv));
+    const pb = processBlock(NS,"hematite");
+    ok("加工できないときは、足りない設備・道具を具体的に言う（赤鉄鉱：作業台とハンマー）", pb && /作業台/.test(pb.text) && /ハンマー/.test(pb.text), pb && pb.text);
+    const NL = newState(); const l1 = harvestDeposit(NL,"mine","sphalerite-loose",{token:NL.seq, rng:()=>0.99, now:5}), l2 = harvestDeposit(NL,"mine","sphalerite-loose",{token:NL.seq, rng:()=>0.99, now:5}), l3 = harvestDeposit(NL,"mine","sphalerite-loose",{token:NL.seq, rng:()=>0.99, now:5});
+    ok("かけらは少しだけ（2回）で、別の鍵で残量を数える（鉱脈の残量は減らない）", l1.ok && l2.ok && !l3.ok && NL.inv.sphalerite===2 && !NL.nature[depositId("mine","sphalerite")] && depositRule(NL,"mine","sphalerite-loose").uses===2);
+    const skip = D.procs.find(p=>p.at.includes("refinery")), SK = newState(); SK.inv.refinery = 1; Object.keys(skip.inp).forEach(k=>SK.inv[k]=skip.inp[k]); skip.tools.forEach(t=>SK.inv[t]=1);
+    const sk = planExperiment(SK, skip.inp, "refinery", skip.op);
+    ok("文明の段階が低くても（段階0）、材料と設備・道具がそろえば上位の加工ができる", stageOf(SK)===0 && sk.ok, skip.id+" "+JSON.stringify(sk.msg||""));
+    const volc = D.regions.find(r=>r.id==="volcano");
+    ok("火山地帯の採取地点は、以前の鍵（sulfur・obsidian）を引き継ぎ、ほかは別の鍵（同じ地域の中で鍵が重ならない）", volc.res.some(x=>!x.key && x.id==="sulfur") && volc.res.some(x=>!x.key && x.id==="obsidian") && D.regions.every(r=>new Set(r.res.map(resKey)).size===r.res.length));
     // 5 エンジン動作
     let S = newState();
     S.inv = {twig:4, campfire:1}; S.disc.twig={first:0,made:1,total:4,routes:[],best:0};
@@ -431,7 +476,7 @@ var ENGINE = (function(D){
     return R;
   }
 
-  return {WORLD_VER, addItem, hasTool, vflag, makeVerifyState, fillStorable, VERIFY_DEFAULTS, SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, collect, stockOf, useStock, harvestDeposit, depositInfo, depositRule, depositId, depositPos, REACH, regionOpen, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
+  return {WORLD_VER, addItem, hasTool, vflag, makeVerifyState, fillStorable, VERIFY_DEFAULTS, SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, collect, stockOf, useStock, harvestDeposit, depositInfo, depositRule, depositId, depositPos, resKey, REACH, regionOpen, processNeeds, processBlock, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
           planCraft, runCraft, producers, usesOf, status, hint, suggest, stageOf, missionIndex, tagProgress, serialize, deserialize, runTests};
 })(typeof DATA!=="undefined"?DATA:require("./data.js"));
 if (typeof module!=="undefined") module.exports = ENGINE;

@@ -46,7 +46,7 @@ ok('道具の条件 OFF：おのがなければ道具なし（通常の判定）
 const S4 = E.makeVerifyState(); ['torch', 'candle'].forEach(k => delete S4.inv[k]); const cave = D.regions.find(r => r.id === 'cave');
 ok('地域の鍵 ON：たいまつがなくても洞窟に入れる', E.regionOpen(S4, cave));
 S4.verify.locks = false;
-ok('地域の鍵 OFF：たいまつ・ろうそくがないと洞窟に入れない（通常の判定）', !E.regionOpen(S4, cave));
+ok('地域の鍵は 2026-11-11 に廃止：検証のバイパスを切っても（通常の判定でも）、たいまつなしで洞窟に入れる', E.regionOpen(S4, cave) && E.regionOpen(E.newState(), cave));
 // 時代の切り替え
 const S5 = E.makeVerifyState(); S5.verify.stage = 0;
 ok('時代の切り替え：選んだ段階になり、自動に戻すと設備から決まる', E.stageOf(S5) === 0 && ((S5.verify.stage = null), E.stageOf(S5) === D.stages.length - 1));
