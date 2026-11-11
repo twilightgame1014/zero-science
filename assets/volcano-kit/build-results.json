@@ -1,0 +1,119 @@
+{
+ "basalt-outcrop-l": {
+  "file": "basalt-outcrop-l.glb",
+  "tris": 768,
+  "size_m": [
+   3.03,
+   2.2,
+   2.19
+  ]
+ },
+ "basalt-outcrop-l_lod1": {
+  "file": "basalt-outcrop-l_lod1.glb",
+  "tris": 344,
+  "size_m": [
+   3.01,
+   2.21,
+   2.19
+  ]
+ },
+ "basalt-outcrop-s": {
+  "file": "basalt-outcrop-s.glb",
+  "tris": 192,
+  "size_m": [
+   1.52,
+   1.06,
+   1.33
+  ]
+ },
+ "fallen-block": {
+  "file": "fallen-block.glb",
+  "tris": 192,
+  "size_m": [
+   1.23,
+   0.93,
+   0.98
+  ]
+ },
+ "scree-cluster": {
+  "file": "scree-cluster.glb",
+  "tris": 1808,
+  "size_m": [
+   1.82,
+   0.67,
+   1.62
+  ]
+ },
+ "crater-rim-shelf": {
+  "file": "crater-rim-shelf.glb",
+  "tris": 192,
+  "size_m": [
+   2.47,
+   0.43,
+   1.62
+  ]
+ },
+ "crater-rim-shelf_lod1": {
+  "file": "crater-rim-shelf_lod1.glb",
+  "tris": 86,
+  "size_m": [
+   2.47,
+   0.43,
+   1.62
+  ]
+ },
+ "cooled-lava-chunk": {
+  "file": "cooled-lava-chunk.glb",
+  "tris": 320,
+  "size_m": [
+   1.27,
+   0.77,
+   1.08
+  ]
+ },
+ "cooled-lava-chunk_lod1": {
+  "file": "cooled-lava-chunk_lod1.glb",
+  "tris": 160,
+  "size_m": [
+   1.26,
+   0.76,
+   1.07
+  ]
+ },
+ "ore-outcrop": {
+  "file": "ore-outcrop.glb",
+  "tris": 256,
+  "size_m": [
+   1.26,
+   1.03,
+   1.29
+  ]
+ },
+ "ore-outcrop_lod1": {
+  "file": "ore-outcrop_lod1.glb",
+  "tris": 128,
+  "size_m": [
+   1.26,
+   1.03,
+   1.29
+  ]
+ },
+ "ash-shrub": {
+  "file": "ash-shrub.glb",
+  "tris": 240,
+  "size_m": [
+   0.81,
+   0.66,
+   0.62
+  ]
+ },
+ "ash-grass-tuft": {
+  "file": "ash-grass-tuft.glb",
+  "tris": 144,
+  "size_m": [
+   0.3,
+   0.47,
+   0.32
+  ]
+ }
+}
