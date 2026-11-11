@@ -38,6 +38,7 @@ export const DEFAULT_CONFIG: GraphicsConfig = {
     width: 1.7,
     height: 1.7,
     walkFps: 9,
+    walkStride: 0.35,
     idleFps: 2,
   },
   water: {

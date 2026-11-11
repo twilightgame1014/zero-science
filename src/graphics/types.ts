@@ -372,6 +372,16 @@ export interface GraphicsConfig {
     width: number;
     height: number;
     walkFps: number;
+    /** Units of travel per walk frame when the game supplies its
+     *  speed (distance-driven phase). One full 4-frame cycle covers
+     *  4 × walkStride units, so the cycle period is
+     *  4 × walkStride / speed seconds. Default 0.35 (one cycle per
+     *  1.4 units = two steps of 0.7, matching the sheets' stride).
+     *  Trim ONLY to fine-tune the period after the game's real speed
+     *  is final: slowing the real speed already lengthens the period
+     *  proportionally, so raising walkStride on top of a speed cut
+     *  double-applies the slowdown (2026-11-11 volcano/walk round). */
+    walkStride?: number;
     /** @deprecated No longer used for frame selection: a stopped
      *  character freezes on the standing frame instead of cycling
      *  walk frames slowly (2026-11-06). Kept for config compat. */

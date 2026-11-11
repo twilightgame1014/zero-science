@@ -199,6 +199,34 @@ export function oasisCenter(cfg: GraphicsConfig): { x: number; z: number } {
   return { x: d.x + 20, z: d.z - 20 };
 }
 
+/** Relief structure of the volcano landform, shared by the height
+ *  function (which carves it) and the terrain painter (which shades
+ *  the gullies and ridge crests to match). `lobe` is the radial
+ *  ridge/gully signal (−1 gully … +1 ridge), `flank` the mid-flank
+ *  envelope it acts on, `breach` the weight of the lowered sector
+ *  facing the forest approach, and `rim` the crater rim's height
+ *  contribution at this point (irregular, breach-lowered). */
+export interface VolcanoRelief {
+  d: number;
+  lobe: number;
+  flank: number;
+  breach: number;
+  rim: number;
+}
+export function volcanoRelief(x: number, z: number, cfg: GraphicsConfig): VolcanoRelief {
+  const def = areaDef(cfg, 'volcano');
+  const dx = x - def.x, dz = z - def.z;
+  const d = Math.hypot(dx, dz);
+  const ang = Math.atan2(dz, dx);
+  const lobe = fbm(Math.cos(ang) * 2.3 + 311, Math.sin(ang) * 2.3 + 157, 3) * 2 - 1;
+  const flank = smoothstep(11, 22, d) * (1 - smoothstep(36, 50, d));
+  const approach = Math.atan2(0 - def.z, 0 - def.x);
+  const breach = Math.pow(Math.max(Math.cos(ang - approach), 0), 3);
+  const rimLobe = fbm(Math.cos(ang) * 3.1 + 71, Math.sin(ang) * 3.1 + 233, 2);
+  const rim = 2.8 * Math.exp(-(((d - 11.5) / 5.2) ** 2)) * (0.62 + 0.76 * rimLobe) * (1 - 0.5 * breach);
+  return { d, lobe, flank, breach, rim };
+}
+
 /** Absolute target height of one area's landform (before blending). */
 function areaHeight(id: AreaId, x: number, z: number, cfg: GraphicsConfig): number {
   const def = areaDef(cfg, id);
@@ -220,18 +248,41 @@ function areaHeight(id: AreaId, x: number, z: number, cfg: GraphicsConfig): numb
       return h;
     }
     case 'volcano': {
-      // Ash plain, a broad cone, and a crater dip at the top. The
-      // crater floor (~22) holds the lava lake disc the terrain
-      // renderer places at terrainHeight(centre).
-      let h = 1.1 + (fbm(x * 0.05 + 91, z * 0.05 + 33, 3) - 0.5) * 1.8;
-      h += 30 * Math.exp(-((d / 30) ** 2));
-      h -= 9 * Math.exp(-((d / 10) ** 2));
+      // Stratovolcano (2026-11-11 round): a broad ash apron rising
+      // into a concave cone with radial ridge/gully relief, an
+      // irregular thick crater rim, and one breached sector facing
+      // the forest approach (the natural climbing route). Anchors
+      // kept from the old smooth cone: the crater floor height
+      // (the lava lake sits at terrainHeight(centre)), the crater
+      // flattening, the base radius. Heights the game derives come
+      // from this same function, so the visible mountain IS the
+      // walkable ground — no visual-only shell.
+      const rel = volcanoRelief(x, z, cfg);
+      const rawH = (px: number, pz: number): number => {
+        const r = volcanoRelief(px, pz, cfg);
+        const d = r.d;
+        let h = 1.1 + (fbm(px * 0.05 + 91, pz * 0.05 + 33, 3) - 0.5) * 1.8;
+        // Cone profile: steep under the rim, easing into the apron.
+        let prof = d <= 9
+          ? lerp(30, 27.5, d / 9)
+          : 27.5 * Math.pow(1 - clamp((d - 9) / 46, 0, 1), 1.65);
+        // The breach lowers the upper cone on the approach sector.
+        prof -= 1.2 * r.breach * smoothstep(6, 10, d) * smoothstep(27, 13, d);
+        h += prof + r.rim - 9 * Math.exp(-((d / 10) ** 2));
+        // Radial ridges (+) and gullies (−): mid-flank only, and
+        // zero near the centre so the crater floor stays exact.
+        h += r.lobe * (0.5 + 2.6 * r.flank) * smoothstep(3, 6, d);
+        h += (fbm(px * 0.11 + 7, pz * 0.11 + 3, 2) - 0.5) * 0.9 * r.flank;
+        // The breach sector's gully runs a little deeper.
+        h -= 0.7 * r.breach * r.flank;
+        return h;
+      };
+      const centreH = rawH(def.x, def.z);
+      const h = rawH(x, z);
       // Flatten the crater floor toward the centre height: the
-      // raw cone/dip pair rises ~2.7 m by r=8, which buried the
-      // lava lake disc (r 8.2) except at its very centre.
-      const centreH = 1.1 + (fbm(def.x * 0.05 + 91, def.z * 0.05 + 33, 3) - 0.5) * 1.8 + 30 - 9;
-      h = lerp(h, centreH, smoothstep(11, 7, d) * 0.92);
-      return h;
+      // raw cone/dip pair rises by r=8, which buried the lava
+      // lake disc (r 8.2) except at its very centre.
+      return lerp(h, centreH, smoothstep(11, 7, rel.d) * 0.92);
     }
     case 'snow': {
       // High ridges over the old north-east highland, with one flat

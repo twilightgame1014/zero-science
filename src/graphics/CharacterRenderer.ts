@@ -330,14 +330,14 @@ class CharSprite {
     // reports movement. Standing still freezes the cycle, the
     // frame and the bob. When the game supplies its actual speed
     // (Claude §22.2), the phase advances by distance travelled —
-    // one 4-frame cycle per 1.4 units (two steps) — so slow and
-    // fast walks never slide; otherwise it advances by time at
-    // the configured walkFps, as before.
+    // one 4-frame cycle per 4 × walkStride units (default 1.4 =
+    // two steps) — so slow and fast walks never slide; otherwise it
+    // advances by time at the configured walkFps, as before.
     const moving = this.state.moving;
     if (moving) {
       const speed = (this.state as PlayerVisualState).speed;
       if (typeof speed === 'number' && Number.isFinite(speed)) {
-        this.animPhase += (Math.max(0, speed) * dt) / 0.35;
+        this.animPhase += (Math.max(0, speed) * dt) / (this.cfg.walkStride ?? 0.35);
       } else {
         this.animPhase += dt * this.cfg.walkFps;
       }

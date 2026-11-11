@@ -12,6 +12,7 @@ import {
   riverCenterX,
   smoothstep,
   terrainHeight,
+  volcanoRelief,
 } from './utils';
 import type { AreaDefinition } from './types';
 
@@ -54,6 +55,9 @@ const VCOLORS = {
   cEarth: new THREE.Color(0x7c6a42),
   cUnderwater: new THREE.Color(0x77683f),
   cAsh: new THREE.Color(0x998a7a),
+  cAshSoil: new THREE.Color(0x99846c),
+  cScreeV: new THREE.Color(0x8d8172),
+  cCrater: new THREE.Color(0x37322e),
   cTownStone: new THREE.Color(0xa79c8d),
   cTownEarth: new THREE.Color(0x8a6f52),
   cBasalt: new THREE.Color(0x33302e),
@@ -339,7 +343,7 @@ export class TerrainRenderer {
   ): void {
     const i = out.i;
     const tmp = this.cTmp;
-    const { cGrass, cGrassDry, cForestFloor, cSand, cWetSand, cClay, cRock, cRockDark, cPath, cEarth, cUnderwater, cAsh, cBasalt, cSnow, cDune, cTownStone, cTownEarth } = VCOLORS;
+    const { cGrass, cGrassDry, cForestFloor, cSand, cWetSand, cClay, cRock, cRockDark, cPath, cEarth, cUnderwater, cAsh, cAshSoil, cScreeV, cCrater, cBasalt, cSnow, cDune, cTownStone, cTownEarth } = VCOLORS;
 
     const n = fbm(x * 0.09 + 31, z * 0.09 + 17, 3);
     const dRiver = distanceToRiver(x, z);
@@ -380,6 +384,9 @@ export class TerrainRenderer {
     /* Area overlays (world expansion): the land reads as its area
      * even where no splat texture reaches — ash near the volcano,
      * white on the snowfield heights, dune sand in the desert. */
+    // Volcano paint outputs shared with the splat writes below.
+    let volTileW: number | null = null;
+    let volFlank = 0;
     const wVol = this.areaRawAt(x, z, 'volcano');
     const wSnow = this.areaRawAt(x, z, 'snow');
     const wDesert = this.areaRawAt(x, z, 'desert');
@@ -387,8 +394,29 @@ export class TerrainRenderer {
     const wLake = this.areaRawAt(x, z, 'lakeside');
     const wTown = this.areaRawAt(x, z, 'town');
     if (wVol > 0) {
-      tmp.lerp(cAsh, wVol * 0.78);
-      tmp.lerp(cBasalt, wVol * smoothstep(6, 14, h) * 0.6);
+      // Volcano progression (2026-11-11 round): the ground must
+      // read as one mountain — ash-brown soil on the apron, scree
+      // grey-brown on the flank, dark basalt on the upper cone,
+      // near-black inside the crater bowl. The relief shading uses
+      // the same radial signal the height function carves with
+      // (utils.volcanoRelief), so gullies darken where the ground
+      // actually dips and ridge crests lighten where it rises.
+      // Steep faces bare dark rock at any height. All weights are
+      // scaled by wVol, so the blend into other areas stays soft.
+      const rel = volcanoRelief(x, z, this.cfg);
+      volFlank = rel.flank;
+      const steep = smoothstep(0.93, 0.82, out.ny);
+      tmp.lerp(cAshSoil, wVol * 0.88);
+      tmp.lerp(cScreeV, wVol * (smoothstep(3.5, 7, h) * (1 - smoothstep(15, 20, h))) * 0.7);
+      tmp.lerp(cBasalt, wVol * smoothstep(13, 19, h) * 0.7);
+      tmp.lerp(cCrater, wVol * smoothstep(15, 11, rel.d) * 0.8);
+      tmp.lerp(cBasalt, wVol * steep * 0.45);
+      if (rel.lobe < 0) tmp.multiplyScalar(1 + rel.lobe * 0.1 * wVol);
+      else tmp.multiplyScalar(1 + rel.lobe * 0.05 * wVol);
+      // The dark basalt tile belongs on rock, not on soil: weak on
+      // the apron, full on steep faces (its brightness also follows
+      // the vertex colour via tintF in the shader).
+      volTileW = clamp(wVol * (0.34 + 0.34 * smoothstep(4, 10, h) + 0.5 * steep), 0, 0.96);
     }
     if (wDesert > 0) tmp.lerp(cDune, wDesert * 0.8);
     const snowCover = clamp(wSnow * (smoothstep(1.4, 3.4, h) + smoothstep(7.5, 10.5, h)), 0, 1);
@@ -425,7 +453,7 @@ export class TerrainRenderer {
     s[i * 4 + 1] = clamp(s[i * 4 + 1] + wLake * shoreBand * 0.7, 0, 0.96);
     s[i * 4 + 3] = clamp(Math.max(s[i * 4 + 3], wTown * 0.5), 0, 0.96) * aboveWater;
     const s2 = out.s2;
-    s2[i * 4] = clamp(wVol * 1.05, 0, 0.96);
+    s2[i * 4] = volTileW ?? clamp(wVol * 1.05, 0, 0.96);
     s2[i * 4 + 1] = clamp(wSnow * (smoothstep(1.2, 3.0, h) + smoothstep(7.5, 10.5, h) * 0.9), 0, 0.96);
     s2[i * 4 + 2] = clamp(wDesert, 0, 0.96) * smoothstep(wl - 0.1, wl + 0.35, h);
     s2[i * 4 + 3] = clamp((wCoast + wLake * 0.9) * shoreBand, 0, 0.95) * aboveWater;
@@ -437,11 +465,18 @@ export class TerrainRenderer {
     // Scree (round 21): rubble ground on steep slopes, driven by
     // the analytic normal — the same slope the rock vertex colour
     // reads, so scree appears exactly where the mountain bares
-    // rock. Suppressed under snowfields and the town tiles.
-    s3[i * 3 + 2] = this.hasScree
+    // rock. Suppressed under snowfields and the town tiles. On the
+    // volcano the suppression lifts on the mid flank (2026-11-11):
+    // a stratovolcano's flank IS scree, banded by the same relief
+    // envelope the height function uses.
+    const screeSlope = this.hasScree
       ? clamp(smoothstep(0.945, 0.845, out.ny) * 1.05, 0, 0.95) *
-        aboveWater * (1 - wSnow * 0.85) * (1 - wVol * 0.85) * (1 - clamp(cobbleW, 0, 1))
+        aboveWater * (1 - wSnow * 0.85) * (1 - clamp(cobbleW, 0, 1))
       : 0;
+    s3[i * 3 + 2] = Math.max(
+      screeSlope * (1 - wVol * 0.85),
+      screeSlope * clamp(wVol * volFlank * 1.25, 0, 0.92),
+    );
   }
 
   private buildTerrainMaterial(
@@ -548,7 +583,7 @@ export class TerrainRenderer {
               '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundMud, vWPos / 5.0).rgb * tintF, pw1.y * 0.9);',
               '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSand, vWPos / 6.0).rgb * tintF, pw1.z * 0.92);',
               '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundPath, vWPos / 5.0).rgb * tintF, pw1.w * 0.94);',
-              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundVolcanic, vWPos / 6.0).rgb * tintF, pw2.x * 0.92);',
+              '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundVolcanic, vWPos / 6.0).rgb * tintF * 1.55, pw2.x * 0.92);',
               '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundDesert, vWPos / 8.0).rgb * tintF, pw2.z * 0.92);',
               '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSnow, vWPos / 7.0).rgb * tintF, pw2.y * 0.95);',
               '  diffuseColor.rgb = mix(diffuseColor.rgb, texture2D(uGroundSandWet, vWPos / 5.0).rgb * tintF, pw2.w * 0.9);',
