@@ -10,7 +10,7 @@ import { fbm, smoothstep, clamp, lerp, riverCenterX, distanceToRiver, terrainHei
 import type { GraphicsConfig } from '../graphics/types';
 
 /** 地形の版（セーブの S.worldVer と比べる）。地形の形を変えたら上げて、移行（安全な位置への補正）を確認する */
-export const WORLD_VERSION = 3;   // 3＝Muse の7エリア（ラウンド18）を土台にした版
+export const WORLD_VERSION = 4;   // 3＝Muse の7エリア（ラウンド18）を土台にした版。4＝南西の火山を登れる山にした版（2026-11-11。火山の中心から 70 より外は版3と同じ）
 /** 旧世界：|x|,|z| ≤ OLD_HALF の地形は描画モジュールと同じ */
 export const OLD_HALF = 60;
 /** 歩ける範囲（長方形）。海の深い所・崖・深い水は別に止める */
@@ -122,6 +122,127 @@ function terraceRock(h: number, m: number, x: number, z: number): number {
   return lerp(h, q, w);
 }
 
+/* ---------------- 火山（南西。2026-11-11 地形の版4） ----------------
+   Muse の火山エリア（ラウンド18、中心 VOLC）の場所に、登って探索できる山を地形の高さで作る（色や飾りだけで表さない）。
+   半径で5つの帯に分ける：麓（46〜64：ゆるい裾野）・山腹（30〜46：歩ける斜面）・上部斜面（15〜30：崖。登山道でしか登れない）・
+   火口縁（12.5〜15.3：歩ける尾根）・火口（10 より内側：平らな底に溶岩湖。内壁は崖）。
+   中心から VOLCANO.R0（70）より外は1マスも変えない（ほかの地域・滝・山の高さの差は0。テストで検査）。
+   描画モジュールは config.world.heightAt とビルドの差し替えでこの関数をそのまま使うので、見た目の山と歩く山は同じもの（別の山を重ねて作らない）。 */
+export const VOLCANO = { x: VOLC.x, z: VOLC.z, R0: 70, R1: 56, footR: 64, flankR: 46, upperR: 30, rimOutR: 15.4, rimR: 13.8, rimInR: 12.3, floorR: 9.6, floorH: 31, rimH: 40 };
+/** 半径の断面（中心からの距離 → 高さ）。単調な3次補間（帯の境目で折れ目を作らない・山の形を行き過ぎない） */
+const VKNOT: Array<[number, number]> = [[0, 31], [9.6, 31], [12.3, 39.6], [13.2, 39.95], [14.4, 39.95], [15.4, 39.5], [22, 30.2], [30, 20], [38, 13.4], [46, 7.8], [55, 5.4], [64, 4.2], [72, 3.8]];
+const VSLOPE = (() => {
+  const n = VKNOT.length, d: number[] = [], m: number[] = new Array(n).fill(0);
+  for (let i = 0; i < n - 1; i++) d.push((VKNOT[i + 1][1] - VKNOT[i][1]) / (VKNOT[i + 1][0] - VKNOT[i][0]));
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  m[0] = d[0]; m[n - 1] = d[n - 2];
+  for (let i = 0; i < n - 1; i++) {   // Fritsch–Carlson：行き過ぎない（単調な区間で山や谷を作らない）
+    if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i + 1] / d[i], s = a * a + b * b;
+    if (s > 9) { const t = 3 / Math.sqrt(s); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
+  }
+  return m;
+})();
+export function volcanoProfile(r: number): number {
+  const K = VKNOT; if (r <= K[0][0]) return K[0][1]; if (r >= K[K.length - 1][0]) return K[K.length - 1][1];
+  let i = 0; while (r > K[i + 1][0]) i++;
+  const h = K[i + 1][0] - K[i][0], t = (r - K[i][0]) / h, t2 = t * t, t3 = t2 * t;
+  return (2 * t3 - 3 * t2 + 1) * K[i][1] + (t3 - 2 * t2 + t) * h * VSLOPE[i] + (-2 * t3 + 3 * t2) * K[i + 1][1] + (t3 - t2) * h * VSLOPE[i + 1];
+}
+/** 断面の傾き（登山道の計画に使う） */
+function volcanoProfileSlope(r: number): number { return (volcanoProfile(r + 0.25) - volcanoProfile(r - 0.25)) / 0.5; }
+/** 拠点の方を向いた側（登山道の入口がある側）の角度 */
+export const VOLC_FACE = Math.atan2(20 - VOLC.z, -20 - VOLC.x);
+const angDiff = (a: number, b: number) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
+/* 古い溶岩の流れ（麓の盛り上がり。黒曜石が見つかる所）：中心からの角度・始まりと終わりの半径・幅・高さ */
+const LAVA_FLOWS = [
+  { a: VOLC_FACE + 1.75, r0: 24, r1: 60, w: 4.2, h: 1.5 },
+  { a: VOLC_FACE - 2.35, r0: 26, r1: 62, w: 5.0, h: 1.7 },
+];
+/** 火山の高さの目標（帯ごとの断面＋放射状のひだ＋火口縁の高低＋古い溶岩の流れ） */
+function volcanoTarget(x: number, z: number): number {
+  const dx = x - VOLC.x, dz = z - VOLC.z, r = Math.hypot(dx, dz), th = Math.atan2(dz, dx);
+  let h = volcanoProfile(r);
+  // 放射状のひだ（雨で刻まれた谷と尾根）。上部斜面と山腹だけ。火口縁と麓の外側は弱く
+  const rib = Math.sin(9 * th + 2.1 * Math.sin(3 * th + 1.3) + r * 0.05) * 0.5 + Math.sin(14 * th + 0.7) * 0.25;
+  h += rib * 1.25 * sm(15.5, 21, r) * (1 - sm(40, 58, r));
+  // 火口縁の高さは一周で少し変わる。登山道が着く側はやや低い（鞍部）
+  const crest = 1.3 * Math.sin(2 * th + 0.7) + 0.5 * Math.sin(5 * th + 2.0) - 1.1 * Math.exp(-((angDiff(th, VOLC_FACE) / 0.4) ** 2));
+  h += crest * sm(9.6, 11.5, r) * (1 - sm(18, 26, r));
+  // 細かい起伏（岩のごつごつ。大きな形は断面で決まっている）
+  h += (fbm(x * 0.09 + 17.3, z * 0.09 + 4.1, 3) - 0.5) * 1.1 * sm(10.5, 13, r) * (1 - 0.75 * Math.exp(-(((r - 13.8) / 1.8) ** 2)));   // 火口縁の尾根は歩けるように細かい起伏を弱く
+  for (const f of LAVA_FLOWS) {
+    const a = { x: VOLC.x + Math.cos(f.a) * f.r0, z: VOLC.z + Math.sin(f.a) * f.r0 }, b = { x: VOLC.x + Math.cos(f.a + 0.18) * f.r1, z: VOLC.z + Math.sin(f.a + 0.18) * f.r1 };
+    const s = segInfo(x, z, a, b), w = f.w * (0.8 + 0.4 * s.t);
+    if (s.d < w) h += f.h * (1 - sm(0, 1, s.d / w) ** 1.5) * sm(0, 0.15, s.t) * (1 - sm(0.85, 1, s.t));
+  }
+  return h;
+}
+/** 版3のセーブの位置が火山の変わった所（中心から R0 の内側）なら、登山道の近い所（歩ける・つながっている）を返す。それ以外は null */
+export function volcanoSafeSpot(x: number, z: number): { x: number; z: number } | null {
+  if (Math.hypot(x - VOLC.x, z - VOLC.z) >= VOLCANO.R0) return null;
+  const n = polyNear(TRAIL_VOLCANO, x, z), p = polyAt(TRAIL_VOLCANO, n.s);
+  return { x: +p.x.toFixed(2), z: +p.z.toFixed(2) };
+}
+/** 火山の地形を足す（中心から R0 より外はそのまま返す） */
+export function volcanoShape(x: number, z: number, h: number): number {
+  const r = Math.hypot(x - VOLC.x, z - VOLC.z);
+  if (r >= VOLCANO.R0) return h;
+  return lerp(h, volcanoTarget(x, z), sm(VOLCANO.R0, VOLCANO.R1, r));
+}
+/** 火山のどの帯か（地名・採取地点の配置・テストに使う） */
+export function volcanoZone(x: number, z: number): 'crater' | 'rim' | 'upper' | 'flank' | 'foot' | null {
+  const r = Math.hypot(x - VOLC.x, z - VOLC.z);
+  if (r < VOLCANO.rimInR - 0.6) return 'crater';
+  if (r < VOLCANO.rimOutR + 0.8) return 'rim';
+  if (r < VOLCANO.upperR) return 'upper';
+  if (r < VOLCANO.flankR) return 'flank';
+  if (r < VOLCANO.footR + 4) return 'foot';
+  return null;
+}
+/** 登山道（麓 → 山腹 → 上部斜面のつづら折り → 火口縁）。断面の傾きから、道の上り坂が一定（約0.24）になる向きを選んで作る。
+    道の折り返しは、拠点を向いた側の決まった角度の幅の中だけ（同じ所を何度も横切らない）。起動時に一度だけ、決まった値で計算する */
+const VOLC_TURNS: number[] = [];
+/** 登山道（麓 → 山腹 → 上部斜面のつづら折り → 火口縁）。断面の傾きから、道の上り坂が一定（約0.24）になる向きを選んで作る。
+    折り返しは半径 2.6 の U 字（2本の道が 5 マス以上離れ、間に斜面が残る）で、拠点を向いた側の決まった角度の幅の中だけ。
+    起動時に一度だけ、決まった値で計算する（乱数なし） */
+export const TRAIL_VOLCANO: Poly = (() => {
+  const G = 0.24, RT = 2.6, ds = 0.25, out: Array<[number, number]> = [];
+  let r = 66, th = VOLC_FACE + 0.08, dir = 1, k = 0, acc = 0, ht = volcanoProfile(66);
+  const push = () => out.push([+(VOLC.x + Math.cos(th) * r).toFixed(2), +(VOLC.z + Math.sin(th) * r).toFixed(2)]);
+  /* 道の高さ ht は1マスで G ずつ上がる。足もとの自然の高さとの差（折り返しで内側へ回り込むと道が斜面より低くなる）を、
+     次の道で等高線に沿って進みながら取り戻す（内側へ進む量を減らす。外側へは戻らない＝道どうしの間隔が狭まらない） */
+  const sinA = (rr: number) => { const g = Math.abs(volcanoProfileSlope(rr)); return clamp((G - 0.2 * (volcanoProfile(rr) - ht)) / Math.max(g, 1e-3), 0, 1); };
+  const step = (sa: number, ca: number, d: number) => { r -= sa * ds; th += d * ca * ds / r; ht += G * ds; acc += ds; if (acc >= 1.2) { acc = 0; push(); } };
+  push();
+  while (r > VOLCANO.rimR + 0.15 && k++ < 12000) {
+    if (r <= VOLCANO.rimOutR + 0.4 && volcanoProfile(r) - ht < 1) { step(1, 0, dir); continue; }   // 火口縁の手前：縁へまっすぐ
+    const sa = sinA(r), ca = Math.sqrt(1 - sa * sa);
+    const half = clamp((r > VOLCANO.upperR ? 34 : 26) / (2 * r), 0.2, 0.8);   // 一本の道の長さ（山腹 34・上部 26 マス）
+    // 火口縁のすぐ下（U 字で縁へ突っ込む所）では折り返さず、等高線に沿って回りながら縁へ上る
+    if (sa < 0.999 && r - 2 * RT > VOLCANO.rimOutR + 1.5 && dir * angDiff(th, VOLC_FACE) > half) {
+      // U 字の折り返し：向きを、今の上り方から反対側の上り方まで、内側（上）を回って変える
+      push(); VOLC_TURNS.push(out.length - 1);
+      const a0 = Math.asin(sa);
+      for (let psi = a0; psi < Math.PI - a0; psi += ds / RT) step(Math.sin(psi), Math.cos(psi), dir);
+      dir = -dir; continue;
+    }
+    step(sa, ca, dir);
+  }
+  push();
+  return poly(out);
+})();
+/** 登山道の岩棚（U 字の折り返しのいちばん外側の、さらに外の平らな所。休み場と採取地点）：中心・半径・道のり s。
+    高さは近い道の高さ（道の幅が広がった所なので、道とのつなぎ目に段差ができない）。採取地点を置いても道をふさがない */
+export const VOLC_LEDGES: Array<{ x: number; z: number; r: number; s: number }> = VOLC_TURNS.filter((i0) => Math.hypot(TRAIL_VOLCANO.pts[i0].x - VOLC.x, TRAIL_VOLCANO.pts[i0].z - VOLC.z) > VOLCANO.rimOutR + 2.5).map((i0) => {   // 火口縁の上の折り返しは岩棚にしない（尾根そのものが歩ける）
+  const P = TRAIL_VOLCANO, aOf = (q: V2) => angDiff(Math.atan2(q.z - VOLC.z, q.x - VOLC.x), VOLC_FACE);
+  const side = Math.sign(aOf(P.pts[i0])) || 1;
+  let i = i0; for (let j = i0; j < Math.min(P.pts.length, i0 + 14); j++) if (side * aOf(P.pts[j]) > side * aOf(P.pts[i])) i = j;
+  const p = P.pts[i], dx = p.x - VOLC.x, dz = p.z - VOLC.z, rr = Math.hypot(dx, dz), th = Math.atan2(dz, dx);
+  const t = { x: -Math.sin(th) * side, z: Math.cos(th) * side }, R = rr > VOLCANO.upperR ? 3.0 : 2.6;
+  return { x: +(p.x + t.x * (R + 0.4)).toFixed(2), z: +(p.z + t.z * (R + 0.4)).toFixed(2), r: R, s: P.cum[i] };
+});
+
 /* ---------------- 山の川と滝 ----------------
    滝の場所は「流れの向き d」と「横の向き side」の座標（a＝落ち口から下流へ、l＝横）で設計する。
    上の段（山の池から落ち口まで、ゆるく下る）→ 落ち口 → 高さ約7mの崖（滝つぼを馬てい形に囲む）→ 滝つぼ → 谷底（海へ下る）→ 浜。
@@ -182,7 +303,7 @@ export const RESTS: Array<{ trail: 'main' | 'falls'; s: number; r: number; name:
   { trail: 'main', s: 34, r: 3.6, name: '山麓の休み場' }, { trail: 'main', s: 70, r: 3.6, name: '中腹の休み場' },
 ];
 export const LOOKOUT = { x: 104, z: -118, r: 7.5 };
-export const TRAILS = { main: TRAIL_MAIN, falls: TRAIL_FALLS, gorge: TRAIL_GORGE };
+export const TRAILS = { main: TRAIL_MAIN, falls: TRAIL_FALLS, gorge: TRAIL_GORGE, volcano: TRAIL_VOLCANO };
 
 /* 道の高さ：自然の地形を道に沿って測り、上り下りの傾きを抑えて、なめらかにした値（起動時に一度だけ計算） */
 const TRAIL_STEP = 0.75, TRAIL_GRADE = 0.27;
@@ -243,7 +364,9 @@ function ensureProfiles(): Profile[] {
     { s: P(-4, -4.6), h: upperSurf(-4, -4.6) },
     { s: TRAIL_FALLS.len, h: TARN.level + 0.7 },
   ], pre, true);
-  profiles = [main, falls, gorge];
+  // 火山の登山道：自然の斜面に沿って、上り坂を 0.27 以下に抑えた高さ（道は断面から上り坂約 0.24 で計画してある）
+  const volcano = buildProfile(TRAIL_VOLCANO, [], pre);
+  profiles = [main, falls, gorge, volcano];
   return profiles;
 }
 
@@ -316,13 +439,23 @@ function carveTrails(x: number, z: number, h: number): number {
   const ps = ensureProfiles();
   let out = h;
   // 道が2本近いときは、近い方の道の高さだけを使う（2本の高さを重ねて段差を作らない）
-  let best: { d: number; ph: number } | null = null;
+  let best: { d: number; ph: number; v: boolean } | null = null;
   for (const p of ps) {
     const nr = polyNear(p.trail, x, z, 6);
     if (nr.d >= 5.2) continue;
-    if (!best || nr.d < best.d) best = { d: nr.d, ph: profileAt(p, nr.s) };
+    if (!best || nr.d < best.d) best = { d: nr.d, ph: profileAt(p, nr.s), v: p.trail === TRAIL_VOLCANO };
   }
-  if (best) out = lerp(out, best.ph, sm(5.4, 2.4, best.d));
+  // 火山の登山道は細い踏み分け道（平らな幅 ±1.4、斜面へ 2.9 までにつなぐ）。つづら折りの道と道の間に、もとの斜面を残す
+  if (best) {
+    let w = best.v ? sm(2.9, 1.4, best.d) : sm(5.4, 2.4, best.d);
+    // 火山の岩棚（折り返しの外側）：道の幅が広がった平らな所。高さは近い道の高さなので、道とのつなぎ目に段差ができない
+    if (best.v) {
+      for (const L of VOLC_LEDGES) { const d = Math.hypot(x - L.x, z - L.z); if (d < L.r + 1.4) w = Math.max(w, sm(L.r + 1.4, L.r, d)); }
+      // 火口縁の尾根は削らない（縁の下を通る道の切り通しが、尾根の幅を狭めないように）
+      if (best.ph < out) w *= sm(VOLCANO.rimOutR - 0.2, VOLCANO.rimOutR + 0.9, Math.hypot(x - VOLC.x, z - VOLC.z));
+    }
+    out = lerp(out, best.ph, w);
+  }
   // 見晴らし台：平らに
   const dl = Math.hypot(x - LOOKOUT.x, z - LOOKOUT.z);
   if (dl < LOOKOUT.r + 1.6) out = lerp(out, lookoutH, sm(LOOKOUT.r + 1.6, LOOKOUT.r, dl));
@@ -333,7 +466,7 @@ function carveTrails(x: number, z: number, h: number): number {
   return out;
 }
 function outerBeforeTrails(x: number, z: number, h0: number): number {
-  let h = outerShape(x, z, h0);
+  let h = volcanoShape(x, z, outerShape(x, z, h0));
   h = fallsZone(x, z, h);
   h = carveStreams(x, z, h);
   return h;
@@ -404,7 +537,8 @@ export function placeName(x: number, z: number, h: number): string | null {
   if (Math.hypot(x - TARN.x, z - TARN.z) < 12) return '山の池';
   if (Math.hypot(x - LOOKOUT.x, z - LOOKOUT.z) < 12) return '見晴らし台';
   if (Math.hypot(x - FROZEN_POND.x, z - FROZEN_POND.z) < 12) return '凍った池';
-  if (Math.hypot(x - LAVA_LAKE.x, z - LAVA_LAKE.z) < 16) return '火口';
+  const vz = volcanoZone(x, z);
+  if (vz) return vz === 'crater' ? '火口' : vz === 'rim' ? '火口縁' : vz === 'upper' ? '火山の上部斜面' : vz === 'flank' ? '火山の山腹' : '火山の麓';
   const m = mountainAt(x, z);
   if (m > 2) return h > 22 ? '山の高所' : h > 13 ? '山の中腹' : '山麓';
   const a = dominantArea(x, z);

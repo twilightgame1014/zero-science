@@ -178,5 +178,59 @@ function polyAt(P, s) { let i = 0; while (i < P.pts.length - 2 && P.cum[i + 1] <
   ok('外の野で採取した状態は、セーブして新しく作った世界でも同じ ID の自然物に残る（再訪・再読み込み）', r && r.ok && o2 && JSON.stringify(Wn.visual(S1, tr)) === JSON.stringify(W2.visual(S2, o2)) && W2.visual(S2, o2).state !== Wn.visual(E.newState(), tr).state,
     JSON.stringify({ r: r && r.ok, id: tr.id, a: Wn.visual(S1, tr), b: o2 && W2.visual(S2, o2) })); }
 
+/* ---------- 火山（地形の版4。2026-11-11）：登って探索できる山 ---------- */
+{ const V = T.VOLCANO, P = T.TRAILS.volcano, S0 = E.newState();
+  const fs = await import('node:fs');
+  const ref = JSON.parse(fs.readFileSync(new URL('./fixtures/heights-world-v3.json', import.meta.url), 'utf8'));
+  const diff = ref.filter(([x, z, h]) => H(x, z) !== h);
+  ok('火山の外（中心から 70 以上）・滝・山・拠点・海岸・砂漠の高さは、版3と1マスも変わらない（差0。112点）', diff.length === 0 && ref.length === 112, JSON.stringify(diff.slice(0, 3)));
+  let maxOut = 0; for (let a = 0; a < 6.283; a += 0.05) for (const r of [70, 72, 80, 100]) { const x = V.x + r * Math.cos(a), z = V.z + r * Math.sin(a), h = H(x, z); maxOut = Math.max(maxOut, Math.abs(T.volcanoShape(x, z, h) - h)); }
+  ok('火山の地形は中心から 70 より外へ広がらない', maxOut === 0, String(maxOut));
+  const hz = z => { let s = 0, n = 0; for (let a = 0; a < 6.283; a += 0.1) { const x = V.x + z * Math.cos(a), y = V.z + z * Math.sin(a); s += H(x, y); n++; } return s / n; };
+  ok('火山は実際の高さを持つ：麓（半径55）≈5、山腹（38）≈13、上部斜面（22）≈30、火口縁（13.8）≈40、火口の底≈31（縁より低い）',
+    hz(55) < 7 && hz(38) > 10 && hz(38) < 17 && hz(22) > 26 && hz(13.8) > 38 && H(V.x, V.z) < hz(13.8) - 6, [55, 38, 22, 13.8].map(r => hz(r).toFixed(1)).join('/') + ' 底' + H(V.x, V.z).toFixed(1));
+  ok('火山の頂（火口縁）は北東の山（頂の高さ約40）と同じくらい高く、遠くから見える大きさ（麓の直径 約130）', hz(13.8) > 38 && V.footR * 2 >= 120);
+  ok('帯の区別：麓・山腹・上部斜面・火口縁・火口', ['foot', 'flank', 'upper', 'rim', 'crater'].every((z, i) => T.volcanoZone(V.x + [55, 38, 22, 13.8, 5][i], V.z) === z) && T.placeName(V.x + 22, V.z, 30) === '火山の上部斜面' && T.placeName(V.x + 13.8, V.z, 40) === '火口縁');
+  // 登山道：麓から火口縁まで、道のどこも歩ける・上り坂は 0.3 以下・つづら折り（折り返し3回以上）
+  let maxG = 0, prev = null, bad = 0; for (let s = 0; s <= P.len; s += 0.5) { const q = polyAt(P, s), h = H(q.x, q.z); if (prev !== null) maxG = Math.max(maxG, Math.abs(h - prev) / 0.5); prev = h; if (W.terrainBlocked(q.x, q.z)) bad++; }
+  const head = P.pts[0], end = P.pts[P.pts.length - 1];
+  ok('登山道は麓（半径 64 以上）から火口縁（半径 15 以内・高さ 38 以上）まで続く', Math.hypot(head.x - V.x, head.z - V.z) > 64 && Math.hypot(end.x - V.x, end.z - V.z) < 15.5 && H(end.x, end.z) > 38, JSON.stringify({ head, end, h: H(end.x, end.z).toFixed(1) }));
+  ok('登山道のどこも歩ける（崖にならない）・上り坂は 0.7 以下（ほとんど 0.27 以下）', bad === 0 && maxG < 0.7, bad + ' / ' + maxG.toFixed(2));
+  ok('登山道はつづら折り（U 字の折り返しが3回以上）で、岩棚（平らな所）がある', T.VOLC_LEDGES.length >= 3 && T.VOLC_LEDGES.every(L => { let w = 0; for (let a = 0; a < 6.283; a += 0.5) if (!W.terrainBlocked(L.x + 1.2 * Math.cos(a), L.z + 1.2 * Math.sin(a))) w++; return w >= 11; }));
+  const pth = W.findPath(S0, { x: D.base.x + 4, z: D.base.z }, head);
+  ok('拠点から登山道の入口（火山地帯の中心）まで陸の経路がある', !!pth);
+  const up = W.findPath(S0, head, { x: end.x, z: end.z });
+  ok('登山道の入口から火口縁まで、歩いて行ける経路がある（地図のクリック移動と同じ A*）', !!up, up ? up.length + '点' : '');
+  // 道を外れて上部斜面を直登できない：山腹から、道と岩棚を除いて歩ける所をたどっても、火口縁（半径 16 以内）に届かない
+  { const G2 = 0.5, R2 = 36, n = Math.round(2 * R2 / G2) + 1, X = i => V.x - R2 + i * G2, Z = j => V.z - R2 + j * G2, okc = new Uint8Array(n * n), seen = new Uint8Array(n * n), q = [];
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { const x = X(i), z = Z(j), r = Math.hypot(x - V.x, z - V.z); if (r > R2 || W.terrainBlocked(x, z) || T.polyNear(P, x, z).d < 3.2 || T.VOLC_LEDGES.some(L => Math.hypot(L.x - x, L.z - z) < L.r + 1.6)) continue; okc[i * n + j] = 1; if (r > 33) { seen[i * n + j] = 1; q.push(i * n + j); } }
+    let minR = 99; while (q.length) { const k = q.pop(), i = Math.floor(k / n), j = k % n; minR = Math.min(minR, Math.hypot(X(i) - V.x, Z(j) - V.z)); for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const ii = i + a, jj = j + b; if (ii < 0 || jj < 0 || ii >= n || jj >= n) continue; const kk = ii * n + jj; if (okc[kk] && !seen[kk]) { seen[kk] = 1; q.push(kk); } } }
+    ok('上部斜面は崖：道を外れて歩ける所をたどっても火口縁へ届かない（直登できない）', minR > 18, 'いちばん近い半径 ' + minR.toFixed(1)); }
+  // 火口縁は一周歩ける。火口の中（溶岩湖）へは下りられない
+  let rimOk = 0; for (let a = 0; a < 360; a += 30) { const t = a * Math.PI / 180; if (W.findPath(S0, end, { x: V.x + 13.8 * Math.cos(t), z: V.z + 13.8 * Math.sin(t) })) rimOk++; }
+  ok('火口縁（尾根）は一周歩ける（12方向すべてへ経路がある）', rimOk === 12, rimOk + '/12');
+  ok('火口の中へは下りられない（内壁は崖、底は溶岩湖）', !W.findPath(S0, end, { x: V.x + 9.0, z: V.z }) && W.terrainBlocked(V.x + 10.6, V.z) && W.terrainBlocked(V.x, V.z));
+  // 採取地点：麓・登山道のわき・岩棚・火口縁に散らばり、どれも歩いて近づける。崖の中・溶岩の上にない
+  const vol = D.regions.find(r => r.id === 'volcano'), deps = vol.res.map(x => ({ x, p: E.depositPos(vol, x) }));
+  const zones = new Set(deps.map(d => T.volcanoZone(d.p.x, d.p.z)));
+  ok('火山の採取地点は麓・山腹・上部斜面・火口縁に散らばる（一か所に集めない。どの2つも 6 マス以上離れている）', deps.length >= 8 && ['foot', 'flank', 'upper', 'rim'].every(z => zones.has(z)) && deps.every((a, i) => deps.every((b, j) => i === j || Math.hypot(a.p.x - b.p.x, a.p.z - b.p.z) >= 6)), [...zones].join(','));
+  ok('火山の採取地点は、崖の中・溶岩の上・火口の中にない', deps.every(d => !W.terrainBlocked(d.p.x, d.p.z) && T.waterAt(d.p.x, d.p.z, H(d.p.x, d.p.z)).kind === null && T.volcanoZone(d.p.x, d.p.z) !== 'crater'));
+  const nearTrail = deps.filter(d => T.polyNear(P, d.p.x, d.p.z).d < 6).length;
+  ok('登山道沿い（道から 6 マス以内）に採取地点が3つ以上ある', nearTrail >= 3, String(nearTrail));
+  const far = deps.filter(d => !W.pathToDeposit(S0, d.p, (N.depShape(d.x) || {}).r || 0, head));
+  ok('火山の採取地点へは、登山道の入口から歩いて近づける', far.length === 0, far.map(d => E.resKey(d.x)).join(','));
+  ok('火山の採取物は、登録済みの火山の素材（玄武岩・黒曜石・硫黄・赤鉄鉱）', vol.res.every(x => ['basalt', 'obsidian', 'sulfur', 'hematite'].includes(x.id) && D.items[x.id]));
+  // 実際に歩いて登る：入口から火口縁まで、A* の経路を W.move で歩く（崖にはまらない）。進めなくなったら、ゲームと同じく経路を引き直す（ui.js：0.5秒止まったら最大2回）
+  { let p = { x: head.x, z: head.z }, maxH = -1, onCliff = 0, repath = 0, path = (up || []).slice();
+    for (let guard = 0; guard < 20000 && path.length; guard++) { const wp = path[0], d = Math.hypot(wp.x - p.x, wp.z - p.z);
+      if (d < 0.2) { path.shift(); continue; }
+      const st = Math.min(0.3, d), r = W.move(S0, p, (wp.x - p.x) / d * st, (wp.z - p.z) / d * st, 0);
+      if (Math.hypot(r.x - p.x, r.z - p.z) < st * 0.2) { if (++repath > 8) break; path = W.findPath(S0, p, end) || []; continue; }
+      p = { x: r.x, z: r.z }; if (W.terrainBlocked(p.x, p.z)) onCliff++; maxH = Math.max(maxH, H(p.x, p.z)); }
+    ok('入口から火口縁まで、移動の処理（W.move）で実際に歩いて登れる（崖の中に入らない。止まったら引き直す経路で進める）', Math.hypot(p.x - end.x, p.z - end.z) < 1.5 && onCliff === 0 && maxH > 38, JSON.stringify({ end: [p.x.toFixed(1), p.z.toFixed(1)], repath, onCliff, maxH: maxH.toFixed(1) }));
+    console.log('   火山の登山：経路の引き直し ' + repath + ' 回'); }
+  ok('版3のセーブの位置が火山の変わった所なら、登山道の上（歩ける所）へ戻す。火山の外は戻さない', (() => { const a = T.volcanoSafeSpot(V.x + 22, V.z + 3); return a && !W.terrainBlocked(a.x, a.z) && !!W.findPath(S0, a, head) && T.volcanoSafeSpot(0, 0) === null && T.volcanoSafeSpot(V.x + 75, V.z) === null; })());
+}
+
 console.log(`\n${total - fail}/${total} 合格`);
 if (fail) process.exit(1);
