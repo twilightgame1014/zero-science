@@ -1094,7 +1094,7 @@ function loop3D(ts){
   if(window.HD2D && HD2D.tickBuildingParts) HD2D.tickBuildingParts(ts/1000);   // 建物の可動部（ピストン・掘削軸など）
   if(W3.place || $("#buildov")) drawPlaceOverlay();
   /* 大きなフレーム間隔でも進む距離を保つ（すり抜けは nature.move が細かく分けて防ぐ）。毎秒5コマまでは、進む速さがフレームレートに依らない */
-  const dt = W3.lastTs ? Math.min(MAX_DT,(ts-W3.lastTs)/1000) : 0; W3.lastTs=ts;
+  const dt = W3.lastTs ? Math.max(0, Math.min(MAX_DT,(ts-W3.lastTs)/1000)) : 0; W3.lastTs=ts;   // 時刻が戻ったとき（試験の偽の時計など）は進めない
   if(W3.world && W3.pos) W3.world.update(dt, W3.pos, W3.gfx.getCamera());   // 外側の地形の区画（近いほど細かく・少しずつ作る）と水・滝の動き
   /* 地名（山麓・海岸など）が変わったら左上の表示を更新、エリアの照明・空・霧・粒子を Muse の setEnvironment へ（0.5秒ごと） */
   W3.plT=(W3.plT||0)+dt; if(W3.plT>0.5 && W3.pos){ W3.plT=0; camRecenterUI(); const pn=placeHere(); if(pn!==W3.placeName){ W3.placeName=pn; updateLoc(); }
