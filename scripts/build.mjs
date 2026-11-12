@@ -45,6 +45,19 @@ for (const [name, file] of Object.entries(ICON_FILES)) {
     if (fs.existsSync(path.join(root, f))) box[name] = dataUrl(f, 'image/png');
   }
 }
+// 線のUIアイコン（Muse ラウンド28・assets/ui-icons-line。メニューの配色：濃紺の帯の上は生成り（c）、選択中・紙の上は青緑（t））。
+// ある名前はこちらを優先し、ないものは上の色つきアイコン。状態の印（未発見・加工できない・材料不足・選択中）は 24px の3色
+ASSETS.iconsLine = {}; ASSETS.stateIcons = {};
+for (const [name, file] of Object.entries(ICON_FILES)) {
+  const c = `assets/ui-icons-line/png/48/${file}-cream.png`, t = `assets/ui-icons-line/png/48/${file}-teal.png`;
+  if (fs.existsSync(path.join(root, c)) && fs.existsSync(path.join(root, t))) ASSETS.iconsLine[name] = { c: dataUrl(c, 'image/png'), t: dataUrl(t, 'image/png') };
+}
+for (const st of ['undiscovered', 'blocked', 'lacking', 'selected']) {
+  const o = {}; for (const [k, col] of [['c', 'cream'], ['t', 'teal'], ['n', 'navy']]) { const f = `assets/ui-icons-line/png/24/state-${st}-${col}.png`; if (fs.existsSync(path.join(root, f))) o[k] = dataUrl(f, 'image/png'); }
+  if (Object.keys(o).length) ASSETS.stateIcons[st] = o;
+}
+// 研究室の背景（Muse ラウンド28・assets/ui-science/lab-bench-bg.svg。生成り＋濃紺。棚 y=96・作業台 y=186 は drawScene と同じ）。屋内の段階（3以上）で使う
+if (fs.existsSync(path.join(root, 'assets/ui-science/lab-bench-bg.svg'))) ASSETS.labBg = dataUrl('assets/ui-science/lab-bench-bg.svg', 'image/svg+xml');
 // 実験台の器具（Muse・assets/lab-apparatus/sprites。装置と液体・炎は別レイヤー、256×256・底面中心が (128,234)）
 ASSETS.labApp = {};
 const appDir = path.join(root, 'assets/lab-apparatus/sprites');

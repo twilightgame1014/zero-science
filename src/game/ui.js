@@ -113,9 +113,16 @@ function applyUiMode(){
 /* UIアイコン（Muse 仕上げの assets/ui-icons）。タブ・メニューは 48px 版、右上の小さなボタンは 32px 版。
    画像がない名前（メニュー）は絵文字。どれも必ず文字ラベルと組み合わせる */
 const ICON_EMOJI = {lab:"🧪", craft:"🔨", book:"📖", tech:"🕸️", log:"📓", map:"🗺️", home:"🏠", settings:"⚙️", menu:"☰"};
-function iconHTML(name, small){ const box = window.ASSETS && (small ? ASSETS.icons32 : ASSETS.icons), src = box && box[name];
+/* 2026-11-12：Muse ラウンド28 の線のアイコン（ASSETS.iconsLine）を優先。生成り（ico-c：濃紺の帯・HUD の上）と青緑（ico-t：選択中・紙の上）の2枚を出し、CSS で切り替える */
+function iconHTML(name, small){
+  const ln = window.ASSETS && ASSETS.iconsLine && ASSETS.iconsLine[name];
+  if(ln) return `<img class="ico line ico-c" src="${ln.c}" alt="" aria-hidden="true"><img class="ico line ico-t" src="${ln.t}" alt="" aria-hidden="true">`;
+  const box = window.ASSETS && (small ? ASSETS.icons32 : ASSETS.icons), src = box && box[name];
   return src ? `<img class="ico" src="${src}" alt="" aria-hidden="true">` : `<span class="ico emo" aria-hidden="true">${ICON_EMOJI[name]||""}</span>`; }
-function applyIcons(){ document.querySelectorAll("[data-icon]").forEach(el=>{ const sp=el.querySelector(".ico"); if(sp) sp.outerHTML = iconHTML(el.dataset.icon, el.classList.contains("hbtn")); }); }
+/* 状態の印（未発見・加工できない・材料不足・選択中）を CSS 変数へ（::before の画像。文字の印も残す） */
+(function stateIconVars(){ const st = window.ASSETS && ASSETS.stateIcons; if(!st) return; const r=document.documentElement.style;
+  for(const k of Object.keys(st)) for(const c of Object.keys(st[k])) r.setProperty(`--st-${k}-${c}`, `url("${st[k][c]}")`); })();
+function applyIcons(){ document.querySelectorAll("[data-icon]").forEach(el=>{ el.querySelectorAll(".ico").forEach((sp,i)=>{ if(i) sp.remove(); else sp.outerHTML = iconHTML(el.dataset.icon, el.classList.contains("hbtn")); }); }); }
 function renderChrome(){
   const i = E.missionIndex(S), m = D.missions[i], touch = uiMode()==="touch";
   const vb=$("#vbadge"); if(vb) vb.hidden = !VERIFY;
@@ -293,6 +300,8 @@ function labBackground(st){
     <rect y="178" width="400" height="52" style="fill:var(--ground)"/>
     ${st===2?`<rect x="8" y="44" width="7" height="140" style="fill:var(--wood2)"/><rect x="385" y="44" width="7" height="140" style="fill:var(--wood2)"/>
       <path d="M-6 56 L200 8 L406 56 L392 62 L200 20 L8 62Z" style="fill:#b8943f"/>`:""}`;
+  /* 屋内（段階3以上）：Muse ラウンド28 の生成り＋濃紺の背景（棚 y=96・作業台 y=186 は同じ）。なければ従来の絵 */
+  if(window.ASSETS && ASSETS.labBg) return `<rect width="400" height="230" fill="#f3eee2"/><image href="${ASSETS.labBg}" x="0" y="0" width="400" height="225" preserveAspectRatio="none"/>`;
   if(st===3) return `<rect width="400" height="230" style="fill:var(--wall)"/>
     <rect y="120" width="400" height="70" style="fill:var(--wall2)"/>
     <rect x="160" y="22" width="80" height="60" rx="4" fill="url(#sky)" stroke="var(--wood)" stroke-width="5"/><path d="M200 22 V82 M160 52 H240" stroke="var(--wood)" stroke-width="3"/>

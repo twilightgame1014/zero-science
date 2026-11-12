@@ -128,14 +128,14 @@ ok('岩はハンマーで3回割ると残骸になり、何日たっても元に
   const DS = N.DEPOSIT_SHAPE, allRes = [...new Set(D.regions.flatMap(r => r.res.map(x => x.id)))];
   ok('すべての地域の採取地点に、描画の種類と当たり判定の決まりがある（描画に存在する種類）', allRes.every(id => DS[id] && SPEC[DS[id].vis]), allRes.filter(id => !DS[id] || !SPEC[DS[id].vis]).join(','));
   const solidBad = allRes.filter(id => { const d = DS[id]; const sp = SPEC[d.vis];
-    if (d.vis === 'rock' || d.vis === 'ore') return !(d.r >= sp.footprintRadius * 0.85 && d.r <= sp.footprintRadius * 1.15);
+    if (d.vis === 'rock' || d.vis === 'ore' || d.vis === 'sulfur') return !(d.r >= sp.footprintRadius * 0.85 && d.r <= sp.footprintRadius * 1.15);
     if (d.vis === 'tree') return !(d.r >= sp.trunkRadius && d.r <= sp.trunkRadius + 0.15);
     return d.r !== 0; });
-  ok('岩・鉱石の姿の採取地点は占有半径の±15%、木の姿は幹の太さで壁になり、それ以外は歩行を妨げない', solidBad.length === 0, solidBad.join(','));
+  ok('岩・鉱石・硫黄の姿の採取地点は占有半径の±15%、木の姿は幹の太さで壁になり、それ以外は歩行を妨げない', solidBad.length === 0, solidBad.join(','));
   const S9 = E.newState(); S9.inv.pickaxe = 1; S9.inv.ironpick = 1; S9.inv.torch = 1; S9.inv.rig = 1;
   const depBad = W.statics.filter(st => { if (W.free(S9, st.x, st.z)) return true; const ap = W.nearestFree(S9, { x: st.x, z: st.z }, undefined, 4); return !ap || Math.hypot(ap.x - st.x, ap.z - st.z) - 0.6 > E.REACH; });
   ok('壁になる採取地点は中心に入れず、外周の立てる場所から手が届く', depBad.length === 0, depBad.map(s => s.id).join(','));
-  ok('描画に必要な種類（tree・rock・branch・pebble・herb・grass・bush・ore・water・oil）と採取後の形がそろっている', ['tree', 'rock', 'branch', 'pebble', 'herb', 'grass', 'bush', 'ore', 'water', 'oil'].every(t => SPEC[t]) && SPEC.tree.depletedForm === 'stump' && SPEC.rock.depletedForm === 'rubble' && SPEC.herb.depletedForm === 'cut-patch');
+  ok('描画に必要な種類（tree・rock・branch・pebble・herb・grass・bush・ore・water・oil・sulfur・ore-shard）と採取後の形がそろっている', ['tree', 'rock', 'branch', 'pebble', 'herb', 'grass', 'bush', 'ore', 'water', 'oil', 'sulfur', 'ore-shard'].every(t => SPEC[t]) && SPEC.tree.depletedForm === 'stump' && SPEC.rock.depletedForm === 'rubble' && SPEC.herb.depletedForm === 'cut-patch');
   const big = W.objects.filter(o => o.kind === 'tree' || o.kind === 'rock').reduce((m, o) => Math.max(m, o.scale), 0);
   const unreach = W.objects.filter(o => o.block).filter(o => { const ap = W.approachPoint(SU, o, { x: o.x + 5, z: o.z }); return !(ap && W.reachGap(o, ap) <= E.REACH); });
   ok('壁になる木・岩はすべて（いちばん大きい物も、地域を開放すれば鍵のかかった地域の中も）外周の立てる場所から手が届く', unreach.length === 0, 'max scale ' + big + ' ' + unreach.map(o => o.id).join(','));
@@ -206,7 +206,7 @@ ok('最初の目標（木の枝）と2番目（丸い石・火打ち石）を新
   ok('地域の採取地点（かけら・火山の地点も）は、木や岩と重ならない', depBad.length === 0, depBad.join(','));
   ok('地域の採取地点（かけら・火山の地点も）へは、新しいゲームで拠点から歩いて行ける', depFar.length === 0, depFar.join(','));
   const loose = D.regions.flatMap(r => r.res.filter(x => x.loose).map(x => ({ r, x })));
-  ok('落ちているかけらは踏める小石の姿（当たり判定なし）で、道具がなくても拾える', loose.length >= 7 && loose.every(({ r, x }) => N.depShape(x).r === 0 && N.depShape(x).vis === 'pebble' && E.gatherInfo(S0, r, x).ok && !W.statics.some(t => t.id === E.depositId(r.id, E.resKey(x)))));
+  ok('落ちているかけらは鉱石のかけらの姿（ore-shard。当たり判定なし）で、道具がなくても拾える', loose.length >= 7 && loose.every(({ r, x }) => N.depShape(x).r === 0 && N.depShape(x).vis === 'ore-shard' && E.gatherInfo(S0, r, x).ok && !W.statics.some(t => t.id === E.depositId(r.id, E.resKey(x)))));
   const vm = await import('node:vm'); let synErr = '';
   for (const f of ['ui.js', 'engine.js', 'data.js', 'nature.js']) { try { new vm.Script(fs.readFileSync(new URL('../src/game/' + f, import.meta.url), 'utf8'), { filename: f }); } catch (e) { synErr += f + ': ' + e.message + ' '; } }
   ok('ゲームのスクリプトに構文エラーがない（ui.js・engine.js・data.js・nature.js）', !synErr, synErr);

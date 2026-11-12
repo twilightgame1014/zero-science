@@ -71,10 +71,10 @@ var NATURE = (function(){
     rain:T_("water"), river:T_("water"), spring:T_("water"), seawater:T_("water"), crude:T_("oil"),
     basalt:T_("rock",0.9), limestone:T_("rock",0.9), granite:T_("rock",0.9),
     quartz:T_("ore",0.9), coal:T_("ore",0.9), rocksalt:T_("ore",0.9), hematite:T_("ore",0.9), malachite:T_("ore",0.9),
-    cassiterite:T_("ore",0.9), sphalerite:T_("ore",0.9), bauxite:T_("ore",0.9), sulfur:T_("ore",0.9), obsidian:T_("ore",0.9),
+    cassiterite:T_("ore",0.9), sphalerite:T_("ore",0.9), bauxite:T_("ore",0.9), sulfur:T_("sulfur",0.9), obsidian:T_("ore",0.9),
   };
-  /* 落ちている鉱石のかけら（loose：道具がなくても拾える少しの量）は、地面の小石の姿で、歩行を妨げない */
-  const LOOSE_SHAPE = {vis:"pebble", r:0};
+  /* 落ちている鉱石のかけら（loose：道具がなくても拾える少しの量）は、鉱石のかけらの姿（Muse ラウンド28 'ore-shard'）で、歩行を妨げない */
+  const LOOSE_SHAPE = {vis:"ore-shard", r:0};   // 2026-11-12：Muse ラウンド28 の鉱石のかけらの見た目（当たり判定なしのまま）
   /* solid:false は踏める平たい採取地点（火口縁の硫黄の皮など。見た目は元の種類のまま、当たり判定なし） */
   const depShape = res => { if(!res) return null; if(res.loose) return LOOSE_SHAPE; const b = DEPOSIT_SHAPE[res.id]; return b && res.solid===false ? {vis:b.vis, r:0} : b; };
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }

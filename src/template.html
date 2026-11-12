@@ -664,6 +664,19 @@ ul.needs li small{display:block;color:var(--clay);font-weight:700}
 [data-ui="touch"] .vbadge[hidden]{display:none}
 /* パネルを開いたときに見出しへ移すフォーカスは、読み上げのため。枠は出さない（キーボードで動かしたフォーカスには枠を出す） */
 #dockTitle:focus{outline:none}
+/* 線のアイコン（Muse ラウンド28）：濃紺の上は生成り、選択中・紙の上は青緑 */
+img.ico.line{image-rendering:auto}
+.ico-t{display:none !important}
+.nav button[aria-current="page"] .ico-c,.hbtn[aria-expanded="true"] .ico-c,.dockhd .ico-c,.bigitem .ico-c{display:none !important}
+.nav button[aria-current="page"] .ico-t,.dockhd .ico-t,.bigitem .ico-t{display:inline-block !important}
+.hbtn[aria-expanded="true"] .ico-c{display:inline-block !important}
+.nav button[aria-current="page"]{color:#ffffff}
+/* 状態の印（Muse ラウンド28 の線の印。読めないときは文字の印だけ） */
+.dx.hidden .i::before,.mat .np::before,.need span.ng::after,.opt[aria-pressed="true"]::after{content:"";display:inline-block;width:16px;height:16px;vertical-align:-3px;background-size:contain;background-repeat:no-repeat}
+.dx.hidden .i::before{background-image:var(--st-undiscovered-n);margin-right:2px}
+.mat .np::before{background-image:var(--st-blocked-n)}
+.need span.ng::after{background-image:var(--st-lacking-n);margin-left:3px}
+.opt[aria-pressed="true"]::after{background-image:var(--st-selected-c);margin-left:4px}
 </style>
 </head>
 <body>
