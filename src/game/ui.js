@@ -882,7 +882,7 @@ function structAdd(id, type, at, rot){
   W3.gfx.addStructureVisual(id, type, at, rot||0); W3.structs.add(id);
   /* Muse の GLB（assets/buildings-3d）。読み終えたら、その種類の建物を置き直して GLB の見た目にする（それまでは従来の手続きモデル） */
   const H=window.HD2D;
-  const glb = (ASSETS.buildings && ASSETS.buildings[type]) || (ASSETS.props && ASSETS.props[type]);
+  const glb = (ASSETS.buildings && ASSETS.buildings[type]) || (ASSETS.props && ASSETS.props[type]) || (ASSETS.town && ASSETS.town[type]);
   if(H && H.ensureBuildingModel && glb){
     H.ensureBuildingModel(W3.gfx, type, glb).then(ok=>{ const done=(W3.modelReady||(W3.modelReady=new Set()));
       if(!ok || done.has(type)) return; done.add(type);
@@ -893,7 +893,7 @@ function structRemove(id){ W3.gfx.removeStructureVisual(id); W3.structs.delete(i
 /* 当たり判定：建物の占有形状（structures.json の footprint）を自然物の世界へ渡す。プレビュー（vps:）は判定なし */
 function syncStructColliders(){
   if(!world()) return;
-  const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:") || id.startsWith("ghost:")) return; const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[v.type]);
+  const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:") || id.startsWith("ghost:")) return; const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[v.type]) || (ASSETS.townSpecs && ASSETS.townSpecs[v.type]);
     if(sp && sp.footprint) list.push({id, type:v.type, x:v.x, z:v.z, rot:v.rot, footprint:sp.footprint}); });
   const sig=JSON.stringify(list); if(sig===W3.colSig) return; W3.colSig=sig;
   WORLD.setStructures(list);
@@ -973,6 +973,11 @@ async function start3D(){
       viewportInsets: hudInsets(),
       onContextLost: ()=>{ W3.lost=true; }, onContextRestored: ()=>{ W3.lost=false; } });
     W3.gfx.setWorldVisualState({timeOfDay:0.44, weather:"clear", ambientParticles:true});
+    if(HD2D.setSharedTextures) HD2D.setSharedTextures(ASSETS.sharedTex||{});   // 共有テクスチャ（建物・小物・自然物の GLB が参照。建物を読む前に渡す）
+    /* 自然物の 3D モデル（Muse の環境セット・GPT-DQ3。2026-11-12、src/world/natureModels.ts）：木・岩・やぶ・切り株などの見た目だけを GLB にする。
+       ID・位置・残量・当たり判定はゲームのまま。読めなかった種類は旧い見た目のまま（原因は HD2D.natureModelStatus() とコンソール） */
+    if(HD2D.installNatureModels && ASSETS.nature) HD2D.installNatureModels(W3.gfx, ASSETS.nature, TERRAIN).then(()=>{
+      const st=HD2D.natureModelStatus(); W3.natModels=st; if(Object.keys(st.failed).length) console.warn("自然物のモデルの読み込みに失敗：", st.failed); });
     /* 広い世界の外側（地形の区画・海・湖・山の川・滝）を、モジュールのシーンに足して描く（src/world/render.ts） */
     if(HD2D.attachWorld){ try{ W3.world = HD2D.attachWorld(W3.gfx, {cfg:W3.cfg, quality: MOBILE ? "low" : "high",
       images:{particle:ASSETS.particle}}); }catch(e){ console.error("広い世界の描画を始められなかった", e); } }
@@ -1104,6 +1109,7 @@ function loop3D(ts){
   W3.raf = requestAnimationFrame(loop3D);
   if(W3.state!=="ready" || W3.lost) return;
   if(window.HD2D && HD2D.tickBuildingParts) HD2D.tickBuildingParts(ts/1000);   // 建物の可動部（ピストン・掘削軸など）
+  if(window.HD2D && HD2D.tickNatureModels && W3.pos) HD2D.tickNatureModels(Math.min(0.2,(ts-(W3.lastTs||ts))/1000), W3.pos.x, W3.pos.z);   // 大きな岩の LOD（主人公からの距離）
   if(W3.place || $("#buildov")) drawPlaceOverlay();
   /* 大きなフレーム間隔でも進む距離を保つ（すり抜けは nature.move が細かく分けて防ぐ）。毎秒5コマまでは、進む速さがフレームレートに依らない */
   const dt = W3.lastTs ? Math.max(0, Math.min(MAX_DT,(ts-W3.lastTs)/1000)) : 0; W3.lastTs=ts;   // 時刻が戻ったとき（試験の偽の時計など）は進めない
@@ -1854,7 +1860,7 @@ function camReset(){
 }
 /* 地形＋建物の高さ（建物の占有範囲の上は、地面＋建物の高さ structures.json の size.h） */
 function camBuildings(cx, cz, r){
-  return (world() && WORLD.structures ? WORLD.structures() : []).map(o=>{ const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[o.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[o.type]);
+  return (world() && WORLD.structures ? WORLD.structures() : []).map(o=>{ const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[o.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[o.type]) || (ASSETS.townSpecs && ASSETS.townSpecs[o.type]);
       return {o, h: sp && sp.size && finite(sp.size.h) ? sp.size.h : 0, g: groundY(o.x, o.z)}; })
     .filter(b=>b.h>0.4 && Math.hypot(b.o.x-cx, b.o.z-cz) < r);
 }
@@ -2294,6 +2300,9 @@ function viewVerify(){
     <div class="vgrid">${STRUCT_PLAN.map(p=>`<button class="btn small ${placed.has(p.id)?"":"sub"}" data-act="v-place" data-id="${p.id}" aria-pressed="${placed.has(p.id)}">${placed.has(p.id)?"✅":"＋"} ${p.type}</button>`).join("")}</div>
     <p class="desc">足もとに置く（ゲームの決まりにない種類も見た目を確認できる）：</p>
     <div class="vgrid">${c.structTypes.map(t=>`<button class="btn small sub" data-act="v-extra" data-id="${t}">${t}</button>`).join("")}</div>
+    <h4 class="mt">街の建物・小物（Muse／GPT の DQ3 セット。検証モードだけ。通常のゲームでは置く条件が未決）</h4>
+    <div class="vgrid">${Object.keys(ASSETS.townSpecs||{}).map(t=>`<button class="btn small sub" data-act="v-extra" data-id="${t}">${ASSETS.townSpecs[t].name}</button>`).join("")}</div>
+    <p class="desc">自然物の 3D モデル：${(()=>{ const m=window.HD2D&&HD2D.natureModelStatus?HD2D.natureModelStatus():null; return m ? `読み込み ${m.templates} 種（LOD ${m.lod1}）・差し替え ${m.swapped} 回・共有テクスチャ ${m.textures} 枚${Object.keys(m.failed).length?`・<span class="vwarn">失敗 ${Object.keys(m.failed).join("、")}</span>`:""}` : "なし"; })()}</p>
     <div class="vgrid mt"><button class="btn small sub" data-act="v-clearst">建物を全部撤去（${placed.size+v.extra.length}）</button></div></div>
   <div class="vsec"><h4>採取済みの資源</h4><p class="desc" style="margin-top:0">変化している自然物・採取地点：${Object.keys(S.nature||{}).length} 件</p><div class="vgrid"><button class="btn small sub" data-act="v-restore">すべて元に戻す</button></div></div>
   <div class="vsec"><h4>アセット</h4><p class="desc" style="margin-top:0">一覧は別の画面で開きます（探索画面では読み込まない）。3Dの見た目・演出は主人公のそばに置いて確かめられます。</p>

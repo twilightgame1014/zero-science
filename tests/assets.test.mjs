@@ -122,5 +122,28 @@ ok('建物の下になった自然物は、見えない・壁にならない・�
   const goBad = V.npcs.map(n => abs(n.home)).filter(p => !W5.findPath(S5, { x: D.base.x, z: D.base.z }, { x: p.x + 1.2, z: p.z }));
   ok('拠点から集落の人のそばまで歩いて行ける', goBad.length === 0, JSON.stringify(goBad));
 }
+/* ---------- 自然物・街の 3D モデル（Muse の環境セット・GPT-DQ3。2026-11-12、scripts/make-nature-glb.py） ---------- */
+{
+  const man = JSON.parse(rd('assets/build/nature/manifest.json')), nm = rd('src/world/natureModels.ts');
+  const used = [...new Set([...nm.matchAll(/'((?:tree|rock|shrub|shell|basalt)-[a-z0-9-]+|stump|log-fallen|moss-rock|driftwood|rock-m-depleted)'/g)].map(m => m[1]))];
+  const lacking = used.filter(id => !man.nature[id] || !fs.existsSync(new URL('assets/build/nature/' + id + '.glb', root)));
+  ok('自然物の差し替えに使う全モデル（' + used.length + ' 種）に、軽量版の GLB がある', used.length >= 20 && lacking.length === 0, lacking.join(','));
+  const tex = new Set(Object.keys(man.textures)), refs = Object.values(man.nature).concat(Object.values(man.town), Object.values(man.buildings), Object.values(man.props), Object.values(man.lod1)).flatMap(v => v.textures);
+  ok('軽量版の GLB が参照する共有テクスチャ（' + tex.size + ' 枚）はすべてある（"tex:<hash>"）', refs.every(h => tex.has(h) && fs.existsSync(new URL('assets/build/nature-tex/' + h + '.webp', root))));
+  ok('共有テクスチャで重複がなくなった（同じ画像は1枚。元の画像の合計より小さい）', Object.values(man.textures).reduce((a, t) => a + t.bytesOut, 0) < Object.values(man.textures).reduce((a, t) => a + t.bytesIn, 0) / 4);
+  const bt = Object.keys(spec), liteMiss = bt.filter(id => !fs.existsSync(new URL('assets/build/buildings-lite/' + id + '.glb', root)));
+  ok('拠点の建物の全種類に、共有テクスチャ版（buildings-lite）がある', liteMiss.length === 0, liteMiss.join(','));
+  ok('建物・小物の共有テクスチャ版は接地影（ContactShadow）を残す（自然物と街のモデルだけ外す）', Object.values(man.buildings).every(v => v.droppedShadowMeshes === 0) && Object.values(man.props).every(v => v.droppedShadowMeshes === 0));
+  const ts = JSON.parse(rd('assets/build/town/specs.json')).town;
+  ok('街の建物・小物 12 種に、占有形状（広場は歩ける＝なし、旗は竿だけ）と軽量版 GLB がある', Object.keys(ts).length === 12 && ts.plaza.footprint === null && ts['banner-red'].footprint.r <= 0.15 &&
+    Object.keys(ts).every(id => fs.existsSync(new URL('assets/build/town/' + id + '.glb', root))));
+  ok('LOD1 は大きな岩だけ（形と寸法が LOD0 と同じ・描画回数が減る）。木の LOD1 は形が違うので使わない',
+    Object.keys(man.lod1).every(id => /^rock-l-/.test(id)) && Object.entries(man.lodReport).filter(([k]) => /^rock-l-/.test(k)).every(([, r]) => r.size0.join() === r.size1.join() && r.meshes1 < r.meshes0));
+  ok('自然物のモデルは、旧い見た目と重ねない（群れの中身を入れ替えるだけ）・読めないときは旧い見た目（buildNode を包む）', /origNode\(state, seed\)/.test(nm) && /group: made\.group/.test(nm) && !/group\.add\(.*origNode/.test(nm));
+  ok('ジオメトリは共有の印（モジュールの破棄で消さない）・材質はノードごとに複製（フェード）', /userData\.shared = true/.test(nm) && /x\.clone\(\)/.test(nm));
+  const dist = new URL('dist/index.html', root);
+  if (fs.existsSync(dist)) ok('ビルドした1ファイルの HTML は 16MB 以下（非公開ページに置ける大きさ）', fs.statSync(dist).size <= 16 * 1024 * 1024, (fs.statSync(dist).size / 1048576).toFixed(2) + 'MB');
+}
+
 console.log(`\n${total - fail}/${total} 合格`);
 process.exit(fail ? 1 : 0);

@@ -6,6 +6,7 @@ import { initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, RESOU
 import { GPT_TEXTURES } from './graphics/gptTextures';
 import { BRANCH_TEXTURES } from './graphics/branchTextures';
 import { attachWorld } from './world/render';
+import { installNatureModels, tickNatureModels, natureModelStatus, prepareShared, setSharedTextures } from './world/natureModels';
 import * as CharMod from './graphics/CharacterRenderer';
 /* ---------- 建物の3Dモデル（Muse の GLB。assets/buildings-3d、2026-11-07） ----------
    描画モジュールは StructureRenderer.registerFactory で建物の作り方を差し替えられる（呼び出し側はそのまま）。
@@ -48,6 +49,7 @@ function ensureBuildingModel(gfx: any, type: string, b64: string | undefined): P
   const pr = new Promise<boolean>((resolve) => {
     try {
       new GLTFLoader().parse(b64ToBuffer(b64), '', (gltf) => {
+        prepareShared(gltf.scene);                  // 街のモデル（DQ3）は共有テクスチャを使う（画像を抜いた軽量版。普通の建物には何もしない）
         templates.set(type, gltf.scene);
         const sr = gfx && gfx.structures;          // 描画モジュールの StructureRenderer（公開の registerFactory を使う）
         if (sr && typeof sr.registerFactory === 'function') sr.registerFactory(type, () => cloneBuilding(type));
@@ -114,5 +116,5 @@ function diag8Check(): { ok: boolean; available: boolean; stuck: number[] } {
   return { ok: stuck.length === 0, available: true, stuck };
 }
 (window as any).HD2D = { attachWorld, diag8Check, initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, THREE, RESOURCE_VISUAL_SPECS, GPT_TEXTURES, BRANCH_TEXTURES,
-  ensureBuildingModel, tickBuildingParts, buildingModelStatus, npcSet, npcRemove, npcTick, npcStatus };
+  ensureBuildingModel, tickBuildingParts, buildingModelStatus, setSharedTextures, installNatureModels, tickNatureModels, natureModelStatus, npcSet, npcRemove, npcTick, npcStatus };
 window.dispatchEvent(new Event('hd2d-ready'));

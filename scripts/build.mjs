@@ -81,7 +81,8 @@ if (fs.existsSync(path.join(root, toolAtlas)) && fs.existsSync(path.join(root, t
   ASSETS.buildingSpecs = {};
   for (const s of spec.structures) ASSETS.buildingSpecs[s.id] = { name: s.name, facilityId: s.facilityId || null, footprint: s.footprint, entrance: s.entrance, operate: s.operate, size: s.size, moving: (s.movingParts || []).map(m => m.name) };
   ASSETS.buildings = {};
-  const dir = 'assets/build/buildings';
+  // 2026-11-12：画像を共有テクスチャ（ASSETS.sharedTex）へ移した版（assets/build/buildings-lite。scripts/make-nature-glb.py）があればそれを使う
+  const dir = fs.existsSync(path.join(root, 'assets/build/buildings-lite')) ? 'assets/build/buildings-lite' : 'assets/build/buildings';
   for (const id of Object.keys(ASSETS.buildingSpecs)) {
     const f = path.join(root, dir, id + '.glb');
     if (fs.existsSync(f)) ASSETS.buildings[id] = fs.readFileSync(f).toString('base64');
@@ -95,11 +96,28 @@ if (fs.existsSync(path.join(root, toolAtlas)) && fs.existsSync(path.join(root, t
   for (const p of pj.props) {
     const f = p.footprint || {}, type = 'prop-' + p.id;
     ASSETS.propSpecs[type] = { name: p.name, stage: p.stage, footprint: f.r != null ? { shape: 'circle', r: f.r } : { shape: 'rect', w: f.w, d: f.d }, size: p.size };
-    const g = path.join(root, 'assets/build/props', p.id + '.glb');
+    const lite = path.join(root, 'assets/build/props-lite', p.id + '.glb'), g = fs.existsSync(lite) ? lite : path.join(root, 'assets/build/props', p.id + '.glb');
     if (fs.existsSync(g)) ASSETS.props[type] = fs.readFileSync(g).toString('base64'); else console.warn('小物のモデルがない（scripts/make-building-glb.py を実行）：' + p.id);
   }
   ASSETS.npc = {};
   for (const n of ['guide', 'resident', 'craftsman']) { const f = 'assets/build/npc/' + n + '.webp'; if (fs.existsSync(path.join(root, f))) ASSETS.npc[n] = dataUrl(f, 'image/webp'); else console.warn('NPC の絵がない（scripts/make-npc-sprites.py を実行）：' + n); }
+}
+// 自然物と街の 3D モデル（Muse の環境セット・GPT-DQ3 セット。scripts/make-nature-glb.py が作った軽量版：画像を抜いた GLB ＋ 重複を除いた共有テクスチャ）
+{
+  const man = path.join(root, 'assets/build/nature/manifest.json');
+  if (fs.existsSync(man)) {
+    const m = JSON.parse(fs.readFileSync(man, 'utf8'));
+    ASSETS.nature = { models: {}, lod1: {}, manifest: { nature: m.nature } };
+    // 共有テクスチャ（自然物・街・拠点の建物・集落の小物の GLB が "tex:<hash>" の名前で参照する。同じ画像は1枚）
+    ASSETS.sharedTex = {};
+    for (const id of Object.keys(m.nature)) ASSETS.nature.models[id] = fs.readFileSync(path.join(root, 'assets/build/nature', id + '.glb')).toString('base64');
+    for (const id of Object.keys(m.lod1 || {})) ASSETS.nature.lod1[id] = fs.readFileSync(path.join(root, 'assets/build/nature', id + '_lod1.glb')).toString('base64');
+    for (const h of Object.keys(m.textures)) ASSETS.sharedTex[h] = dataUrl('assets/build/nature-tex/' + h + '.webp', 'image/webp');
+    // 街の建物・小物（検証モードで置ける。通常のゲームの開始地点には置かない）。占有形状は assets/build/town/specs.json
+    const ts = JSON.parse(fs.readFileSync(path.join(root, 'assets/build/town/specs.json'), 'utf8'));
+    ASSETS.townSpecs = {}; ASSETS.town = {};
+    for (const [id, sp] of Object.entries(ts.town)) { const type = 'town-' + id; ASSETS.townSpecs[type] = sp; ASSETS.town[type] = fs.readFileSync(path.join(root, 'assets/build/town', id + '.glb')).toString('base64'); }
+  } else console.warn('自然物のモデルがない（scripts/make-nature-glb.py を実行）');
 }
 // 検証モードの一覧：描画モジュールに登録されている演出と建物タイプ（ソースから読み取る。固定の数を書かない）
 {
