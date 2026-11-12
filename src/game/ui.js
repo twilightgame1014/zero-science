@@ -1761,7 +1761,29 @@ const CAM = {
   nearMargin: 0.3,     // 近い面と地形・建物との余裕（マス）
   segSide: 1.0,        // 主人公からカメラへの線の左右にも見る幅（マス）
   checkEvery: 0.1,     // 衝突を調べる間隔（秒。角度・ズーム・位置が大きく変わったらすぐ）
+  /* 山のカメラ（2026-11-11 オーナーの依頼「火山を登るとき、カメラが斜面にめり込まないよう、壁に合わせてキャラに近づく（マインクラフトのように）」）：
+     火山の上（volcanoZone）では、回転の中心を主人公の高さにし（なめらかに追う）、主人公からカメラへの線が斜面に当たる手前までカメラ本体を近づける。
+     正投影なので近づいても大きさは変わらず、主人公より手前の斜面は近い面で切られて見えなくなる。平地の「高さの固定」はそのまま */
+  mtnFollow: 4,        // 回転の中心の高さが主人公の足もとを追う速さ（毎秒）
+  mtnGap: 1.2,         // 斜面に当たる所から手前へ空ける距離（マス）
+  mtnMin: 0.6,         // いちばん近づいたときの距離（マス。近い面は 0.1 なので、主人公のすぐ前まで寄れる）
+  mtnOut: 2.5,         // 斜面が開けたとき、元の距離へ戻る速さ（毎秒。近づくときはすぐ）
+  mtnExit: 3,          // 火山の帯の外へ出てから元のカメラに戻るまでの余白（マス。出入りでちらつかない）
 };
+/* 主人公からカメラの向き B へ、最初に地形・建物に当たる距離（当たらなければ Infinity）。胸・足もと・左右の線で見る */
+function camHitDist(pl, ax, maxD, bl){
+  let hit = Infinity;
+  for(const [hh, s] of [[1.2,0],[0.35,0],[1.2,-0.8],[1.2,0.8]]){
+    for(let t=0.6; t<Math.min(maxD, hit); t+=(t<8?0.3:t<30?0.8:2)){
+      const px=pl.x+ax.B.x*t+ax.R.x*s, py=pl.y+hh+ax.B.y*t, pz=pl.z+ax.B.z*t+ax.R.z*s;
+      if(py < camHeightAt(px, pz, bl) + 0.1){ hit = t; break; } } }
+  return hit;
+}
+const CAM_MOD_DIST_MIN = 10;   // 描画モジュールが受け付ける距離の下限
+function camMountain(){ if(!W3.pos || !window.TERRAIN || !TERRAIN.volcanoZone || !TERRAIN.VOLCANO) return false;
+  const V=TERRAIN.VOLCANO, r=Math.hypot(W3.pos.x-V.x, W3.pos.z-V.z), inZone = !!TERRAIN.volcanoZone(W3.pos.x, W3.pos.z);
+  if(inZone) W3.camMtn = true; else if(r > V.footR + 4 + CAM.mtnExit) W3.camMtn = false;
+  return !!W3.camMtn; }
 const camSupported = ()=> !!(W3.gfx && typeof W3.gfx.setCameraOrbit==="function");
 const clampN = (v,a,b)=> Math.max(a, Math.min(b, v));
 const finite = v => typeof v==="number" && isFinite(v);
@@ -1881,6 +1903,8 @@ function camFrame(dt){
   if(!c.ok || !W3.pos){ c.a={y:c.cy, p:c.cp, z:c.cz}; camSend(c.cy, c.cp, c.cz, 0); return; }      // 偽モジュール・古い版：高さの固定なし
   if(c.base==null) camRebase();
   const cam = W3.gfx.getCamera();
+  if(camMountain()){ camFrameMountain(c, dt, cam); return; }
+  if(c.mtnWas){ c.mtnWas = false; c.dv = null; c.sol = null; c.next = 0; camStore(true); }   // 山を下りた：高さはここで止め、以後は平地の決まり
   /* 2) 置ける値。角度・ズームが変わるのはユーザーの操作中（ドラッグ・ピンチ・ホイール・視点を戻す、とそのなめらかな続き）だけ。
      操作中：向き・ズームは今の見下ろし角のまま置けるなら進め、駄目ならそこで止める。見下ろし角は希望へ向かって、置ける所まで進める（二分探索）。
      操作が終わったとき、置けずに止まった値を新しい希望の値にする（操作後の状態を基準として保つ）。
@@ -1934,6 +1958,31 @@ function camFrame(dt){
   W3.camDbg = {camY: cam.position.y, focusY: lk.L.y, targetY: lk.yF, base: c.base, pitch: a.p, want: c.cp, dist: c.d, lim: c.lim || "なし", freeze: !!c.freeze,
     groundAtCam: groundY(cam.position.x, cam.position.z), groundAtHero: groundY(W3.pos.x, W3.pos.z)};
 }
+/* 山のカメラ（CAM.mtn*）：角度・ズームはユーザーの操作のまま（制限しない）。回転の中心の高さは主人公の足もとをなめらかに追い、
+   距離は「主人公からカメラへの線が斜面・建物に当たる手前」まで近づける（近づくのはすぐ、離れるのはゆっくり） */
+function camFrameMountain(c, dt, cam){
+  c.mtnWas = true; c.freeze = null; c.opLim = null; c.sol = null;
+  c.a = {y:c.cy, p:c.cp, z:c.cz};
+  const g = groundY(W3.pos.x, W3.pos.z);
+  c.base = c.snap ? g : c.base + (g - c.base) * damp(CAM.mtnFollow, dt);
+  const ax = camAxes(c.a.y, c.a.p), bl = camBuildings(W3.pos.x, W3.pos.z, 120);
+  const hit = camHitDist({x:W3.pos.x, y:g, z:W3.pos.z}, ax, CAM.dist + 2, bl);
+  const want = clampN(hit - Math.min(CAM.mtnGap, hit*0.5), CAM.mtnMin, CAM.dist);   // 斜面がすぐ近いときは、当たる所の半分の距離まで
+  c.dv = (c.dv==null || want < c.dv || c.snap) ? want : c.dv + (want - c.dv) * damp(CAM.mtnOut, dt);
+  c.d = c.dSel = Math.round(c.dv*20)/20;
+  c.lim = c.d < CAM.dist - 0.01 ? "山：斜面の手前まで近づいた（距離 "+c.d.toFixed(1)+"）" : "山：主人公の高さに合わせる";
+  const lk = camLook(c.a.y, c.a.p, c.a.z, W3.pos.x, W3.pos.z);
+  /* モジュールの距離は 10 以上（CameraController の DIST_MIN）。それより近づけるときは、距離を 10 のまま、注視点を同じ視線の上で奥へずらす
+     （正投影なので画面の絵は変わらず、カメラ本体の位置＝近い面だけが主人公に近づく） */
+  const send = Math.max(CAM_MOD_DIST_MIN, c.d), sh = send - c.d;
+  const tx = W3.pos.x - ax.B.x*sh, tz = W3.pos.z - ax.B.z*sh, ty = lk.yF - ax.B.y*sh;
+  try{ W3.gfx.setCameraTarget({x:tx, z:tz, y:ty}); }catch(e){}
+  camSend(c.a.y, c.a.p, c.a.z, send);
+  if(c.snap){ c.snap = false; try{ const r=W3.gfx.cameraRig; if(r && typeof r.setTarget==="function" && typeof r.snapToTarget==="function"){ r.setTarget(tx, tz, ty); r.snapToTarget(); } }catch(e){} }
+  c.mtnSave = (c.mtnSave||0) + dt; if(c.mtnSave > 2){ c.mtnSave = 0; camStore(false); }
+  W3.camDbg = {camY: cam.position.y, focusY: lk.L.y, targetY: lk.yF, base: c.base, pitch: c.a.p, want: c.cp, dist: c.d, lim: c.lim, freeze: false, mountain: true,
+    groundAtCam: groundY(cam.position.x, cam.position.z), groundAtHero: g};
+}
 /* 検証用の表示（検証モードか URL に ?camdebug=1）：カメラ本体の高さ・注視点の高さ・見下ろし角（実際／希望）・距離・制限 */
 function camDebugInit(){
   if(!(VERIFY || /[?&]camdebug=1/.test(location.search)) || $("#camdbg")) return;
@@ -1958,7 +2007,7 @@ document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.
 function camRecenter(){ if(!W3.cam) return; camRebase(); banner("🎯 カメラの高さを今の主人公の足もとに合わせた"); }
 function camRecenterUI(){
   const b=$("#camRecenter"); if(!b) return; let off=false;
-  try{ if(W3.cam && W3.cam.ok && W3.pos){ const r=$("#w3").getBoundingClientRect(), sp=toScreen(W3.pos.x, groundY(W3.pos.x,W3.pos.z)+0.8, W3.pos.z); off = !sp.ok || Math.abs(sp.y - r.height/2) > r.height*0.3 || Math.abs(sp.x - r.width/2) > r.width*0.38; } }catch(e){}
+  try{ if(W3.cam && W3.cam.ok && W3.pos && !W3.camMtn){ /* 火山の上ではカメラが主人公の高さを追うので出さない */ const r=$("#w3").getBoundingClientRect(), sp=toScreen(W3.pos.x, groundY(W3.pos.x,W3.pos.z)+0.8, W3.pos.z); off = !sp.ok || Math.abs(sp.y - r.height/2) > r.height*0.3 || Math.abs(sp.x - r.width/2) > r.width*0.38; } }catch(e){}
   if(b.hidden === off) b.hidden = !off;
 }
 /* 設定画面の感度 */
