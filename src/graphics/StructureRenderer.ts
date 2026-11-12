@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { StructureType, Vec3Like } from './types';
 import { AssetManager } from './AssetManager';
-import { segmentPointDistance } from './utils';
+import { segmentPointDistance, cameraPitchDegrees, screenOverlap } from './utils';
 
 export type StructureFactory = () => THREE.Group;
 
@@ -194,16 +194,27 @@ export class StructureRenderer {
    * sight to the player (low exploration camera), easing back when the
    * view clears. Visual only; existence and placement stay logic-owned.
    */
-  updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+  updateOcclusion(camera: THREE.Camera | THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+    const cameraPos = (camera as THREE.Camera).position ?? (camera as THREE.Vector3);
     const FADE_MIN = 0.22;
     const k = Math.min(1, dt * 7);
+    // Round 28 (Claude §24.4): at pitch < 15° a roof can cover the
+    // sprite on screen while its centre stays off the chest-height
+    // segment — add the NDC screen-rectangle test. (Skipped when
+    // only a position is supplied, e.g. headless test harnesses.)
+    const isCamera = !!(camera as THREE.Camera).projectionMatrix;
+    const lowPitch = isCamera && cameraPitchDegrees(camera as THREE.Camera) < 15;
     for (const st of this.fadeState.values()) {
       const d = segmentPointDistance(
         cameraPos.x, cameraPos.y, cameraPos.z,
         playerPos.x, playerPos.y, playerPos.z,
         st.center.x, st.center.y, st.center.z,
       );
-      const goal = d < st.radius ? FADE_MIN : 1;
+      let goal = d < st.radius ? FADE_MIN : 1;
+      if (goal === 1 && lowPitch &&
+        screenOverlap(camera as THREE.Camera, playerPos, st.center.x, st.center.y, st.center.z, st.radius)) {
+        goal = FADE_MIN;
+      }
       if (st.fade === goal) continue;
       let next = st.fade + (goal - st.fade) * k;
       if (Math.abs(goal - next) < 0.01) next = goal;

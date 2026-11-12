@@ -5,6 +5,7 @@ import {
   areaRaw,
   clamp,
   distanceToPath,
+  distanceToPolyline,
   distanceToRiver,
   fbm,
   frozenPond,
@@ -59,6 +60,13 @@ const VCOLORS = {
   cBasalt: new THREE.Color(0x33302e),
   cSnow: new THREE.Color(0xe8eef2),
   cDune: new THREE.Color(0xdbbe85),
+  // Round 28 (Claude §25.2): host-path tread + volcano band set.
+  cTrailSoil: new THREE.Color(0x8a6f4d),
+  cTrailGravel: new THREE.Color(0x9a8a72),
+  cSulfur: new THREE.Color(0xc9a83c),
+  cCrater: new THREE.Color(0x35302b),
+  cLavaFlow: new THREE.Color(0x4a3430),
+  cAshPale: new THREE.Color(0xb3a48f),
 };
 
 export class TerrainRenderer {
@@ -79,6 +87,14 @@ export class TerrainRenderer {
   private areaDefs: AreaDefinition[];
   private lastFocus = { x: Number.POSITIVE_INFINITY, z: Number.POSITIVE_INFINITY };
   private lavaMaterial: THREE.MeshStandardMaterial | null = null;
+  /** Host-supplied worn paths (round 28, Claude §25.2.1) with
+   *  precomputed bounds so fillVertex can reject far vertices
+   *  before the segment loop. */
+  private hostPaths: Array<{
+    points: ReadonlyArray<readonly number[]>;
+    width: number;
+    minX: number; minZ: number; maxX: number; maxZ: number;
+  }> = [];
 
   constructor(
     cfg: GraphicsConfig,
@@ -97,6 +113,22 @@ export class TerrainRenderer {
     this.cfg = cfg;
     this.quality = quality;
     this.areaDefs = areaDefinitions(cfg);
+    for (const p of cfg.world.paths ?? []) {
+      if (!p.points || p.points.length < 2) continue;
+      // Normalise once: hosts may hand over [x, z, h?] arrays or
+      // {x, z} points (the game's Poly type); the painter only
+      // ever reads [x, z] pairs.
+      const pts: Array<readonly [number, number]> = p.points.map((pt) =>
+        Array.isArray(pt)
+          ? [pt[0], pt[1]] as readonly [number, number]
+          : [(pt as { x: number }).x, (pt as { z: number }).z] as readonly [number, number]);
+      let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity;
+      for (const pt of pts) {
+        minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
+        minZ = Math.min(minZ, pt[1]); maxZ = Math.max(maxZ, pt[1]);
+      }
+      this.hostPaths.push({ points: pts, width: Math.max(0.4, p.width), minX, minZ, maxX, maxZ });
+    }
     this.terrainMaterial = this.buildTerrainMaterial(detailTexture, groundTextures);
     this.hasScree = !!groundTextures?.scree;
     this.waterMesh = this.buildWater();
@@ -333,13 +365,27 @@ export class TerrainRenderer {
     return def ? areaRaw(x, z, def) : 0;
   }
 
+  /** Distance to the nearest host path + that path's flat
+   *  half-width (round 28). Infinity when no path is near. */
+  private hostTrail(x: number, z: number): { d: number; width: number } {
+    let best = Infinity;
+    let width = 0;
+    for (const p of this.hostPaths) {
+      const reach = p.width + 2.2;
+      if (x < p.minX - reach || x > p.maxX + reach || z < p.minZ - reach || z > p.maxZ + reach) continue;
+      const d = distanceToPolyline(x, z, p.points);
+      if (d < best) { best = d; width = p.width; }
+    }
+    return { d: best, width };
+  }
+
   private fillVertex(
     x: number, z: number, h: number,
     out: { r: number; g: number; b: number; s: Float32Array; s2: Float32Array; s3: Float32Array; i: number; ny: number },
   ): void {
     const i = out.i;
     const tmp = this.cTmp;
-    const { cGrass, cGrassDry, cForestFloor, cSand, cWetSand, cClay, cRock, cRockDark, cPath, cEarth, cUnderwater, cAsh, cBasalt, cSnow, cDune, cTownStone, cTownEarth } = VCOLORS;
+    const { cGrass, cGrassDry, cForestFloor, cSand, cWetSand, cClay, cRock, cRockDark, cPath, cEarth, cUnderwater, cAsh, cBasalt, cSnow, cDune, cTownStone, cTownEarth, cTrailSoil, cTrailGravel, cSulfur, cCrater, cLavaFlow, cAshPale } = VCOLORS;
 
     const n = fbm(x * 0.09 + 31, z * 0.09 + 17, 3);
     const dRiver = distanceToRiver(x, z);
@@ -370,6 +416,21 @@ export class TerrainRenderer {
     const pathMask =
       smoothstep(2.4, 1.1, distanceToPath(x, z)) * smoothstep(0.42, 0.6, h);
     tmp.lerp(cPath, pathMask * 0.8);
+    // Host-supplied worn paths (round 28, Claude §25.2.1): the
+    // tread the height function flattens (e.g. the volcano trail,
+    // half-width 1.4) reads as packed soil with gravel speckle,
+    // feathering into the slope by ~2× the width. Never paving,
+    // never steps — just ground many feet have compacted.
+    let trailW = 0;
+    if (this.hostPaths.length > 0) {
+      const tr = this.hostTrail(x, z);
+      if (tr.d < tr.width + 2.2) {
+        trailW = smoothstep(tr.width + 1.6, tr.width * 0.5, tr.d);
+        const gravel = smoothstep(0.45, 0.8, fbm(x * 0.9 + 3, z * 0.9 + 41, 2));
+        tmp.lerp(cTrailSoil, trailW * 0.85);
+        tmp.lerp(cTrailGravel, trailW * gravel * 0.45);
+      }
+    }
     const rockiness = smoothstep(1.6, 3.6, h) * 0.75 +
       smoothstep(20, 46, x - z * 0.35) * 0.45;
     tmp.lerp(n > 0.55 ? cRock : cRockDark, clamp(rockiness, 0, 0.92));
@@ -386,9 +447,55 @@ export class TerrainRenderer {
     const wCoast = this.areaRawAt(x, z, 'coast');
     const wLake = this.areaRawAt(x, z, 'lakeside');
     const wTown = this.areaRawAt(x, z, 'town');
+    // Volcano band factor for the splat write below (round 28):
+    // 1 on the bare upper mountain / crater, lower on the foot.
+    let volTileW = wVol;
+    let volScreeKeep = 1 - wVol * 0.85; // legacy suppression
     if (wVol > 0) {
+      const vDef = this.areaDefs.find((a) => a.id === 'volcano');
+      const dVol = vDef ? Math.hypot(x - vDef.x, z - vDef.z) : 999;
       tmp.lerp(cAsh, wVol * 0.78);
-      tmp.lerp(cBasalt, wVol * smoothstep(6, 14, h) * 0.6);
+      if (dVol < 75) {
+        // Banded by radius from the crater centre (contract v4:
+        // crater < 11.7, rim 11.7–16.2, upper cliff 16.2–30,
+        // flank 30–46, foot 46–68). Bands feather into each other;
+        // noise breaks every boundary so nothing reads as rings.
+        const bandNoise = (fbm(x * 0.11 + 77, z * 0.11 + 5, 3) - 0.5) * 5.0;
+        const db = dVol + bandNoise;
+        // Foot: pale ash field with dark basalt speckle.
+        const footW = smoothstep(44, 52, db);
+        tmp.lerp(cAshPale, wVol * footW * 0.5);
+        tmp.lerp(cBasalt, wVol * footW * smoothstep(0.62, 0.85, mottle) * 0.4);
+        // Flank: old lava flows — dark reddish-brown streaks run
+        // downhill (noise stretched along the radius).
+        const ang = Math.atan2(z - (vDef?.z ?? 0), x - (vDef?.x ?? 0));
+        const streak = fbm(Math.cos(ang) * 6 + 40 + dVol * 0.05, Math.sin(ang) * 6 + 9 + dVol * 0.05, 3);
+        const flankW = smoothstep(28, 33, db) * smoothstep(48, 43, db);
+        tmp.lerp(cLavaFlow, wVol * flankW * smoothstep(0.45, 0.75, streak) * 0.65);
+        tmp.lerp(cBasalt, wVol * flankW * 0.3);
+        // Upper cliff: bare dark rock.
+        const upperW = smoothstep(15, 18, db) * smoothstep(31, 27, db);
+        tmp.lerp(cBasalt, wVol * upperW * 0.55);
+        tmp.lerp(cRockDark, wVol * upperW * 0.3);
+        // Rim: sulfur crust patches (the yellow skin the rim
+        // deposits sit on) — patchy, never a solid ring.
+        const rimW = smoothstep(10.8, 12.6, db) * smoothstep(17.4, 15.6, db);
+        const crust = smoothstep(0.52, 0.78, fbm(x * 0.33 + 19, z * 0.33 + 63, 3));
+        tmp.lerp(cSulfur, wVol * rimW * crust * 0.6);
+        // Crater bowl: charcoal.
+        const craterW = smoothstep(12.6, 10.8, db);
+        tmp.lerp(cCrater, wVol * craterW * 0.8);
+        volTileW = wVol * (0.6 + 0.4 * Math.max(upperW, craterW, rimW));
+        volScreeKeep = 1 - wVol * (Math.max(upperW, flankW) > 0.4 ? 0.4 : 0.85);
+        // The trodden trail must survive the area overlay.
+        if (trailW > 0) {
+          const gravel = smoothstep(0.45, 0.8, fbm(x * 0.9 + 3, z * 0.9 + 41, 2));
+          tmp.lerp(cTrailSoil, trailW * 0.8);
+          tmp.lerp(cTrailGravel, trailW * gravel * 0.4);
+        }
+      } else {
+        tmp.lerp(cBasalt, wVol * smoothstep(6, 14, h) * 0.6);
+      }
     }
     if (wDesert > 0) tmp.lerp(cDune, wDesert * 0.8);
     const snowCover = clamp(wSnow * (smoothstep(1.4, 3.4, h) + smoothstep(7.5, 10.5, h)), 0, 1);
@@ -418,14 +525,14 @@ export class TerrainRenderer {
     s[i * 4] = clamp(forestMask * 0.95 + smoothstep(0.6, 0.85, mottle) * 0.4, 0, 0.95) * aboveWater * rockSuppress;
     s[i * 4 + 1] = clamp(wet * 1.0 + clayMask * 0.8, 0, 0.95) * rockSuppress;
     s[i * 4 + 2] = clamp(bank * 0.92, 0, 0.95) * aboveWater * rockSuppress;
-    s[i * 4 + 3] = clamp(pathMask * 1.1, 0, 0.96) * aboveWater;
+    s[i * 4 + 3] = clamp(Math.max(pathMask * 1.1, trailW * 1.05), 0, 0.96) * aboveWater;
     // Shores of the new basins wear sand / mud / wet sand too.
     const shoreBand = clamp(1 - Math.abs(h - (wl + 0.18)) / 0.55, 0, 1);
     s[i * 4 + 2] = clamp(s[i * 4 + 2] + wCoast * smoothstep(wl + 2.4, wl + 0.7, h) * 0.9, 0, 0.96) * rockSuppress;
     s[i * 4 + 1] = clamp(s[i * 4 + 1] + wLake * shoreBand * 0.7, 0, 0.96);
     s[i * 4 + 3] = clamp(Math.max(s[i * 4 + 3], wTown * 0.5), 0, 0.96) * aboveWater;
     const s2 = out.s2;
-    s2[i * 4] = clamp(wVol * 1.05, 0, 0.96);
+    s2[i * 4] = clamp(volTileW * 1.05 * (1 - trailW * 0.8), 0, 0.96);
     s2[i * 4 + 1] = clamp(wSnow * (smoothstep(1.2, 3.0, h) + smoothstep(7.5, 10.5, h) * 0.9), 0, 0.96);
     s2[i * 4 + 2] = clamp(wDesert, 0, 0.96) * smoothstep(wl - 0.1, wl + 0.35, h);
     s2[i * 4 + 3] = clamp((wCoast + wLake * 0.9) * shoreBand, 0, 0.95) * aboveWater;
@@ -440,7 +547,7 @@ export class TerrainRenderer {
     // rock. Suppressed under snowfields and the town tiles.
     s3[i * 3 + 2] = this.hasScree
       ? clamp(smoothstep(0.945, 0.845, out.ny) * 1.05, 0, 0.95) *
-        aboveWater * (1 - wSnow * 0.85) * (1 - wVol * 0.85) * (1 - clamp(cobbleW, 0, 1))
+        aboveWater * (1 - wSnow * 0.85) * volScreeKeep * (1 - clamp(cobbleW, 0, 1))
       : 0;
   }
 

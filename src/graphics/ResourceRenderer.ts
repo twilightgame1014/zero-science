@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { ResourceVisualState } from './types';
 import { disposeObject } from './StructureRenderer';
 import { AssetManager } from './AssetManager';
-import { addInstanceFade, mulberry32, segmentPointDistance } from './utils';
+import { addInstanceFade, mulberry32, segmentPointDistance, cameraPitchDegrees, screenOverlap } from './utils';
 import { fracturedRockGeometry } from './WaterfallKit';
 
 interface SlotRef {
@@ -510,9 +510,17 @@ export class ResourceRenderer {
    * touches another. Only group-path kinds can be in the fade set;
    * the instanced kinds are all low ground props.
    */
-  updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+  updateOcclusion(camera: THREE.Camera | THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+    const cameraPos = (camera as THREE.Camera).position ?? (camera as THREE.Vector3);
     const FADE_MIN = 0.22;
     const k = Math.min(1, dt * 7);
+    // Round 28 (Claude §24.4): below 15° pitch, add the NDC
+    // screen-rectangle test — a rock or crown far up the view
+    // axis can cover the sprite while missing the segment test.
+    // (Skipped when only a position is supplied, e.g. headless
+    // test harnesses.)
+    const isCamera = !!(camera as THREE.Camera).projectionMatrix;
+    const lowPitch = isCamera && cameraPitchDegrees(camera as THREE.Camera) < 15;
     for (const entry of this.entries.values()) {
       const st = entry.state;
       if (!entry.group || st.depleted) continue;
@@ -551,6 +559,10 @@ export class ResourceRenderer {
         const dz = p.z - playerPos.z;
         const reach = 3.1 * entry.baseScale;
         if (dx * dx + dz * dz < reach * reach) goal = FADE_MIN;
+      }
+      if (goal === 1 && lowPitch &&
+        screenOverlap(camera as THREE.Camera, playerPos, OCCL_POINT.x, OCCL_POINT.y, OCCL_POINT.z, radius)) {
+        goal = floor;
       }
       if (entry.fade === goal) continue;
       let next = entry.fade + (goal - entry.fade) * k;
@@ -605,6 +617,10 @@ export class ResourceRenderer {
         const reach = radius + 0.6;
         const camSide = dx * (cameraPos.x - playerPos.x) + dz * (cameraPos.z - playerPos.z) > 0;
         if (hd2 < 0.09 || (hd2 < reach * reach && camSide)) goal = floor;
+        if (goal === 1 && lowPitch &&
+          screenOverlap(camera as THREE.Camera, playerPos, OCCL_POINT.x, OCCL_POINT.y, OCCL_POINT.z, radius)) {
+          goal = floor;
+        }
       }
       if (entry.fade === goal) continue;
       let next = entry.fade + (goal - entry.fade) * k;
@@ -892,6 +908,18 @@ export class ResourceRenderer {
               rockM));
             r.position.set((i - 1) * 0.3, 0.12, (i % 2) * 0.25 - 0.1);
           }
+        }
+      } else if (state.type === 'sulfur') {
+        // Broken crust remains: dull grey-yellow plates, crystals gone.
+        const brokenM = std(0x8a7f5c, 1);
+        for (let i = 0; i < 3; i++) {
+          const p = add(new THREE.Mesh(
+            this.geo('sulfurPlate', () => { const geo = new THREE.IcosahedronGeometry(0.5, 0); jitterRock(geo); return geo; }),
+            brokenM));
+          p.position.set((i - 1) * 0.34, 0.04, (i % 2) * 0.22 - 0.08);
+          p.scale.set(0.8, 0.1, 0.7);
+          p.rotation.y = i * 1.1;
+          p.castShadow = false;
         }
       } else if (
         state.type === 'herb' || state.type === 'flowers' ||
@@ -1266,6 +1294,66 @@ export class ResourceRenderer {
             this.geo('crystal', () => new THREE.OctahedronGeometry(1)), cm));
           c.position.set(cx, cy, cz);
           c.scale.set(cs, cs * 1.6, cs);
+        }
+        break;
+      }
+      case 'sulfur': {
+        // Sulfur crust (round 28, Claude §25.2.4): a flat,
+        // walk-over skin of cracked yellow mineral plates on the
+        // crater rim — a surface deposit, not a boulder (the game
+        // marks these nodes solid:false). Paler plate centres and
+        // a few small crystals keep it readable at gameplay
+        // distance; the rim terrain paint carries matching patches.
+        const sr2 = mulberry32(seed ^ 0x5f3759);
+        const crustM = std(0xc9a83c, 1);
+        const paleM = std(0xe3cd72, 1);
+        const plates = 4 + Math.floor(sr2() * 3);
+        for (let pi = 0; pi < plates; pi++) {
+          const plate = add(new THREE.Mesh(
+            this.geo('sulfurPlate', () => { const geo = new THREE.IcosahedronGeometry(0.5, 0); jitterRock(geo); return geo; }),
+            pi % 2 ? paleM : crustM));
+          const pa = sr2() * Math.PI * 2;
+          const pd = pi === 0 ? 0 : 0.3 + sr2() * 0.45;
+          plate.position.set(Math.cos(pa) * pd, 0.05, Math.sin(pa) * pd);
+          plate.scale.set(0.9 + sr2() * 0.5, 0.14, 0.8 + sr2() * 0.45);
+          plate.rotation.y = sr2() * Math.PI;
+          plate.castShadow = false;
+        }
+        const crysM = std(0xd9bc45, 0.6);
+        for (let ci = 0; ci < 3; ci++) {
+          const c = add(new THREE.Mesh(
+            this.geo('crystal', () => new THREE.OctahedronGeometry(1)), crysM));
+          const ca = sr2() * Math.PI * 2;
+          c.position.set(Math.cos(ca) * 0.3, 0.15, Math.sin(ca) * 0.3);
+          const cs = 0.07 + sr2() * 0.05;
+          c.scale.set(cs, cs * 1.7, cs);
+        }
+        break;
+      }
+      case 'ore-shard': {
+        // Loose ore fragments (round 28, Claude §25.2.5): a small
+        // scatter of angular mineral shards — dark host rock with
+        // rust and quartz faces showing — instead of the rounded
+        // grey pebble, so a dropped fragment reads as ore, not
+        // gravel. The game scales these nodes 0.7 and walks over
+        // them (radius 0).
+        const shr = mulberry32(seed ^ 0x2b6f31);
+        const shardM = std(0x4c423a, 0.95);
+        const rustM = std(0x8a5638, 0.9);
+        const quartzM = std(0xe8e0cc, 0.4);
+        const mats = [shardM, shardM, rustM, quartzM, shardM];
+        const count = 4 + Math.floor(shr() * 2);
+        for (let si = 0; si < count; si++) {
+          const shard = add(new THREE.Mesh(
+            this.geo('oreShard', () => { const geo = new THREE.IcosahedronGeometry(0.2, 0); jitterRock(geo); return geo; }),
+            mats[si % mats.length]));
+          const sa = shr() * Math.PI * 2;
+          const sd = si === 0 ? 0 : 0.16 + shr() * 0.3;
+          shard.position.set(Math.cos(sa) * sd, 0.07, Math.sin(sa) * sd);
+          const ss = 0.7 + shr() * 0.8;
+          shard.scale.set(ss, ss * (0.55 + shr() * 0.3), ss * (0.7 + shr() * 0.5));
+          shard.rotation.set(shr() * 0.6, shr() * Math.PI * 2, shr() * 0.6);
+          shard.castShadow = false;
         }
         break;
       }
@@ -1705,6 +1793,8 @@ export const RESOURCE_VISUAL_SPECS: Record<string, ResourceVisualSpec> = {
   water: { footprintRadius: 0.7, height: 0.15, depletedForm: 'none' },
   oil: { footprintRadius: 0.7, height: 0.12, depletedForm: 'none' },
   ore: { footprintRadius: 1.0, height: 1.15, depletedForm: 'rubble' },
+  sulfur: { footprintRadius: 0.85, height: 0.2, depletedForm: 'none' },
+  'ore-shard': { footprintRadius: 0.34, height: 0.3, depletedForm: 'none' },
   lily: { footprintRadius: 0.55, height: 0.06, depletedForm: 'none' },
   lava: { footprintRadius: 0.8, height: 0.06, depletedForm: 'none' },
 };

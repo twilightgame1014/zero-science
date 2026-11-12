@@ -23,13 +23,19 @@ export interface EnvPreset {
 }
 
 const PRESETS: Record<AreaId, EnvPreset> = {
-  forest: { fogNear: 88, fogFar: 420, skyTint: new THREE.Color(0xffffff), tintAmount: 0, sunMul: 1, fillMul: 1 },
-  lakeside: { fogNear: 88, fogFar: 430, skyTint: new THREE.Color(0xbfe0ee), tintAmount: 0.18, sunMul: 1.02, fillMul: 1.02 },
-  coast: { fogNear: 95, fogFar: 460, skyTint: new THREE.Color(0xcfe8f2), tintAmount: 0.22, sunMul: 1.05, fillMul: 1.0 },
-  volcano: { fogNear: 64, fogFar: 340, skyTint: new THREE.Color(0xeccfa8), tintAmount: 0.12, sunMul: 1.52, fillMul: 1.38 },
-  snow: { fogNear: 80, fogFar: 380, skyTint: new THREE.Color(0xdcecf8), tintAmount: 0.3, sunMul: 1.06, fillMul: 1.05 },
-  desert: { fogNear: 92, fogFar: 430, skyTint: new THREE.Color(0xf0dcb0), tintAmount: 0.3, sunMul: 1.08, fillMul: 0.95 },
-  town: { fogNear: 88, fogFar: 420, skyTint: new THREE.Color(0xf2e3c2), tintAmount: 0.08, sunMul: 1, fillMul: 1 },
+  // Fog distances (round 28, Claude §25.2.2): pushed out so a
+  // 40-high landmark ~100–170 m away (the volcano seen from the
+  // forest base) stays a readable silhouette instead of washing
+  // out — at 150 m the forest blend now fogs ~7% instead of ~19%.
+  // Fog still owns only the far depth; nothing near the player
+  // is touched.
+  forest: { fogNear: 110, fogFar: 560, skyTint: new THREE.Color(0xffffff), tintAmount: 0, sunMul: 1, fillMul: 1 },
+  lakeside: { fogNear: 110, fogFar: 570, skyTint: new THREE.Color(0xbfe0ee), tintAmount: 0.18, sunMul: 1.02, fillMul: 1.02 },
+  coast: { fogNear: 118, fogFar: 600, skyTint: new THREE.Color(0xcfe8f2), tintAmount: 0.22, sunMul: 1.05, fillMul: 1.0 },
+  volcano: { fogNear: 84, fogFar: 470, skyTint: new THREE.Color(0xeccfa8), tintAmount: 0.12, sunMul: 1.75, fillMul: 2.05 },
+  snow: { fogNear: 100, fogFar: 500, skyTint: new THREE.Color(0xdcecf8), tintAmount: 0.3, sunMul: 1.06, fillMul: 1.05 },
+  desert: { fogNear: 112, fogFar: 570, skyTint: new THREE.Color(0xf0dcb0), tintAmount: 0.3, sunMul: 1.08, fillMul: 0.95 },
+  town: { fogNear: 110, fogFar: 560, skyTint: new THREE.Color(0xf2e3c2), tintAmount: 0.08, sunMul: 1, fillMul: 1 },
 };
 
 export class LightingManager {
