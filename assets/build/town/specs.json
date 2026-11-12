@@ -1,0 +1,185 @@
+{
+ "note": "街の建物・小物（発展した街の素材。検証モードで置ける。通常のゲームの開始地点には置かない）。footprint は scripts/make-nature-glb.py が実寸から決める",
+ "town": {
+  "hut-town": {
+   "name": "町の家",
+   "stage": "town",
+   "footprint": {
+    "shape": "rect",
+    "w": 3.44,
+    "d": 3.4
+   },
+   "size": {
+    "w": 4.2,
+    "h": 3.52,
+    "d": 4.15
+   },
+   "tris": 3332,
+   "meshes": 55
+  },
+  "plaza": {
+   "name": "石畳の広場",
+   "stage": "town",
+   "footprint": null,
+   "size": {
+    "w": 12.6,
+    "h": 0.03,
+    "d": 12.6
+   },
+   "tris": 496,
+   "meshes": 5
+  },
+  "banner-red": {
+   "name": "旗（赤）",
+   "stage": "town",
+   "footprint": {
+    "shape": "circle",
+    "r": 0.12
+   },
+   "size": {
+    "w": 1.25,
+    "h": 2.6,
+    "d": 0.3
+   },
+   "tris": 332,
+   "meshes": 4
+  },
+  "banner-green": {
+   "name": "旗（緑）",
+   "stage": "town",
+   "footprint": {
+    "shape": "circle",
+    "r": 0.12
+   },
+   "size": {
+    "w": 1.25,
+    "h": 2.6,
+    "d": 0.3
+   },
+   "tris": 332,
+   "meshes": 4
+  },
+  "planter-large": {
+   "name": "植木鉢（大）",
+   "stage": "town",
+   "footprint": {
+    "shape": "circle",
+    "r": 0.37
+   },
+   "size": {
+    "w": 0.78,
+    "h": 0.98,
+    "d": 0.81
+   },
+   "tris": 296,
+   "meshes": 12
+  },
+  "planter-small": {
+   "name": "植木鉢（小）",
+   "stage": "town",
+   "footprint": {
+    "shape": "circle",
+    "r": 0.22
+   },
+   "size": {
+    "w": 0.48,
+    "h": 0.6,
+    "d": 0.48
+   },
+   "tris": 288,
+   "meshes": 8
+  },
+  "crates": {
+   "name": "木箱",
+   "stage": "town",
+   "footprint": {
+    "shape": "rect",
+    "w": 1.23,
+    "d": 0.72
+   },
+   "size": {
+    "w": 1.33,
+    "h": 1.25,
+    "d": 0.78
+   },
+   "tris": 1944,
+   "meshes": 18
+  },
+  "barrel": {
+   "name": "たる",
+   "stage": "town",
+   "footprint": {
+    "shape": "circle",
+    "r": 0.37
+   },
+   "size": {
+    "w": 0.73,
+    "h": 0.95,
+    "d": 0.73
+   },
+   "tris": 892,
+   "meshes": 4
+  },
+  "bucket-rope": {
+   "name": "おけと縄",
+   "stage": "town",
+   "footprint": {
+    "shape": "circle",
+    "r": 0.36
+   },
+   "size": {
+    "w": 1.21,
+    "h": 0.81,
+    "d": 0.69
+   },
+   "tris": 2204,
+   "meshes": 8
+  },
+  "stall": {
+   "name": "屋台",
+   "stage": "town",
+   "footprint": {
+    "shape": "rect",
+    "w": 2.0,
+    "d": 1.15
+   },
+   "size": {
+    "w": 2.35,
+    "h": 2.14,
+    "d": 1.35
+   },
+   "tris": 340,
+   "meshes": 6
+  },
+  "fruit-basket": {
+   "name": "果物かご",
+   "stage": "town",
+   "footprint": {
+    "shape": "circle",
+    "r": 0.42
+   },
+   "size": {
+    "w": 0.88,
+    "h": 0.67,
+    "d": 0.88
+   },
+   "tris": 564,
+   "meshes": 8
+  },
+  "stone-lantern": {
+   "name": "石どうろう",
+   "stage": "town",
+   "footprint": {
+    "shape": "circle",
+    "r": 0.39
+   },
+   "size": {
+    "w": 0.93,
+    "h": 1.68,
+    "d": 0.93
+   },
+   "tris": 986,
+   "meshes": 11
+  }
+ }
+}
