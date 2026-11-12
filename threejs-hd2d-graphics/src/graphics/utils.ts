@@ -351,6 +351,104 @@ export function distanceToPath(x: number, z: number): number {
   return best;
 }
 
+/**
+ * Distance from (x, z) to an arbitrary host polyline (round 28,
+ * Claude §25.2.1). Points may carry extra components (e.g. a
+ * height) — only the first two are read. `bbox` (minX, minZ,
+ * maxX, maxZ) lets callers reject far points before the segment
+ * loop; pass the same margin the caller cares about.
+ */
+export function distanceToPolyline(
+  x: number, z: number,
+  points: ReadonlyArray<readonly number[]>,
+): number {
+  let best = Infinity;
+  for (let i = 0; i < points.length - 1; i++) {
+    const ax = points[i][0], az = points[i][1];
+    const bx = points[i + 1][0], bz = points[i + 1][1];
+    const abx = bx - ax;
+    const abz = bz - az;
+    const len2 = abx * abx + abz * abz;
+    const t = len2 > 0 ? clamp(((x - ax) * abx + (z - az) * abz) / len2, 0, 1) : 0;
+    const dx = x - (ax + abx * t);
+    const dz = z - (az + abz * t);
+    const d2 = dx * dx + dz * dz;
+    if (d2 < best) best = d2;
+  }
+  return Math.sqrt(best);
+}
+
+/* ------------------------------------------------------------------ */
+/* Screen-space occlusion test (round 28, Claude §24.4 / §25.2.3)      */
+/*                                                                     */
+/* At very low pitch the orthographic view stacks everything on the    */
+/* camera side of the player onto the player's sprite, however far     */
+/* away it stands in world space; a world-space segment test against   */
+/* chest height misses crowns and roofs above the line. The test       */
+/* below projects both the player and the occluder into NDC and        */
+/* compares rectangles, which is what "covers the sprite" means.       */
+/* ------------------------------------------------------------------ */
+
+function applyMat4(
+  e: readonly number[],
+  x: number, y: number, z: number,
+  out: { x: number; y: number; z: number },
+): void {
+  const w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15] || 1);
+  out.x = (e[0] * x + e[4] * y + e[8] * z + e[12]) * w;
+  out.y = (e[1] * x + e[5] * y + e[9] * z + e[13]) * w;
+  out.z = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w;
+}
+
+const PROJ_A = { x: 0, y: 0, z: 0 };
+const PROJ_B = { x: 0, y: 0, z: 0 };
+const VIEW_A = { x: 0, y: 0, z: 0 };
+const VIEW_B = { x: 0, y: 0, z: 0 };
+
+/**
+ * True when the occluder at (cx, cy, cz) with world radius `r`
+ * overlaps the player's sprite rectangle on screen AND stands on
+ * the camera side of the player. The player rectangle is the
+ * sprite's world quad around `playerPos` (the chest anchor the
+ * engine passes) inflated by `margin` world units. Works in NDC,
+ * so it is resolution- and aspect-correct.
+ */
+export function screenOverlap(
+  camera: THREE.Camera,
+  playerPos: THREE.Vector3,
+  cx: number, cy: number, cz: number, r: number,
+  playerHalfW = 0.85, playerHalfH = 0.95, margin = 0.35,
+): boolean {
+  const inv = camera.matrixWorldInverse.elements;
+  applyMat4(inv, playerPos.x, playerPos.y, playerPos.z, VIEW_A);
+  applyMat4(inv, cx, cy, cz, VIEW_B);
+  // Camera looks down -Z in view space: closer to the camera
+  // means a larger view z. The occluder must reach the player's
+  // depth or in front of it.
+  if (VIEW_B.z + r < VIEW_A.z) return false;
+  const pe = camera.projectionMatrix.elements;
+  applyMat4(pe, VIEW_A.x, VIEW_A.y, VIEW_A.z, PROJ_A);
+  applyMat4(pe, VIEW_B.x, VIEW_B.y, VIEW_B.z, PROJ_B);
+  const ux = Math.abs(pe[0]); // NDC span of one world unit, x
+  const uy = Math.abs(pe[5]); // NDC span of one world unit, y
+  const pHalfW = (playerHalfW + margin) * ux;
+  const pHalfH = (playerHalfH + margin) * uy;
+  const oHalfW = r * ux;
+  const oHalfH = r * uy;
+  return (
+    Math.abs(PROJ_B.x - PROJ_A.x) < pHalfW + oHalfW &&
+    Math.abs(PROJ_B.y - PROJ_A.y) < pHalfH + oHalfH
+  );
+}
+
+/** Camera pitch in degrees (0 = horizontal), from its matrix. */
+export function cameraPitchDegrees(camera: THREE.Camera): number {
+  const me = camera.matrixWorld.elements;
+  // Camera forward is -Z of the world matrix, in world space.
+  const fy = -me[9];
+  return Math.abs(Math.asin(clamp(fy, -1, 1))) * (180 / Math.PI);
+}
+
 /** Distance from point P to segment A->B (3D). Used by the occlusion
  *  fade to test whether something blocks the camera->player sight line. */
 export function segmentPointDistance(

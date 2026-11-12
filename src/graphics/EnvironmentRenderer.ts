@@ -14,6 +14,8 @@ import {
   heightAt,
   areaWeights,
   addInstanceFade,
+  cameraPitchDegrees,
+  screenOverlap,
 } from './utils';
 
 interface WindMaterial {
@@ -327,9 +329,18 @@ export class EnvironmentRenderer {
     this.vegFadeSets.push({ centers, radii, fades, attr });
   }
 
-  updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+  updateOcclusion(camera: THREE.Camera | THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+    const cameraPos = (camera as THREE.Camera).position ?? (camera as THREE.Vector3);
     const FADE_MIN = 0.13;
     const k = Math.min(1, dt * 7);
+    // Round 28 (Claude §24.4): below 15° pitch the orthographic
+    // stack puts crowns far up the view axis onto the sprite even
+    // when the chest-height segment passes under them — add the
+    // screen-rectangle test the low vegetation already uses in
+    // spirit, done properly in NDC. (A bare Vector3 — the headless
+    // test harness — has no projection, so the test is skipped.)
+    const isCamera = !!(camera as THREE.Camera).projectionMatrix;
+    const lowPitch = isCamera && cameraPitchDegrees(camera as THREE.Camera) < 15;
     for (const set of [...this.canopy, ...this.vegFadeSets]) {
       let dirty = false;
       const n = set.radii.length;
@@ -349,7 +360,11 @@ export class EnvironmentRenderer {
         const pdx = set.centers[i * 3] - playerPos.x;
         const pdz = set.centers[i * 3 + 2] - playerPos.z;
         const nearPlayer = pdx * pdx + pdz * pdz < (r + 1.05) * (r + 1.05);
-        const goal = d < r + 0.45 || nearPlayer ? FADE_MIN : 1;
+        let goal = d < r + 0.45 || nearPlayer ? FADE_MIN : 1;
+        if (goal === 1 && lowPitch &&
+          screenOverlap(camera as THREE.Camera, playerPos, set.centers[i * 3], set.centers[i * 3 + 1], set.centers[i * 3 + 2], r)) {
+          goal = FADE_MIN;
+        }
         const cur = set.fades[i];
         if (cur === goal) continue;
         const next = cur + (goal - cur) * k;

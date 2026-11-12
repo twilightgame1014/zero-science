@@ -348,6 +348,23 @@ export interface GraphicsConfig {
      * of the plane's depth attribute.
      */
     dryMask?: (x: number, z: number) => boolean;
+    /**
+     * Host-supplied worn paths (Claude §25.2.1, round 28). Each
+     * entry is a polyline the game owns (e.g. the volcano climbing
+     * trail from TERRAIN.TRAILS) plus its flat half-width in world
+     * units. The terrain painter compacts the ground along the line
+     * into packed soil / gravel colour and raises the path splat
+     * channel there — appearance only: walkability, routing and
+     * the trail's shape stay with the game. Points may be [x, z]
+     * or [x, z, h]; the height component is ignored (the height
+     * function already flattens the tread). Sampled once per
+     * terrain vertex at chunk build, so a changed path applies to
+     * chunks built afterwards.
+     */
+    paths?: Array<{
+      points: ReadonlyArray<readonly number[] | { x: number; z: number }>;
+      width: number;
+    }>;
   };
   coordinates: {
     /** scene = (logic - origin) * scale. Adjust at integration time so
@@ -372,6 +389,17 @@ export interface GraphicsConfig {
     width: number;
     height: number;
     walkFps: number;
+    /**
+     * Walk-cycle stride (round 28, Claude §25.3): the phase
+     * advances one frame per `walkStride` world units actually
+     * travelled, so a full 4-frame cycle covers 4 × walkStride
+     * units (default 0.35 → 1.4 units per cycle, the shipped
+     * contract). Distance-driven, so changing the game's walk
+     * speed alone stretches the cycle in time without any foot
+     * slide; change this only together with the sprite sheets'
+     * implied step length.
+     */
+    walkStride?: number;
     /** @deprecated No longer used for frame selection: a stopped
      *  character freezes on the standing frame instead of cycling
      *  walk frames slowly (2026-11-06). Kept for config compat. */

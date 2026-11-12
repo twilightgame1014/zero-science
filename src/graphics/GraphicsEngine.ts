@@ -824,9 +824,9 @@ export class GraphicsEngine {
       // camera's view of the player at the low exploration angle.
       const rp = this.character.getRenderedPosition();
       OCCL_TARGET.set(rp.x, rp.y + 1.0, rp.z);
-      this.world.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
-      this.structures.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
-      this.resources.updateOcclusion(this.cameraRig.camera.position, OCCL_TARGET, dt);
+      this.world.updateOcclusion(this.cameraRig.camera, OCCL_TARGET, dt);
+      this.structures.updateOcclusion(this.cameraRig.camera, OCCL_TARGET, dt);
+      this.resources.updateOcclusion(this.cameraRig.camera, OCCL_TARGET, dt);
       // NPC occlusion fade (Claude §16): NPCs behind trees or
       // buildings thin to 0.35 like the player-side fade, instead
       // of staying fully opaque. Floor is higher than the node

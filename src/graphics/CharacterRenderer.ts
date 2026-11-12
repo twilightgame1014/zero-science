@@ -196,6 +196,17 @@ class CharSprite {
   readonly group = new THREE.Group();
   private sprite: THREE.Mesh;
   private shadow: THREE.Mesh;
+  /** Terrain-occlusion silhouette (round 28, Claude §25.2.3):
+   *  a flat cream copy of the sprite drawn through the ground
+   *  when a slope between camera and character hides them, so
+   *  the player never loses their own position on a ledge.
+   *  Player only — NPCs use the fade system instead. */
+  private ghost: THREE.Mesh | null = null;
+  private ghostTex: THREE.Texture | null = null;
+  private ghostOpacity = 0;
+  private occlTimer = 0;
+  private occluded = false;
+  enableGhost = false;
   private texture: THREE.Texture;
   private cfg: GraphicsConfig['character'];
   private groundHeightAt: (x: number, z: number) => number;
@@ -252,6 +263,31 @@ class CharSprite {
     this.sprite.renderOrder = 3;
     this.group.add(this.sprite);
 
+    // Ghost silhouette (built for every sprite, enabled only on
+    // the player). Same sheet + frame as the sprite; the frame
+    // offset is copied across every update.
+    this.ghostTex = spriteTexture.clone();
+    this.ghostTex.needsUpdate = true;
+    this.ghostTex.repeat.set(1 / 4, 1 / this.sheetRows);
+    this.ghostTex.magFilter = THREE.NearestFilter;
+    this.ghostTex.minFilter = THREE.LinearMipmapLinearFilter;
+    const ghostMat = new THREE.MeshBasicMaterial({
+      map: this.ghostTex,
+      color: 0xffeec2,
+      transparent: true,
+      opacity: 0,
+      alphaTest: 0.08,
+      depthTest: false,
+      depthWrite: false,
+    });
+    this.ghost = new THREE.Mesh(
+      new THREE.PlaneGeometry(cfg.width, cfg.height),
+      ghostMat,
+    );
+    this.ghost.renderOrder = 60;
+    this.ghost.visible = false;
+    this.group.add(this.ghost);
+
     const shadowMat = new THREE.MeshBasicMaterial({
       map: shadowTexture,
       transparent: true,
@@ -282,6 +318,18 @@ class CharSprite {
     mat.map = this.texture;
     mat.needsUpdate = true;
     old.dispose();
+    if (this.ghost && this.ghostTex) {
+      const oldGhost = this.ghostTex;
+      this.ghostTex = source.clone();
+      this.ghostTex.needsUpdate = true;
+      this.ghostTex.repeat.set(1 / 4, 1 / this.sheetRows);
+      this.ghostTex.magFilter = THREE.NearestFilter;
+      this.ghostTex.minFilter = THREE.LinearMipmapLinearFilter;
+      const gm = this.ghost.material as THREE.MeshBasicMaterial;
+      gm.map = this.ghostTex;
+      gm.needsUpdate = true;
+      oldGhost.dispose();
+    }
   }
 
   setState(state: CharState): void {
@@ -337,7 +385,7 @@ class CharSprite {
     if (moving) {
       const speed = (this.state as PlayerVisualState).speed;
       if (typeof speed === 'number' && Number.isFinite(speed)) {
-        this.animPhase += (Math.max(0, speed) * dt) / 0.35;
+        this.animPhase += (Math.max(0, speed) * dt) / (this.cfg.walkStride ?? 0.35);
       } else {
         this.animPhase += dt * this.cfg.walkFps;
       }
@@ -371,13 +419,74 @@ class CharSprite {
     // the sprite always reads correctly.
     cappedBillboard(this.sprite.quaternion, camera);
 
+    // Terrain-occlusion silhouette (round 28, Claude §25.2.3):
+    // when the ground itself — not a tree or building — hides the
+    // character (standing on a ledge with the slope between them
+    // and the camera), show a pale silhouette through the slope
+    // so the player keeps their bearings. Detection samples the
+    // height function along the camera→body-centre line a few
+    // times a second; the ghost fades in/out, never pops.
+    if (this.ghost && this.ghostTex) {
+      this.ghostTex.offset.copy(this.texture.offset);
+      if (this.enableGhost) {
+        this.occlTimer -= dt;
+        if (this.occlTimer <= 0) {
+          this.occlTimer = 0.12;
+          this.occluded = this.terrainBlocksView(camera);
+        }
+      } else {
+        this.occluded = false;
+      }
+      const goal = this.occluded ? 0.55 : 0;
+      if (this.ghostOpacity !== goal) {
+        const fk = Math.min(1, dt * 8);
+        let next = this.ghostOpacity + (goal - this.ghostOpacity) * fk;
+        if (Math.abs(goal - next) < 0.02) next = goal;
+        this.ghostOpacity = next;
+      }
+      const gm = this.ghost.material as THREE.MeshBasicMaterial;
+      gm.opacity = this.ghostOpacity;
+      this.ghost.visible = this.ghostOpacity > 0.02;
+      if (this.ghost.visible) {
+        this.ghost.position.copy(this.sprite.position);
+        this.ghost.quaternion.copy(this.sprite.quaternion);
+      }
+    }
+
     this.shadow.position.set(this.rendered.x, this.rendered.y + 0.03, this.rendered.z);
+  }
+
+  /** True when terrain rises above the camera→body-centre line
+   *  (round 28). The ends of the line are excluded: the ground at
+   *  the character's own feet and at the camera never counts. */
+  private terrainBlocksView(camera: THREE.Camera): boolean {
+    const cp = camera.position;
+    const ax = this.rendered.x;
+    const az = this.rendered.z;
+    const ay = this.rendered.y + this.cfg.height * 0.5;
+    const dx = ax - cp.x;
+    const dy = ay - cp.y;
+    const dz = az - cp.z;
+    if (Math.hypot(dx, dz) < 6) return false;
+    const STEPS = 12;
+    for (let i = 2; i < STEPS; i++) {
+      const t = i / STEPS;
+      const px = cp.x + dx * t;
+      const pz = cp.z + dz * t;
+      if (this.groundHeightAt(px, pz) > cp.y + dy * t + 0.3) return true;
+    }
+    return false;
   }
 
   dispose(): void {
     this.texture.dispose();
     this.sprite.geometry.dispose();
     (this.sprite.material as THREE.Material).dispose();
+    if (this.ghost) {
+      this.ghost.geometry.dispose();
+      (this.ghost.material as THREE.Material).dispose();
+    }
+    this.ghostTex?.dispose();
     this.shadow.geometry.dispose();
     (this.shadow.material as THREE.Material).dispose();
   }
@@ -411,6 +520,7 @@ export class CharacterRenderer {
     this.shadowTexture = shadowTexture;
     this.placeholderTexture = spriteTexture;
     this.player = new CharSprite(spriteTexture, shadowTexture, cfg, groundHeightAt);
+    this.player.enableGhost = true;
     this.group.add(this.player.group);
   }
 

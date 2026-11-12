@@ -72,8 +72,8 @@ export class WorldRenderer {
   }
 
   /** Fade foreground canopies that block the camera->player sight line. */
-  updateOcclusion(cameraPos: THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
-    this.environment.updateOcclusion(cameraPos, playerPos, dt);
+  updateOcclusion(camera: THREE.Camera | THREE.Vector3, playerPos: THREE.Vector3, dt: number): void {
+    this.environment.updateOcclusion(camera, playerPos, dt);
   }
 
   /** Hide scenery ground cover around game-owned natural objects. */

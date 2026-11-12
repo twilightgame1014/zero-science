@@ -947,7 +947,10 @@ async function start3D(){
     /* 地形の高さの公開口（Muse ラウンド22 config.world.heightAt）：モジュールの地形・接地・水深をゲームの worldHeight に従わせる。
        ビルドの差し替え（terrain-shim）も残す：モジュールの EnvironmentRenderer はまだ import した terrainHeight を直接使うため（Muse §20） */
     const hcfg = HD2D.resolveConfig(), heightAt = (x,z)=>TERRAIN.terrainHeight(x,z,hcfg);
-    const cover = {...(cam?{camera:cam}:{}), world:{heightAt}};
+    /* 登山道の見た目（Muse ラウンド28、§25.2.1）：地形 v4 が平らにした踏み跡を、描画モジュールの
+       config.world.paths 口へ渡す。色はモジュール側（踏み固めた土・砂利）。歩行判定は従来どおりゲーム側 */
+    const cover = {...(cam?{camera:cam}:{}), world:{heightAt,
+      paths:[{points:TERRAIN.TRAILS.volcano.pts, width:1.4}]}};
     W3.cfg = HD2D.resolveConfig(cover);
     W3.gfx = await HD2D.initializeGraphics(W3.host, { config:cover,
       playerSpriteUrl: await heroSheet3D(), grassDetailUrl: ASSETS.grass, rockDetailUrl: ASSETS.rock,
