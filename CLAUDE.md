@@ -80,6 +80,19 @@
 - 検証モードでは STRUCT_PLAN・CIV は「所持」ではなく `placed` で決める（全解放でも原野に建物を自動で置かない）。一覧・件数は data.js・`HD2D.RESOURCE_VISUAL_SPECS`・ビルド時に描画モジュールのソースから読んだ演出と建物タイプ（`ASSETS.gfxCatalog`）・埋め込んだアセットから毎回作る。アセット一覧は案内の枠（別画面）で開いたときだけ作る。
 - 描画の状態：枝葉カードのテクスチャが読めないと描画モジュールは旧来の球体の樹冠に戻るので、`gfxStatus()` で検出して検証メニューとコンソールに出す。
 
+## 自然物・街の3Dモデルと共有テクスチャ（Muse の環境セット・GPT-DQ3。2026-11-12〜）
+- `scripts/make-nature-glb.py`：環境セット（`assets/environment-set/models`）と DQ3（`assets/gpt-dq3/models`）の GLB（原本・変えない）から、画像を抜いた軽量版（`assets/build/nature`・`assets/build/town`）を作り、
+  画像は中身ごとに1枚へまとめて `assets/build/nature-tex/<hash>.webp`（色は長辺512、法線・粗さは256）。GLB の中の画像は 1×1 にし、名前を `tex:<hash>` にする。
+  拠点の建物・集落の小物（`make-building-glb.py` の出力）も同じ処理で `buildings-lite`・`props-lite`（接地影は残す）。ビルドは `ASSETS.sharedTex` に共有テクスチャを1回だけ入れる（全体で 36.7MB の原本 → 形 4.4MB＋テクスチャ 1.2MB。`dist/index.html` は 16MB 以下をテストで検査）。
+  読み込みは `src/world/natureModels.ts`（`HD2D.setSharedTextures` を建物より先に呼ぶ。`prepareShared` が `tex:` の画像を共有のテクスチャに差し替える）。原本を変えたら `make-building-glb.py` → `make-nature-glb.py` の順に再実行。
+- 自然物：`HD2D.installNatureModels(gfx, ASSETS.nature, TERRAIN)` が描画モジュールの `ResourceRenderer.buildNode` を実行時に包み、木（広葉樹6・針葉樹2）・岩（6、海岸・湖畔は海岸の岩2、苔むした岩、火山・玄武岩の岩は玄武岩3）・やぶ（2）・切り株・砕けた岩・倒木・流木・貝殻（2）の**見た目だけ**を GLB にする。
+  ID・位置・向き・大きさ・残量・採取済み・当たり判定はゲームのまま（描画へ渡す状態も同じ）。同じ群れの中身を入れ替えるので旧い見た目と重ならない。読めない種類は旧い見た目のまま（`HD2D.natureModelStatus()`）。
+  大きさは描画の決まり（`RESOURCE_VISUAL_SPECS`）に合わせる（木は高さ、岩・やぶ・切り株は地面の上の半径、倒木・流木は長さ）。遮蔽フェード・採取中のゆれと光・足もとの輪はモジュールの仕組みがそのまま動く（材質はノードごとに複製、ジオメトリとテクスチャは共有）。
+  LOD：大きな岩だけ（苔の板が外れて描画回数 3→1。主人公から30マスより遠い）。木の LOD1 は形と寸法が違う（幅が最大40%違う）ので使わない。ヤシ・乾いたやぶ・刈ったやぶ・鉱石の姿は旧い見た目（対応するモデルがない）。
+- 街（DQ3 の12種：町の家・広場・旗2・植木鉢2・木箱・たる・おけと縄・屋台・果物かご・石どうろう）：`ASSETS.town`／`ASSETS.townSpecs`（種類 `town-<id>`、占有形状は実寸から：広場は歩ける＝なし、旗は竿だけ、屋台は台だけ）。
+  **検証モードの「街の建物・小物」から置ける。通常のゲームには置かない**（置く条件は未決。提案は `docs/handoff/REPORT-2026-11-12-assets.md`）。
+- 崖のモジュール5種・滝の岩枠・小石の山・低木（実）・DQ3 の木3種は使っていない（理由は同じ報告）。
+
 ## 建物の3Dモデルと道具・設備・操作のアイコン（Muse・2026-11-07〜）
 - 建物：Muse の `assets/buildings-3d`（原本の GLB 13種・`structures.json`）。`scripts/make-building-glb.py` でテクスチャだけを再圧縮した軽量版 `assets/build/buildings/*.glb` を作り（原本を変えたら再実行。既定は長辺512px＝第14ラウンドの色テクスチャの解像度のまま、不透明な画像は JPEG）、base64 で埋め込む。モデル内の接地影 `ContactShadow` はそのまま使う（地形と干渉したらこのノードだけ外す）。
 - 読み込みは `src/graphics-entry.ts` の `HD2D.ensureBuildingModel`：GLB を解析して雛形を持ち、`StructureRenderer.registerFactory` に「雛形の複製（ジオメトリ・材質も建物ごと）」を返すファクトリを登録する。読み終えるまでは従来の手続きモデル。読み終えたら UI がその種類の建物を置き直す。使う種類だけをその時に読む。可動部は Flame・Wheel が描画モジュールの既存アニメ、Piston・DrillPipe・Winch・Bellows は `HD2D.tickBuildingParts`（ゲームの描画ループから呼ぶ）。
@@ -106,7 +119,10 @@
   歩いている間に置けなければ距離、それでも駄目なら水平の追従を止める。自動の上昇はしない（旧 `camNeed` は廃止）。木・建物・草やぶはモジュールの遮蔽フェード。
   検証用の表示：検証モードか `?camdebug=1` で左下に「カメラY・注視点Y・俯角（実際／希望）・距離・制限」。`window.__GAME__.cam.debug()` でも読める。保存は `S.camera`（yaw・pitch・zoom・sx・sy。読み込み時に範囲へ補正）。
   主人公の向きは `W3.face`（ワールドの角度。進もうとしている向き＝入力・次の通過点で変わり、滑っても止まっても変わらない。`S.pos.face`）。絵の行はカメラから見た相対角で選ぶ（ヒステリシス：4方向±10°・8方向±6°）。移動はカメラの水平の向きが基準（camBasis）。
-  主人公のシートは Muse 第23ラウンドの8方向（4列×8行、`scripts/make-hero-sprites.py` → `assets/build/hero/*-8dir.webp`、`ASSETS.heroRows=8`）。8方向で出すのは描画モジュールの行選びの自己点検 `HD2D.diag8Check()`（`src/graphics-entry.ts`）に通ったときだけ（今の版はカメラ角の約27%で行が固まるので通らない → 上4行を切り出して4方向。CLAUDE-TO-MUSE §22）。2D の主人公は CSS 変数 `--hero-rows`。歩く速さ `speed` も渡す（今のモジュールは未使用）。
+  主人公のシートは Muse 第23ラウンドの8方向（4列×8行、`scripts/make-hero-sprites.py` → `assets/build/hero/*-8dir.webp`、`ASSETS.heroRows=8`）。8方向で出すのは描画モジュールの行選びの自己点検 `HD2D.diag8Check()`（`src/graphics-entry.ts`）に通ったときだけ。
+  **現在（2026-11-12 確認）：自己点検に通り、男女とも8方向**（`tests/e2e/hero-8dir.mjs` が全カメラ角で8行すべてを確認）。連続の向き `facing`（`W3.face`）を渡す。2D の主人公は CSS 変数 `--hero-rows`。
+  歩く速さ `speed`（実際に進んだ速さ）も渡し、モジュールが歩く絵の位相に使う（Muse §31・`config.character.walkStride` 既定 0.35＝1.4マスで一周）。
+  （過去の不具合の記録：第23ラウンドの版はカメラ角の約27%で行が固まり、自己点検に通らず上4行の4方向で出していた（CLAUDE-TO-MUSE §22）。第25ラウンドで修正済み。speed も当時は未使用だった）
 - セーブ v3：`build`・`camera` を追加（v2 からの移行あり）。形式の古いセーブは移行前に `<キー>-backup-v<版>` へ元のまま控える。主人公の向きは `S.pos.dir`。
 - カメラの API は Muse の `setCameraOrbit({yawDegrees,pitchDegrees,viewSize})`・`getCameraYawDegrees()`（第17ラウンド）。モジュールは絵の行をカメラ基準で選ぶので、ゲームは画面基準の向きを `worldFacing()` で世界の向きに変換して `setPlayerVisualState` に渡す。
 - 自然物の見た目の違い（`variant`：針葉樹・ヤシ・葦・乾いたやぶ・苔むした岩・倒木。採れる物は元の種類のまま）と飾り（`WORLD.decos`：睡蓮・溶岩）は `nature.js` が生成後に割り当てる。溶岩は通れない円（`kind:"lava"`）で、上とすぐそばに建物を置けない。
@@ -148,7 +164,7 @@
 5. 水位（0.32）より低い土地が水中色で塗られているのが意図どおりか
 6. 建物タイプ（水車・蒸気機関・精留塔・掘削やぐら・橋）は描画側に追加済み。水車・蒸気機関・精留塔・掘削やぐらは `STRUCT_PLAN` に組み込み済み（作った設備に対応）。橋は対応する工作がまだないので使っていない（通行の決まりもゲーム側の作業として残っている）
 7. （対応済み：川の水面・`pickGround`・`setViewportInsets` は `feature/graphics-world-polish` で追加され、このブランチに統合）
-8. `GraphicsOptions.decor` は統合済み（景観の木・岩・茂み・倒木・小石は描かない）。残り：景観の草むら（十字面の群落）がゲームの採取できる草むらと見分けにくい・まとめて描くAPIの中身をインスタンス描画にする（性能）
+8. `GraphicsOptions.decor` は統合済み（景観の木・岩・茂み・倒木・小石は描かない）。残り：景観の草むら（十字面の群落）がゲームの採取できる草むらと見分けにくい・まとめて描くAPIの中身をインスタンス描画にする（性能）。採取できるやぶは 2026-11-12 から環境セットの低木モデル（景観の十字の板とは形が違う）
 9. （対応済み：第9ラウンドでフェード範囲の拡大・足元の輪の最前面化・アイコンの一本化）
 10. （対応済み：道具・設備・操作のアイコン62点を統合）川の水（3層）は既定値で使用中（`config.water` は渡さない）。`assets/env-textures` は未使用
 11. （対応済み：`decor.stonework` は統合済み）地形の「踏み分け道」（`distanceToPath` の土の帯）は残しているので、開始時に要るかを相談したい
