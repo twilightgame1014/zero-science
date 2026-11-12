@@ -162,7 +162,7 @@
 ## 5. テスト
 - `npm test`：全部合格（エンジン 40・自然物 66・世界 74・検証 18・カメラ 35・アセット 45（今回 +13：軽量版・共有テクスチャ・街の占有形状・LOD1・入れ替えの仕組み・16 MB））。
 - `npm run typecheck`・`npm run build`：合格。
-- e2e（偽の描画モジュール `tests/e2e/play.mjs`・実WebGL の `hero-8dir`・`camera-focus-fade`）：結果は §8。
+- e2e：`tests/e2e/play.mjs`（偽の描画モジュール）211 合格・0 不合格／`tests/e2e/hero-8dir.mjs`（実WebGL）男女8方向すべて合格／`tests/e2e/camera-focus-fade.mjs`（実WebGL）4 合格・0 不合格／`tests/camera-focus-fade.mjs` 合格／`npm run test:8dir` 合格。
 
 ## 6. 通常のゲームに置くには判断が要る街のモデル
 今は 12 種とも**検証モードだけ**（「街の建物・小物」から主人公の足もとに置ける・保存される・撤去できる）。通常のゲームの拠点の建物は「工作で作った設備と1対1」（`STRUCT_PLAN`）なので、対応する設備がない街の小物を勝手に置くとこの決まりを破る。新しいゲームの開始時には置かない（確認済み）。
