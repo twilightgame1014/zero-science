@@ -568,17 +568,63 @@ def export_glb(coll, fname):
     bpy.ops.object.select_all(action="DESELECT")
     for o in coll.objects:
         o.select_set(True)
+    # Mute all NLA tracks during export: otherwise the frame-1
+    # evaluated pose of a *-close clip leaks into the node rest
+    # transform (observed: BayPivot exported pre-rotated by 0.95).
+    # Muted tracks are still exported as animations.
+    muted = []
+    for o in coll.objects:
+        if o.animation_data:
+            for t in o.animation_data.nla_tracks:
+                muted.append((t, t.mute))
+                t.mute = True
     bpy.ops.export_scene.gltf(
         filepath=str(MODELS / fname), export_format="GLB",
         use_selection=True, export_apply=True, export_yup=True,
         export_extras=True, export_animations=True,
         export_animation_mode="NLA_TRACKS")
+    for t, m in muted:
+        t.mute = m
+    fix_rest_pose(MODELS / fname)
     tris = 0
     for o in coll.objects:
         if o.type == "MESH":
             tris += len(o.data.polygons)
     print(f"EXPORT {fname}: {len(coll.objects)} objects, ~{tris} polys")
     return tris
+
+# Pivot/root nodes whose rest rotation must be identity in the GLB.
+# The exporter bakes the *-close clips' first-frame pose into these
+# nodes' rest rotation; the clips themselves carry the motion, so
+# zeroing the node rotation restores the correct rest pose.
+REST_IDENTITY = {"HatchPivot", "BayPivot", "TowerRoot", "CorridorRoot",
+                 "Beacon", "ArmPivot_1", "ArmPivot_2", "ArmPivot_3",
+                 "HoldPivot_1", "HoldPivot_2", "HoldPivot_3",
+                 "HoldPivot_4"}
+
+def fix_rest_pose(path):
+    import json as _json
+    import struct as _struct
+    data = path.read_bytes()
+    if data[:4] != b"glTF":
+        return
+    (clen,) = _struct.unpack_from("<I", data, 12)
+    js = _json.loads(data[20:20 + clen])
+    changed = False
+    for n in js.get("nodes", []):
+        if n.get("name") in REST_IDENTITY and "rotation" in n:
+            n["rotation"] = [0, 0, 0, 1]
+            changed = True
+    if not changed:
+        return
+    payload = _json.dumps(js, separators=(",", ":")).encode()
+    payload += b" " * (-len(payload) % 4)
+    rest = data[20 + clen:]
+    total = 12 + 8 + len(payload) + len(rest)
+    out = data[:8] + _struct.pack("<I", total) + \
+        _struct.pack("<I", len(payload)) + b"JSON" + payload + rest
+    path.write_bytes(out)
+    print(f"REST POSE FIXED: {path.name}")
 
 # ------------------------------------------------------------------ verify
 

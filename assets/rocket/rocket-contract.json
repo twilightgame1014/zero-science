@@ -375,8 +375,14 @@
   }
  ],
  "pending": [
-  "LOD1 set + GPT texture pass (UV templates issued after UV design)"
+  "GPT texture pass (request + UV templates issued: GPT-TEXTURE-REQUEST.md, textures/uv-template-*.png)"
  ],
+ "lod": {
+  "files": "<model-id>-lod1.glb for all 13 models (tools/build_lod.py)",
+  "method": "decimate ratio 0.5 on meshes >= 40 polys; nodes, anchors and clips preserved",
+  "totals": "LOD0 65,292 tris / 4.7 MB; LOD1 34,388 tris / 2.8 MB; all 26 files 7.5 MB"
+ },
+ "finalVerification": "shipped GLBs assembled in a fresh scene (tools/verify_final.py): full/back/low/hatch/equipment renders in previews/final-*.png; corridor-hatch junction is occluded by the tower from external cameras, covered by the 7 numeric checks; rest pose of all pivot nodes verified identity in the GLB JSON (exporter had baked *-close first-frame poses into BayPivot/HatchPivot rest rotations - fixed in tools via fix_rest_pose)",
  "reuse": {
   "power-plant": "existing building remains the site power source; power-distribution is equipment-scale and new",
   "workbench": "assets/buildings-3d workbench GLB reused as the assembly workbench"
@@ -387,6 +393,6 @@
   "protagonistVisualHeightM": 1.33
  },
  "stageSwitching": "visibility only, NOT animation; rocket ascent and countdown are game-side transforms (no baked translation in model clips)",
- "version": 4,
+ "version": 5,
  "animationsVerified": "all 8 clips present in GLBs with correct target nodes; hatch_open end pose checked numerically on the re-imported GLB (hatch moves (-1.1,17.3) -> (-1.554,17.935))"
 }
