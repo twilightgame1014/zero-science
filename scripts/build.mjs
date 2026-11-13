@@ -3,6 +3,7 @@
 // - assets/ の画像を data URL にして埋め込む（公開先で外部画像を読まなくて済むように）。
 import { build } from 'esbuild';
 import fs from 'node:fs';
+import {gzipSync} from 'node:zlib';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { worldTerrainPlugin } from './world-plugin.mjs';
@@ -12,7 +13,7 @@ const rd = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 
 const gfx = await build({
   entryPoints: [path.join(root, 'src/graphics-entry.ts')],
-  bundle: true, format: 'esm', target: 'es2020', write: false,
+  bundle: true, format: 'esm', target: 'es2020', write: false, minify: true,
   external: ['three', 'three/addons/*'], logLevel: 'warning',
   plugins: [worldTerrainPlugin(root)],   // モジュールの地形を広い世界の正本へ（src/graphics は変更しない）
 });
@@ -111,14 +112,20 @@ if (fs.existsSync(path.join(root, toolAtlas)) && fs.existsSync(path.join(root, t
   const structures = [...stBody.matchAll(/'([\w-]+)'/g)].map(m => m[1]);
   ASSETS.gfxCatalog = { effects, structures };
 }
+// Muse確定版のLOD1を可逆圧縮して1ファイルHTMLへ。読込み失敗は仮表示へ戻る。
+ASSETS.spaceModels = {};
+for(const id of ['rocket','launch-pad','support-tower','boarding-corridor','control-terminal','electronics-fab','computer-bench','test-terminal','suit-stand','life-support','power-distribution','parts-rack','spacesuit-display']){
+  const f=path.join(root,'assets/rocket/models',id+'-lod1.glb');
+  if(fs.existsSync(f)) ASSETS.spaceModels[id]={gzip:gzipSync(fs.readFileSync(f),{level:9}).toString('base64')};
+}
 const parts = {
   '/*GFX*/': gfxCode,
   '/*ASSETS*/': 'var ASSETS=' + JSON.stringify(ASSETS) + ';',
-  '/*DATA*/': rd('src/game/data.js'),
-  '/*ENGINE*/': rd('src/game/engine.js'),
+  '/*DATA*/': rd('src/game/data.js')+'\n'+rd('src/game/space-data.js'),
+  '/*ENGINE*/': rd('src/game/engine.js')+'\n'+rd('src/game/space.js'),
   '/*TERRAIN*/': terrainCode,
   '/*NATURE*/': rd('src/game/nature.js'),
-  '/*UI*/': rd('src/game/ui.js'),
+  '/*UI*/': rd('src/game/ui.js').replace('/*SPACE_UI*/',()=>rd('src/game/space-ui.js')),
 };
 let html = rd('src/template.html');
 for (const [key, code] of Object.entries(parts)) {

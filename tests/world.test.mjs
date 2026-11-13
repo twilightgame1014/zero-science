@@ -182,8 +182,9 @@ function polyAt(P, s) { let i = 0; while (i < P.pts.length - 2 && P.cum[i + 1] <
 { const V = T.VOLCANO, P = T.TRAILS.volcano, S0 = E.newState();
   const fs = await import('node:fs');
   const ref = JSON.parse(fs.readFileSync(new URL('./fixtures/heights-world-v3.json', import.meta.url), 'utf8'));
-  const diff = ref.filter(([x, z, h]) => H(x, z) !== h);
-  ok('火山の外（中心から 70 以上）・滝・山・拠点・海岸・砂漠の高さは、版3と1マスも変わらない（差0。112点）', diff.length === 0 && ref.length === 112, JSON.stringify(diff.slice(0, 3)));
+  // Node/CPU間の三角関数の丸め差（実測最大4.1e-13）だけ許容。地形の差は検出する。
+  const diff = ref.filter(([x, z, h]) => !Number.isFinite(H(x,z)) || Math.abs(H(x, z)-h) > 1e-9);
+  ok('火山の外（中心から 70 以上）・滝・山・拠点・海岸・砂漠の高さは、版3と1マスも変わらない（誤差1e-9以下。112点）', diff.length === 0 && ref.length === 112, JSON.stringify(diff.slice(0, 3)));
   let maxOut = 0; for (let a = 0; a < 6.283; a += 0.05) for (const r of [70, 72, 80, 100]) { const x = V.x + r * Math.cos(a), z = V.z + r * Math.sin(a), h = H(x, z); maxOut = Math.max(maxOut, Math.abs(T.volcanoShape(x, z, h) - h)); }
   ok('火山の地形は中心から 70 より外へ広がらない', maxOut === 0, String(maxOut));
   const hz = z => { let s = 0, n = 0; for (let a = 0; a < 6.283; a += 0.1) { const x = V.x + z * Math.cos(a), y = V.z + z * Math.sin(a); s += H(x, y); n++; } return s / n; };
