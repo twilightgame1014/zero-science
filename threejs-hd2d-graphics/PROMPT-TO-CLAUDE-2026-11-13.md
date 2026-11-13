@@ -51,8 +51,11 @@ hatch_close（0.8s）/ bay_open・bay_close（0.8s）/ mount_release
 断熱 #C9A86A / 耐熱 #3A3733 / 琥珀 #C38A2E（最小限）。文字は焼かない。
 
 ## 現在の状態（2026-11-13）
-- ステップ①の仮形状 5 点の GLB と再生成スクリプト
-  （assets/rocket/tools/build_rocket.py）を同ブランチに置きました。
+- ステップ①〜③まで素材側は制作済み：仮形状→段階表示（②）→
+  正式モデル＋アニメクリップ付与（③）。GLB 6 点（parts-rack 追加）と
+  再生成スクリプト（assets/rocket/tools/build_rocket.py）を
+  同ブランチに置きました。全 8 クリップが GLB 内にあり対象ノードが
+  正しいこと、hatch_open の終端ポーズは再読み込みで数値確認済み。
 - 検証レンダーは assets/rocket/previews/（全体・正面・ハッチ側・
   低角度・ハッチ接写・段階 S4/S1）。これは「素材の制作」側の検証で、
   ゲームへの導入は未実施です。

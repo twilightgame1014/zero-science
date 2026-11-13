@@ -103,7 +103,7 @@ def cyl(coll, name, loc, r, h, material, verts=24, r2=None):
     _link(o, coll)
     return o
 
-def panel(coll, name, z0, z1, r0, r1, a0, a1, material, seg=6):
+def panel(coll, name, z0, z1, r0, r1, a0, a1, material, seg=12):
     """Curved skin panel: arc segment a0..a1 (Blender XY radians),
     radius r0 at z0 tapering to r1 at z1. Outward-facing, smooth."""
     verts, faces = [], []
@@ -187,6 +187,12 @@ def build_pad():
     # tower rails on the slab (tower slides -X when retracting)
     for sy in (-0.7, 0.7):
         box(c, "TowerRail", (-4.75, sy, 0.87), (6.5, 0.22, 0.12), "metalDark")
+    # floodlight poles at the two front corners
+    for sx in (-6.6, 6.6):
+        cyl(c, "LightPole", (sx, -6.6, 2.4), 0.06, 3.2, "metalDark",
+            verts=8)
+        box(c, "LightHead", (sx * 0.96, -6.35, 4.05), (0.5, 0.18, 0.3),
+            "glowAmber", rot=(0.5, 0, 0))
     anchor(c, "Anchor_mount_top", 0, 1.6, 0)
     anchor(c, "Anchor_smoke_l", -3.2, 0.5, 0)
     anchor(c, "Anchor_smoke_r", 3.2, 0.5, 0)
@@ -206,11 +212,25 @@ def build_rocket():
     cyl(c, "PropSkirt", (0, 0, 1.75), 1.78, 0.3, "metalDark", verts=28)
     cyl(c, "Nozzle", (0, 0, 1.25), 0.95, 0.7, "heat", verts=24, r2=0.52)
     cyl(c, "NozzleInner", (0, 0, 0.92), 0.8, 0.06, "metalDark", verts=24)
+    # stabilizer fins at the cardinal points (hold-downs sit diagonal)
+    for k in range(4):
+        a = k * math.pi / 2
+        ca, sa = math.cos(a), math.sin(a)
+        box(c, "Fin", (2.05 * ca, 2.05 * sa, 2.9), (0.95, 0.09, 1.9),
+            "navy", rot=(0, 0, -a))
+        box(c, "FinTip", (2.35 * ca, 2.35 * sa, 3.6), (0.4, 0.1, 0.5),
+            "amber", rot=(0, 0, -a))
     # --- BodyLower (4.8-11.3): insulation wrap low, panel skin above
     cyl(c, "BodyLowerInsul", (0, 0, 5.9), 1.75, 2.2, "insul", verts=28)
     for q, (a0, a1) in QUAD.items():
         panel(c, f"Skin_Lower_{q}", 7.0, 11.3, 1.7, 1.7, a0, a1, "ecru")
     _seam_rings(c, (7.0, 9.3, 11.3))
+    # vertical seam strips on the quadrant boundaries (panel joints)
+    for q, (a0, _a1) in QUAD.items():
+        panel(c, "SeamStrip", 7.0, 11.3, 1.715, 1.715,
+              a0 - 0.02, a0 + 0.02, "metalDark", seg=1)
+        panel(c, "SeamStrip", 11.3, 15.8, 1.715, 1.465,
+              a0 - 0.02, a0 + 0.02, "metalDark", seg=1)
     # inspection hatches + a pipe run (front = Blender -Y)
     box(c, "InspectHatch", (0.9, -1.62, 8.6), (0.55, 0.14, 0.75),
         "metalDark")
@@ -228,6 +248,11 @@ def build_rocket():
     cyl(c, "Capsule", (0, 0, 17.2), 1.45, 2.8, "ecru", verts=28, r2=0.78)
     sph(c, "CapsuleDome", (0, 0, 18.85), (1.56, 1.56, 0.85), "ecru")
     cyl(c, "CapsuleBase", (0, 0, 15.95), 1.5, 0.3, "navy", verts=28)
+    # RCS thruster bumps around the capsule base
+    for k in range(4):
+        a = k * math.pi / 2 + math.pi / 4
+        cyl(c, "RCS", (1.38 * math.cos(a), 1.38 * math.sin(a), 16.35),
+            0.09, 0.22, "navy", verts=10, r2=0.05)
     # hatch: separate object, disc on the -X frustum surface at z 17.3
     bpy.ops.mesh.primitive_cone_add(vertices=28, radius1=0.475,
                                     radius2=0.475, depth=0.1,
@@ -328,6 +353,11 @@ def build_tower():
         box(c, name, (0.9 + ln / 2, 0, z), (ln, 0.5, 0.22), "teal")
         box(c, name + "_pad", (0.9 + ln, 0, z), (0.12, 0.7, 0.5),
             "metalDark")
+    # conduit pipe up the +X post + deck railing at corridor level
+    cyl(c, "Conduit", (0.95, 0.81, 10.5), 0.05, 21.0, "amber", verts=8)
+    for sx in (-0.85, 0.85):
+        box(c, "RailPost", (sx, -0.95, 17.35), (0.05, 0.05, 0.9), "frame")
+    box(c, "RailTop", (0, -0.95, 17.8), (1.75, 0.05, 0.05), "frame")
     # elevator shaft on the -X face + top crane beam + beacon
     box(c, "Elevator", (-1.25, 0, 10.0), (0.7, 1.1, 20.0), "navy")
     box(c, "CraneBeam", (1.6, 0, 21.35), (3.2, 0.25, 0.3), "frame")
@@ -364,6 +394,16 @@ def build_corridor():
     o.name = "DockRing"
     o.data.materials.append(MAT["amber"])
     _link(o, c)
+    # bellows rings near both ends (docking-tunnel look)
+    for bx in (0.18, L - 0.18):
+        bpy.ops.mesh.primitive_torus_add(major_radius=0.62,
+                                         minor_radius=0.05,
+                                         location=(bx, 0, 0.79),
+                                         rotation=(0, math.pi / 2, 0))
+        o = bpy.context.object
+        o.name = "Bellows"
+        o.data.materials.append(MAT["heat"])
+        _link(o, c)
     # diagonal support strut back to the tower
     box(c, "Strut", (0.45, 0, -0.5), (0.09, 0.09, 1.35), "frame",
         rot=(0.6, 0, 0))
@@ -386,6 +426,13 @@ def build_terminal():
     sph(c, "MastLight", (-0.95, 0.25, 2.75), (0.11, 0.11, 0.11),
         "glowAmber")
     cyl(c, "CableDrum", (0.4, 0.75, 0.3), 0.3, 0.35, "heat", verts=16)
+    # keyboard slab + status buttons (active-state emissives)
+    box(c, "Keyboard", (0, -0.28, 0.93), (1.1, 0.3, 0.05), "metal",
+        rot=(-0.35, 0, 0))
+    cyl(c, "BtnTeal", (-0.55, -0.12, 1.06), 0.045, 0.03, "screenGlow",
+        verts=12)
+    cyl(c, "BtnAmber", (-0.38, -0.12, 1.06), 0.045, 0.03, "glowAmber",
+        verts=12)
     return c
 
 # ------------------------------------------------------------------ rack
@@ -407,6 +454,114 @@ def build_parts_rack():
         rot=(0, -0.24, 0))
     return c
 
+# ------------------------------------------------------------------ anim
+
+from mathutils import Quaternion
+
+def _parent_keep(child, parent):
+    bpy.ops.object.select_all(action="DESELECT")
+    child.select_set(True)
+    parent.select_set(True)
+    bpy.context.view_layer.objects.active = parent
+    bpy.ops.object.parent_set(type="OBJECT", keep_transform=True)
+
+def _by_name(coll, name):
+    for o in coll.objects:
+        if o.name == name or o.name.startswith(name + "."):
+            return o
+    return None
+
+def bake_clip(obj, clip, keys):
+    """keys: [(frame, kind, value)] kind in rot_euler/loc/rot_quat.
+    Creates an action and parks it on a new NLA track named `clip`."""
+    if obj.animation_data is None:
+        obj.animation_data_create()
+    for t in obj.animation_data.nla_tracks:
+        t.mute = True
+    act = bpy.data.actions.new(clip + "@" + obj.name)
+    act.use_fake_user = True
+    obj.animation_data.action = act
+    for frame, kind, value in keys:
+        if kind == "rot_euler":
+            obj.rotation_euler = value
+            obj.keyframe_insert("rotation_euler", frame=frame)
+        elif kind == "loc":
+            obj.location = value
+            obj.keyframe_insert("location", frame=frame)
+        elif kind == "rot_quat":
+            obj.rotation_mode = "QUATERNION"
+            obj.rotation_quaternion = value
+            obj.keyframe_insert("rotation_quaternion", frame=frame)
+    obj.animation_data.action = None
+    track = obj.animation_data.nla_tracks.new()
+    track.name = clip
+    track.strips.new(clip, 1, act)
+    track.mute = False
+    obj.rotation_euler = (0, 0, 0)
+    obj.location = obj.location  # keep place; pose re-driven by NLA
+
+def add_animations():
+    rk = COLL["rocket"]
+    # --- hatch (top hinge, swings out/up) + bay panel (bottom hinge)
+    hp = empty(rk, "HatchPivot", (-1.1, 0, 17.78))
+    _parent_keep(_by_name(rk, "Hatch"), hp)
+    _parent_keep(_by_name(rk, "HatchRim"), hp)
+    bake_clip(hp, "hatch_open",
+              [(1, "rot_euler", (0, 0, 0)), (20, "rot_euler", (0, 1.9, 0))])
+    bake_clip(hp, "hatch_close",
+              [(1, "rot_euler", (0, 1.9, 0)), (20, "rot_euler", (0, 0, 0))])
+    bp = empty(rk, "BayPivot", (0, -1.66, 12.45))
+    _parent_keep(_by_name(rk, "BayPanel"), bp)
+    _parent_keep(_by_name(rk, "BayPanelFrame"), bp)
+    bake_clip(bp, "bay_open",
+              [(1, "rot_euler", (0, 0, 0)), (20, "rot_euler", (0.95, 0, 0))])
+    bake_clip(bp, "bay_close",
+              [(1, "rot_euler", (0.95, 0, 0)), (20, "rot_euler", (0, 0, 0))])
+    # --- tower: root slide + arm fold + beacon spin
+    tw = COLL["support-tower"]
+    root = empty(tw, "TowerRoot", (0, 0, 0))
+    arm_pivots = []
+    for i, z in enumerate((6.5, 12.5, 17.0), start=1):
+        pv = empty(tw, f"ArmPivot_{i}", (0.9, 0, z))
+        _parent_keep(_by_name(tw, f"Arm_{i}"), pv)
+        _parent_keep(_by_name(tw, f"Arm_{i}_pad"), pv)
+        arm_pivots.append(pv)
+    for o in list(tw.objects):
+        if o is not root and o.parent is None:
+            _parent_keep(o, root)
+    for pv in arm_pivots:
+        bake_clip(pv, "tower_retract",
+                  [(1, "rot_euler", (0, 0, 0)),
+                   (20, "rot_euler", (0, -1.15, 0))])
+    bake_clip(root, "tower_retract",
+              [(1, "loc", (0, 0, 0)), (15, "loc", (0, 0, 0)),
+               (60, "loc", (-3.0, 0, 0))])
+    bake_clip(_by_name(tw, "Beacon"), "beacon_spin",
+              [(1, "rot_euler", (0, 0, 0)),
+               (49, "rot_euler", (0, 0, 2 * math.pi))])
+    # --- corridor: root hinge swing-up
+    co = COLL["boarding-corridor"]
+    croot = empty(co, "CorridorRoot", (0, 0, 0))
+    for o in list(co.objects):
+        if o is not croot and o.parent is None:
+            _parent_keep(o, croot)
+    bake_clip(croot, "corridor_retract",
+              [(1, "rot_euler", (0, 0, 0)),
+               (36, "rot_euler", (0, -1.22, 0))])
+    # --- pad: hold-down arms tip outward (quaternion hinge on tangent)
+    pd = COLL["launch-pad"]
+    for i in range(1, 5):
+        a = (i - 1) * math.pi / 2 + math.pi / 4
+        arm = _by_name(pd, f"HoldDown_{i}")
+        pv = empty(pd, f"HoldPivot_{i}",
+                   (1.95 * math.cos(a), 1.95 * math.sin(a), 1.55))
+        _parent_keep(arm, pv)
+        # rest pose is identity; tip = rotate about the world tangent
+        q0 = Quaternion((0, 0, 1), 0)
+        q1 = Quaternion((-math.sin(a), math.cos(a), 0), 1.0)
+        bake_clip(pv, "mount_release",
+                  [(1, "rot_quat", q0), (15, "rot_quat", q1)])
+
 # ------------------------------------------------------------------ export
 
 def export_glb(coll, fname):
@@ -416,7 +571,8 @@ def export_glb(coll, fname):
     bpy.ops.export_scene.gltf(
         filepath=str(MODELS / fname), export_format="GLB",
         use_selection=True, export_apply=True, export_yup=True,
-        export_extras=True)
+        export_extras=True, export_animations=True,
+        export_animation_mode="NLA_TRACKS")
     tris = 0
     for o in coll.objects:
         if o.type == "MESH":
@@ -444,6 +600,12 @@ def check(name, got, want, tol=0.06):
 
 def verify_scene():
     """Assemble the site in the scene collection and run numeric checks."""
+    # stills must show rest poses: mute every NLA clip (exports are done)
+    for coll in COLL.values():
+        for o in coll.objects:
+            if o.animation_data:
+                for t in o.animation_data.nla_tracks:
+                    t.mute = True
     # tower at three.js (-4.6, 0, 0); corridor origin at (-3.7, 16.83)
     duplicate_at(COLL["support-tower"], (-4.6, 0, 0), "_asm")
     duplicate_at(COLL["boarding-corridor"], (-3.7, 0, 16.83), "_asm")
@@ -536,6 +698,7 @@ def main():
     corridor = build_corridor()
     terminal = build_terminal()
     rack = build_parts_rack()
+    add_animations()
     stats = {}
     stats["launch-pad"] = export_glb(pad, "launch-pad.glb")
     stats["rocket"] = export_glb(rocket, "rocket.glb")

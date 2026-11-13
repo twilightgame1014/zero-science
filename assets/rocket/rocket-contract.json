@@ -1,1 +1,257 @@
-{"assemblyStages":{"S0":"launch-pad + support-tower + control-terminal","S1":"rocket: Frame_* + Frame_Tank* only (no skin, no Capsule, no corridor, no rack)","S2":"Propulsion skin set + BodyLowerInsul + Skin_Lower_P1-P3 (P4 open, Frame_BodyLower visible there) + SeamRing_70 + Frame_BodyUpper + Frame_TankUpper + Skin_Upper_P2; parts-rack on site; no Capsule, no corridor","S3":"full skin (all Skin_*, UpperBand, SeamRing_*, BayPanel, Capsule set, Nose*), frames hidden; Hatch/BayPanel shown open via hatch_open/bay_open clips at end frame; parts-rack + existing workbench beside; corridor detached","S4":"complete: rack removed, all closed, corridor attached, tower arms engaged"},"convention":"origin at ground contact centre; front = +Z (Three.js); Y-up; unit = metre","date":"2026-11-13","effects":"flame/smoke/exhaust are game-side effects attached at Anchor_exhaust / Anchor_smoke_l/r; no baked flame geometry","models":[{"anchors":{"Anchor_camera_capsule":[-4.2,17.6,3.2],"Anchor_exhaust":[0,0.9,0],"Anchor_hatch":[-1.15,17.3,0],"Anchor_mount":[0,1.6,0]},"collision":{"height":19.2,"radius":1.8,"shape":"cylinder"},"file":"models/rocket.glb","id":"rocket","parts":[{"diameter":3.4,"node":"Propulsion","yRange":[1.6,4.8]},{"diameter":3.4,"node":"BodyLower","yRange":[4.8,11.3]},{"diameter":"3.4->2.9","node":"BodyUpper","yRange":[11.3,15.8]},{"node":"BayPanel","note":"equipment bay door on +Z face, clip bay_open/bay_close"},{"diameter":"2.9->1.5","node":"Capsule","yRange":[15.8,19.2]},{"node":"Hatch","note":"on -X face, centre y 17.3, diameter 0.95, clips hatch_open/hatch_close"},{"node":"NoseTip","yRange":[19.2,20.8]},{"node":"Frame_Propulsion / Frame_BodyLower / Frame_BodyUpper","note":"skeleton ribs+stringers for assembly stages"},{"node":"Frame_TankLower / Frame_TankUpper","note":"inner tank silhouettes"}],"polysApprox":9782,"role":"crewed rocket stack (separable part nodes; skin split into quadrant panels Skin_Lower_P1-P4 / Skin_Upper_P1-P4 for stage display)","sizeM":{"diameter":3.4,"heightOnPad":19.2,"topAboveGround":20.8}},{"anchors":{"Anchor_mount_top":[0,1.6,0],"Anchor_smoke_l":[-3.2,0.5,0],"Anchor_smoke_r":[3.2,0.5,0]},"animations":["mount_release"],"collision":{"d":16,"h":0.8,"shape":"box","w":16},"file":"models/launch-pad.glb","id":"launch-pad","polysApprox":700,"sizeM":{"d":16,"h":2.4,"w":16}},{"anchors":{"Anchor_corridor_root":[0.9,16.83,0]},"animations":["tower_retract","beacon_spin"],"collision":{"d":1.8,"h":21.5,"shape":"box","w":1.8},"file":"models/support-tower.glb","id":"support-tower","placement":"centre at (-4.6, 0, 0) relative to pad centre","polysApprox":950,"sizeM":{"d":1.8,"h":21.5,"w":1.8}},{"anchors":{"Anchor_hatch_dock":[2.55,0.47,0]},"animations":["corridor_retract"],"collision":{"shape":"none (walk-through visual)"},"file":"models/boarding-corridor.glb","id":"boarding-corridor","placement":"origin at tower Anchor_corridor_root (world (-3.7, 16.83, 0) when tower is placed), extends +X","polysApprox":636,"sizeM":{"h":1.58,"length":2.55,"w":1.1}},{"collision":{"d":0.8,"h":1.5,"shape":"box","w":1.8},"emissiveParts":["Screen (screenGlow)","MastLight (glowAmber)"],"file":"models/control-terminal.glb","id":"control-terminal","polysApprox":570,"sizeM":{"d":0.8,"h":1.5,"w":1.8}},{"collision":{"d":0.9,"h":1.8,"shape":"box","w":2.4},"file":"models/parts-rack.glb","id":"parts-rack","note":"assembly parts storage (shelves + crates + spare panel); on site during S2/S3 only","polysApprox":72,"sizeM":{"d":0.9,"h":1.8,"w":2.4}}],"pending":["C science equipment GLBs (electronics-fab, computer-bench, test-terminal, suit-stand, life-support, power-distribution)","spacesuit-display GLB + design renders + GPT sprite handoff spec","animation clips (listed in README) - nodes are separated in stage 1 blockout, clips authored in step 3","LOD1 set + GPT texture pass (UV templates issued after UV design)"],"reuse":{"power-plant":"existing building remains the site power source; power-distribution is equipment-scale and new","workbench":"assets/buildings-3d workbench GLB reused as the assembly workbench"},"scaleReference":{"note":"sprite cell 256px, visible 200px, baseline 29px from cell bottom","protagonistSpritePlaneM":1.7,"protagonistVisualHeightM":1.33},"stageSwitching":"visibility only, NOT animation; rocket ascent and countdown are game-side transforms (no baked translation in model clips)","version":2}
+{
+ "assemblyStages": {
+  "S0": "launch-pad + support-tower + control-terminal",
+  "S1": "rocket: Frame_* + Frame_Tank* only (no skin, no Capsule, no corridor, no rack)",
+  "S2": "Propulsion skin set + BodyLowerInsul + Skin_Lower_P1-P3 (P4 open, Frame_BodyLower visible there) + SeamRing_70 + Frame_BodyUpper + Frame_TankUpper + Skin_Upper_P2; parts-rack on site; no Capsule, no corridor",
+  "S3": "full skin (all Skin_*, UpperBand, SeamRing_*, BayPanel, Capsule set, Nose*), frames hidden; Hatch/BayPanel shown open via hatch_open/bay_open clips at end frame; parts-rack + existing workbench beside; corridor detached",
+  "S4": "complete: rack removed, all closed, corridor attached, tower arms engaged"
+ },
+ "convention": "origin at ground contact centre; front = +Z (Three.js); Y-up; unit = metre",
+ "date": "2026-11-13",
+ "effects": "flame/smoke/exhaust are game-side effects attached at Anchor_exhaust / Anchor_smoke_l/r; no baked flame geometry",
+ "models": [
+  {
+   "anchors": {
+    "Anchor_camera_capsule": [
+     -4.2,
+     17.6,
+     3.2
+    ],
+    "Anchor_exhaust": [
+     0,
+     0.9,
+     0
+    ],
+    "Anchor_hatch": [
+     -1.15,
+     17.3,
+     0
+    ],
+    "Anchor_mount": [
+     0,
+     1.6,
+     0
+    ]
+   },
+   "collision": {
+    "height": 19.2,
+    "radius": 1.8,
+    "shape": "cylinder"
+   },
+   "file": "models/rocket.glb",
+   "id": "rocket",
+   "parts": [
+    {
+     "diameter": 3.4,
+     "node": "Propulsion",
+     "yRange": [
+      1.6,
+      4.8
+     ]
+    },
+    {
+     "diameter": 3.4,
+     "node": "BodyLower",
+     "yRange": [
+      4.8,
+      11.3
+     ]
+    },
+    {
+     "diameter": "3.4->2.9",
+     "node": "BodyUpper",
+     "yRange": [
+      11.3,
+      15.8
+     ]
+    },
+    {
+     "node": "BayPanel",
+     "note": "equipment bay door on +Z face, clip bay_open/bay_close"
+    },
+    {
+     "diameter": "2.9->1.5",
+     "node": "Capsule",
+     "yRange": [
+      15.8,
+      19.2
+     ]
+    },
+    {
+     "node": "Hatch",
+     "note": "on -X face, centre y 17.3, diameter 0.95, clips hatch_open/hatch_close"
+    },
+    {
+     "node": "NoseTip",
+     "yRange": [
+      19.2,
+      20.8
+     ]
+    },
+    {
+     "node": "Frame_Propulsion / Frame_BodyLower / Frame_BodyUpper",
+     "note": "skeleton ribs+stringers for assembly stages"
+    },
+    {
+     "node": "Frame_TankLower / Frame_TankUpper",
+     "note": "inner tank silhouettes"
+    }
+   ],
+   "role": "crewed rocket stack (separable part nodes; skin split into quadrant panels Skin_Lower_P1-P4 / Skin_Upper_P1-P4 for stage display)",
+   "sizeM": {
+    "diameter": 3.4,
+    "heightOnPad": 19.2,
+    "topAboveGround": 20.8
+   },
+   "tris": 20528,
+   "fileKiB": 1344
+  },
+  {
+   "anchors": {
+    "Anchor_mount_top": [
+     0,
+     1.6,
+     0
+    ],
+    "Anchor_smoke_l": [
+     -3.2,
+     0.5,
+     0
+    ],
+    "Anchor_smoke_r": [
+     3.2,
+     0.5,
+     0
+    ]
+   },
+   "animations": [
+    "mount_release"
+   ],
+   "collision": {
+    "d": 16,
+    "h": 0.8,
+    "shape": "box",
+    "w": 16
+   },
+   "file": "models/launch-pad.glb",
+   "id": "launch-pad",
+   "sizeM": {
+    "d": 16,
+    "h": 2.4,
+    "w": 16
+   },
+   "tris": 1512,
+   "fileKiB": 122
+  },
+  {
+   "anchors": {
+    "Anchor_corridor_root": [
+     0.9,
+     16.83,
+     0
+    ]
+   },
+   "animations": [
+    "tower_retract",
+    "beacon_spin"
+   ],
+   "collision": {
+    "d": 1.8,
+    "h": 21.5,
+    "shape": "box",
+    "w": 1.8
+   },
+   "file": "models/support-tower.glb",
+   "id": "support-tower",
+   "placement": "centre at (-4.6, 0, 0) relative to pad centre",
+   "sizeM": {
+    "d": 1.8,
+    "h": 21.5,
+    "w": 1.8
+   },
+   "tris": 1900,
+   "fileKiB": 189
+  },
+  {
+   "anchors": {
+    "Anchor_hatch_dock": [
+     2.55,
+     0.47,
+     0
+    ]
+   },
+   "animations": [
+    "corridor_retract"
+   ],
+   "collision": {
+    "shape": "none (walk-through visual)"
+   },
+   "file": "models/boarding-corridor.glb",
+   "id": "boarding-corridor",
+   "placement": "origin at tower Anchor_corridor_root (world (-3.7, 16.83, 0) when tower is placed), extends +X",
+   "sizeM": {
+    "h": 1.58,
+    "length": 2.55,
+    "w": 1.1
+   },
+   "tris": 3576,
+   "fileKiB": 243
+  },
+  {
+   "collision": {
+    "d": 0.8,
+    "h": 1.5,
+    "shape": "box",
+    "w": 1.8
+   },
+   "emissiveParts": [
+    "Screen (screenGlow)",
+    "MastLight (glowAmber)"
+   ],
+   "file": "models/control-terminal.glb",
+   "id": "control-terminal",
+   "sizeM": {
+    "d": 0.8,
+    "h": 1.5,
+    "w": 1.8
+   },
+   "tris": 1208,
+   "fileKiB": 93
+  },
+  {
+   "collision": {
+    "d": 0.9,
+    "h": 1.8,
+    "shape": "box",
+    "w": 2.4
+   },
+   "file": "models/parts-rack.glb",
+   "id": "parts-rack",
+   "note": "assembly parts storage (shelves + crates + spare panel); on site during S2/S3 only",
+   "sizeM": {
+    "d": 0.9,
+    "h": 1.8,
+    "w": 2.4
+   },
+   "tris": 144,
+   "fileKiB": 19
+  }
+ ],
+ "pending": [
+  "C science equipment GLBs (electronics-fab, computer-bench, test-terminal, suit-stand, life-support, power-distribution)",
+  "spacesuit-display GLB + design renders + GPT sprite handoff spec",
+  "LOD1 set + GPT texture pass (UV templates issued after UV design)"
+ ],
+ "reuse": {
+  "power-plant": "existing building remains the site power source; power-distribution is equipment-scale and new",
+  "workbench": "assets/buildings-3d workbench GLB reused as the assembly workbench"
+ },
+ "scaleReference": {
+  "note": "sprite cell 256px, visible 200px, baseline 29px from cell bottom",
+  "protagonistSpritePlaneM": 1.7,
+  "protagonistVisualHeightM": 1.33
+ },
+ "stageSwitching": "visibility only, NOT animation; rocket ascent and countdown are game-side transforms (no baked translation in model clips)",
+ "version": 3,
+ "animationsVerified": "all 8 clips present in GLBs with correct target nodes; hatch_open end pose checked numerically on the re-imported GLB (hatch moves (-1.1,17.3) -> (-1.554,17.935))"
+}
