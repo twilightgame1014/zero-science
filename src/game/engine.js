@@ -1,6 +1,6 @@
 /* ===================== ゲームエンジン（UIから独立） ===================== */
 var ENGINE = (function(D){
-  const SCHEMA = 4;
+  const SCHEMA = 5;
   /* 地形の版（広い世界の形。src/world/shape.ts の WORLD_VERSION と同じ値。テストで検査）。セーブの worldVer がこれより古ければ、UI が位置を確かめて直す */
   const WORLD_VER = 4;
   const IT = D.items;
@@ -9,7 +9,7 @@ var ENGINE = (function(D){
 
   /* nature：変化した自然物・採取地点の状態だけを保存する（{id:{u:使った回数, t:取り尽くした時刻}}） */
   /* build：建物の置き場所 {建物ID:{x,z,rot}}（撤去したものは {removed:true}。記録がなければ決まった場所）。camera：カメラのユーザー設定（v3〜） */
-  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, build:{}, camera:{}, worldVer:WORLD_VER, created:Date.now()}; }
+  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, build:{}, camera:{}, space:{version:1}, worldVer:WORLD_VER, created:Date.now()}; }
   const cnt = (S,id)=> S.inv[id]||0;
   const has = (S,id)=> cnt(S,id)>0;
   /* 検証モード（S.verify。通常のセーブには存在しない）の条件バイパス。
@@ -234,6 +234,7 @@ var ENGINE = (function(D){
   /* ---------- 組み立て ---------- */
   function planCraft(S, c){
     const out = IT[c.out];
+    if(c.lesson && !(S.space && S.space.lessons && S.space.lessons[c.lesson])) return {ok:false,kind:"lesson",msg:"宇宙へ：前提の実習を完了してください"};
     if(out.unique && has(S,c.out)) return {ok:false, kind:"own", msg:"もう持っているよ"};
     if(c.at && !hasTool(S,c.at)) return {ok:false, kind:"at", msg:"「"+IT[c.at].name+"」で作るよ"};
     const t = c.tools.find(x=>!hasTool(S,x)); if(t) return {ok:false, kind:"tool", msg:"「"+IT[t].name+"」が必要"};
@@ -244,6 +245,7 @@ var ENGINE = (function(D){
   function runCraft(S, craftId, token){
     if(token !== S.seq) return {ok:false, kind:"dup", msg:"二重に実行されたので取り消したよ"};
     const c = D.crafts.find(x=>x.id===craftId); if(!c) return {ok:false, msg:"レシピがない"};
+    if(c.space) return {ok:false,kind:"project",msg:"宇宙へ画面で製作してください（加工時間とまとめ製作に対応）"};
     const pl = planCraft(S,c); if(!pl.ok) return pl;
     const r = commit(S, c.inp, {[c.out]:c.qty}, c.id); if(!r.ok) return r;
     S.seq++;
@@ -334,7 +336,8 @@ var ENGINE = (function(D){
     },
     1: s => { s.nature = {}; return s; },  // v1→v2：自然物・採取地点の状態（最初は何も変化していない）
     2: s => { s.build = {}; s.camera = {}; return s; },  // v2→v3：建物の自由設置・カメラの設定（これまでの建物は決まった場所のまま）
-    3: s => { s.worldVer = 1; return s; }  // v3→v4：地形の版を記録（これまでのセーブは旧世界＝版1。位置の確認は読み込み後に UI が地形関数で行う）
+    3: s => { s.worldVer = 1; return s; },
+    4: s => { s.space = {version:1}; return s; }  // v3→v4：地形の版を記録（これまでのセーブは旧世界＝版1。位置の確認は読み込み後に UI が地形関数で行う）
   };
   const ALIASES = {}; // 名称変更したIDの対応表（例：{"oldId":"newId"}）
   function migrate(raw){

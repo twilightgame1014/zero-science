@@ -340,7 +340,7 @@ var NATURE = (function(){
       if(pts.some(q=>!inWorld(q.x,q.z,1.2))) why.add("世界の端に近すぎる");
       const hs = pts.map(q=>H(q.x,q.z)), hmin=Math.min(...hs), hmax=Math.max(...hs);
       const diag = t.shape==="rect" ? Math.hypot(t.w,t.d) : t.r*2;          // 大きい建物ほど端と端の高さの差は大きくてよい（なだらかなら置ける）
-      if(hmax-hmin > Math.max(0.8, 0.3*diag) || pts.some(q=>slope(q.x,q.z) > 0.6)) why.add("地面が傾きすぎている（平らな所へ）");
+      if(hmax-hmin > Math.max(0.8, 0.3*diag) || pts.some(q=>slope(q.x,q.z) > (Number.isFinite(p.maxSlope)?p.maxSlope:0.6))) why.add("地面が傾きすぎている（平らな所へ）");
       const dr = pts.map(q=>T.distanceToRiver(q.x,q.z));
       if(WIDE){ const ws = pts.map(q=>T.waterAt(q.x,q.z,H(q.x,q.z)).kind);
         if(ws.includes("lava")) why.add("溶岩の上・すぐそばには置けない");
