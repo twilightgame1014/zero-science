@@ -79,8 +79,12 @@ const VCOLORS = {
   // Round 29 (Codex §26.2): the upper cliff band in cBasalt read
   // near-black in game (centre-frame mean 15/255). The upper band
   // gets this lighter grey-brown so the slope keeps reading as
-  // rock strata; foot/flank keep the dark basalt.
-  cBasaltHigh: new THREE.Color(0x5d554c),
+  // rock strata; foot/flank keep the dark basalt. (First pass at
+  // 0x5d554c measured only +10% in the game build — the volcanic
+  // splat texture dominates the albedo there, so the band colour
+  // has to be decisively lighter, and the splat weight on the
+  // upper band is reduced as well; see volTileW below.)
+  cBasaltHigh: new THREE.Color(0x71665a),
   cSnow: new THREE.Color(0xe8eef2),
   cDune: new THREE.Color(0xdbbe85),
   // Round 28 (Claude §25.2): host-path tread + volcano band set.
@@ -522,7 +526,7 @@ export class TerrainRenderer {
         // (round 29, Codex §26.2: the dark basalt read as one
         // near-black mass on the upper slope in game).
         const upperW = smoothstep(15, 18, db) * smoothstep(31, 27, db);
-        tmp.lerp(cBasaltHigh, wVol * upperW * 0.62);
+        tmp.lerp(cBasaltHigh, wVol * upperW * 0.7);
         tmp.lerp(cRockDark, wVol * upperW * 0.18);
         // Rim: sulfur crust patches (the yellow skin the rim
         // deposits sit on) — patchy, never a solid ring.
@@ -532,7 +536,10 @@ export class TerrainRenderer {
         // Crater bowl: charcoal.
         const craterW = smoothstep(12.6, 10.8, db);
         tmp.lerp(cCrater, wVol * craterW * 0.8);
-        volTileW = wVol * (0.6 + 0.4 * Math.max(upperW, craterW, rimW));
+        // Round 29: the upper band's splat weight is damped
+        // (upperW * 0.7) so its brighter vertex colour is not
+        // buried under the dark volcanic tile (Codex §26.2).
+        volTileW = wVol * (0.6 + 0.4 * Math.max(upperW * 0.7, craterW, rimW));
         volScreeKeep = 1 - wVol * (Math.max(upperW, flankW) > 0.4 ? 0.4 : 0.85);
         // The trodden trail must survive the area overlay.
         if (trailW > 0) {
