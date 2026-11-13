@@ -35,6 +35,24 @@ const CHUNK = 60;
 const CHUNK_MIN = -3; // chunk coords -3..2 -> centres -150..150, field ±180
 const CHUNK_MAX = 2;
 
+/** The declared terrain field in metres (round 29, Claude §24.2):
+ *  chunk index range on both axes plus the derived span. */
+export function terrainFieldSpan(range?: { min: number; max: number }): {
+  min: number; max: number; lo: number; hi: number;
+  centre: number; extent: number; halfSpan: number;
+} {
+  const min = range?.min ?? CHUNK_MIN;
+  const max = range?.max ?? CHUNK_MAX;
+  const lo = min * CHUNK;
+  const hi = (max + 1) * CHUNK;
+  return {
+    min, max, lo, hi,
+    centre: (lo + hi) / 2,
+    extent: Math.max(Math.abs(lo), Math.abs(hi)),
+    halfSpan: (hi - lo) / 2,
+  };
+}
+
 interface ChunkEntry {
   mesh: THREE.Mesh;
   tier: 'near' | 'far';
@@ -58,13 +76,18 @@ const VCOLORS = {
   cTownStone: new THREE.Color(0xa79c8d),
   cTownEarth: new THREE.Color(0x8a6f52),
   cBasalt: new THREE.Color(0x33302e),
+  // Round 29 (Codex §26.2): the upper cliff band in cBasalt read
+  // near-black in game (centre-frame mean 15/255). The upper band
+  // gets this lighter grey-brown so the slope keeps reading as
+  // rock strata; foot/flank keep the dark basalt.
+  cBasaltHigh: new THREE.Color(0x5d554c),
   cSnow: new THREE.Color(0xe8eef2),
   cDune: new THREE.Color(0xdbbe85),
   // Round 28 (Claude §25.2): host-path tread + volcano band set.
   cTrailSoil: new THREE.Color(0x8a6f4d),
   cTrailGravel: new THREE.Color(0x9a8a72),
   cSulfur: new THREE.Color(0xc9a83c),
-  cCrater: new THREE.Color(0x35302b),
+  cCrater: new THREE.Color(0x453c34),
   cLavaFlow: new THREE.Color(0x4a3430),
   cAshPale: new THREE.Color(0xb3a48f),
 };
@@ -95,6 +118,10 @@ export class TerrainRenderer {
     width: number;
     minX: number; minZ: number; maxX: number; maxZ: number;
   }> = [];
+  /** Streaming bounds in chunk indices (round 29, Claude §24.2):
+   *  from config.world.chunkRange, changeable via setTerrainField. */
+  private chunkMin = CHUNK_MIN;
+  private chunkMax = CHUNK_MAX;
 
   constructor(
     cfg: GraphicsConfig,
@@ -111,6 +138,9 @@ export class TerrainRenderer {
     this.openWaterEnabled = openWaterEnabled;
     this.detailBrightness = detailBrightness;
     this.cfg = cfg;
+    const span = terrainFieldSpan(cfg.world.chunkRange);
+    this.chunkMin = span.min;
+    this.chunkMax = span.max;
     this.quality = quality;
     this.areaDefs = areaDefinitions(cfg);
     for (const p of cfg.world.paths ?? []) {
@@ -214,6 +244,21 @@ export class TerrainRenderer {
   }
 
   /**
+   * Move the streaming bounds (round 29, Claude §24.2): the next
+   * updateChunks pass builds inside the new range and disposes
+   * chunks outside it. Passing null restores the configured /
+   * default field. The open-water plane and backdrop ring keep
+   * the size they were built with (from config.world.chunkRange),
+   * so declare the full field in config when it is known up front.
+   */
+  setTerrainField(range: { min: number; max: number } | null): void {
+    const span = terrainFieldSpan(range ?? this.cfg.world.chunkRange);
+    this.chunkMin = span.min;
+    this.chunkMax = span.max;
+    this.lastFocus = { x: Number.POSITIVE_INFINITY, z: Number.POSITIVE_INFINITY };
+  }
+
+  /**
    * Ensure the chunks around (fx, fz) exist at the right detail
    * tier and dispose the rest. Called every frame with the camera
    * focus; a pass only runs when the focus has moved at least 12 m
@@ -226,8 +271,8 @@ export class TerrainRenderer {
     this.lastFocus = { x: fx, z: fz };
     const { near, far, nearSeg, farSeg } = this.radii();
     const desired = new Map<string, { gx: number; gz: number; tier: 'near' | 'far'; d: number }>();
-    for (let gx = CHUNK_MIN; gx <= CHUNK_MAX; gx++) {
-      for (let gz = CHUNK_MIN; gz <= CHUNK_MAX; gz++) {
+    for (let gx = this.chunkMin; gx <= this.chunkMax; gx++) {
+      for (let gz = this.chunkMin; gz <= this.chunkMax; gz++) {
         const cx = gx * CHUNK + CHUNK / 2;
         const cz = gz * CHUNK + CHUNK / 2;
         const d = Math.hypot(cx - fx, cz - fz);
@@ -285,8 +330,8 @@ export class TerrainRenderer {
   prepareAround(x: number, z: number, radiusM = 90): void {
     const { nearSeg } = this.radii();
     let built = 0;
-    for (let gx = CHUNK_MIN; gx <= CHUNK_MAX && built < 64; gx++) {
-      for (let gz = CHUNK_MIN; gz <= CHUNK_MAX && built < 64; gz++) {
+    for (let gx = this.chunkMin; gx <= this.chunkMax && built < 64; gx++) {
+      for (let gz = this.chunkMin; gz <= this.chunkMax && built < 64; gz++) {
         const cx = gx * CHUNK + CHUNK / 2;
         const cz = gz * CHUNK + CHUNK / 2;
         if (Math.hypot(cx - x, cz - z) > radiusM + CHUNK * 0.7) continue;
@@ -385,7 +430,7 @@ export class TerrainRenderer {
   ): void {
     const i = out.i;
     const tmp = this.cTmp;
-    const { cGrass, cGrassDry, cForestFloor, cSand, cWetSand, cClay, cRock, cRockDark, cPath, cEarth, cUnderwater, cAsh, cBasalt, cSnow, cDune, cTownStone, cTownEarth, cTrailSoil, cTrailGravel, cSulfur, cCrater, cLavaFlow, cAshPale } = VCOLORS;
+    const { cGrass, cGrassDry, cForestFloor, cSand, cWetSand, cClay, cRock, cRockDark, cPath, cEarth, cUnderwater, cAsh, cBasalt, cBasaltHigh, cSnow, cDune, cTownStone, cTownEarth, cTrailSoil, cTrailGravel, cSulfur, cCrater, cLavaFlow, cAshPale } = VCOLORS;
 
     const n = fbm(x * 0.09 + 31, z * 0.09 + 17, 3);
     const dRiver = distanceToRiver(x, z);
@@ -473,10 +518,12 @@ export class TerrainRenderer {
         const flankW = smoothstep(28, 33, db) * smoothstep(48, 43, db);
         tmp.lerp(cLavaFlow, wVol * flankW * smoothstep(0.45, 0.75, streak) * 0.65);
         tmp.lerp(cBasalt, wVol * flankW * 0.3);
-        // Upper cliff: bare dark rock.
+        // Upper cliff: bare rock — the lighter grey-brown
+        // (round 29, Codex §26.2: the dark basalt read as one
+        // near-black mass on the upper slope in game).
         const upperW = smoothstep(15, 18, db) * smoothstep(31, 27, db);
-        tmp.lerp(cBasalt, wVol * upperW * 0.55);
-        tmp.lerp(cRockDark, wVol * upperW * 0.3);
+        tmp.lerp(cBasaltHigh, wVol * upperW * 0.62);
+        tmp.lerp(cRockDark, wVol * upperW * 0.18);
         // Rim: sulfur crust patches (the yellow skin the rim
         // deposits sit on) — patchy, never a solid ring.
         const rimW = smoothstep(10.8, 12.6, db) * smoothstep(17.4, 15.6, db);
@@ -923,16 +970,23 @@ export class TerrainRenderer {
   private buildWaterPlane(): THREE.Mesh {
     const { waterLevel } = this.cfg.world;
     const dryMask = this.cfg.world.dryMask;
-    const SIZE = 760;
-    const SEG = 190;
+    // Sized from the declared terrain field (round 29, Claude
+    // §24.2): the historical 760 m plane on the default ±180
+    // field; a wider declared field gets a plane that still
+    // covers it (plus margin into the backdrop zone), centred on
+    // the field centre. Vertex depths are sampled in world
+    // coordinates, so an off-centre field stays correct.
+    const span = terrainFieldSpan(this.cfg.world.chunkRange);
+    const SIZE = Math.max(760, span.extent * 2 + 120);
+    const SEG = Math.min(320, Math.ceil(SIZE / 4));
     const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
     geo.rotateX(-Math.PI / 2);
     const pos = geo.attributes.position as THREE.BufferAttribute;
     const depths = new Float32Array(pos.count);
     const flows = new Float32Array(pos.count * 2);
     for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i);
-      const z = pos.getZ(i);
+      const x = pos.getX(i) + span.centre;
+      const z = pos.getZ(i) + span.centre;
       depths[i] = dryMask && dryMask(x, z)
         ? 0
         : clamp(waterLevel - this.h(x, z), 0, 3);
@@ -942,7 +996,7 @@ export class TerrainRenderer {
     geo.setAttribute('aDepth', new THREE.BufferAttribute(depths, 1));
     geo.setAttribute('aFlow', new THREE.BufferAttribute(flows, 2));
     const mesh = new THREE.Mesh(geo, this.buildWaterMaterial());
-    mesh.position.y = waterLevel - 0.015;
+    mesh.position.set(span.centre, waterLevel - 0.015, span.centre);
     mesh.name = 'OpenWater';
     mesh.renderOrder = 2;
     return mesh;
