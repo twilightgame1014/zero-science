@@ -235,11 +235,146 @@
    },
    "tris": 144,
    "fileKiB": 19
+  },
+  {
+   "id": "electronics-fab",
+   "file": "models/electronics-fab.glb",
+   "sizeM": {
+    "w": 2.6,
+    "d": 1.2,
+    "h": 2.0
+   },
+   "collision": {
+    "shape": "box",
+    "w": 2.6,
+    "d": 1.2,
+    "h": 2.0
+   },
+   "tris": 1312,
+   "fileKiB": 105
+  },
+  {
+   "id": "computer-bench",
+   "file": "models/computer-bench.glb",
+   "sizeM": {
+    "w": 2.2,
+    "d": 1.0,
+    "h": 1.6
+   },
+   "collision": {
+    "shape": "box",
+    "w": 2.2,
+    "d": 1.0,
+    "h": 1.6
+   },
+   "tris": 296,
+   "fileKiB": 32,
+   "emissiveParts": [
+    "MonitorScreen (screenGlow)"
+   ]
+  },
+  {
+   "id": "test-terminal",
+   "file": "models/test-terminal.glb",
+   "sizeM": {
+    "w": 1.4,
+    "d": 0.9,
+    "h": 1.7
+   },
+   "collision": {
+    "shape": "box",
+    "w": 1.4,
+    "d": 0.9,
+    "h": 1.7
+   },
+   "tris": 8776,
+   "fileKiB": 629,
+   "emissiveParts": [
+    "Screen (screenGlow)",
+    "GraphBar x5 (glowAmber)",
+    "Dot indicators"
+   ]
+  },
+  {
+   "id": "suit-stand",
+   "file": "models/suit-stand.glb",
+   "sizeM": {
+    "w": 1.6,
+    "d": 1.2,
+    "h": 2.2
+   },
+   "collision": {
+    "shape": "box",
+    "w": 1.6,
+    "d": 1.2,
+    "h": 2.2
+   },
+   "tris": 2420,
+   "fileKiB": 174,
+   "note": "spacesuit assembly/inspection stand; spacesuit-display mounts at its centre"
+  },
+  {
+   "id": "life-support",
+   "file": "models/life-support.glb",
+   "sizeM": {
+    "w": 2.0,
+    "d": 1.0,
+    "h": 1.9
+   },
+   "collision": {
+    "shape": "box",
+    "w": 2.0,
+    "d": 1.0,
+    "h": 1.9
+   },
+   "tris": 4812,
+   "fileKiB": 330
+  },
+  {
+   "id": "power-distribution",
+   "file": "models/power-distribution.glb",
+   "sizeM": {
+    "w": 2.2,
+    "d": 0.8,
+    "h": 1.9
+   },
+   "collision": {
+    "shape": "box",
+    "w": 2.2,
+    "d": 0.8,
+    "h": 1.9
+   },
+   "tris": 1356,
+   "fileKiB": 119,
+   "emissiveParts": [
+    "PanelLamp (screenGlow)"
+   ]
+  },
+  {
+   "id": "spacesuit-display",
+   "file": "models/spacesuit-display.glb",
+   "sizeM": {
+    "h": 1.51
+   },
+   "collision": {
+    "shape": "none (display)"
+   },
+   "tris": 17400,
+   "fileKiB": 1226,
+   "parts": [
+    "Helmet",
+    "Visor",
+    "Torso",
+    "GloveL",
+    "GloveR",
+    "BootL",
+    "BootR",
+    "Backpack"
+   ],
+   "note": "common standard suit for both protagonists; design renders in previews/suit-*.png; sprite handoff in GPT-SPRITE-REQUEST.md"
   }
  ],
  "pending": [
-  "C science equipment GLBs (electronics-fab, computer-bench, test-terminal, suit-stand, life-support, power-distribution)",
-  "spacesuit-display GLB + design renders + GPT sprite handoff spec",
   "LOD1 set + GPT texture pass (UV templates issued after UV design)"
  ],
  "reuse": {
@@ -252,6 +387,6 @@
   "protagonistVisualHeightM": 1.33
  },
  "stageSwitching": "visibility only, NOT animation; rocket ascent and countdown are game-side transforms (no baked translation in model clips)",
- "version": 3,
+ "version": 4,
  "animationsVerified": "all 8 clips present in GLBs with correct target nodes; hatch_open end pose checked numerically on the re-imported GLB (hatch moves (-1.1,17.3) -> (-1.554,17.935))"
 }
