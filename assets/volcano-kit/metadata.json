@@ -1,0 +1,185 @@
+{
+ "kit": "volcano-kit",
+ "round": "2026-11-11 volcano/walk/UI round (Muse, graphics)",
+ "units": "metres",
+ "origin": "ground centre (x/z centre, y=0 at base)",
+ "front": "+Z (rocks are placed by rotation.y freely; no gameplay front)",
+ "volcano_centre": {
+  "x": -128,
+  "z": -118
+ },
+ "approach_azimuth_deg": 43,
+ "notes": [
+  "全モデル単一ノード・フラット材質（テクスチャなし）。色は灰・灰褐色・炭色基調。",
+  "発光は cooled-lava-chunk の亀裂面（vk_lava_crack）のみ。火山全体は光らない。",
+  "地形高度はモジュールの terrainHeight が正本。本キットは見た目のドレッシングで、地形を変えない。"
+ ],
+ "assets": [
+  {
+   "id": "basalt-outcrop-l",
+   "file": "basalt-outcrop-l.glb",
+   "size_m_whd": [
+    2.91,
+    2.13,
+    2.11
+   ],
+   "tris": 768,
+   "lod1": {
+    "file": "basalt-outcrop-l_lod1.glb",
+    "tris": 344
+   },
+   "role": "玄武岩露頭（大）— 山腹の岩壁・尾根の節",
+   "placement": "火山中心から半径18–30m、任意の方角。sink 0.3m。尾根筋（volcanoRelief.lobe>0）に寄せると地形と噛み合う",
+   "collision_ref": {
+    "type": "cylinder",
+    "radius": 1.25,
+    "height": 2.13
+   }
+  },
+  {
+   "id": "basalt-outcrop-s",
+   "file": "basalt-outcrop-s.glb",
+   "size_m_whd": [
+    1.46,
+    1.0,
+    1.23
+   ],
+   "tris": 192,
+   "role": "玄武岩露頭（小）— 山腹・裾野の岩",
+   "placement": "半径14–34m、任意の方角。sink 0.22m",
+   "collision_ref": {
+    "type": "cylinder",
+    "radius": 0.62,
+    "height": 1.0
+   }
+  },
+  {
+   "id": "fallen-block",
+   "file": "fallen-block.glb",
+   "size_m_whd": [
+    1.17,
+    0.87,
+    0.92
+   ],
+   "tris": 192,
+   "role": "崩落した岩塊 — 露頭の下手に転がる",
+   "placement": "半径16–34m。露頭（outcrop）の下手2–5mに置くと崩落の物語が付く。sink 0.2m",
+   "collision_ref": {
+    "type": "cylinder",
+    "radius": 0.5,
+    "height": 0.87
+   }
+  },
+  {
+   "id": "scree-cluster",
+   "file": "scree-cluster.glb",
+   "size_m_whd": [
+    1.81,
+    0.64,
+    1.61
+   ],
+   "tris": 1808,
+   "role": "礫の集積 — 谷筋の出口・山腹の崩れ跡",
+   "placement": "半径20–40m。谷筋（lobe<0）の下端に。sink 0.06m",
+   "collision_ref": {
+    "type": "none",
+    "note": "地形に沿う低い盛り上がり。歩行を妨げない前提のドレッシング"
+   }
+  },
+  {
+   "id": "crater-rim-shelf",
+   "file": "crater-rim-shelf.glb",
+   "size_m_whd": [
+    2.46,
+    0.43,
+    1.61
+   ],
+   "tris": 192,
+   "lod1": {
+    "file": "crater-rim-shelf_lod1.glb",
+    "tris": 86
+   },
+   "role": "火口縁の岩棚 — 厚みのある火口縁を補強する棚",
+   "placement": "半径11.5–13.5m（火口縁バンド）。上面が水平になるよう配置。アプローチ側の切れ目（方位43°±35°）は空ける。sink 0.35m",
+   "collision_ref": {
+    "type": "cylinder",
+    "radius": 1.15,
+    "height": 0.43
+   }
+  },
+  {
+   "id": "cooled-lava-chunk",
+   "file": "cooled-lava-chunk.glb",
+   "size_m_whd": [
+    1.28,
+    0.73,
+    1.05
+   ],
+   "tris": 320,
+   "lod1": {
+    "file": "cooled-lava-chunk_lod1.glb",
+    "tris": 160
+   },
+   "role": "溶岩が冷えて固まった岩塊 — 発光は亀裂面のみ",
+   "placement": "半径13–26m（上部山腹）。火口内縁（半径8–10m）にも可。sink 0.15m",
+   "collision_ref": {
+    "type": "cylinder",
+    "radius": 0.55,
+    "height": 0.73
+   }
+  },
+  {
+   "id": "ore-outcrop",
+   "file": "ore-outcrop.glb",
+   "size_m_whd": [
+    1.31,
+    0.89,
+    1.12
+   ],
+   "tris": 240,
+   "lod1": {
+    "file": "ore-outcrop_lod1.glb",
+    "tris": 120
+   },
+   "role": "鉱石露頭（ドレッシング用）— 錆色＋石英の結節で周囲の岩と判別可能",
+   "placement": "半径17–24m。※これは景観ドレッシング。採集ノード自体の位置・IDは Claude 側（nature.js）が正本 — ノードに隣接させて置く",
+   "collision_ref": {
+    "type": "cylinder",
+    "radius": 0.58,
+    "height": 0.89
+   }
+  },
+  {
+   "id": "ash-shrub",
+   "file": "ash-shrub.glb",
+   "size_m_whd": [
+    0.81,
+    0.66,
+    0.62
+   ],
+   "tris": 240,
+   "role": "灰をかぶった低木 — 裾野の疎らな植生",
+   "placement": "半径36–48m（裾野）。sink 0.03m",
+   "collision_ref": {
+    "type": "none",
+    "note": "低木ドレッシング。歩行を妨げない"
+   }
+  },
+  {
+   "id": "ash-grass-tuft",
+   "file": "ash-grass-tuft.glb",
+   "size_m_whd": [
+    0.3,
+    0.47,
+    0.32
+   ],
+   "tris": 144,
+   "role": "灰原の草株 — 裾野の疎らな草",
+   "placement": "半径34–50m（裾野）。sink 0.02m。密に置かず数株を一組に",
+   "collision_ref": {
+    "type": "none",
+    "note": "草ドレッシング。歩行を妨げない"
+   }
+  }
+ ]
+}
