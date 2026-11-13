@@ -103,6 +103,35 @@ def cyl(coll, name, loc, r, h, material, verts=24, r2=None):
     _link(o, coll)
     return o
 
+def panel(coll, name, z0, z1, r0, r1, a0, a1, material, seg=6):
+    """Curved skin panel: arc segment a0..a1 (Blender XY radians),
+    radius r0 at z0 tapering to r1 at z1. Outward-facing, smooth."""
+    verts, faces = [], []
+    for i in range(seg + 1):
+        a = a0 + (a1 - a0) * i / seg
+        ca, sa = math.cos(a), math.sin(a)
+        verts.append((r0 * ca, r0 * sa, z0))
+        verts.append((r1 * ca, r1 * sa, z1))
+    for i in range(seg):
+        b = i * 2
+        faces.append((b, b + 2, b + 3, b + 1))
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(verts, [], faces)
+    me.update()
+    o = bpy.data.objects.new(name, me)
+    coll.objects.link(o)
+    if material:
+        o.data.materials.append(MAT[material])
+    for p in me.polygons:
+        p.use_smooth = True
+    return o
+
+# skin quadrants (Blender XY): P1 front(-Y) P2 +X P3 back(+Y) P4 -X
+QUAD = {"P1": (-3 * math.pi / 4, -math.pi / 4),
+        "P2": (-math.pi / 4, math.pi / 4),
+        "P3": (math.pi / 4, 3 * math.pi / 4),
+        "P4": (3 * math.pi / 4, 5 * math.pi / 4)}
+
 def sph(coll, name, loc, size, material):
     bpy.ops.mesh.primitive_uv_sphere_add(location=loc)
     o = bpy.context.object
@@ -167,7 +196,8 @@ def build_pad():
 
 def _seam_rings(c, zlist, r=1.73):
     for z in zlist:
-        cyl(c, "SeamRing", (0, 0, z), r, 0.09, "navy", verts=28)
+        cyl(c, f"SeamRing_{int(z * 10)}", (0, 0, z), r, 0.09, "navy",
+            verts=28)
 
 def build_rocket():
     c = collection("rocket")
@@ -176,9 +206,10 @@ def build_rocket():
     cyl(c, "PropSkirt", (0, 0, 1.75), 1.78, 0.3, "metalDark", verts=28)
     cyl(c, "Nozzle", (0, 0, 1.25), 0.95, 0.7, "heat", verts=24, r2=0.52)
     cyl(c, "NozzleInner", (0, 0, 0.92), 0.8, 0.06, "metalDark", verts=24)
-    # --- BodyLower (4.8-11.3): insulation wrap low, ecru above
+    # --- BodyLower (4.8-11.3): insulation wrap low, panel skin above
     cyl(c, "BodyLowerInsul", (0, 0, 5.9), 1.75, 2.2, "insul", verts=28)
-    cyl(c, "BodyLower", (0, 0, 9.15), 1.7, 4.3, "ecru", verts=28)
+    for q, (a0, a1) in QUAD.items():
+        panel(c, f"Skin_Lower_{q}", 7.0, 11.3, 1.7, 1.7, a0, a1, "ecru")
     _seam_rings(c, (7.0, 9.3, 11.3))
     # inspection hatches + a pipe run (front = Blender -Y)
     box(c, "InspectHatch", (0.9, -1.62, 8.6), (0.55, 0.14, 0.75),
@@ -186,8 +217,9 @@ def build_rocket():
     box(c, "InspectHatch", (-1.15, -1.28, 10.2), (0.5, 0.14, 0.65),
         "metalDark")
     cyl(c, "PipeRun", (1.55, -0.72, 8.0), 0.07, 6.4, "metal", verts=10)
-    # --- BodyUpper (11.3-15.8): taper, navy band, bay panel (front)
-    cyl(c, "BodyUpper", (0, 0, 13.55), 1.7, 4.5, "ecru", verts=28, r2=1.45)
+    # --- BodyUpper (11.3-15.8): taper panels, navy band, bay panel
+    for q, (a0, a1) in QUAD.items():
+        panel(c, f"Skin_Upper_{q}", 11.3, 15.8, 1.7, 1.45, a0, a1, "ecru")
     cyl(c, "UpperBand", (0, 0, 15.45), 1.5, 0.5, "navy", verts=28, r2=1.44)
     box(c, "BayPanel", (0, -1.62, 13.4), (1.25, 0.16, 1.9), "teal")
     box(c, "BayPanelFrame", (0, -1.58, 13.4), (1.45, 0.08, 2.1),
@@ -356,6 +388,25 @@ def build_terminal():
     cyl(c, "CableDrum", (0.4, 0.75, 0.3), 0.3, 0.35, "heat", verts=16)
     return c
 
+# ------------------------------------------------------------------ rack
+
+def build_parts_rack():
+    c = collection("parts-rack")
+    for sx in (-1.05, 1.05):
+        for sy in (-0.35, 0.35):
+            box(c, "Post", (sx, sy, 0.9), (0.09, 0.09, 1.8), "frame")
+    for z in (0.25, 0.95, 1.65):
+        box(c, "Shelf", (0, 0, z), (2.3, 0.85, 0.06), "metalDark")
+    box(c, "Crate", (-0.6, 0, 1.2), (0.8, 0.6, 0.45), "insul")
+    box(c, "Crate", (0.45, 0.05, 1.18), (0.65, 0.55, 0.4), "navy")
+    box(c, "Crate", (-0.3, 0, 0.52), (0.9, 0.65, 0.5), "metalDark")
+    box(c, "PipeBundle", (0.62, 0, 0.62), (0.5, 0.4, 0.35), "metal")
+    # spare skin panel leaning against the rack (ecru, slightly curved
+    # look via two angled slabs)
+    box(c, "SparePanel", (1.35, 0, 0.82), (0.05, 1.0, 1.65), "ecru",
+        rot=(0, -0.24, 0))
+    return c
+
 # ------------------------------------------------------------------ export
 
 def export_glb(coll, fname):
@@ -379,7 +430,7 @@ def duplicate_at(coll, offset, tag):
     out = []
     for o in list(coll.objects):
         n = o.copy()
-        n.name = o.name + tag
+        n.name = coll.name + "__" + o.name + tag
         n.location = Vector(o.location) + Vector(offset)
         bpy.context.scene.collection.objects.link(n)
         out.append(n)
@@ -397,6 +448,13 @@ def verify_scene():
     duplicate_at(COLL["support-tower"], (-4.6, 0, 0), "_asm")
     duplicate_at(COLL["boarding-corridor"], (-3.7, 0, 16.83), "_asm")
     duplicate_at(COLL["control-terminal"], (6.5, -5.5, 0.8), "_asm")
+    rack_asm = duplicate_at(COLL["parts-rack"], (4.8, -3.4, 0.8), "_asm")
+    for o in rack_asm:  # rack is on site only during S2/S3, not in S4 views
+        o.hide_render = True
+    # the site views show the completed site (S4): hide skeleton nodes
+    for o in COLL["rocket"].objects:
+        if o.name.startswith("Frame_"):
+            o.hide_render = True
     # scale figure: protagonist visual height 1.33 m, standing on the pad
     c = bpy.context.scene.collection
     sph(c, "ScaleFigure", (3.4, -3.2, 0.8 + 0.665), (0.56, 0.56, 1.33),
@@ -477,6 +535,7 @@ def main():
     tower = build_tower()
     corridor = build_corridor()
     terminal = build_terminal()
+    rack = build_parts_rack()
     stats = {}
     stats["launch-pad"] = export_glb(pad, "launch-pad.glb")
     stats["rocket"] = export_glb(rocket, "rocket.glb")
@@ -485,10 +544,12 @@ def main():
                                            "boarding-corridor.glb")
     stats["control-terminal"] = export_glb(terminal,
                                            "control-terminal.glb")
+    stats["parts-rack"] = export_glb(rack, "parts-rack.glb")
     ok = verify_scene()
+    render_views()
+    # save AFTER render_views so the scene keeps its lights/cameras
     bpy.ops.wm.save_as_mainfile(
         filepath=str(HERE.parent / "rocket-scene.blend"))
-    render_views()
     print("STATS", stats)
     print("VERIFY", "OK" if ok else "FAILED")
 

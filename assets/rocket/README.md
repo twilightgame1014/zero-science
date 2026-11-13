@@ -77,13 +77,22 @@ boarding-corridor（原点＝塔側接続点、+X 方向へ伸びる）:
 （各段階で支持物＝台・塔・作業台・クレーンアームのいずれかに接する）。
 
 - S0 射点のみ：launch-pad + support-tower + control-terminal
-- S1 骨格：Propulsion 骨格 + BodyLower/BodyUpper のフレーム
-  （リブ＋縦通材＋タンク輪郭）、Capsule なし、外装なし
-- S2 外装途中：BodyLower 外装約7割（欠けパネルから骨格が見える）、
-  Propulsion 外装あり、BodyUpper は骨格＋一部パネル
-- S3 機器搭載途中：外装完成、Capsule あり（ハッチ開放）、
-  BayPanel 開放、部品箱・作業台を脇に配置、通路は未接続
-- S4 完成：全閉、通路接続、塔アーム接続
+- S1 骨格：rocket は Frame_*（リブ＋縦通材）と Frame_Tank* のみ表示。
+  Capsule・外装・通路・部品棚なし
+- S2 外装途中：Propulsion 外装一式（Propulsion / PropSkirt / Nozzle /
+  NozzleInner）、BodyLowerInsul、Skin_Lower_P1〜P3（塔側 P4 が欠け、
+  そこは Frame_BodyLower が見える）、SeamRing_70、BodyUpper は
+  Frame_BodyUpper + Frame_TankUpper + Skin_Upper_P2 のみ（正面 P1・
+  背面 P3・塔側 P4 は骨格のまま）。Capsule・通路なし、parts-rack 配置
+- S3 機器搭載途中：外装完成（全 Skin_*、UpperBand、SeamRing_*、
+  BayPanel、Capsule 一式、Nose*）、骨格は非表示。ハッチと BayPanel は
+  クリップ hatch_open / bay_open の終端フレームで開放状態にする。
+  parts-rack と既存 workbench を脇に配置、通路は未接続
+- S4 完成：S3 から parts-rack を撤去し、全閉（閉クリップの始端）、
+  通路を接続、塔アーム接続
+
+外装パネルは4分割（P1 正面 +Z / P2 +X / P3 背面 / P4 塔側 −X）。
+段階表示の検証レンダーは previews/stage-s1〜s4-34.png。
 
 流用：整備用の作業台は既存 `workbench`（buildings-3d）をそのまま使う。
 部品置き場だけ新規（`parts-rack`：棚＋部品箱、2.4×0.9×1.8）。
