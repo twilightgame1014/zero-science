@@ -563,6 +563,20 @@ export class GraphicsEngine {
     this.world.prepareTerrainAt(x, z, radiusM);
   }
 
+  /**
+   * Move the terrain streaming bounds, in chunk indices
+   * (round 29, Claude §24.2): chunks stream in inside the new
+   * range and are disposed outside it, so a host world wider
+   * than the default ±180 field no longer needs the module's
+   * private chunk builder. Passing null restores the field from
+   * config.world.chunkRange (or the default). The open-water
+   * plane and backdrop ring are sized from the config value at
+   * engine build and do not resize at runtime.
+   */
+  setTerrainField(range: { min: number; max: number } | null): void {
+    this.world.setTerrainField(range);
+  }
+
   setQuality(tier: QualityTier): void {
     if (tier === this.quality) return;
     this.quality = tier;
