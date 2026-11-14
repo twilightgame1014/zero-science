@@ -41,6 +41,7 @@ const site = (page, id) => ev(page, id => JSON.parse(JSON.stringify(window.__GAM
 /* ---------------- PC ---------------- */
 {
   const { page, errors } = await newPage({ width: 1280, height: 800 }, false);
+  ok('Muse の契約の欄（museFields）は、今は空として画面に渡る（工程別の見た目・道の素材は仮表示のまま）', await ev(page, () => JSON.stringify(ASSETS.consMuse) === '{"buildings":{},"roads":{}}'));
   ok('UI の新しいゲームは「建てて作る」ルール・セーブは v6', await ev(page, () => window.__GAME__.S.cons.rule === 'build' && window.__GAME__.S.v === 6));
   ok('開始地点に建物は1つもない（固定の場所に自動で建たない）', await ev(page, () => !Object.keys(window.__FAKE.structures).some(k => /^(st-|cs:)/.test(k))));
   await give(page, { twig: 12, thread: 6, cobble: 6, knife: 1 });
@@ -154,6 +155,58 @@ const site = (page, id) => ev(page, id => JSON.parse(JSON.stringify(window.__GAM
   ok('旧セーブ：主人公・宇宙計画の状態はそのまま、元のセーブは控えてある', r.hero === 'girl' && r.space.switch === true && r.backup);
   ok('旧セーブ：固定の場所の建物（st-）は出さず、移した建物（cs:）だけが建つ（二重に出ない）', !r.structs.some(k => k.startsWith('st-')) && r.structs.filter(k => k.startsWith('cs:')).length === r.inst.length, JSON.stringify(r.structs));
   ok('ページでエラーが起きていない（移行）', errors.length === 0, errors.join('\n'));
+  await page.context().close();
+}
+/* ---------------- 建築から宇宙計画の製作への案内（2026-11-14 Claude） ---------------- */
+{
+  const { page, errors } = await newPage({ width: 1280, height: 800 }, false);
+  // 準備（状態の用意だけ）：完成した作業台・宇宙計画の材料。発電所（発電機）はまだない
+  await give(page, { steel: 4, wire: 8, glass: 2, twig: 8, thread: 4, cobble: 4, knife: 1, electromagnet: 2 });
+  const wb = await findSpot(page, 'workbench', { x: -20, z: 20 });
+  await ev(page, p => { const g = window.__GAME__, S = g.S, W = g.WORLD; const r = CONS.plan(S, W, 'workbench', p.x, p.z, 0, { player: null, npcs: [], reserved: [] }, S.seq); W.setStructures(CONS.colliders(S));
+    const v = S.cons.inst[r.id]; v.phase = 'completed'; v.stage = 1; v.done = Date.now(); g.render(); }, wb);
+  const spOpen = async () => { await ev(page, () => { const g = window.__GAME__; g.U.space = Object.assign(g.U.space || {}, { section: '製作', group: '材料', item: 'sp_machine' }); g.setTab('space'); }); await page.waitForTimeout(250); };
+  await spOpen();
+  const card = () => ev(page, () => { const c = [...document.querySelectorAll('.sp-card')].find(c => c.querySelector('[data-sp="select"][data-id="sp_machine"]')); return c ? { text: c.innerText, place: !!c.querySelector('[data-act="cs-place"][data-id="powerplant"]'), open: c.querySelector('[data-act="cs-open"]')?.dataset.id || null } : null; });
+  let c = await card();
+  ok('宇宙計画の製作：建物の設備が足りないと「未着手：現地に建てる」と「建設する」が出る', c && /設備不足/.test(c.text) && /未着手/.test(c.text) && c.place, JSON.stringify(c));
+  ok('宇宙計画：発電機のない打ち上げ条件にも建設の入口がある', await ev(page, () => { const g = window.__GAME__; g.U.space.section = '打ち上げ'; g.render(); g.setTab('space'); return !!document.querySelector('#dockBody [data-act="cs-place"][data-id="powerplant"]'); }));
+  await spOpen();
+  await page.click('.sp-card [data-act="cs-place"][data-id="powerplant"]'); await page.waitForTimeout(250);
+  ok('「建設する」を押すと、発電所の置き場所を決めるモードになる', await ev(page, () => { const P = window.__GAME__.W3.place; return !!P && P.cons && P.cons.def === 'powerplant'; }));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  const pp = await findSpot(page, 'powerplant', { x: -20, z: 20 });
+  const ppId = await ev(page, p => { const g = window.__GAME__, S = g.S, W = g.WORLD; const r = CONS.plan(S, W, 'powerplant', p.x, p.z, 0, { player: null, npcs: [], reserved: [] }, S.seq); W.setStructures(CONS.colliders(S)); g.render(); return r.id; }, pp);
+  await spOpen(); c = await card();
+  ok('予定地があると「予定地・工程 0/2」と「現場を開く」に変わる（状態は「設備の建設待ち」）', c && /設備の建設待ち/.test(c.text) && /予定地・工程 0\/2/.test(c.text) && c.open === ppId, JSON.stringify(c));
+  // 1 工程目を施工中にする（画面の操作と同じ CONS の関数）
+  await ev(page, id => { const g = window.__GAME__, S = g.S, W = g.WORLD, v = S.cons.inst[id]; g.W3.pos = CONS.near(W, v, { x: v.x, z: v.z + 3.2 }) ? { x: v.x, z: v.z + 3.2 } : g.W3.pos;
+    const st = { x: v.x, z: v.z + 2.6 }; g.W3.pos = st; CONS.deliverAll(S, W, id, st, S.seq); CONS.startWork(S, W, id, st, Date.now(), S.seq); g.render(); }, ppId);
+  await spOpen(); c = await card();
+  ok('施工中なら「設備を施工中」と工程が出る。未完成の設備では製作を始められない', c && /設備を施工中/.test(c.text) && /施工中・工程/.test(c.text) && !(await ev(page, () => { const g = window.__GAME__; return g.SPACE.startCraft(g.S, 'c_sp_machine', 1).ok; })), JSON.stringify(c));
+  await page.click(`.sp-card [data-act="cs-open"][data-id="${ppId}"]`); await page.waitForTimeout(250);
+  ok('「現場を開く」で、その現場の画面が開く', await ev(page, id => window.__GAME__.U.cons.open === id && /発電所/.test(document.querySelector('#sheet').innerText) && /施工中/.test(document.querySelector('#sheet').innerText), ppId));
+  await page.click('#sheet .close'); await page.waitForTimeout(150);
+  // 完成させる（準備）→ 製作できる・完成の画面から宇宙計画の製作へ
+  await ev(page, id => { const g = window.__GAME__, v = g.S.cons.inst[id]; v.phase = 'completed'; v.stage = 2; v.work = null; v.done = Date.now(); g.render(); }, ppId);
+  await spOpen(); c = await card();
+  ok('発電所が完成すると、宇宙計画の部品が「製作可能」になる', c && /製作可能/.test(c.text), JSON.stringify(c));
+  await ev(page, id => { window.__GAME__.setTab('explore'); }, ppId); await page.waitForTimeout(150);
+  await ev(page, id => { document.querySelector('#consHud') && 0; const b = document.createElement('button'); b.dataset.act = 'cs-open'; b.dataset.id = id; document.body.appendChild(b); b.click(); b.remove(); }, ppId); await page.waitForTimeout(250);
+  ok('完成した設備の画面に「次に使う所」（宇宙計画の製作など）がある', await ev(page, () => !!document.querySelector('#sheet [data-act="cs-next"][data-id="space"]')));
+  await page.click('#sheet [data-act="cs-next"][data-id="space"]'); await page.waitForTimeout(250);
+  ok('「宇宙計画の製作で使う」で宇宙計画の製作の画面が開く', await ev(page, () => window.__GAME__.U.tab === 'space' && window.__GAME__.U.space.section === '製作'));
+  // 実習が足りない部品は「実習へ」で、その実習の画面へ
+  await ev(page, () => { const g = window.__GAME__; g.U.space.group = '計算機'; g.render(); g.setTab('space'); }); await page.waitForTimeout(200);
+  const lg = await ev(page, () => { const b = document.querySelector('[data-sp="lesson-go"]'); return b ? b.dataset.id : null; });
+  if (lg) await page.click(`[data-sp="lesson-go"][data-id="${lg}"]`); await page.waitForTimeout(200);
+  ok('実習が足りない部品から「実習へ」で、その実習が選ばれた実習の画面へ', !!lg && await ev(page, id => window.__GAME__.U.space.section === '実習' && window.__GAME__.U.space.lesson === id, lg), String(lg));
+  // 工作の画面の現場への入口に、工程が出る
+  const kp = await findSpot(page, 'kiln', { x: -20, z: 20 });
+  await ev(page, p => { const g = window.__GAME__, S = g.S; S.inv.clay = 3; S.disc.clay = S.disc.clay || { first: 1, made: 1, total: 1, routes: [], best: 0 }; CONS.plan(S, g.WORLD, 'kiln', p.x, p.z, 0, { player: null, npcs: [], reserved: [] }, S.seq); g.WORLD.setStructures(CONS.colliders(S)); g.render(); }, kp);
+  await ev(page, () => window.__GAME__.setTab('craft')); await page.waitForTimeout(200);
+  ok('工作の画面の「かまど」の入口に、現場の状態（予定地・工程 0/2）が出る', await ev(page, () => [...document.querySelectorAll('#dockBody [data-act="cs-open"]')].some(b => /かまど|現場を開く/.test(b.textContent) && /予定地・工程 0\/2/.test(b.textContent))));
+  ok('ページでエラーが起きていない（宇宙計画への案内）', errors.length === 0, errors.join('\n'));
   await page.context().close();
 }
 } finally { try { await browser?.close(); } finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }

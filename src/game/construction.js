@@ -309,10 +309,18 @@ var CONS = (function(D, E){
     const cnt = n.filter(Boolean).length;
     return {links:n, kind: cnt===4 ? "cross" : cnt===3 ? "tee" : cnt===2 ? ((n[0]&&n[2])||(n[1]&&n[3]) ? "straight" : "bend") : cnt===1 ? "end" : "single"}; }
   /* 建物の入口・作業点に道がつながっているか（入口の前 1.6 マス以内に道のマス） */
-  function connected(S, id){ const c = state(S), v = c.inst[id]; if(!v || v.kind==="road") return false; const d = DEF[v.def], lp = d.entrance || d.operate; if(!lp) return null;
-    const co = Math.cos(v.rot), si = Math.sin(v.rot), L = Math.hypot(lp[0],lp[1])||1, ex = lp[0]+lp[0]/L*0.8, ez = lp[1]+lp[1]/L*0.8;
-    const w = {x: v.x + co*ex + si*ez, z: v.z - si*ex + co*ez};
-    return Object.keys(c.roads).some(k=>{ const [i,j] = k.split(",").map(Number), p = cellCenter(i,j); return Math.abs(p.x-w.x) <= C.CELL*0.5+0.8 && Math.abs(p.z-w.z) <= C.CELL*0.5+0.8; }); }
+  /* 道がつながる点（ローカル座標）。Muse の契約 museFields.roadConnectors があればそれ（その点の上・すぐそばに道のマス）。
+     なければ入口（なければ作業点）の前 0.8 マス。setMuse は画面側が ASSETS.consMuse を渡す（判定はここだけ） */
+  let MUSE = {buildings:{}, roads:{}};
+  function setMuse(m){ MUSE = {buildings:(m&&m.buildings)||{}, roads:(m&&m.roads)||{}}; }
+  function connectorsOf(defId){ const d = DEF[defId], m = MUSE.buildings[defId];
+    if(m && Array.isArray(m.roadConnectors) && m.roadConnectors.length) return m.roadConnectors.map(p=>({x:p[0], z:p[1], muse:true}));
+    const lp = d.entrance || d.operate; if(!lp) return [];
+    const L = Math.hypot(lp[0],lp[1])||1; return [{x:lp[0]+lp[0]/L*0.8, z:lp[1]+lp[1]/L*0.8, muse:false}]; }
+  function connected(S, id){ const c = state(S), v = c.inst[id]; if(!v || v.kind==="road") return false; const pts = connectorsOf(v.def); if(!pts.length) return null;
+    const co = Math.cos(v.rot), si = Math.sin(v.rot);
+    return pts.some(q=>{ const w = {x: v.x + co*q.x + si*q.z, z: v.z - si*q.x + co*q.z};
+      return Object.keys(c.roads).some(k=>{ const [i,j] = k.split(",").map(Number), p = cellCenter(i,j); return Math.abs(p.x-w.x) <= C.CELL*0.5+0.8 && Math.abs(p.z-w.z) <= C.CELL*0.5+0.8; }); }); }
 
   /* ---------- 街の発展（実際に建てた物を近さでまとめて数える。人口のシミュレーションはしない） ---------- */
   function towns(S){
@@ -338,7 +346,7 @@ var CONS = (function(D, E){
   function known(S, defId){ const d = DEF[defId]; if(!d) return false;
     return Object.keys(totalMat(d)).some(k=>S.disc[k]) || (d.facility && S.disc[d.facility]) || d.stages.every(s=>!Object.keys(s.mat).length); }
 
-  return {DEF, state, rule, built, list, plan, move, relocate, remove, removalPreview, deliver, deliverAll, supplyTable, remainingNeed, stageReady, startWork, finishWork,
+  return {DEF, setMuse, connectorsOf, state, rule, built, list, plan, move, relocate, remove, removalPreview, deliver, deliverAll, supplyTable, remainingNeed, stageReady, startWork, finishWork,
     checkBuilding, colliders, roadPlan, planRoad, removeRoadCells, roadShape, roadStagesOf, cellKey, cellOf, cellCenter, lineCells, connected, towns, totalMat, stagesOf,
     near, distTo, shapeOfInst, placeLegacy, legacyItems, facilityBuilding, known, migrateLegacy, spec};
 })(typeof DATA!=="undefined"?DATA:(require("./construction-data.js"), require("./data.js")), typeof ENGINE!=="undefined"?ENGINE:require("./engine.js"));

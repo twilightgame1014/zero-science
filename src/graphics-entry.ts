@@ -1,6 +1,7 @@
 import {spaceModelDiagnostics} from './space-models';
 import { syncSpaceVisual, spaceModelStatus } from './space-visual';
 import { syncConstructionVisual, constructionVisualStatus } from './construction-visual';
+import { stageVisible, stageKey, SCAFFOLD, type StageNodes } from './construction-stage';
 // ゲーム側から描画モジュールを使うための入口（src/graphics 本体は改変しない）
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -36,6 +37,8 @@ function cloneBuilding(type: string): THREE.Group {
     m.material = Array.isArray(m.material) ? m.material.map((x) => x.clone()) : m.material.clone();
     m.castShadow = true; m.receiveShadow = true;
   });
+  /* 足場（Scaffold_*）は建設中だけの部品。完成した建物では隠す（Muse の工程別の GLB が届いたとき用。今の GLB には無い） */
+  root.traverse((o) => { if (SCAFFOLD.test(o.name)) o.visible = false; });
   const g = new THREE.Group(); g.name = 'Building:' + type; g.add(root);
   const find = (n: string) => root.getObjectByName(n) || undefined;
   const p: Parts = { root: g, wheel: find('Wheel'), piston: find('Piston'), pistonX: 0, drill: find('DrillPipe'), winch: find('Winch'), bellows: find('Bellows'), bellowsY: 0 };
@@ -62,6 +65,21 @@ function ensureBuildingModel(gfx: any, type: string, b64: string | undefined): P
   });
   loading.set(type, pr);
   return pr;
+}
+/** 街づくり：工程ごとの見た目（契約 museFields.stageNodes）。同じ完成モデルの複製から、その工程の一覧にあるノードだけを出す。
+ *  描画モジュールの公開 registerFactory に「種類#工程」の名前で登録し、その名前を返す（雛形が読めていなければ null＝仮表示のまま）。 */
+const stagedTypes = new Set<string>();
+function stagedBuildingType(gfx: any, type: string, key: string, stageNodes: StageNodes): string | null {
+  if (!templates.has(type)) return null;
+  const name = type + '#' + key;
+  if (stagedTypes.has(name)) return name;
+  const sr = gfx && gfx.structures; if (!sr || typeof sr.registerFactory !== 'function') return null;
+  sr.registerFactory(name, () => {
+    const g = cloneBuilding(type);
+    g.traverse((o) => { if (o === g) return; const chain: string[] = []; for (let q: THREE.Object3D | null = o; q && q !== g; q = q.parent) chain.push(q.name);
+      if ((o as THREE.Mesh).isMesh || SCAFFOLD.test(o.name)) o.visible = stageVisible(chain, key, stageNodes); });
+    g.name = 'BuildingStage:' + name; return g; });
+  stagedTypes.add(name); return name;
 }
 /** 描画モジュールが動かさない可動部（ピストン・掘削軸・巻き上げドラム・ふいご）を動かす。車輪・炎はモジュールの既存のアニメーション */
 function tickBuildingParts(time: number): void {
@@ -119,5 +137,5 @@ function diag8Check(): { ok: boolean; available: boolean; stuck: number[] } {
   return { ok: stuck.length === 0, available: true, stuck };
 }
 (window as any).HD2D = { syncConstructionVisual, constructionVisualStatus, spaceModelDiagnostics, syncSpaceVisual, spaceModelStatus, attachWorld, diag8Check, initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, THREE, RESOURCE_VISUAL_SPECS, GPT_TEXTURES, BRANCH_TEXTURES,
-  ensureBuildingModel, tickBuildingParts, buildingModelStatus, setSharedTextures, installNatureModels, tickNatureModels, natureModelStatus, npcSet, npcRemove, npcTick, npcStatus };
+  ensureBuildingModel, stagedBuildingType, stageKey, tickBuildingParts, buildingModelStatus, setSharedTextures, installNatureModels, tickNatureModels, natureModelStatus, npcSet, npcRemove, npcTick, npcStatus };
 window.dispatchEvent(new Event('hd2d-ready'));

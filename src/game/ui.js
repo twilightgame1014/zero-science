@@ -228,7 +228,7 @@ function stageSummary(){
     <p class="desc" style="margin-top:0">次の文明の進化：${D.stages[st].need}</p>`;
 }
 function viewMenu(){
-  return stageSummary()+`<div class="bigmenu">${[["book","book","図鑑","見つけたものの説明"],["map","tech","技術","技術と物質のつながり"],["log","log","記録","実験の記録・セーブ"],["build","home","建築","作った家や設備を好きな場所に置く"],...(VERIFY?[["verify","settings","検証モード","全解放・素材・移動・アセット"]]:[]),["settings","settings","設定","主人公・表示・遊び方"]]
+  return stageSummary()+`<div class="bigmenu">${[["book","book","図鑑","見つけたものの説明"],["map","tech","技術","技術と物質のつながり"],["log","log","記録","実験の記録・セーブ"],["build","home","建築",E.buildRule(S)&&!S.verify?"設計図を選び、現地に建てる（予定地→資材を運ぶ→施工）":"作った家や設備を好きな場所に置く"],...(VERIFY?[["verify","settings","検証モード","全解放・素材・移動・アセット"]]:[]),["settings","settings","設定","主人公・表示・遊び方"]]
     .map(([t,i,n,d])=>`<button class="bigitem" data-tab="${t}">${iconHTML(i)}<span>${n}<small>${d}</small></span></button>`).join("")}</div>`;
 }
 function viewSettings(){
@@ -2255,7 +2255,7 @@ function switchState(next){
   haltField(); clearTimeout(saveTimer); clearPreview();
   S = next; lastMission=E.missionIndex(S); lastStage=stage(); U.tray={}; U.fac=null; U.op=null; U.last=null; U.target=null; fieldSig=""; sceneSig="";
   if(W3.gfx){ (W3.natShown||new Set()).forEach(id=>W3.gfx.updateResourceVisual(id,null)); W3.natShown=new Set(); W3.visSig={};
-    [...W3.structs].forEach(id=>structRemove(id)); W3.structs.clear(); W3.colSig=null; syncStructColliders(); W3.sel=null; W3.near=null; }
+    [...W3.structs].forEach(id=>structRemove(id)); W3.structs.clear(); if(W3.consStaged){ W3.consStaged.forEach((_,id)=>W3.gfx.removeStructureVisual(id)); W3.consStaged=null; } W3.colSig=null; syncStructColliders(); W3.sel=null; W3.near=null; }
   applySavedPos(); writeNow(); renderChrome(); render();
 }
 function setVerifyMode(on, fresh){        // fresh："new"（全解放で作り直す）・"copy"（通常セーブを写す）・"keep"（前の検証データの続き）

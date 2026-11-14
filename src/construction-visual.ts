@@ -5,9 +5,9 @@
    描画モジュール（src/graphics）は変えない。シーンへ自分の群れを足すだけ。 */
 import * as THREE from 'three';
 
-type Site = { id: string; x: number; z: number; rot: number; shape: 'rect' | 'circle'; w: number; d: number; r: number; phase: string; progress: number; supplied: number; tall: number; entrance?: [number, number] | null };
+type Site = { id: string; x: number; z: number; rot: number; shape: 'rect' | 'circle'; w: number; d: number; r: number; phase: string; progress: number; supplied: number; tall: number; entrance?: [number, number] | null; formal?: boolean };
 type Cell = { i: number; j: number; kind: string };
-type Data = { sites: Site[]; roads: Cell[]; pending: (Cell & { phase: string })[]; cell: number; colors: Record<string, string> };
+type Data = { sites: Site[]; roads: Cell[]; pending: (Cell & { phase: string })[]; cell: number; colors: Record<string, string>; textures?: Record<string, string> };
 type Entry = { root: THREE.Group; sites: Map<string, { g: THREE.Group; sig: string }>; roadSig: string; roads: THREE.Group };
 const entries = new WeakMap<object, Entry>();
 const mats: Record<string, THREE.Material> = {};
@@ -34,7 +34,8 @@ function buildSite(s: Site, h: (x: number, z: number) => number): THREE.Group {
   const piles = s.phase === 'completed' ? 0 : Math.round(Math.min(1, s.supplied) * 6);
   for (let k = 0; k < piles; k++) { const lx = (s.shape === 'rect' ? s.w / 2 : s.r) + 0.6, lz = -0.9 + k * 0.38, p = w(lx, lz); box(g, mat('pile' + (k % 3), [0x7a5636, 0x9aa1a8, 0xb24a32][k % 3]), p.x, h(p.x, p.z), p.z, 0.45, 0.28 + (k % 2) * 0.12, 0.32); }
   /* 施工中：足場の柱と、進みに合わせて高くなる仮の壁 */
-  if (s.phase === 'constructing') {
+  /* Muse の工程別の見た目が届いた建物（formal）は、その完成モデルの工程のノードを別に出す（graphics-entry の stagedBuildingType）。ここは杭と資材の山だけ */
+  if (s.phase === 'constructing' && !s.formal) {
     const H = Math.max(0.25, s.progress * s.tall), y = h(s.x, s.z);
     pts.forEach(([lx, lz]) => { const p = w(lx * 1.04, lz * 1.04); box(g, wood, p.x, h(p.x, p.z), p.z, 0.1, H + 0.6, 0.1); });
     const body = new THREE.Group(); body.position.set(s.x, y, s.z); body.rotation.y = s.rot; g.add(body);
@@ -42,6 +43,11 @@ function buildSite(s: Site, h: (x: number, z: number) => number): THREE.Group {
   }
   return g; }
 
+const roadTex = new Map<string, THREE.Texture>();
+function roadTexture(url?: string): THREE.Texture | null {
+  if (!url) return null; let t = roadTex.get(url);
+  if (!t) { t = new THREE.TextureLoader().load(url); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; roadTex.set(url, t); }
+  return t; }
 /* 道：種類ごとに、マスを地面に沿わせた板を1つのメッシュへまとめる。予定のマスは縁の線 */
 function buildRoads(d: Data, h: (x: number, z: number) => number): THREE.Group {
   const g = new THREE.Group(); g.name = 'ConstructionRoads';
@@ -53,7 +59,11 @@ function buildRoads(d: Data, h: (x: number, z: number) => number): THREE.Group {
       for (let a = 0; a <= N; a++) for (let b = 0; b <= N; b++) { const x = cx - half + d.cell * a / N, z = cz - half + d.cell * b / N; pos.push(x, h(x, z) + 0.05, z); }
       for (let a = 0; a < N; a++) for (let b = 0; b < N; b++) { const p = base + a * (N + 1) + b; idx.push(p, p + 1, p + N + 1, p + 1, p + N + 2, p + N + 1); } });
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
-    const m = new THREE.MeshStandardMaterial({ color: d.colors[kind] || '#8a6a45', roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    /* UV は世界の座標で 1 マス（2×2）＝ 0〜1。Muse の道のテクスチャ（museFields.tileTexture）が届いたら繰り返して貼る。なければ色の板 */
+    const uv: number[] = []; for (let k = 0; k < pos.length; k += 3) uv.push(pos[k] / d.cell + 0.5, pos[k + 2] / d.cell + 0.5);
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    const map = roadTexture(d.textures && d.textures[kind]);
+    const m = new THREE.MeshStandardMaterial({ color: map ? 0xffffff : (d.colors[kind] || '#8a6a45'), map: map || null, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     const mesh = new THREE.Mesh(geo, m); mesh.receiveShadow = true; mesh.name = 'Road:' + kind; g.add(mesh); }
   const line = mat('roadplan', 0xc38a2e);
   d.pending.forEach(c => { const cx = c.i * d.cell, cz = c.j * d.cell;
@@ -65,7 +75,7 @@ export function syncConstructionVisual(gfx: any, d: Data, heightAt: (x: number, 
   let e = entries.get(gfx);
   if (!e) { const root = new THREE.Group(); root.name = 'ConstructionVisual'; scene.add(root); e = { root, sites: new Map(), roadSig: '', roads: new THREE.Group() }; root.add(e.roads); entries.set(gfx, e); }
   const seen = new Set<string>();
-  for (const s of d.sites) { seen.add(s.id); const sig = [s.x, s.z, s.rot, s.phase, Math.round(s.progress * 20), Math.round(Math.min(1, s.supplied) * 6)].join('|');
+  for (const s of d.sites) { seen.add(s.id); const sig = [s.x, s.z, s.rot, s.phase, Math.round(s.progress * 20), Math.round(Math.min(1, s.supplied) * 6), s.formal ? 1 : 0].join('|');
     const cur = e.sites.get(s.id); if (cur && cur.sig === sig) continue;
     if (cur) { e.root.remove(cur.g); dispose(cur.g); }
     const g = buildSite(s, heightAt); e.root.add(g); e.sites.set(s.id, { g, sig }); }
@@ -75,4 +85,4 @@ export function syncConstructionVisual(gfx: any, d: Data, heightAt: (x: number, 
 }
 /* 共有の箱と材質は捨てない。道の形と材質（毎回作る）だけ捨てる */
 function dispose(g: THREE.Object3D, _own = false) { const shared = new Set(Object.values(mats)); g.traverse(o => { const m = o as THREE.Mesh; if (!m.isMesh) return; if (m.geometry !== BOX) m.geometry.dispose(); const mm = m.material as THREE.Material; if (!shared.has(mm)) mm.dispose(); }); }
-export const constructionVisualStatus = () => ({ placeholder: true });
+export const constructionVisualStatus = () => ({ placeholder: true, roadTextures: roadTex.size });

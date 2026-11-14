@@ -135,6 +135,25 @@ if (fs.existsSync(path.join(root, toolAtlas)) && fs.existsSync(path.join(root, t
 // Muse確定版のLOD1を可逆圧縮して1ファイルHTMLへ。読込み失敗は仮表示へ戻る。
 // 宇宙計画の契約 v6（Muse ラウンド30）：組込枠ごとの表示ノード一覧と、発射サイトの設備の置き場所。ゲームはこの一覧で表示を切り替える
 ASSETS.spaceModels = {};
+/* 街づくり：Muse の工程別の見た目・道の素材（docs/construction/construction-assets.json の museFields。2026-11-14）。
+   埋まった欄だけを ASSETS.consMuse に入れる（null の欄は入れない＝ゲームは仮表示のまま）。工程のノード名が GLB にないときはビルドを止める。 */
+{ const ca = JSON.parse(fs.readFileSync(path.join(root, 'docs/construction/construction-assets.json'), 'utf8'));
+  const glbNames = b64 => { const b = Buffer.from(b64, 'base64'), l = b.readUInt32LE(12); return (JSON.parse(b.subarray(20, 20 + l).toString('utf8')).nodes || []).map(n => n.name); };
+  const out = { buildings: {}, roads: {} }, errs = [];
+  for (const b of ca.buildings) { const m = b.museFields || {}; const e = {};
+    if (m.stageNodes) { const glb = (ASSETS.buildings || {})[b.modelId] || (ASSETS.town || {})[b.modelId];
+      if (!glb) errs.push(b.id + '：モデル ' + b.modelId + ' がない'); else { const names = new Set(glbNames(glb));
+        for (const [k, list] of Object.entries(m.stageNodes)) { if (!(Number(k) >= 0 && Number(k) < b.stages.length)) errs.push(b.id + '：工程 ' + k + ' がない'); for (const n of list) if (!names.has(n)) errs.push(b.id + '：工程 ' + k + ' のノード ' + n + ' が GLB にない'); } }
+      e.stageNodes = m.stageNodes; }
+    if (m.roadConnectors) e.roadConnectors = m.roadConnectors;
+    if (m.lod) e.lod = m.lod; if (m.materialSlots) e.materialSlots = m.materialSlots;
+    if (Object.keys(e).length) out.buildings[b.id] = e; }
+  for (const r of ca.roads) { const m = r.museFields || {}; const e = {};
+    if (m.tileTexture) { const f = path.join(root, m.tileTexture); if (!fs.existsSync(f)) errs.push(r.id + '：道のテクスチャ ' + m.tileTexture + ' がない'); else e.tileTexture = dataUrl(m.tileTexture, /\.png$/i.test(f) ? 'image/png' : /\.jpe?g$/i.test(f) ? 'image/jpeg' : 'image/webp'); }
+    if (m.edgeTreatment) e.edgeTreatment = m.edgeTreatment; if (m.joinPieces) e.joinPieces = m.joinPieces;
+    if (Object.keys(e).length) out.roads[r.id] = e; }
+  if (errs.length) throw new Error('construction-assets.json の museFields：\n' + errs.join('\n'));
+  ASSETS.consMuse = out; }
 ASSETS.spaceContract=JSON.parse(rd('assets/rocket/rocket-contract.json'));
 ASSETS.spacePlacement={'launch-pad':[0,0],'rocket':[0,0],'support-tower':[-4.6,0],'control-terminal':[5,5],'electronics-fab':[-2,6],'computer-bench':[1,6],'test-terminal':[4,-6],'power-distribution':[6,-2],'life-support':[6,1],'suit-stand':[-6,-5],'parts-rack':[-2,-5]};
 for(const q of ASSETS.spaceContract.equipmentPlacement.items)ASSETS.spacePlacement[q.model]=[q.position[0],q.position[2]];
