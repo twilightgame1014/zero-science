@@ -90,6 +90,9 @@ const VCOLORS = {
   // Round 28 (Claude §25.2): host-path tread + volcano band set.
   cTrailSoil: new THREE.Color(0x8a6f4d),
   cTrailGravel: new THREE.Color(0x9a8a72),
+  // Town construction: stone paving for kind:'stone' paths.
+  cStonePave: new THREE.Color(0x8f8c84),
+  cStoneJoint: new THREE.Color(0x55524b),
   cSulfur: new THREE.Color(0xc9a83c),
   cCrater: new THREE.Color(0x453c34),
   cLavaFlow: new THREE.Color(0x4a3430),
@@ -117,9 +120,11 @@ export class TerrainRenderer {
   /** Host-supplied worn paths (round 28, Claude §25.2.1) with
    *  precomputed bounds so fillVertex can reject far vertices
    *  before the segment loop. */
+  private trailKind: 'dirt' | 'gravel' | 'stone' = 'dirt';
   private hostPaths: Array<{
     points: ReadonlyArray<readonly number[]>;
     width: number;
+    kind: 'dirt' | 'gravel' | 'stone';
     minX: number; minZ: number; maxX: number; maxZ: number;
   }> = [];
   /** Streaming bounds in chunk indices (round 29, Claude §24.2):
@@ -161,7 +166,7 @@ export class TerrainRenderer {
         minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]);
         minZ = Math.min(minZ, pt[1]); maxZ = Math.max(maxZ, pt[1]);
       }
-      this.hostPaths.push({ points: pts, width: Math.max(0.4, p.width), minX, minZ, maxX, maxZ });
+      this.hostPaths.push({ points: pts, width: Math.max(0.4, p.width), kind: p.kind ?? 'dirt', minX, minZ, maxX, maxZ });
     }
     this.terrainMaterial = this.buildTerrainMaterial(detailTexture, groundTextures);
     this.hasScree = !!groundTextures?.scree;
@@ -416,16 +421,54 @@ export class TerrainRenderer {
 
   /** Distance to the nearest host path + that path's flat
    *  half-width (round 28). Infinity when no path is near. */
-  private hostTrail(x: number, z: number): { d: number; width: number } {
+  private hostTrail(x: number, z: number): { d: number; width: number; kind: 'dirt' | 'gravel' | 'stone' } {
     let best = Infinity;
     let width = 0;
+    let kind: 'dirt' | 'gravel' | 'stone' = 'dirt';
     for (const p of this.hostPaths) {
       const reach = p.width + 2.2;
       if (x < p.minX - reach || x > p.maxX + reach || z < p.minZ - reach || z > p.maxZ + reach) continue;
       const d = distanceToPolyline(x, z, p.points);
-      if (d < best) { best = d; width = p.width; }
+      if (d < best) { best = d; width = p.width; kind = p.kind; }
     }
-    return { d: best, width };
+    return { d: best, width, kind };
+  }
+
+  /** Paint one vertex toward the road/path surface for the
+   *  given kind at weight w (town construction). 'dirt' with the
+   *  historical weights (0.85 / 0.45) reproduces the round-28
+   *  trail exactly; the volcano trail passes no kind and stays
+   *  dirt. All kinds share the same distance field, so curves,
+   *  T/cross junctions and dead ends need no connector pieces. */
+  private applyTrailColour(
+    tmp: THREE.Color, kind: 'dirt' | 'gravel' | 'stone',
+    x: number, z: number, w: number, soilW: number, gravelW: number,
+  ): void {
+    const { cTrailSoil, cTrailGravel, cStonePave, cStoneJoint } = VCOLORS;
+    if (kind === 'gravel') {
+      const gravel = smoothstep(0.35, 0.75, fbm(x * 1.7 + 3, z * 1.7 + 41, 2));
+      tmp.lerp(cTrailGravel, w * 0.92);
+      tmp.lerp(cTrailSoil, w * gravel * 0.3);
+    } else if (kind === 'stone') {
+      // Flat slabs on a 1.2 m world grid: grey body, darker
+      // joints, per-cell tone jitter. Resolves where the chunk
+      // vertex spacing allows and degrades to flat paving grey
+      // where it does not; the tileable detail texture
+      // (assets/town-construction/textures/road-stone.png) is the
+      // long-term surface, see INTEGRATION §37.
+      const cell = 1.2;
+      const fx = Math.abs((((x / cell) % 1) + 1) % 1 - 0.5);
+      const fz = Math.abs((((z / cell) % 1) + 1) % 1 - 0.5);
+      const joint = smoothstep(0.34, 0.5, Math.max(fx, fz));
+      const jitter = fbm(Math.floor(x / cell) * 3.1 + 7, Math.floor(z / cell) * 3.1 + 13, 1) * 0.09;
+      tmp.lerp(cStonePave, w * 0.94);
+      tmp.multiplyScalar(1 + jitter * w);
+      tmp.lerp(cStoneJoint, w * joint * 0.55);
+    } else {
+      const gravel = smoothstep(0.45, 0.8, fbm(x * 0.9 + 3, z * 0.9 + 41, 2));
+      tmp.lerp(cTrailSoil, w * soilW);
+      tmp.lerp(cTrailGravel, w * gravel * gravelW);
+    }
   }
 
   private fillVertex(
@@ -475,9 +518,8 @@ export class TerrainRenderer {
       const tr = this.hostTrail(x, z);
       if (tr.d < tr.width + 2.2) {
         trailW = smoothstep(tr.width + 1.6, tr.width * 0.5, tr.d);
-        const gravel = smoothstep(0.45, 0.8, fbm(x * 0.9 + 3, z * 0.9 + 41, 2));
-        tmp.lerp(cTrailSoil, trailW * 0.85);
-        tmp.lerp(cTrailGravel, trailW * gravel * 0.45);
+        this.trailKind = tr.kind;
+        this.applyTrailColour(tmp, tr.kind, x, z, trailW, 0.85, 0.45);
       }
     }
     const rockiness = smoothstep(1.6, 3.6, h) * 0.75 +
@@ -543,9 +585,7 @@ export class TerrainRenderer {
         volScreeKeep = 1 - wVol * (Math.max(upperW, flankW) > 0.4 ? 0.4 : 0.85);
         // The trodden trail must survive the area overlay.
         if (trailW > 0) {
-          const gravel = smoothstep(0.45, 0.8, fbm(x * 0.9 + 3, z * 0.9 + 41, 2));
-          tmp.lerp(cTrailSoil, trailW * 0.8);
-          tmp.lerp(cTrailGravel, trailW * gravel * 0.4);
+          this.applyTrailColour(tmp, this.trailKind, x, z, trailW, 0.8, 0.4);
         }
       } else {
         tmp.lerp(cBasalt, wVol * smoothstep(6, 14, h) * 0.6);

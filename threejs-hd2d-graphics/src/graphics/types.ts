@@ -373,6 +373,11 @@ export interface GraphicsConfig {
     paths?: Array<{
       points: ReadonlyArray<readonly number[] | { x: number; z: number }>;
       width: number;
+      /** Road surface for town construction: 'dirt' (default,
+       *  the round-28 packed-soil trail), 'gravel' or 'stone'
+       *  paving. Junctions, curves and dead ends come from the
+       *  shared distance field; no connector pieces exist. */
+      kind?: 'dirt' | 'gravel' | 'stone';
     }>;
     /**
      * Host-declared terrain field in chunk indices (Claude §24.2,

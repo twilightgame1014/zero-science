@@ -1865,3 +1865,104 @@ GraphicsEngine / types の両ツリー）。
 発生点のワールド座標に残る実装で、コーンの追随と
 合わせてコード上も担保している。撮影は
 検証フォルダ round30 の exhaust-emitter-*.png。
+
+## 37. 街・工場の建設アセット（M4-02、2026-11-14）
+
+成果物は `assets/town-construction/`。契約は
+`town-construction.json`（structures.json と同じ規約＋建設工程の
+拡張）。ゲーム側ファイルは変更していない。モジュールの変更は
+TerrainRenderer のパス `kind` 拡張のみ（両ツリー同一）。
+
+### 37.1 建設段階の表示方式（決定事項）
+
+**累積ノード表示方式**。1棟1GLBの中でノードを
+`stage1_foundation` / `stage2_frame` / `stage3_shell` /
+`stage4_complete` の4グループに分けてある。
+
+- stage 0：建物は隠し、`construction-site`（杭と縄）だけ出す
+- stage N（1〜4）：グループ 1..N を表示する
+- 全工程が同一座標・同一スケール。二重壁やズレは構造上起きない
+- 工程番号だけで制御できる。名前で制御したい場合は契約の
+  `stageNodes` に全ノード名がある
+
+工程の中身は建物の構造に合わせた実工程：小屋は
+土壁が棟木を受けるので棟木は stage3、工場の stage2 は
+レンガ壁の下部コース（wallsLower、壁高 2.5 m のうち 0→1.0 m、
+水平バンド分割で段々の施工面になる）。
+
+### 37.2 対象と対応表
+
+| assetId | 扱い | モデル |
+|---|---|---|
+| hut | 改修（既存 hut を工程化） | hut-staged.glb（1996 tris） |
+| house | 改修（DQ3 hut-town を工程化） | house-staged.glb（3332） |
+| warehouse | 新規 | warehouse.glb（3664） |
+| workshop | 新規 | workshop.glb（2844） |
+| factory | 改修（壁分割＋換気筒・配管追加、木箱は小物へ分離） | factory-staged.glb（3080） |
+| laboratory / power-plant / research-institute | 保留（契約に寸法・入口だけ先行記載、工程化は次ラウンド） | 既存のまま |
+
+全棟に LOD1（工程グループを1メッシュずつに統合、計4メッシュ）
+がある。切替距離は既存の構造物 LOD ルールに合わせてよい。
+段階モデルには ContactShadow を入れていない（モジュールの
+実影を使う。斜面で浮く板を建設中に出さないため）。
+
+### 37.3 予定地キットと資材置き場
+
+- `construction-site.glb`：単位寸法（1×1）設計で、各パーツは
+  ノード原点に中心がある。footprint w×d に対して契約の
+  transforms 通りに位置とスケールを設定する
+- 資材小物5種（pile-lumber / pile-stone / pile-sacks /
+  pile-metal / pile-crated）は独立モデル。建物の delivery 点の
+  近くに、資材が集まる間（目安 stage 0〜3）だけ出す。
+  pile-metal と pile-crated は工業時代のみ（era フラグ）
+- 工場モデルに元々あった木箱2つは削除した（搬入物は小物側）
+
+### 37.4 道路（kind 拡張）
+
+道路はモジュールも板も作らない。`config.world.paths` の
+各エントリに `kind: 'dirt' | 'gravel' | 'stone'` を追加できる
+ようにした（types.ts と TerrainRenderer、後方互換）。
+
+- kind 省略時＝従来の踏み固め土（火山道は無変更で従来通り）
+- 曲がり・T字・十字・行き止まり・建物入口の取り付けは
+  距離場がそのまま処理する。接続部品は存在しない
+- 建物へは roadLink 点へ同じ kind の短いパスを引く（エプロン）
+- stone は頂点カラー解像度で 1.2 m グリッドの目地を描く。
+  チャンク頂点間隔より細かい場所では平らな舗装グレーに
+  劣化する。タイル可能なテクスチャ3種（albedo＋法線、512）を
+  `assets/town-construction/textures/` に仮素材として同梱した
+  （Muse の手続き生成。GPT 原画が届いたら差し替え。
+  パス splat への詳細テクスチャ適用は将来のモジュール作業）
+
+検証：モジュールデモ（?roads フック）で hostTrail の種別判定、
+fillVertex の色、実チャンクの頂点カラーを数値確認済み
+（stone 頂点 (0.28, 0.26, 0.22) / dirt (0.24, 0.16, 0.07) 等）。
+デモの森床＋夕景では見た目の帯が写真に残らなかったため、
+**道路の見た目の最終確認は未確認**（ゲーム側で開けた地面に
+引いた状態で確認してほしい）。
+
+### 37.5 配置の目安
+
+- 斜面：footing は厚み 0.3 前後。8°の傾斜面に原点を
+  0.28 沈めて置いた撮影（previews/hut-slope.png）では
+  両端とも地面から ±0.25 以内に収まった。配置時は
+  「footprint 中心の地面高さ −0.2〜−0.3」を目安に沈める
+- 占有・入口・搬入点・作業点・roadLink は契約 JSON に
+  建物ローカル座標（three 形式、正面 +Z）で記載
+
+### 37.6 容量
+
+段階 GLB は共有テクスチャ埋め込みのため単体 2.0〜2.8 MB。
+取り込みは必ず既存の共有テクスチャ軽量化
+（make-nature-glb.py 系、tex:<hash>）を通すこと。
+実増分はジオメトリ＋道路テクスチャ約 0.65 MB の見込み。
+dist は 15.54 MB / 16 MB で、素の埋め込みは入らない。
+
+### 37.7 未確認・残件
+
+- ゲーム内での段階表示・道路の見た目：未確認（統合は Claude）
+- laboratory / power-plant / research-institute の工程化
+- 倉庫の原始時代バリアント（金属屋根→茅/瓦）
+- GPT 道路テクスチャ原画（依頼表 GPT-TEXTURE-REQUEST.md）
+- プレビューは全て Blender Cycles 描画（ゲーム画面ではない）。
+  previews/ に工程帯・工場4面・回転・斜面の撮影あり

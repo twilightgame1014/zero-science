@@ -54,7 +54,23 @@ const fieldCfg = fieldParam
       return c;
     })()
   : undefined;
-const cfgOverride = drymaskCfg ?? fieldCfg;
+// Town-construction verification hook (demo only): ?roads lays
+// three short roads near the sample clearing — a dirt road, a
+// gravel curve joining it, and a stone road branching off in a
+// T — so the path kinds, junction and curve can be eyeballed in
+// one frame.
+const roadsCfg = new URLSearchParams(location.search).has('roads')
+  ? (() => {
+      const c = resolveConfig();
+      c.world.paths = [
+        { points: [[-52, 52], [-28, 52]], width: 1.6, kind: 'dirt' },
+        { points: [[-52, 44], [-44, 47], [-36, 50], [-29, 51.5]], width: 1.6, kind: 'gravel' },
+        { points: [[-40, 52], [-40, 41]], width: 1.8, kind: 'stone' },
+      ];
+      return c;
+    })()
+  : undefined;
+const cfgOverride = drymaskCfg ?? fieldCfg ?? roadsCfg;
 
 const gfx: GraphicsEngine = await initializeGraphics(container, {
   playerSpriteUrl: boySpriteUrl,
@@ -85,9 +101,14 @@ buildVillage(gfx.getScene());
 gfx.setWorldVisualState({ timeOfDay: 0.44 });
 
 /* ---------------- fake game state (demo only) ---------------- */
+// Demo-only spawn override for verification hooks: ?at=x,z
+const atParam = new URLSearchParams(location.search).get('at');
+const spawnAt = atParam
+  ? { x: Number(atParam.split(',')[0]), z: Number(atParam.split(',')[1]) }
+  : { x: -20, z: 20 };
 const player = {
-  x: -20,
-  z: 20,
+  x: spawnAt.x,
+  z: spawnAt.z,
   direction: 'down' as Direction,
   moving: false,
 };
