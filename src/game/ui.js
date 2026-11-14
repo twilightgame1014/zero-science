@@ -1677,13 +1677,13 @@ let modalOpener = null;
 function openModal(focusEl){
   if(!modalOpen()) modalOpener = document.activeElement;
   haltField();
-  $("#modal").classList.add("open"); $("#app").inert = true;
+  $("#modal").classList.add("open"); $("#app").inert = true; document.documentElement.classList.add("modal-on");
   const f = focusEl || $("#sheet").querySelector("button"); if(f) f.focus({preventScroll:true});
 }
 function closeModal(){
   if(!modalOpen()) return;
   endTalk();
-  $("#modal").classList.remove("open"); $("#app").inert = false;
+  $("#modal").classList.remove("open"); $("#app").inert = false; document.documentElement.classList.remove("modal-on");
   const o = modalOpener; modalOpener = null;
   if(o && o.isConnected && !o.closest("[inert],[hidden]")) o.focus({preventScroll:true});
   else if(U.tab!=="explore"){ const h=$("#dockTitle"); if(h) h.focus({preventScroll:true}); }

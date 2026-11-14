@@ -38,6 +38,12 @@ const findSpot = (page, def, from, rot) => ev(page, ([def, from, rot]) => { cons
 const give = (page, items) => ev(page, items => { const S = window.__GAME__.S; for (const k in items) { S.inv[k] = (S.inv[k] || 0) + items[k]; S.disc[k] = S.disc[k] || { first: Date.now(), made: 1, total: 1, routes: [], best: 0 }; } window.__GAME__.render(); }, items);
 const site = (page, id) => ev(page, id => JSON.parse(JSON.stringify(window.__GAME__.S.cons.inst[id] || null)), id);
 
+/* 現場の画面を開いたまま通知（完成・新発見・目標達成）が 3 件出ても、通知が画面の見出しに重ならない（2026-11-14） */
+const toastOverlap = page => ev(page, () => { const box = document.getElementById('toasts'); for (let k = 0; k < 3; k++) { const el = document.createElement('div'); el.className = 'toast';
+    el.innerHTML = '<div class="i">🏗️</div><div><div class="k">新発見！ 図鑑に登録したよ</div><div class="nm">試しの通知 ' + k + '</div><p>説明の文。説明の文。説明の文。説明の文。</p></div>'; box.prepend(el); }
+  const sh = document.getElementById('sheet').getBoundingClientRect(), shown = [...box.children].filter(t => t.offsetParent && getComputedStyle(t).display !== 'none').map(t => t.getBoundingClientRect());
+  const hit = shown.filter(r => r.bottom > sh.top + 1 && r.right > sh.left && r.left < sh.right);
+  box.innerHTML = ''; return { shown: shown.length, hit: hit.length, sheetTop: Math.round(sh.top), toastBottom: Math.round(Math.max(0, ...shown.map(r => r.bottom))) }; });
 /* ---------------- PC ---------------- */
 {
   const { page, errors } = await newPage({ width: 1280, height: 800 }, false);
@@ -61,6 +67,7 @@ const site = (page, id) => ev(page, id => JSON.parse(JSON.stringify(window.__GAM
   const id1 = ids[0];
   ok('予定地の微調整は自分自身の占有形状を除外する', await ev(page,id=>{const g=window.__GAME__,v=g.S.cons.inst[id];return CONS.checkBuilding(g.S,g.WORLD,v.def,v.x,v.z,v.rot,{player:null,npcs:[],reserved:[]},id).ok;},id1));
   ok('現場の画面が開き、所持・必要・搬入済み・不足が出る。遠いので運べない', await ev(page, () => document.getElementById('modal').classList.contains('open') && /不足/.test(document.getElementById('sheet').textContent) && document.querySelector('[data-act="cs-dlall"]').disabled));
+  { const t = await toastOverlap(page); ok('PC：現場の画面を開いているとき、通知は 1 件だけ上の帯に出て、見出しに重ならない', t.shown === 1 && t.hit === 0, JSON.stringify(t)); }
   await page.click('#sheet .close');
   await ev(page, id => { const g = window.__GAME__, v = g.S.cons.inst[id]; g.W3.pos = { x: v.x, z: v.z + 1.4 }; g.W3.path = null; }, id1); await page.waitForTimeout(800);
   ok('現場のそばに来ると、右上に現場への近道が出る', await page.isVisible('#consHud'));
@@ -140,6 +147,7 @@ const site = (page, id) => ev(page, id => JSON.parse(JSON.stringify(window.__GAM
   ok('スマホ：ボタンで予定地にできる', await ev(page, () => Object.values(window.__GAME__.S.cons.inst).some(v => v.def === 'campfire')));
   const sheetSmall = await ev(page, () => [...document.querySelectorAll('#sheet button')].filter(b => b.offsetParent && b.getBoundingClientRect().height < 35.5).map(b => b.textContent.trim().slice(0, 10)));
   ok('スマホ：現場の画面のボタンは押せる大きさ（小ボタン 36px 以上）', sheetSmall.length === 0, sheetSmall.join(' / '));
+  { const t = await toastOverlap(page); ok('スマホ：現場の画面を開いているとき、通知は 1 件だけ上の帯に出て、見出しに重ならない', t.shown === 1 && t.hit === 0, JSON.stringify(t)); }
   ok('ページでエラーが起きていない（スマホ）', errors.length === 0, errors.join('\n'));
   await page.context().close();
 }
