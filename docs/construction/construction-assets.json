@@ -51,11 +51,59 @@
     }
    },
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "workbench",
+      "basket",
+      "basketStone.001",
+      "basketStone.002",
+      "blade",
+      "blade.001",
+      "hammerHandle",
+      "hammerHead",
+      "hide",
+      "basketStone",
+      "lash.001",
+      "lash.002",
+      "lash.003",
+      "leg",
+      "leg.001",
+      "leg.002",
+      "leg.003",
+      "logStore",
+      "logStore.001",
+      "logStore.002",
+      "shelf",
+      "top",
+      "lash",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.33
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "rope.001",
+     "darkStone.001",
+     "darkStone.001",
+     "shadowM.001",
+     "bark.001",
+     "rock1.001",
+     "canvas.001",
+     "logEnd.001",
+     "planksH.001"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -113,11 +161,76 @@
     }
    },
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "campfire",
+      "ringStone",
+      "ringStone.001",
+      "ringStone.002",
+      "ringStone.003",
+      "ringStone.004",
+      "ringStone.005",
+      "ringStone.006",
+      "ringStone.007",
+      "ringStone.008"
+     ],
+     "1": [
+      "campfire",
+      "ash",
+      "ember.001",
+      "ember.002",
+      "ember.003",
+      "ember.004",
+      "ember.005",
+      "emberBed",
+      "ember",
+      "flameCard.001",
+      "flameCard.002",
+      "flameCore",
+      "flameCard",
+      "Flame",
+      "log",
+      "log.001",
+      "log.002",
+      "ringStone",
+      "ringStone.001",
+      "ringStone.002",
+      "ringStone.003",
+      "ringStone.004",
+      "ringStone.005",
+      "ringStone.006",
+      "ringStone.007",
+      "ringStone.008",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.62
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "ash.002",
+     "shadowM.002",
+     "ember.002",
+     "dark.002",
+     "flameCard.002",
+     "flameCore.002",
+     "bark.002",
+     "logEnd.002",
+     "rock1.002",
+     "rock2.002",
+     "rock3.002"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -174,11 +287,62 @@
     }
    },
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "kiln",
+      "base"
+     ],
+     "1": [
+      "kiln",
+      "base",
+      "brace.001",
+      "braceB.001",
+      "brace",
+      "braceB",
+      "braceLash.001",
+      "dome",
+      "mouthCavity",
+      "mouthGlow",
+      "mouthLintel",
+      "mouthLog",
+      "mouthLog.001",
+      "mouthPost",
+      "mouthPost.001",
+      "mouthSill",
+      "braceLash",
+      "sootCore",
+      "sootStain",
+      "vent",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.95
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "stoneTrim.003",
+     "bark.003",
+     "rope.003",
+     "shadowM.003",
+     "clayBig.003",
+     "dark.003",
+     "glow.003",
+     "darkStone.003",
+     "logEnd.003",
+     "sootDecal.003",
+     "clay.003"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -246,11 +410,86 @@
     }
    },
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "smelter",
+      "base"
+     ],
+     "1": [
+      "smelter",
+      "base",
+      "coal.001",
+      "coal.002",
+      "coal.003",
+      "coal.004",
+      "coal",
+      "coal.005",
+      "mouthCavity",
+      "mouthGlow",
+      "mouthRing",
+      "shaft",
+      "shaftTop",
+      "tap",
+      "tapGlow"
+     ],
+     "2": [
+      "smelter",
+      "base",
+      "basket",
+      "belBeam",
+      "belBot",
+      "belMid",
+      "belTop",
+      "nozzle",
+      "Bellows",
+      "belPost.001",
+      "belPost",
+      "coal.001",
+      "coal.002",
+      "coal.003",
+      "coal.004",
+      "coal",
+      "coal.005",
+      "mouthCavity",
+      "mouthGlow",
+      "mouthRing",
+      "shaft",
+      "shaftTop",
+      "tap",
+      "tapGlow",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.9
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "stoneTrim.005",
+     "rope.005",
+     "bark.005",
+     "planksV.005",
+     "canvas.005",
+     "ironT.005",
+     "sootM.005",
+     "shadowM.005",
+     "dark.005",
+     "glow.005",
+     "darkStone.005",
+     "clay.005",
+     "darkStone.005",
+     "liquid.005"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -309,11 +548,96 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "laboratory",
+      "backWall",
+      "beamTop",
+      "chimney",
+      "cornerPost",
+      "cornerPost.001",
+      "cornerPostB",
+      "cornerPostB.001",
+      "floor",
+      "hearth",
+      "hearthGlow",
+      "roof",
+      "roof.001",
+      "sideWall",
+      "sideWall.001"
+     ],
+     "1": [
+      "laboratory",
+      "backWall",
+      "barrel",
+      "beamTop",
+      "chimney",
+      "cornerPost",
+      "cornerPost.001",
+      "cornerPostB",
+      "cornerPostB.001",
+      "flask",
+      "flask.001",
+      "flaskLiquid",
+      "flaskNeck",
+      "flaskNeck.001",
+      "floor",
+      "hearth",
+      "hearthGlow",
+      "jar",
+      "jar.001",
+      "jar.002",
+      "jar.003",
+      "jar.004",
+      "jar.005",
+      "jar.006",
+      "jar.007",
+      "roof",
+      "roof.001",
+      "shelf",
+      "shelf.001",
+      "sideWall",
+      "sideWall.001",
+      "stillNeck",
+      "stillPot",
+      "table",
+      "tableLeg",
+      "tableLeg.001",
+      "tableLeg.002",
+      "tableLeg.003",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      2.35
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "plaster.006",
+     "planksV.006",
+     "bark.006",
+     "stone.006",
+     "shadowM.006",
+     "bark.006",
+     "glass.006",
+     "liquid.006",
+     "stone.006",
+     "glow.006",
+     "plaster.006",
+     "tile.006",
+     "copper.006",
+     "planksH.006"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -390,11 +714,106 @@
     }
    },
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "hut",
+      "footing",
+      "step"
+     ],
+     "1": [
+      "hut",
+      "beamB",
+      "beamF",
+      "footing",
+      "post",
+      "post.001",
+      "post.002",
+      "post.003",
+      "step"
+     ],
+     "2": [
+      "hut",
+      "beamB",
+      "beamF",
+      "door",
+      "eave",
+      "eave.001",
+      "eave.002",
+      "eave.003",
+      "eave.004",
+      "eave.005",
+      "eave.006",
+      "eave.007",
+      "eave.008",
+      "eave.009",
+      "eave.010",
+      "eave.011",
+      "eave.012",
+      "eave.013",
+      "eave.014",
+      "eave.015",
+      "eave.016",
+      "eave.017",
+      "eave.018",
+      "eave.019",
+      "eave.020",
+      "eave.021",
+      "eave.022",
+      "eave.023",
+      "eave.024",
+      "eave.025",
+      "eave.026",
+      "eave.027",
+      "eave.028",
+      "eave.029",
+      "footing",
+      "lintel",
+      "post",
+      "post.001",
+      "post.002",
+      "post.003",
+      "ridge",
+      "ridgeTie",
+      "ridgeTie.001",
+      "ridgeTie.002",
+      "roof",
+      "roof.001",
+      "step",
+      "walls",
+      "winBar",
+      "winBar.001",
+      "winDark",
+      "winFrame",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0.7,
+      2.11
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "bark.004",
+     "shadowM.004",
+     "dark.004",
+     "thatch.004",
+     "stoneTrim.004",
+     "bark.004",
+     "thatch.004",
+     "stone.004",
+     "earth.004",
+     "darkGlass.004",
+     "planksV.004"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -459,11 +878,108 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "hut-town",
+      "found",
+      "step"
+     ],
+     "1": [
+      "hut-town",
+      "found",
+      "post",
+      "post.001",
+      "post.002",
+      "post.003",
+      "rail",
+      "rail.001",
+      "step",
+      "stud",
+      "stud.001"
+     ],
+     "2": [
+      "hut-town",
+      "door",
+      "eavetile",
+      "eavetile.001",
+      "eavetile.002",
+      "eavetile.003",
+      "eavetile.004",
+      "eavetile.005",
+      "eavetile.006",
+      "eavetile.007",
+      "eavetile.008",
+      "eavetile.009",
+      "eavetile.010",
+      "eavetile.011",
+      "eavetile.012",
+      "eavetile.013",
+      "eavetile.014",
+      "eavetile.015",
+      "eavetile.016",
+      "eavetile.017",
+      "eavetile.018",
+      "eavetile.019",
+      "eavetile.020",
+      "eavetile.021",
+      "eavetile.022",
+      "eavetile.023",
+      "eavetile.024",
+      "eavetile.025",
+      "found",
+      "gable",
+      "gable.001",
+      "gable.002",
+      "gable.003",
+      "knob",
+      "lintel",
+      "mullH",
+      "mullV",
+      "plate",
+      "plate.001",
+      "plateS",
+      "plateS.001",
+      "post",
+      "post.001",
+      "post.002",
+      "post.003",
+      "rail",
+      "rail.001",
+      "ridge",
+      "roof",
+      "roof.001",
+      "step",
+      "stud",
+      "stud.001",
+      "walls",
+      "winframe",
+      "winglass",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      2.5
+     ]
+    ],
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "shadowM",
+     "dqPlank",
+     "dqRoof",
+     "dqStone",
+     "dqPlank",
+     "dqIron",
+     "dqTimber",
+     "dqRoof",
+     "dqPlaster",
+     "dqGlass"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -513,11 +1029,47 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "plaza"
+     ],
+     "1": [
+      "plaza",
+      "plaza-centre",
+      "rim",
+      "ring1",
+      "ring2",
+      "ring3"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      7.1
+     ],
+     [
+      7.1,
+      0
+     ],
+     [
+      0,
+      -7.1
+     ],
+     [
+      -7.1,
+      0
+     ]
+    ],
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqCobble",
+     "dqStone",
+     "dqPlaza"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -561,11 +1113,35 @@
     }
    },
    "museFields": {
-    "stageNodes": null,
+    "stageNodes": {
+     "0": [
+      "stone-lantern",
+      "base",
+      "firecore",
+      "jewel",
+      "pillar",
+      "post",
+      "post.001",
+      "post.002",
+      "post.003",
+      "roof",
+      "roofslab",
+      "shelf",
+      "ContactShadow"
+     ]
+    },
     "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqStone",
+     "shadowM.010",
+     "dqGlass",
+     "dqStone"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -629,11 +1205,86 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "smelter",
+      "base"
+     ],
+     "1": [
+      "smelter",
+      "base",
+      "coal.001",
+      "coal.002",
+      "coal.003",
+      "coal.004",
+      "coal",
+      "coal.005",
+      "mouthCavity",
+      "mouthGlow",
+      "mouthRing",
+      "shaft",
+      "shaftTop",
+      "tap",
+      "tapGlow"
+     ],
+     "2": [
+      "smelter",
+      "base",
+      "basket",
+      "belBeam",
+      "belBot",
+      "belMid",
+      "belTop",
+      "nozzle",
+      "Bellows",
+      "belPost.001",
+      "belPost",
+      "coal.001",
+      "coal.002",
+      "coal.003",
+      "coal.004",
+      "coal",
+      "coal.005",
+      "mouthCavity",
+      "mouthGlow",
+      "mouthRing",
+      "shaft",
+      "shaftTop",
+      "tap",
+      "tapGlow",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.9
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "stoneTrim.005",
+     "rope.005",
+     "bark.005",
+     "planksV.005",
+     "canvas.005",
+     "ironT.005",
+     "sootM.005",
+     "shadowM.005",
+     "dark.005",
+     "glow.005",
+     "darkStone.005",
+     "clay.005",
+     "darkStone.005",
+     "liquid.005"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -688,11 +1339,68 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "steam-engine",
+      "base"
+     ],
+     "1": [
+      "steam-engine",
+      "base",
+      "boiler",
+      "boilerBand.001",
+      "boilerBand.002",
+      "conRod",
+      "cylBlock",
+      "dome",
+      "firebox",
+      "fireGlow",
+      "flyPost",
+      "gauge",
+      "pipeTop",
+      "crosshead",
+      "rod",
+      "Piston",
+      "smokestack",
+      "boilerBand",
+      "hub",
+      "rim",
+      "rimIn",
+      "spoke",
+      "spoke.001",
+      "spoke.002",
+      "spoke.003",
+      "spoke.004",
+      "spoke.005",
+      "Wheel",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0.48,
+      1.43
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "stoneBig.007",
+     "ironT.007",
+     "brass.007",
+     "steel.007",
+     "shadowM.007",
+     "ironT.007",
+     "glow.007",
+     "copper.007",
+     "brass.007"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -747,11 +1455,75 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "waterwheel",
+      "axle",
+      "framePost",
+      "framePost.001",
+      "framePostB",
+      "framePostB.001",
+      "pier",
+      "pier.001",
+      "pierWet",
+      "pierWet.001"
+     ],
+     "1": [
+      "waterwheel",
+      "axle",
+      "framePost",
+      "framePost.001",
+      "framePostB",
+      "framePostB.001",
+      "pier",
+      "pier.001",
+      "pierWet",
+      "pierWet.001",
+      "sluice",
+      "hub",
+      "paddle",
+      "paddle.001",
+      "paddle.002",
+      "paddle.003",
+      "paddle.004",
+      "paddle.005",
+      "paddle.006",
+      "paddle.007",
+      "rim",
+      "rimIn",
+      "spoke",
+      "spoke.001",
+      "spoke.002",
+      "spoke.003",
+      "Wheel",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      1.57,
+      0.78
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "bark.002",
+     "logEnd.002",
+     "shadowM.002",
+     "stone.002",
+     "wetStone.002",
+     "planksV.002",
+     "planksH.002",
+     "planksH.002",
+     "bark.002"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -809,11 +1581,77 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "power-plant",
+      "bigWin",
+      "bigWinBarH",
+      "bigWinBarV",
+      "boilerHouse",
+      "chimneyLow",
+      "door",
+      "gableWin",
+      "hall",
+      "hallRoof"
+     ],
+     "1": [
+      "power-plant",
+      "bigWin",
+      "bigWinBarH",
+      "bigWinBarV",
+      "boilerHouse",
+      "bushing.001",
+      "bushing.002",
+      "bushingTop.001",
+      "bushingTop.002",
+      "chimneyBand",
+      "chimneyLow",
+      "chimneyTop",
+      "bushing",
+      "door",
+      "feedPipe",
+      "feedPipe2",
+      "fin",
+      "fin.001",
+      "fin.002",
+      "fin.003",
+      "gableWin",
+      "hall",
+      "hallRoof",
+      "bushingTop",
+      "turbine",
+      "xfmr",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      -2.46,
+      2.24
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "darkGlass.002",
+     "ironT.002",
+     "brick.002",
+     "copper.002",
+     "ceramic.002",
+     "brick.002",
+     "shadowM.002",
+     "steel.002",
+     "winLit.002",
+     "plaster.002",
+     "metalRoofH.002",
+     "steel.002"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -878,11 +1716,113 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "distillation-tower",
+      "base",
+      "ladderRail",
+      "ladderRail.001",
+      "platform",
+      "platform.001",
+      "railPost",
+      "railPost.001",
+      "railPost.002",
+      "railPost.003",
+      "railTop",
+      "railTop.001",
+      "rung",
+      "rung.001",
+      "rung.002",
+      "rung.003",
+      "rung.004"
+     ],
+     "1": [
+      "distillation-tower",
+      "base",
+      "cap",
+      "column",
+      "condenser",
+      "condLeg",
+      "condLeg2",
+      "ladderRail",
+      "ladderRail.001",
+      "platform",
+      "platform.001",
+      "railPost",
+      "railPost.001",
+      "railPost.002",
+      "railPost.003",
+      "railTop",
+      "railTop.001",
+      "rung",
+      "rung.001",
+      "rung.002",
+      "rung.003",
+      "rung.004",
+      "tank",
+      "trayRing",
+      "trayRing.001",
+      "trayRing.002",
+      "trayRing.003"
+     ],
+     "2": [
+      "distillation-tower",
+      "base",
+      "cap",
+      "column",
+      "condenser",
+      "condLeg",
+      "condLeg2",
+      "ladderRail",
+      "ladderRail.001",
+      "outPipe",
+      "platform",
+      "platform.001",
+      "railPost",
+      "railPost.001",
+      "railPost.002",
+      "railPost.003",
+      "railTop",
+      "railTop.001",
+      "rung",
+      "rung.001",
+      "rung.002",
+      "rung.003",
+      "rung.004",
+      "tank",
+      "trayRing",
+      "trayRing.001",
+      "trayRing.002",
+      "trayRing.003",
+      "vapPipe",
+      "ventPipe",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.45
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "stoneBig.008",
+     "steel.008",
+     "copper.008",
+     "ironT.008",
+     "shadowM.008",
+     "ironT.008",
+     "brass.008",
+     "brass.008"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -950,11 +1890,98 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "factory",
+      "dock",
+      "footing",
+      "steps"
+     ],
+     "1": [
+      "factory",
+      "canopy",
+      "chimney",
+      "chimneyCap",
+      "dock",
+      "doorL",
+      "doorR",
+      "footing",
+      "roofGlass",
+      "roofGlass.001",
+      "roofGlass.002",
+      "roofTooth",
+      "roofTooth.001",
+      "roofTooth.002",
+      "steps",
+      "walls",
+      "win",
+      "win.001",
+      "win.002",
+      "winBar",
+      "winBar.001",
+      "winBar.002",
+      "winFrame",
+      "winFrame.001",
+      "winFrame.002"
+     ],
+     "2": [
+      "factory",
+      "canopy",
+      "chimney",
+      "chimneyCap",
+      "crate1",
+      "crate2",
+      "dock",
+      "doorL",
+      "doorR",
+      "footing",
+      "roofGlass",
+      "roofGlass.001",
+      "roofGlass.002",
+      "roofTooth",
+      "roofTooth.001",
+      "roofTooth.002",
+      "steps",
+      "walls",
+      "win",
+      "win.001",
+      "win.002",
+      "winBar",
+      "winBar.001",
+      "winBar.002",
+      "winFrame",
+      "winFrame.001",
+      "winFrame.002",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0.4,
+      2.89
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "metalRoofH.001",
+     "brick.001",
+     "darkStone.001",
+     "shadowM.001",
+     "planksV.001",
+     "stone.001",
+     "stoneBig.001",
+     "darkGlass.001",
+     "brick.001",
+     "winLit.001",
+     "ironT.001"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -1023,11 +2050,86 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "research-institute",
+      "base",
+      "steps"
+     ],
+     "1": [
+      "research-institute",
+      "base",
+      "canopy",
+      "door",
+      "doorGlass",
+      "floor1",
+      "floor2",
+      "glassBand",
+      "glassBand.001",
+      "roofSlab",
+      "steps"
+     ],
+     "2": [
+      "research-institute",
+      "acUnit",
+      "base",
+      "benchIn",
+      "benchIn.001",
+      "canopy",
+      "door",
+      "doorGlass",
+      "duct",
+      "flaskIn",
+      "flaskIn.001",
+      "flaskIn.002",
+      "flaskIn.003",
+      "flaskIn.004",
+      "flaskIn.005",
+      "flaskIn.006",
+      "flaskIn.007",
+      "floor1",
+      "floor2",
+      "glassBand",
+      "glassBand.001",
+      "planter",
+      "planter.001",
+      "roofSlab",
+      "shrub",
+      "shrub.001",
+      "steps",
+      "ventStack",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      2.21,
+      2.39
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "steel.003",
+     "stoneBig.003",
+     "planksV.003",
+     "metalRoof.003",
+     "shadowM.003",
+     "ironT.003",
+     "darkGlass.003",
+     "steel.003",
+     "glass.003",
+     "winLit.003",
+     "plaster.003",
+     "leaf.003",
+     "stone.003"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -1084,11 +2186,91 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
-    "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "stageNodes": {
+     "0": [
+      "drilling-rig",
+      "bandF.001",
+      "bandF.002",
+      "brace.001",
+      "brace.002",
+      "brace.003",
+      "brace.004",
+      "brace",
+      "brace.005",
+      "bandF",
+      "crown",
+      "deck",
+      "hole",
+      "leg",
+      "leg.001",
+      "leg.002",
+      "leg.003",
+      "shed",
+      "shedRoof",
+      "shedStack",
+      "steps"
+     ],
+     "1": [
+      "drilling-rig",
+      "bandF.001",
+      "bandF.002",
+      "brace.001",
+      "brace.002",
+      "brace.003",
+      "brace.004",
+      "brace",
+      "brace.005",
+      "bandF",
+      "cable",
+      "crown",
+      "deck",
+      "bit",
+      "pipeJoint",
+      "pipeMain",
+      "DrillPipe",
+      "hole",
+      "leg",
+      "leg.001",
+      "leg.002",
+      "leg.003",
+      "sheave",
+      "shed",
+      "shedRoof",
+      "shedStack",
+      "steps",
+      "drum",
+      "Winch",
+      "winchPost",
+      "winchPost.001",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0.44,
+      1.88
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "ironT.005",
+     "planksV.005",
+     "dark.005",
+     "shadowM.005",
+     "planksH.005",
+     "steel.005",
+     "ironT.005",
+     "bark.005",
+     "metalRoof.005",
+     "bark.005"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -1132,11 +2314,28 @@
     }
    },
    "museFields": {
-    "stageNodes": null,
+    "stageNodes": {
+     "0": [
+      "banner-red",
+      "bar",
+      "base",
+      "cloth",
+      "pole",
+      "ContactShadow"
+     ]
+    },
     "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqTimber",
+     "dqStone",
+     "dqClothRed",
+     "shadowM.011"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -1179,11 +2378,28 @@
     }
    },
    "museFields": {
-    "stageNodes": null,
+    "stageNodes": {
+     "0": [
+      "banner-green",
+      "bar",
+      "base",
+      "cloth",
+      "pole",
+      "ContactShadow"
+     ]
+    },
     "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqTimber",
+     "dqStone",
+     "dqClothGreen",
+     "shadowM.012"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -1228,11 +2444,44 @@
     }
    },
    "museFields": {
-    "stageNodes": null,
+    "stageNodes": {
+     "0": [
+      "crates",
+      "batten.001",
+      "batten.002",
+      "batten.003",
+      "batten.004",
+      "body.001",
+      "lid",
+      "crate",
+      "batten.005",
+      "batten.006",
+      "batten.007",
+      "batten.008",
+      "body.002",
+      "lid.001",
+      "crate.001",
+      "batten.009",
+      "batten.010",
+      "batten.011",
+      "body",
+      "batten",
+      "lid.002",
+      "crate.002",
+      "ContactShadow"
+     ]
+    },
     "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "shadowM.007",
+     "dqTimber",
+     "dqPlank"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -1275,11 +2524,28 @@
     }
    },
    "museFields": {
-    "stageNodes": null,
+    "stageNodes": {
+     "0": [
+      "barrel",
+      "band.001",
+      "body",
+      "band",
+      "top",
+      "ContactShadow"
+     ]
+    },
     "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqIron",
+     "dqPlank",
+     "shadowM.008",
+     "dqRings"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -1318,11 +2584,33 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
+    "stageNodes": {
+     "0": [
+      "bucket-rope",
+      "band.001",
+      "bucket",
+      "band",
+      "coil.001",
+      "coil.002",
+      "handle",
+      "coil",
+      "ropefall",
+      "ContactShadow"
+     ]
+    },
     "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqIron",
+     "dqPlank",
+     "rope.009",
+     "shadowM.009",
+     "dqTimber"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -1360,11 +2648,43 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
+    "stageNodes": {
+     "0": [
+      "planter-large",
+      "leafcard.001",
+      "leafcard.002",
+      "card",
+      "leafcard.003",
+      "leafcard.004",
+      "card.001",
+      "leafcard.005",
+      "leafcard.006",
+      "card.002",
+      "leafcard.007",
+      "leafcard.008",
+      "card.003",
+      "leafcard",
+      "leafcard.009",
+      "card.004",
+      "pot",
+      "soil",
+      "ContactShadow"
+     ]
+    },
     "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "cardRound",
+     "cardFlower",
+     "cardWhite",
+     "shadowM.005",
+     "dqClay",
+     "dqSoil"
+    ],
+    "status": "納品済み"
    }
   },
   {
@@ -1402,11 +2722,37 @@
    ],
    "salvage": null,
    "museFields": {
-    "stageNodes": null,
+    "stageNodes": {
+     "0": [
+      "planter-small",
+      "leafcard.001",
+      "leafcard.002",
+      "card",
+      "leafcard.003",
+      "leafcard.004",
+      "card.001",
+      "leafcard",
+      "leafcard.005",
+      "card.002",
+      "pot",
+      "soil",
+      "ContactShadow"
+     ]
+    },
     "roadConnectors": null,
-    "lod": null,
-    "materialSlots": null,
-    "status": "未着手（ゲームは仮表示で動く）"
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "cardRound",
+     "cardPink",
+     "cardWhite",
+     "shadowM.006",
+     "dqClay",
+     "dqSoil"
+    ],
+    "status": "納品済み"
    }
   }
  ],
@@ -1426,10 +2772,12 @@
     }
    ],
    "museFields": {
-    "tileTexture": null,
-    "edgeTreatment": null,
-    "joinPieces": null,
-    "status": "未着手（ゲームは色の板で動く）"
+    "tileTexture": "assets/construction/textures/road-dirt.png",
+    "normalTexture": "assets/construction/textures/road-dirt_n.png",
+    "tileMeters": 2,
+    "edgeTreatment": "テクスチャに縁取りは持たせない。縁はセル境界のフェードで処理する（外周0.18mを地面色へ寄せて暗くする頂点色フェード＋板の+0.05浮きとpolygonOffset。仕様はCONSTRUCTION-CONTRACT.mdの道路節）",
+    "joinPieces": "不要。2×2mセル板＋タイルテクスチャで直線・曲がり・T字・十字・端部を構成する（端部も境界フェードで処理）",
+    "status": "納品済み"
    }
   },
   {
@@ -1457,10 +2805,12 @@
     }
    ],
    "museFields": {
-    "tileTexture": null,
-    "edgeTreatment": null,
-    "joinPieces": null,
-    "status": "未着手（ゲームは色の板で動く）"
+    "tileTexture": "assets/construction/textures/road-gravel.png",
+    "normalTexture": "assets/construction/textures/road-gravel_n.png",
+    "tileMeters": 2,
+    "edgeTreatment": "テクスチャに縁取りは持たせない。縁はセル境界のフェードで処理する（外周0.18mを地面色へ寄せて暗くする頂点色フェード＋板の+0.05浮きとpolygonOffset。仕様はCONSTRUCTION-CONTRACT.mdの道路節）",
+    "joinPieces": "不要。2×2mセル板＋タイルテクスチャで直線・曲がり・T字・十字・端部を構成する（端部も境界フェードで処理）",
+    "status": "納品済み"
    }
   },
   {
@@ -1498,10 +2848,12 @@
     }
    ],
    "museFields": {
-    "tileTexture": null,
-    "edgeTreatment": null,
-    "joinPieces": null,
-    "status": "未着手（ゲームは色の板で動く）"
+    "tileTexture": "assets/construction/textures/road-stone.png",
+    "normalTexture": "assets/construction/textures/road-stone_n.png",
+    "tileMeters": 2,
+    "edgeTreatment": "テクスチャに縁取りは持たせない。縁はセル境界のフェードで処理する（外周0.18mを地面色へ寄せて暗くする頂点色フェード＋板の+0.05浮きとpolygonOffset。仕様はCONSTRUCTION-CONTRACT.mdの道路節）",
+    "joinPieces": "不要。2×2mセル板＋タイルテクスチャで直線・曲がり・T字・十字・端部を構成する（端部も境界フェードで処理）",
+    "status": "納品済み"
    }
   }
  ],
