@@ -54,7 +54,36 @@ export class EffectsManager {
   readonly group = new THREE.Group();
   private bursts: Burst[] = [];
   private particleTexture: THREE.Texture;
+  private smokeTexture: THREE.Texture | null = null;
   private groundHeightAt: (x: number, z: number) => number;
+
+  /** Soft irregular puff for pad smoke: the shared particle
+   *  texture is a tight dot, which reads as specks at smoke
+   *  sizes, so padSmoke gets its own overlapping-blob canvas. */
+  private getSmokeTexture(): THREE.Texture {
+    if (this.smokeTexture) return this.smokeTexture;
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d')!;
+    let seed = 4241;
+    const rnd = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    for (let i = 0; i < 11; i++) {
+      const cx = 30 + rnd() * 68;
+      const cy = 30 + rnd() * 68;
+      const r = 20 + rnd() * 30;
+      const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
+      grad.addColorStop(0, 'rgba(255,255,255,0.55)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+    }
+    this.smokeTexture = new THREE.CanvasTexture(canvas);
+    return this.smokeTexture;
+  }
 
   constructor(
     particleTexture: THREE.Texture,
@@ -85,7 +114,7 @@ export class EffectsManager {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const mat = new THREE.PointsMaterial({
-      map: this.particleTexture,
+      map: type === 'padSmoke' ? this.getSmokeTexture() : this.particleTexture,
       color: style.color,
       size: style.size,
       transparent: true,
