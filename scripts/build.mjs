@@ -136,7 +136,8 @@ const parts = {
   '/*ENGINE*/': rd('src/game/engine.js'),
   '/*TERRAIN*/': terrainCode,
   '/*NATURE*/': rd('src/game/nature.js'),
-  '/*UI*/': rd('src/game/ui.js'),
+  '/*SPACE*/': rd('src/game/space.js'),
+  '/*UI*/': rd('src/game/ui.js').replace('/*@include space-ui.js*/', () => rd('src/game/space-ui.js')),
 };
 let html = rd('src/template.html');
 for (const [key, code] of Object.entries(parts)) {

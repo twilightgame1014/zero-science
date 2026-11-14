@@ -89,14 +89,14 @@ function afterChange(news){
 /* 探索フィールドがホーム。ほかの画面は下部タブから「パネル」として上に重ねて開く。
    U.tab==="explore" はパネルが閉じている状態を表す。フィールドのDOMと3D描画は保ったまま。 */
 const TABS = {explore:"探索", lab:"研究室", craft:"工作", book:"図鑑", map:"技術マップ", log:"記録",
-  world:"地図・地域", menu:"メニュー", settings:"設定・ヘルプ", verify:"検証モード", build:"建築"};
+  world:"地図・地域", menu:"メニュー", settings:"設定・ヘルプ", verify:"検証モード", build:"建築", space:"宇宙へ"};
 /* パネルの見出しのアイコン（Muse の UI アイコン。ないものは絵文字。必ず文字と組み合わせる。2026-11-11） */
-const TAB_ICON = {lab:"lab", craft:"craft", book:"book", map:"tech", log:"log", world:"map", menu:"menu", settings:"settings", build:"home"};
+const TAB_ICON = {space:"space", lab:"lab", craft:"craft", book:"book", map:"tech", log:"log", world:"map", menu:"menu", settings:"settings", build:"home"};
 /* パネルの大きさ。PC：右側のパネル（side）か大きなオーバーレイ（wide）。スマホ：下からのシート（sheet）か全高近く（tall） */
 /* 2026-11-11：PC の研究室は、探索のマップを左に見せたまま右側の広いパネル（side-l）で、材料・操作と実験台を並べる。図鑑・技術は大きなオーバーレイ */
-const PC_SIZE = {book:"wide", map:"wide", lab:"side-l"};
-const TOUCH_SIZE = {lab:"tall", craft:"tall", book:"tall", map:"tall", log:"tall", verify:"tall", build:"tall"};
-const MENU_TABS = ["menu","book","map","log","settings","verify","build"];   /* スマホでは「メニュー」の中にある画面 */
+const PC_SIZE = {book:"wide", map:"wide", lab:"side-l", space:"side-l"};
+const TOUCH_SIZE = {lab:"tall", craft:"tall", book:"tall", map:"tall", log:"tall", verify:"tall", build:"tall", space:"tall"};
+const MENU_TABS = ["menu","book","map","log","settings","verify","build","space"];   /* スマホでは「メニュー」の中にある画面 */
 /* 画面幅だけでなく入力方法（タッチかマウスか）も見て、PC用とスマホ用の配置を切り替える */
 const MQ_COARSE = matchMedia("(pointer:coarse)");
 const uiMode = ()=>{ const a=$("#app"); return a ? a.dataset.ui : "pc"; };
@@ -112,7 +112,7 @@ function applyUiMode(){
 }
 /* UIアイコン（Muse 仕上げの assets/ui-icons）。タブ・メニューは 48px 版、右上の小さなボタンは 32px 版。
    画像がない名前（メニュー）は絵文字。どれも必ず文字ラベルと組み合わせる */
-const ICON_EMOJI = {lab:"🧪", craft:"🔨", book:"📖", tech:"🕸️", log:"📓", map:"🗺️", home:"🏠", settings:"⚙️", menu:"☰"};
+const ICON_EMOJI = {space:"🚀", lab:"🧪", craft:"🔨", book:"📖", tech:"🕸️", log:"📓", map:"🗺️", home:"🏠", settings:"⚙️", menu:"☰"};
 /* 2026-11-12：Muse ラウンド28 の線のアイコン（ASSETS.iconsLine）を優先。生成り（ico-c：濃紺の帯・HUD の上）と青緑（ico-t：選択中・紙の上）の2枚を出し、CSS で切り替える */
 function iconHTML(name, small){
   const ln = window.ASSETS && ASSETS.iconsLine && ASSETS.iconsLine[name];
@@ -209,6 +209,7 @@ function renderPanel(){
   else if(U.tab==="log") body.innerHTML = viewLog();
   else if(U.tab==="verify") body.innerHTML = viewVerify();
   else if(U.tab==="build") body.innerHTML = viewBuild();
+  else if(U.tab==="space") body.innerHTML = viewSpace();
   else if(U.tab==="world"){ body.innerHTML = viewWorld(); drawRegion(); drawWorldMap(); }
   else if(U.tab==="menu") body.innerHTML = viewMenu();
   else if(U.tab==="settings") body.innerHTML = viewSettings();
@@ -219,7 +220,7 @@ function stageSummary(){
     <p class="desc" style="margin-top:0">次の文明の進化：${D.stages[st].need}</p>`;
 }
 function viewMenu(){
-  return stageSummary()+`<div class="bigmenu">${[["book","book","図鑑","見つけたものの説明"],["map","tech","技術","技術と物質のつながり"],["log","log","記録","実験の記録・セーブ"],["build","home","建築","作った家や設備を好きな場所に置く"],...(VERIFY?[["verify","settings","検証モード","全解放・素材・移動・アセット"]]:[]),["settings","settings","設定","主人公・表示・遊び方"]]
+  return stageSummary()+`<div class="bigmenu">${[["space","space","宇宙へ","最終目標：自分のロケットで宇宙へ。進み具合と次にやること"],["book","book","図鑑","見つけたものの説明"],["map","tech","技術","技術と物質のつながり"],["log","log","記録","実験の記録・セーブ"],["build","home","建築","作った家や設備を好きな場所に置く"],...(VERIFY?[["verify","settings","検証モード","全解放・素材・移動・アセット"]]:[]),["settings","settings","設定","主人公・表示・遊び方"]]
     .map(([t,i,n,d])=>`<button class="bigitem" data-tab="${t}">${iconHTML(i)}<span>${n}<small>${d}</small></span></button>`).join("")}</div>`;
 }
 function viewSettings(){
@@ -906,8 +907,8 @@ function syncStructColliders(){
 const buildRec = id=> (S.build||{})[id];
 function planPos(p){ const b=buildRec(p.id); if(b && !b.removed) return {x:b.x, z:b.z, rot:b.rot};
   return {x:p.at.x, z:p.at.z, rot: p.rot!=null ? p.rot : Math.atan2(D.base.x-p.at.x, D.base.z-p.at.z)}; }
-function planOwned(p){ return S.verify ? placedSet().has(p.id) : p.when(); }
-function planWanted(p){ const b=buildRec(p.id); if(b && b.removed) return false; if(W3.place && W3.place.id===p.id) return false; return planOwned(p); }
+function planOwned(p){ return p.manual ? p.when() : S.verify ? placedSet().has(p.id) : p.when(); }
+function planWanted(p){ const b=buildRec(p.id); if(b && b.removed) return false; if(p.manual && !b) return false;   /* 発射場の設備は、自分で置き場所を決めるまで建たない */ if(W3.place && W3.place.id===p.id) return false; return planOwned(p); }
 function syncStructures(){
   if(!W3.gfx) return;
   /* 検証モードでは「全部持っている」ので、設備の所持ではなく、検証メニューで置いた物だけを建てる（原野を保つ） */
@@ -922,6 +923,7 @@ function syncStructures(){
   const extra = (S.verify && S.verify.extra) || [], ids = new Set(extra.map(x=>x.id));
   extra.forEach(x=>{ if(!W3.structs.has(x.id)) structAdd(x.id, x.type, {x:x.x, z:x.z}, x.rot||0); });
   [...W3.structs].forEach(id=>{ if(id.startsWith("vx:") && !ids.has(id)) structRemove(id); });
+  spaceSync3D();
   syncVillage();
   syncStructColliders();
 }
@@ -976,6 +978,7 @@ async function start3D(){
     if(HD2D.setSharedTextures) HD2D.setSharedTextures(ASSETS.sharedTex||{});   // 共有テクスチャ（建物・小物・自然物の GLB が参照。建物を読む前に渡す）
     /* 自然物の 3D モデル（Muse の環境セット・GPT-DQ3。2026-11-12、src/world/natureModels.ts）：木・岩・やぶ・切り株などの見た目だけを GLB にする。
        ID・位置・残量・当たり判定はゲームのまま。読めなかった種類は旧い見た目のまま（原因は HD2D.natureModelStatus() とコンソール） */
+    spaceInit3D();
     if(HD2D.installNatureModels && ASSETS.nature) HD2D.installNatureModels(W3.gfx, ASSETS.nature, TERRAIN).then(()=>{
       const st=HD2D.natureModelStatus(); W3.natModels=st; if(Object.keys(st.failed).length) console.warn("自然物のモデルの読み込みに失敗：", st.failed); });
     /* 広い世界の外側（地形の区画・海・湖・山の川・滝）を、モジュールのシーンに足して描く（src/world/render.ts） */
@@ -1034,7 +1037,7 @@ function resume3D(){ if(W3.state!=="ready" || W3.raf) return;
 function fieldShown(){ return U.tab==="explore" || !(uiMode()==="touch" && $("#dock").dataset.size==="tall"); }
 const modalOpen = ()=> $("#modal").classList.contains("open");
 /* フィールドが入力を受け付けるのは、パネルも案内（モーダル）も開いていないときだけ */
-function fieldInputActive(){ return U.tab==="explore" && !modalOpen() && W3.state==="ready" && S.flags.view!=="2d" && !document.hidden; }
+function fieldInputActive(){ return U.tab==="explore" && !U.cine && !modalOpen() && W3.state==="ready" && S.flags.view!=="2d" && !document.hidden; }
 /* 押しっぱなしのキー・スティック・タップ中の指・移動予約をすべて解除する（閉じた瞬間に勝手に歩かないように） */
 function haltField(){
   W3.keys={}; W3.joy=null; W3.down=null; W3.target=null; W3.path=null; W3.intent=null;
@@ -1109,6 +1112,7 @@ function loop3D(ts){
   W3.raf = requestAnimationFrame(loop3D);
   if(W3.state!=="ready" || W3.lost) return;
   if(window.HD2D && HD2D.tickBuildingParts) HD2D.tickBuildingParts(ts/1000);   // 建物の可動部（ピストン・掘削軸など）
+  spaceTick();
   if(window.HD2D && HD2D.tickNatureModels && W3.pos) HD2D.tickNatureModels(Math.min(0.2,(ts-(W3.lastTs||ts))/1000), W3.pos.x, W3.pos.z);   // 大きな岩の LOD（主人公からの距離）
   if(W3.place || $("#buildov")) drawPlaceOverlay();
   /* 大きなフレーム間隔でも進む距離を保つ（すり抜けは nature.move が細かく分けて防ぐ）。毎秒5コマまでは、進む速さがフレームレートに依らない */
@@ -1458,17 +1462,18 @@ function renderExplore3D(v){
 
 /* ===================== 工作 ===================== */
 function craftCard(c){
-  const it = IT[c.out], pl = E.planCraft(S,c), own = it.unique && owned(c.out);
+  const it = IT[c.out], pl = E.planCraft(S,c), own = it.unique && SPACE.owns(S,c.out), mx = own ? 0 : E.craftMax(S,c);
   const reqs = Object.keys(c.inp).map(id=>{ const k=S.disc[id]; const okk=E.cnt(S,id)>=c.inp[id]; return `<span class="${okk?"ok":"ng"}">${k?ic(id)+nm(id):"❔？？？"} ${E.cnt(S,id)}/${c.inp[id]}</span>`; }).join("");
   const tl = c.tools.concat(c.at?[c.at]:[]).map(id=>`<span class="${owned(id)?"ok":"ng"}">${c.at===id?"場所：":"道具："}${S.disc[id]?ic(id)+nm(id):"❔？？？"}</span>`).join("");
   return `<div class="card"><h3><span class="i">${ic(c.out)}</span>${it.name}${own?' <span class="tag" style="background:var(--meadow);color:var(--meadow-ink)">持っている</span>':""}</h3>
-    <div class="kid">${it.kid}</div><div class="need">${reqs}${tl}</div><div class="how">作り方：${c.how}</div>
-    ${own?"":`<div class="row mt"><button class="btn small" data-act="craft" data-id="${c.id}" ${pl.ok?"":"disabled"}>🔨 作る</button>${pl.ok?"":`<span class="desc" style="margin:0">${pl.msg}</span>`}</div>`}</div>`;
+    <div class="kid">${it.kid}</div><div class="need">${reqs}${tl}${(c.know||[]).map(k=>`<span class="${E.knows(S,k)?"ok":"ng"}">実習：${SPACE.trialOf(k).name}</span>`).join("")}</div><div class="how">作り方：${c.how}${it.simp?' <span class="tag sptag">ゲーム内で簡略化</span>':""}</div>
+    ${c.why?`<div class="how spwhy"><b>なぜこの材料？</b> ${c.why}</div>`:""}
+    ${own?"":`<div class="row mt"><button class="btn small" data-act="craft" data-id="${c.id}" ${pl.ok?"":"disabled"}>🔨 作る</button>${mx>=2?`<button class="btn small sub" data-act="craft" data-id="${c.id}" data-n="${Math.min(mx,5)}">×${Math.min(mx,5)} まとめて</button>`:""}${pl.ok?"":`<span class="desc" style="margin:0">${pl.msg}</span>`}${pl.kind==="know"?`<button class="btn small sub" data-act="sp-field" data-id="computer">実習へ</button>`:""}</div>`}</div>`;
 }
 function viewCraft(){
   const vis = D.crafts.filter(c=>S.disc[c.out] || Object.keys(c.inp).some(k=>S.disc[k]) || ["c_knife","c_thread"].includes(c.id));
-  const todo = vis.filter(c=>!(IT[c.out].unique&&owned(c.out))).sort((a,b)=>(E.planCraft(S,b).ok?1:0)-(E.planCraft(S,a).ok?1:0));
-  const done = vis.filter(c=>IT[c.out].unique&&owned(c.out)).filter((c,i,a)=>a.findIndex(x=>x.out===c.out)===i);
+  const todo = vis.filter(c=>!(IT[c.out].unique&&SPACE.owns(S,c.out))).sort((a,b)=>(E.planCraft(S,b).ok?1:0)-(E.planCraft(S,a).ok?1:0));
+  const done = vis.filter(c=>IT[c.out].unique&&SPACE.owns(S,c.out)).filter((c,i,a)=>a.findIndex(x=>x.out===c.out)===i);
   const hidden = D.crafts.length - vis.length;
   return `<div class="sec">工作 <small>材料を組み立てて道具や設備を作る（化学変化ではない作業）</small></div>
   <div class="grid2">${todo.map(craftCard).join("")||`<p class="desc">今作れるものはないよ。</p>`}</div>
@@ -1508,6 +1513,8 @@ function openItem(id){
     <div class="hd"><span class="bigi">${ic(id)}</span><div><h2>${it.name}</h2><div class="yomi">${it.yomi}・${it.en}</div></div></div>
     <div class="kidbox">${it.kid}</div>
     <h5>📘 くわしく</h5><p style="margin:0;font-size:.9rem">${it.more}</p>
+    ${it.simp?`<p class="desc"><span class="tag sptag" style="margin-left:0">ゲーム内で簡略化</span> 実際の工業の工程を大きくまとめた表現です。科学の説明と、ゲームの中のレシピは別のものです。</p>`:""}
+    ${(()=>{ const cw=pr.crafts.find(c=>c.why); return cw?`<h5>🧩 なぜこの材料を使うの？</h5><p style="margin:0;font-size:.9rem">${cw.why}</p>`:""; })()}
     ${why?`<h5>🔬 何が起きてできたの？</h5><p style="margin:0;font-size:.9rem">${why.why}</p>`:""}
     <dl class="kv">${it.f?`<dt>化学式</dt><dd>${it.f}</dd>`:""}<dt>分類</dt><dd>${it.tags.join("・")}</dd>
       ${it.el&&it.el.length?`<dt>含む元素</dt><dd>${it.el.join(" ")}</dd>`:""}
@@ -1629,7 +1636,7 @@ document.addEventListener("click", ev=>{
     case "introagain": S.flags.intro=0; setTab("explore"); intro(); break;
     case "gather": doGather(b.dataset.r, id); break;
     case "auto": { const i=S.auto.findIndex(x=>x.r===b.dataset.r&&x.id===id); if(i>=0) S.auto.splice(i,1); else if(S.auto.length<E.autoSlots(S)) S.auto.push({r:b.dataset.r,id}); save(); drawRegion(); break; }
-    case "craft": { const r=E.runCraft(S,id,S.seq); if(r.ok){ afterChange(r.news); render(); } break; }
+    case "craft": { const r=E.runCraft(S,id,S.seq,+b.dataset.n||1); if(r.ok){ if(r.n>1) banner("🔨 "+nm(r.craft.out)+"を"+r.n+"回分まとめて作った"); afterChange(r.news); render(); } break; }
     case "filter": U.filter=id; renderPanel(); break;
     case "item": openItem(id); break;
     case "close": closeModal(); break;
@@ -2138,7 +2145,7 @@ function placeLabel(p){ const sp=(ASSETS.buildingSpecs||{})[p.type]||{};
   return {name: sp.name || p.type, from: (STRUCT_FAC[p.id]||[]).filter(id=>IT[id]).map(nm).join("・")}; }
 function viewBuild(){
   const list = STRUCT_PLAN.filter(planOwned);
-  const rows = list.map(p=>{ const L=placeLabel(p), b=buildRec(p.id), st = b && b.removed ? "撤去中（設備は持ち物に残っている）" : b ? "好きな場所に置いた" : "決まった場所に建っている";
+  const rows = list.map(p=>{ const L=placeLabel(p), b0=buildRec(p.id), b = p.manual && !b0 ? {removed:true} : b0, st = p.manual && !b0 ? "まだ置いていない（平らで広い場所へ）" : b && b.removed ? "撤去中（設備は持ち物に残っている）" : b ? "好きな場所に置いた" : "決まった場所に建っている";
     return `<div class="bit"><span class="i">${ic((STRUCT_FAC[p.id]||[])[0]||"")}</span><span class="n">${L.name}<small>${st}${L.from?"（"+L.from+"）":""}</small></span>
       ${b && b.removed ? `<button class="btn small" data-act="b-start" data-id="${p.id}">置く</button>`
         : `<button class="btn small" data-act="b-start" data-id="${p.id}">移動・回転</button><button class="btn small sub" data-act="b-remove" data-id="${p.id}">撤去</button>`}</div>`; }).join("");
@@ -2379,5 +2386,7 @@ document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.
 document.addEventListener("change", ev=>{ const b=ev.target; if(b && b.dataset && b.dataset.act==="v-flag") verifyAct("v-flag", b.dataset.id, b); });
 document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="vq"){ vQuery=ev.target.value; const r=$("#vres"); if(r) r.innerHTML=vResults(); } });
 
-window.__GAME__ = {get S(){return S;}, save:()=>save(), walk:{speed:WALK_SPEED, maxDt:MAX_DT, stride:1.4}, cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim(), rebase:()=>camRebase(), debug:()=>W3.camDbg, solve:(y,p,z,x,zz)=>camSolve(y,p,z,x,zz), axes:(y,p)=>camAxes(y,p), CAM}, hero:{dirs:()=>heroDirs(), sheet:h=>heroSheet3D(h), facing:()=>worldFacing()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
+/*@include space-ui.js*/
+
+window.__GAME__ = {space:{go:(v,i)=>spGo(v,i), trial:id=>trialOpen(id), test:id=>testOpen(id), sitePlace:()=>spSitePlace(), verify:k=>spVerifyAct(k), cine:()=>U.cine, ending:f=>endingOpen(f), resume:()=>spResumeCheck()}, get S(){return S;}, save:()=>save(), walk:{speed:WALK_SPEED, maxDt:MAX_DT, stride:1.4}, cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim(), rebase:()=>camRebase(), debug:()=>W3.camDbg, solve:(y,p,z,x,zz)=>camSolve(y,p,z,x,zz), axes:(y,p)=>camAxes(y,p), CAM}, hero:{dirs:()=>heroDirs(), sheet:h=>heroSheet3D(h), facing:()=>worldFacing()}, get VERIFY(){return VERIFY;}, fieldInputActive:()=>fieldInputActive(), placeUpdate:f=>placeUpdate(f), stage:()=>stage(), verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);

@@ -12,7 +12,8 @@ ok('全解放：保管できるものはすべて在庫にあり、保管でき�
 ok('全解放：道具・設備など1つしか持てないものは1個', items.filter(k => D.items[k].unique).every(k => V.inv[k] === 1));
 ok('全解放：バイパスは最初すべてON・建物は何も置かない（原野のまま）', V.verify.free && V.verify.tools && V.verify.locks && V.verify.instant && V.verify.stage === null && V.verify.placed.length === 0 && V.verify.extra.length === 0);
 ok('全解放：すべての地域（準備中を除く）が開いている', D.regions.filter(r => !r.future).every(r => E.regionOpen(V, r)));
-ok('全解放：すべての目標が達成済みになる（最後の「図鑑のコンプリートを目指そう」は終わりのない目標）', E.missionIndex(V) === D.missions.length - 1 && D.missions.slice(0, -1).every(m => m.done(V)));
+const firstSpace = D.missions.findIndex(m => m.tab === 'space');
+ok('全解放：宇宙計画より前の目標はすべて達成済み。宇宙計画の目標は、実習・設置・試験を実際に行うまで達成にならない（全解放でも勝手にクリアにしない）', firstSpace > 0 && D.missions.slice(0, firstSpace).every(m => m.done(V)) && E.missionIndex(V) > firstSpace - 1 && E.missionIndex(V) < D.missions.length - 1 && !D.missions[D.missions.length - 2].done(V));
 
 // 通常のセーブを写しても、元は変わらない
 const N = E.newState(); N.inv.twig = 3; E.addItem(N, 'flint', 2); N.seq = 7;
@@ -49,7 +50,7 @@ S4.verify.locks = false;
 ok('地域の鍵は 2026-11-11 に廃止：検証のバイパスを切っても（通常の判定でも）、たいまつなしで洞窟に入れる', E.regionOpen(S4, cave) && E.regionOpen(E.newState(), cave));
 // 時代の切り替え
 const S5 = E.makeVerifyState(); S5.verify.stage = 0;
-ok('時代の切り替え：選んだ段階になり、自動に戻すと設備から決まる', E.stageOf(S5) === 0 && ((S5.verify.stage = null), E.stageOf(S5) === D.stages.length - 1));
+ok('時代の切り替え：選んだ段階になり、自動に戻すと設備から決まる', E.stageOf(S5) === 0 && ((S5.verify.stage = null), E.stageOf(S5) === 5 && D.stages.length === 7));
 // セーブの往復
 const S6 = E.deserialize(E.serialize(V));
 ok('検証データは保存・読み込みしても検証の設定が残る', S6.verify && S6.verify.free === true && Object.keys(S6.disc).length === items.length);

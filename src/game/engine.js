@@ -1,6 +1,6 @@
 /* ===================== ゲームエンジン（UIから独立） ===================== */
 var ENGINE = (function(D){
-  const SCHEMA = 4;
+  const SCHEMA = 5;
   /* 地形の版（広い世界の形。src/world/shape.ts の WORLD_VERSION と同じ値。テストで検査）。セーブの worldVer がこれより古ければ、UI が位置を確かめて直す */
   const WORLD_VER = 4;
   const IT = D.items;
@@ -9,7 +9,10 @@ var ENGINE = (function(D){
 
   /* nature：変化した自然物・採取地点の状態だけを保存する（{id:{u:使った回数, t:取り尽くした時刻}}） */
   /* build：建物の置き場所 {建物ID:{x,z,rot}}（撤去したものは {removed:true}。記録がなければ決まった場所）。camera：カメラのユーザー設定（v3〜） */
-  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, build:{}, camera:{}, worldVer:WORLD_VER, created:Date.now()}; }
+  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, build:{}, camera:{}, worldVer:WORLD_VER, space:newSpace(), created:Date.now()}; }
+  /* space：宇宙計画の進み（v5〜）。know：済ませた実習（知識）、inst：機体に取りつけた部分、tests：合格した試験、wear：宇宙服を着ているか、
+     board：搭乗中か（読み込みで必ず false に戻す）、launching：打ち上げ演出の開始時刻（中断の検出）、clear：初回の到達記録、replays：再演出の回数 */
+  function newSpace(){ return {know:{}, inst:{}, tests:{}, wear:false, board:false, launching:0, clear:null, replays:0}; }
   const cnt = (S,id)=> S.inv[id]||0;
   const has = (S,id)=> cnt(S,id)>0;
   /* 検証モード（S.verify。通常のセーブには存在しない）の条件バイパス。
@@ -56,6 +59,7 @@ var ENGINE = (function(D){
     if(res.bonus && has(S,res.bonus)) n += 1;
     if(BASKET_RES.includes(res.id) && has(S,"basket")) n += 1;
     if(RAIL.includes(r.id) && has(S,"steamengine")) n += 1;
+    if(RAIL.includes(r.id) && has(S,"powerdrill")) n += 2;      // 後半の負担を減らす：電動ドリルで鉱石がまとめて採れる
     if(exploreLv(S,r.id)>=2) n += 1;
     return {ok:true, n};
   }
@@ -232,24 +236,32 @@ var ENGINE = (function(D){
   }
 
   /* ---------- 組み立て ---------- */
-  function planCraft(S, c){
+  const knows = (S,k)=> !!(S.space && S.space.know && S.space.know[k]) || vflag(S,"know");
+  function planCraft(S, c, n){
     const out = IT[c.out];
     if(out.unique && has(S,c.out)) return {ok:false, kind:"own", msg:"もう持っているよ"};
+    { const m = out.unique && (D.space.modules||[]).find(x=>x.item===c.out); if(m && S.space && S.space.inst && S.space.inst[m.slot]) return {ok:false, kind:"own", msg:"もう機体に取りつけてあるよ"}; }
     if(c.at && !hasTool(S,c.at)) return {ok:false, kind:"at", msg:"「"+IT[c.at].name+"」で作るよ"};
     const t = c.tools.find(x=>!hasTool(S,x)); if(t) return {ok:false, kind:"tool", msg:"「"+IT[t].name+"」が必要"};
-    const short = vflag(S,"free") ? [] : Object.keys(c.inp).filter(id=>cnt(S,id)<c.inp[id]);
+    /* 知識（実習）：先に中間の成果物を動かして確かめてから、次の段階を作る。文明の段階は見ない */
+    const kn = (c.know||[]).find(k=>!knows(S,k)); if(kn){ const tr=(D.space.trials||[]).find(x=>x.id===kn); return {ok:false, kind:"know", know:kn, msg:"実習「"+(tr?tr.name:kn)+"」がまだ（「宇宙へ」の画面で試そう）"}; }
+    n = Math.max(1, Math.min(20, n|0 || 1)); if(out.unique) n = 1;
+    const short = vflag(S,"free") ? [] : Object.keys(c.inp).filter(id=>cnt(S,id)<c.inp[id]*n);
     if(short.length) return {ok:false, kind:"qty", msg:"材料が足りない："+short.map(id=>IT[id].name).join("、"), short};
-    return {ok:true};
+    return {ok:true, n};
   }
-  function runCraft(S, craftId, token){
+  /* まとめて作れる最大の回数（同じ道具は1つだけ。上限20） */
+  function craftMax(S, c){ if(IT[c.out].unique) return 1; if(vflag(S,"free")) return 20; let m=20; for(const id in c.inp) m=Math.min(m, Math.floor(cnt(S,id)/c.inp[id])); return Math.max(0,m); }
+  function runCraft(S, craftId, token, n){
     if(token !== S.seq) return {ok:false, kind:"dup", msg:"二重に実行されたので取り消したよ"};
     const c = D.crafts.find(x=>x.id===craftId); if(!c) return {ok:false, msg:"レシピがない"};
-    const pl = planCraft(S,c); if(!pl.ok) return pl;
-    const r = commit(S, c.inp, {[c.out]:c.qty}, c.id); if(!r.ok) return r;
+    const pl = planCraft(S,c,n); if(!pl.ok) return pl;
+    const inp={}; for(const id in c.inp) inp[id]=c.inp[id]*pl.n;
+    const r = commit(S, inp, {[c.out]:c.qty*pl.n}, c.id); if(!r.ok) return r;
     S.seq++;
-    S.hist.unshift({t:Date.now(), k:"craft", craft:c.id, inp:c.inp, out:{[c.out]:c.qty}});
+    S.hist.unshift({t:Date.now(), k:"craft", craft:c.id, inp, out:{[c.out]:c.qty*pl.n}});
     if(S.hist.length>200) S.hist.length=200;
-    return {ok:true, news:r.news, craft:c};
+    return {ok:true, news:r.news, craft:c, n:pl.n};
   }
 
   /* ---------- 情報の公開範囲・ヒント ---------- */
@@ -314,6 +326,7 @@ var ENGINE = (function(D){
     if(s>=2 && has(S,"furnace") && (d.glass||has(S,"still"))) s=3;
     if(s>=3 && has(S,"blastfurnace") && (has(S,"steamengine")||has(S,"generator"))) s=4;
     if(s>=4 && has(S,"generator") && (d.pe||d.aluminum||d.solarcell)) s=5;
+    if(S.space && S.space.clear) s=Math.max(s,6);       // 宇宙へ到達した（表示だけ。レシピの判定には使わない）
     return s;
   }
   function missionIndex(S){ const i = D.missions.findIndex(m=>!m.done(S)); return i<0?D.missions.length-1:i; }
@@ -334,6 +347,7 @@ var ENGINE = (function(D){
     },
     1: s => { s.nature = {}; return s; },  // v1→v2：自然物・採取地点の状態（最初は何も変化していない）
     2: s => { s.build = {}; s.camera = {}; return s; },  // v2→v3：建物の自由設置・カメラの設定（これまでの建物は決まった場所のまま）
+    4: s => { s.space = newSpace(); return s; },  // v4→v5：宇宙計画の進み（これまでのセーブは何も進んでいない。持ち物・建物・位置はそのまま）
     3: s => { s.worldVer = 1; return s; }  // v3→v4：地形の版を記録（これまでのセーブは旧世界＝版1。位置の確認は読み込み後に UI が地形関数で行う）
   };
   const ALIASES = {}; // 名称変更したIDの対応表（例：{"oldId":"newId"}）
@@ -350,6 +364,13 @@ var ENGINE = (function(D){
     for(const k of Object.keys(n.build)){ const b=n.build[k]; if(!b || typeof b!=="object" || !(b.removed===true || (isFinite(b.x) && isFinite(b.z) && isFinite(b.rot)))) delete n.build[k]; }
     if(!n.camera || typeof n.camera!=="object" || Array.isArray(n.camera)) n.camera={};
     if(!(typeof n.worldVer==="number" && isFinite(n.worldVer))) n.worldVer = 1;
+    { const sp = (n.space && typeof n.space==="object" && !Array.isArray(n.space)) ? n.space : {}, d = newSpace();
+      for(const k of ["know","inst","tests"]) d[k] = (sp[k] && typeof sp[k]==="object" && !Array.isArray(sp[k])) ? sp[k] : {};
+      d.wear = sp.wear===true; d.board = false;          // 搭乗中のまま読み込んでも、必ず地上から再開する（進行不能にしない）
+      d.launching = (typeof sp.launching==="number" && isFinite(sp.launching)) ? sp.launching : 0;
+      d.clear = (sp.clear && typeof sp.clear==="object" && isFinite(sp.clear.t)) ? sp.clear : null;
+      d.replays = (typeof sp.replays==="number" && sp.replays>0) ? Math.floor(sp.replays) : 0;
+      n.space = d; }
     for(const k of Object.keys(n.nature)){ const x=n.nature[k]; if(!x || typeof x!=="object" || !(x.u>0) || !isFinite(x.u)) delete n.nature[k]; else { x.u=Math.floor(x.u); if(x.t!==undefined && !isFinite(x.t)) delete x.t; } }
     return n;
   }
@@ -358,7 +379,7 @@ var ENGINE = (function(D){
   /* ---------- 検証モード（全解放）：通常のセーブとは別の状態を作る ----------
      base を渡すとその写し（通常セーブを引き継ぐとき）。base 自体は変えない。
      登録されているすべての物質・道具・設備を図鑑に載せ、保管できるものは在庫に入れる（保管できないもの＝store:false は在庫に入れない）。 */
-  const VERIFY_DEFAULTS = {on:true, free:true, tools:true, locks:true, instant:true, stage:null, placed:[], extra:[]};
+  const VERIFY_DEFAULTS = {on:true, free:true, tools:true, know:true, locks:true, instant:true, stage:null, placed:[], extra:[]};
   function fillStorable(S, n){
     let k=0; for(const id in IT){ const it=IT[id]; if(it.store===false) continue; S.inv[id] = it.unique ? 1 : Math.max(cnt(S,id), n||99); k++; } return k;
   }
@@ -458,6 +479,15 @@ var ENGINE = (function(D){
     const v3 = deserialize(JSON.stringify({v:3, inv:{bench:1}, disc:{}, pos:{x:-18,z:21,dir:"up"}, nature:{"tree:1,2":{u:1}}, build:{"st-bench":{x:1,z:2,rot:0.5}}, camera:{yaw:90}}));
     ok("スキーマv3のセーブをv4へ移行できる（地形の版は旧世界=1、位置・建物・採取状態・カメラはそのまま）", v3.v===SCHEMA && v3.worldVer===1 && v3.pos.x===-18 && v3.pos.dir==="up" && v3.build["st-bench"].rot===0.5 && v3.nature["tree:1,2"].u===1 && v3.camera.yaw===90);
     ok("新しいゲームは今の地形の版", newState().worldVer===WORLD_VER);
+    const v4 = deserialize(JSON.stringify({v:4, inv:{steel:3}, disc:{}, pos:{x:1,z:2}, build:{"st-bench":{x:1,z:2,rot:0}}, worldVer:4, flags:{hero:"boy"}}));
+    ok("スキーマv4のセーブをv5へ移行できる（宇宙計画は未着手、持ち物・建物・位置・主人公はそのまま）", v4.v===SCHEMA && v4.inv.steel===3 && v4.build["st-bench"].x===1 && v4.pos.z===2 && v4.flags.hero==="boy" && v4.space && !v4.space.clear && Object.keys(v4.space.know).length===0);
+    const vb = deserialize(JSON.stringify({v:5, space:{know:{gates:1}, board:true, wear:true, launching:"x", clear:{bad:1}, inst:[1]}}));
+    ok("宇宙計画の壊れた記録を直す（搭乗中のまま読み込んでも地上から・知識と宇宙服は残る）", vb.space.know.gates===1 && vb.space.board===false && vb.space.wear===true && vb.space.launching===0 && vb.space.clear===null && !Array.isArray(vb.space.inst));
+    const SB = newState(); SB.inv = {wire:8, pe:4, bench:1}; const bc = runCraft(SB,"c_insulwire",SB.seq,3);
+    ok("まとめて作る：3回分の材料を使って3回分できる（足りなければ作らない）", bc.ok && SB.inv.insulwire===12 && SB.inv.wire===2 && SB.inv.pe===1 && !runCraft(SB,"c_insulwire",SB.seq,2).ok && SB.inv.insulwire===12);
+    const SK2 = newState(); const gc = D.crafts.find(c=>c.id==="c_gateboard"); Object.keys(gc.inp).forEach(k=>SK2.inv[k]=gc.inp[k]); SK2.inv.bench=1; SK2.inv.solderiron=1;
+    const k1 = planCraft(SK2,gc); SK2.space.know.switching=1; const k2 = planCraft(SK2,gc);
+    ok("知識（実習）がいる工作は、実習を済ませるまで作れない。済ませれば段階に関係なく作れる", !k1.ok && k1.kind==="know" && k2.ok && stageOf(SK2)===0);
     const badB = deserialize(JSON.stringify({v:3, build:{"st-bench":{x:1,z:2,rot:0.5}, "st-fire":{removed:true}, "st-kiln":{x:"a"}, "st-x":null}}));
     ok("壊れた置き場所の記録は捨てる（正しいものは残す）", badB.build["st-bench"].rot===0.5 && badB.build["st-fire"].removed===true && !badB.build["st-kiln"] && !("st-x" in badB.build));
     const badN = deserialize(JSON.stringify({v:2, nature:{"t:1,2":{u:-1}, "d:river:cobble":{u:2.5,t:"x"}}}));
@@ -476,7 +506,7 @@ var ENGINE = (function(D){
     return R;
   }
 
-  return {WORLD_VER, addItem, hasTool, vflag, makeVerifyState, fillStorable, VERIFY_DEFAULTS, SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, collect, stockOf, useStock, harvestDeposit, depositInfo, depositRule, depositId, depositPos, resKey, REACH, regionOpen, processNeeds, processBlock, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
+  return {WORLD_VER, newSpace, knows, craftMax, commit, addItem, hasTool, vflag, makeVerifyState, fillStorable, VERIFY_DEFAULTS, SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, collect, stockOf, useStock, harvestDeposit, depositInfo, depositRule, depositId, depositPos, resKey, REACH, regionOpen, processNeeds, processBlock, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
           planCraft, runCraft, producers, usesOf, status, hint, suggest, stageOf, missionIndex, tagProgress, serialize, deserialize, runTests};
 })(typeof DATA!=="undefined"?DATA:require("./data.js"));
 if (typeof module!=="undefined") module.exports = ENGINE;

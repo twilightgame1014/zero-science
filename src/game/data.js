@@ -635,7 +635,7 @@ var DATA = (function(){
   P("soap_strong","heat",HEAT,{oil:1,stronglye:1},{soap:1,glycerinwater:1},"油が強いアルカリで分かれて、石けんとグリセリンになった（けん化）。",Object.assign({temp:80},POT));
   P("soap_lye","heat",HEAT,{oil:1,lye:2},{soap:1,glycerinwater:1},"ふつうの灰汁でも、時間をかけて温めればやわらかい石けんができる。",Object.assign({temp:80},POT));
   P("soap_naoh","heat",HEAT,{oil:1,naoh:1},{soap:1,glycerinwater:1},"工業で作った水酸化ナトリウムを使うと、硬くて質のよい石けんがすぐにできる。",Object.assign({temp:80},POT));
-  P("char_log","char",["charkiln"],{log:2},{charcoal:1,woodvinegar:1},"空気が少ないので木は燃えきらない。水やガスが抜けて、炭素の多い木炭が残った。煙を冷やすと木酢液も取れた。",{temp:450});
+  P("char_log","char",["charkiln"],{log:2},{charcoal:2,woodvinegar:1},"空気が少ないので木は燃えきらない。水やガスが抜けて、炭素の多い木炭が残った。煙を冷やすと木酢液も取れた。",{temp:450});
   P("char_coal","char",["charkiln"],{coal:2},{coke:1,coaltar:1},"石炭を蒸し焼きにすると、ねばねばのコールタールが出ていき、硬いコークスが残った。",{temp:1000});
   P("shape_pot","shape",["bench"],{clay:2},{greenware:1},"粘土をこねて、器の形にした。");
   P("dry_pot","dry",["rack","campfire"],{greenware:1},{driedware:1},"器の中の水分をゆっくり飛ばした。これで焼いても割れにくい。",{temp:40});
@@ -666,7 +666,7 @@ var DATA = (function(){
   P("glass_potash","melt",["furnace"],{cleansand:2,potash:1,quicklime:1},{moltenglass:1,co2:1},"炭酸カリウムでも同じように砂を溶かせる。森の灰から作るガラスの作り方だ。",{tools:["crucible"],temp:1150});
   P("cool_glass","cool",["bench"],{moltenglass:1},{glass:1},"溶けたガラスは、粒がきちんと並ぶひまがないまま固まる。だから透き通っている。");
   P("shape_copper","shape",["bench"],{copper:1},{copperplate:1},"銅はたたくと薄く広がる。板に延ばした。",{tools:["hammer"]});
-  P("draw_wire","shape",["bench"],{copperplate:1},{wire:2},"銅板を細く切り、鉄の棒に開けた小さな穴に通して引っぱると、細い線になった。",{tools:["hammer","ironrod"]});
+  P("draw_wire","shape",["bench"],{copperplate:1},{wire:4},"銅板を細く切り、鉄の棒に開けた小さな穴に通して引っぱると、細い線になった。",{tools:["hammer","ironrod"]});
   P("forge_iron","shape",["kiln"],{iron:1},{ironrod:1},"鉄を赤くなるまで熱するとやわらかくなる。たたくとすき間のかすが出ていって、丈夫な棒になった。",{tools:["hammer"],temp:900});
   P("forge_meteor","shape",["kiln"],{meteorite:1},{ironrod:1},"宇宙から来た鉄も、熱してたたけば棒になる。古代の人もこうして隕石の鉄で道具を作った。",{tools:["hammer"],temp:900});
   P("rust_iron","mix",["bench"],{iron:1,water:1},{rust:1},"鉄が水と空気中の酸素に触れて、茶色いさびになった。せっかく取り出した鉄が、元の石に戻ろうとしている。",{air:true});
@@ -687,11 +687,11 @@ var DATA = (function(){
   P("make_concrete","mix",["bench"],{cement:1,sand:2,cobble:2,water:1},{concrete:2},"セメントが水と反応して結晶を作り、砂と砂利をがっちりつなぎとめた。現代の町はこの石でできている。");
   /* 現代科学 */
   P("fractionate","distill",["refinery"],{crude:2},{gasoline:1,kerosene:1,naphtha:1,heavyoil:1},"原油を熱すると、軽い成分ほど塔の上の方で液体に戻る。沸点の違いで4つの成分に分けられた。",{temp:350});
-  P("crack_naphtha","crack",["reactor"],{naphtha:1},{ethylene:1,hydrogen:1},"ナフサの長い分子を800℃以上で一瞬だけ熱すると、小さく切れてエチレンができた。",{tools:["cylinder"],temp:850});
-  P("polymerize_pe","polymerize",["reactor"],{ethylene:3},{pe:1},"触媒の働きで、エチレンの小さな分子が何万個も手をつないで長い鎖になった。これがプラスチックだ。",{temp:100});
+  P("crack_naphtha","crack",["reactor"],{naphtha:1},{ethylene:2,hydrogen:1},"ナフサの長い分子を800℃以上で一瞬だけ熱すると、小さく切れてエチレンができた。",{tools:["cylinder"],temp:850});
+  P("polymerize_pe","polymerize",["reactor"],{ethylene:3},{pe:2},"触媒の働きで、エチレンの小さな分子が何万個も手をつないで長い鎖になった。これがプラスチックだ。",{temp:100});
   P("mold_pe","shape",["reactor"],{pe:1},{plasticbox:1},"ポリエチレンは温めるとやわらかくなる。型に流して冷やすと、容器の形に固まった。",{temp:150});
   P("grind_bauxite","grind",["mill"],{bauxite:1},{orebauxite:1},"ボーキサイトをすりつぶして粉にした。");
-  P("bayer","heat",["kiln"],{orebauxite:2,naoh:1},{aluminate:1,redmud:1},"強いアルカリにはアルミニウムの成分だけが溶け、鉄の成分は赤い泥として残った（バイヤー法）。",Object.assign({temp:150},POT));
+  P("bayer","heat",["kiln"],{orebauxite:2,naoh:1},{aluminate:2,redmud:1},"強いアルカリにはアルミニウムの成分だけが溶け、鉄の成分は赤い泥として残った（バイヤー法）。",Object.assign({temp:150},POT));
   P("precip_aloh","cool",["bench"],{aluminate:1},{aloh:1,naoh:1},"液を冷やすと、溶けきれなくなった水酸化アルミニウムが白い粉になって出てきた。水酸化ナトリウムはまた使える。");
   P("calcine_alumina","fire",["blastfurnace","eaf"],{aloh:2},{alumina:1,steam:1},"水酸化アルミニウムを1000℃以上で焼くと、水が抜けてアルミナになった。",{temp:1100});
   P("hall_heroult","electrolyze",["eaf"],{alumina:1,coke:1},{aluminum:1,co2:1},"アルミニウムは酸素と強く結びついているので、炭素だけでは取り出せない。溶かしたアルミナに大量の電気を流して、ようやく金属が取り出せた（ホール・エルー法）。",{temp:960});
@@ -808,15 +808,299 @@ var DATA = (function(){
     {n:2,name:"土器の村",era:"原始時代",need:"簡易炉でガラスか蒸留器を作ろう"},
     {n:3,name:"金属と化学の町",era:"初期化学の時代",need:"高炉と、蒸気機関か発電機を作ろう"},
     {n:4,name:"近代工業の町",era:"近代工業の時代",need:"プラスチック・アルミニウム・太陽電池のどれかを作ろう"},
-    {n:5,name:"現代の科学都市",era:"現代科学の時代",need:"今後のアップデートで、さらに先へ"},
+    {n:5,name:"現代の科学都市",era:"現代科学の時代",need:"宇宙計画を進めて、自分のロケットで宇宙へ"},
+    {n:6,name:"宇宙へ届いた文明",era:"宇宙の時代",need:"宇宙へ到達した。地上の探検と研究は、これからも続く"},
   ];
   const eras = [
     {name:"第1段階 原始科学",kid:"石・火・土の力を知る時代",techs:["knife","axe","hammer","firedrill","campfire","bench","rack","pot","cloth","filter","torch","basket","kiln","mill","charkiln","pickaxe","candle"]},
     {name:"第2段階 初期化学",kid:"金属・ガラス・蒸留で物質を分ける時代",techs:["fermenter","bellows","furnace","crucible","still","bottle","balance","thermometer","notebook","storehouse","ironpick","ironaxe"]},
     {name:"第3段階 近代工業",kid:"電気・蒸気・鋼で大量生産する時代",techs:["battery","electrolyzer","waterwheel","electromagnet","generator","blastfurnace","steel","steamengine","cement","concrete"]},
     {name:"第4段階 現代科学",kid:"石油化学・軽金属・半導体の時代",techs:["cylinder","rig","refinery","reactor","eaf","pe","aluminum","pure_si","bulb","solarcell"]},
-    {name:"第5段階 高度科学",kid:"集積回路・医薬品・ナノ材料（今後のアップデート）",techs:[],future:true},
+    {name:"第5段階 精密工業と電子",kid:"工作機械・合金・ゴムと繊維・半導体・コンピューターの時代",techs:["press","lathe","motor","alplate","rubber","composite","semifab","transistor","gateboard","computer","radio","accumulator"]},
+    {name:"第6段階 宇宙開発",kid:"宇宙服・ロケット・発射台を自分で作り、宇宙へ",techs:["substation","assembly","spacesuit","lifesupport","r_frame","r_engine","r_capsule","shipcomputer","launchpad","tower","control"]},
   ];
+
+
+  /* =====================================================================
+     宇宙計画（2026-11-13〜）：最終目標「自分で作ったロケットで宇宙へ」
+     ここから下の物質・部品・設備は、すべて上の天然資源までさかのぼれる（tests/space.test.mjs で検査）。
+     ・推進モジュール・推進用資材・誘導は、ゲーム専用の架空の部品（現実の配合・条件・寸法・制御は扱わない）。
+     ・simp:true は「ゲーム内で簡略化」した工程（図鑑・工作・研究室に表示する）。
+     ・工作の why は「なぜこの材料を使うか」。know は「先に済ませる実習（知識）」。
+     ===================================================================== */
+  const SPC="宇宙開発", ELC="電子部品"; TAGS.push(ELC, SPC);
+  ["heat","spin"].forEach(o=>items.reactor.ops.push(o)); items.furnace.ops.push("spin"); items.eaf.ops.push("spin");
+  Object.assign(ops, {
+    roll:{name:"圧延",yomi:"あつえん",icon:"🛞",fx:"shape",kid:"重いローラーの間に通して、金属をうすく均一にのばす。"},
+    cut:{name:"切削",yomi:"せっさく",icon:"⚙️",fx:"grind",kid:"回しながら刃を当てて、正確な形にけずり出す。"},
+    spin:{name:"紡糸",yomi:"ぼうし",icon:"🧵",fx:"chain",kid:"溶かしたものを細い穴から引き出して、糸のような繊維にする。"},
+    fabricate:{name:"微細加工",yomi:"びさいかこう",icon:"🔬",fx:"electric",kid:"ほこりのない部屋で、目に見えないほど細かい回路を作りこむ。"},
+  });
+
+  /* ---------- 金属と構造材 ---------- */
+  I("steelplate",[MAT,MET],"⬛","鋼板","こうはん","Steel plate",["Fe","C"],
+    "鋼をローラーでのばした板。丈夫で、曲げたり切ったりして大きな設備の材料にする。",
+    "熱した鋼をローラーに何度も通すと、厚さがそろった板になります（圧延）。橋・船・ビルの骨組みに使われます。",{color:"#6f7780",uses:"鉄骨、配管、設備の外板"});
+  I("steelbeam",[MAT,MET],"🏗️","鉄骨","てっこつ","Steel beam",["Fe","C"],
+    "鋼板を折り曲げて作った長い骨組み。重い物を支える柱やはりになる。",
+    "H や L の形に曲げると、同じ重さの板よりずっと曲がりにくくなります。形で強さを出す工夫です。",{color:"#5d6670",uses:"発射台、支持塔、組立棟"});
+  I("bolt",[MAT,MET],"🔩","ボルトとナット","ぼるととなっと","Bolts and nuts",["Fe"],
+    "ねじを切った鉄の留め具。部品どうしをしっかり固定し、あとで外すこともできる。",
+    "ねじは「坂道を棒に巻きつけた形」。小さな力で回すだけで、とても強くしめつけられます。同じ大きさで作る（規格）ことで、どの部品にも合います。",{color:"#8a8f96",uses:"機体・設備の組み立て"});
+  I("pipe",[MAT,MET],"🧪","金属の管","きんぞくのくだ","Metal pipe",["Fe","C"],
+    "鋼板を丸めて作った管。水や空気を、もらさずに運ぶ。",
+    "管の太さと曲がり方で、中を流れる速さと圧力が変わります。つなぎ目にはシール材をはさんで、もれを防ぎます。",{color:"#7b8894",uses:"配管、バルブ、冷却"});
+  I("alalloy",[MET],"🪙","軽合金（ジュラルミン）","けいごうきん","Duralumin",["Al","Cu"],
+    "アルミニウムに銅を少し混ぜた金属。軽いのに、鋼に近い強さがある。",
+    "純粋なアルミニウムはやわらかいですが、銅を数％混ぜると結晶がずれにくくなって硬くなります。20世紀のはじめに発明され、飛行機の機体に使われました。",{color:"#c2c8cf",uses:"機体の板、タンク"});
+  I("alplate",[MAT,MET],"◻️","軽合金の板","けいごうきんのいた","Light-alloy sheet",["Al","Cu"],
+    "軽合金をのばした板。空を飛ぶものは、1グラムでも軽く作りたい。",
+    "同じ大きさなら、重さは鋼の約3分の1。機体が軽いほど、少ない力で高く上がれます。",{color:"#d4d9de",uses:"機体構造、外装、カプセル、タンク"});
+  I("foil",[MAT,MET],"✨","アルミ箔","あるみはく","Aluminium foil",["Al"],
+    "アルミニウムを紙よりうすくのばしたもの。光と熱をよくはね返す。",
+    "金属の表面は光（と熱の光＝赤外線）をはね返します。うすい箔でも同じ働きをするので、軽い断熱材になります。",{color:"#e3e6ea",uses:"断熱シート、コンデンサー、バイザーの膜"});
+
+  /* ---------- ガラスとセラミックス ---------- */
+  I("temperedglass",[MAT,INO],"🪟","強化ガラス","きょうかがらす","Tempered glass",["Si","O","Ca"],
+    "熱してから急に冷やしたガラス。ふつうのガラスより割れにくい。",
+    "急に冷やすと表面だけ先に固まり、表面どうしが押し合う力（圧縮）が残ります。この力がひび割れの広がりをおさえます。",{color:"#cfe8ee",uses:"窓、バイザー、計器のカバー"});
+  I("glassfiber",[MAT,INO],"🧶","ガラス繊維","がらすせんい","Glass fibre",["Si","O","Ca"],
+    "溶かしたガラスを細く引いた糸。燃えず、熱を伝えにくく、引っぱりにとても強い。",
+    "ガラスは細くするほど傷が少なくなり、曲げても折れにくくなります。樹脂で固めると軽くて強い複合材料になります。",{color:"#e8eef0",uses:"複合素材、耐熱タイル"});
+  I("ceramic",[MAT,INO],"🧱","耐熱セラミックス","たいねつせらみっくす","Alumina ceramic",["Al","O"],
+    "アルミナの粉を高温で焼き固めたもの。金属が溶ける温度でも形が変わらない。",
+    "粉の粒どうしが溶けきらずにくっつく（焼結）ことで、硬く熱に強い固体になります。電気を通さないので、電子部品の土台にもなります。",{color:"#f0ece2",uses:"耐熱タイル、噴射ノズル、抵抗器"});
+
+  /* ---------- 化学素材と繊維 ---------- */
+  I("rawrubber",[POL,ORG],"🫓","合成ゴムのもと","ごうせいごむのもと","Raw synthetic rubber",["C","H"],
+    "石油から作った、べたべたしてのびる物質。このままでは夏にとけ、冬にかたくなる。",
+    "長い鎖の分子がからみ合っているので、引っぱるとのびます。鎖どうしがつながっていないので、まだ形が安定しません。",{color:"#5a4f45",uses:"加硫してゴムにする",simp:true});
+  I("rubber",[POL,ORG],"⚫","ゴム","ごむ","Vulcanised rubber",["C","H","S"],
+    "硫黄を混ぜて熱したゴム。のびてももとに戻り、空気や水を通さない。",
+    "硫黄が鎖と鎖の間に橋をかける（加硫）と、のびても元に戻るようになります。1839年にグッドイヤーが発見しました。",{color:"#2c2a28",uses:"シール材、手袋、気密シート"});
+  I("seal",[MAT,POL],"⭕","シール材（パッキン）","しーるざい","Seals and gaskets",["C","H","S"],
+    "ゴムの輪。部品のつなぎ目にはさんで、空気や液体がもれるのを防ぐ。",
+    "やわらかいゴムが押されて、すき間の形にぴったり変形します。小さな部品ですが、もれを防ぐ最後のとりでです。",{color:"#3a3633",uses:"バルブ、タンク、宇宙服、カプセル"});
+  I("synfiber",[POL,ORG],"🧵","合成繊維","ごうせいせんい","Synthetic fibre",["C","H"],
+    "プラスチックを溶かして細く引いた糸。植物の糸よりずっと強く、水にも強い。",
+    "分子の鎖を引きのばして同じ向きにそろえると、とても強い糸になります。",{color:"#dfe6ee",uses:"合成繊維の布",simp:true});
+  I("composite",[MAT,POL],"🛡️","複合素材（繊維強化プラスチック）","ふくごうそざい","Fibre-reinforced plastic",["C","H","Si","O","Ca"],
+    "ガラス繊維を樹脂で固めた材料。軽くて強く、好きな形に作れる。",
+    "繊維が引っぱる力を、樹脂が形を保つ役目を受け持ちます。ちがう材料の長所を組み合わせる考え方です。",{color:"#9fb3a8",uses:"ヘルメット、基板、カプセルの内張り"});
+
+  /* ---------- 半導体 ---------- */
+  I("wafer",[MAT,ELC],"💿","シリコンウェハー","しりこんうぇはー","Silicon wafer",["Si"],
+    "高純度ケイ素をうすく切ってみがいた円い板。電子部品を作りこむ土台。",
+    "ケイ素は「半導体」。ほんの少しの条件のちがいで、電気を通したり通さなかったりします。この性質が電子部品のもとです。",{color:"#7f8fa6",uses:"トランジスタ、集積回路"});
+  I("transistor",[PRD,ELC],"🔺","トランジスタ","とらんじすた","Transistor",["Si","Cu"],
+    "小さな電気の合図で、大きな電気の流れを入れたり切ったりできる部品。動く部分がない。",
+    "1947年に発明されました。リレーと同じ「電気で動くスイッチ」ですが、ずっと小さく速く、こわれにくいのが特長です。",{color:"#3c4654",uses:"論理回路、通信機",simp:true});
+  I("chip",[PRD,ELC],"🔲","集積回路","しゅうせきかいろ","Integrated circuit",["Si","Al"],
+    "たくさんのトランジスタと配線を、1枚の小さな板にまとめて作りこんだ部品。",
+    "部品を1つずつつなぐかわりに、写真のような方法でまとめて作ります。小さく、速く、まちがいが少なくなりました。",{color:"#2f3640",uses:"演算・制御装置、センサー",simp:true});
+
+  P("roll_steel","roll",["press"],{steel:1},{steelplate:4},"熱した鋼をローラーに何度も通すと、うすくて厚さのそろった板にのびた。",{temp:900});
+  P("alloy_dural","melt",["eaf"],{aluminum:3,copper:1},{alalloy:4},"溶けたアルミニウムに銅が溶けこんだ。冷えるとき、銅がアルミニウムの結晶をずれにくくして、硬く強い合金になる。",{temp:700});
+  P("roll_alalloy","roll",["press"],{alalloy:1},{alplate:4},"軽合金をローラーでのばして、軽くて丈夫な板にした。",{temp:400});
+  P("roll_foil","roll",["press"],{aluminum:1},{foil:8},"やわらかいアルミニウムは、ローラーで紙よりうすくのばせる。",{temp:25});
+  P("cut_bolt","cut",["lathe"],{ironrod:1},{bolt:6},"鉄の棒を回しながら刃を当てて、同じ大きさのねじ山をけずり出した。",{temp:25});
+  P("cut_pipe","cut",["lathe"],{steelplate:1},{pipe:4},"鋼板を丸めてつなぎ、内側と端を正確にけずって管に仕上げた。",{temp:25});
+  P("temper_glass","fire",["kiln"],{glass:2},{temperedglass:1},"ガラスをやわらかくなる手前まで熱し、風で一気に冷やした。表面に押し合う力が残り、割れにくくなった。",{temp:650});
+  P("spin_glass","spin",["furnace","eaf"],{glass:1},{glassfiber:2},"溶けたガラスを小さな穴から引き出すと、髪の毛より細い繊維になった。",{temp:1200});
+  P("sinter_alumina","fire",["eaf"],{alumina:2},{ceramic:1},"アルミナの粉を押し固めて高温で焼くと、粒どうしがくっついて硬いセラミックスになった（焼結）。",{temp:1600});
+  P("make_rawrubber","polymerize",["reactor"],{ethylene:2,naphtha:1},{rawrubber:4},"石油から取り出した小さな分子を長い鎖につなげると、のびる性質をもつ物質になった。（実際の工程を大きくまとめた表現です）",{temp:60,simp:true});
+  P("vulcanize","heat",["reactor"],{rawrubber:2,sulfur:1},{rubber:3},"硫黄が分子の鎖と鎖を橋のようにつなぎ、のびても元に戻る丈夫なゴムになった（加硫）。",{temp:150});
+  P("spin_fiber","spin",["reactor"],{pe:1},{synfiber:4},"溶かしたプラスチックを細い穴から引き出し、引きのばして強い糸にした。",{temp:150,simp:true});
+  P("mold_composite","shape",["reactor"],{glassfiber:2,pe:1},{composite:4},"ガラス繊維に樹脂をしみこませて型で固めた。繊維が力を受け止め、樹脂が形を保つ。",{temp:160,simp:true});
+  P("slice_wafer","cut",["semifab"],{pure_si:1},{wafer:4},"高純度ケイ素のかたまりを、うすい円い板に切り分けてみがいた。",{temp:25});
+  P("fab_transistor","fabricate",["semifab"],{wafer:1,wire:1},{transistor:4},"ウェハーの表面に、電気の通り方がちがう層を作り分けて、電気で動くスイッチにした。（実際には数百の工程があります）",{temp:25,simp:true});
+  P("fab_chip","fabricate",["semifab"],{wafer:1,aluminum:1},{chip:2},"1枚のウェハーの上に、たくさんのトランジスタとアルミニウムの配線をまとめて作りこんだ。（実際には数百の工程があります）",{temp:25,simp:true});
+
+  /* ---------- 部品（工作で作る。化学変化ではない） ---------- */
+  const PT = (id,tags,icon,name,yomi,en,kid,more,o)=>I(id,tags,icon,name,yomi,en,[],kid,more,Object.assign({color:"#8f9aa3"},o));
+  PT("insulwire",[MAT,ELC],"〰️","被覆電線","ひふくでんせん","Insulated wire","銅線をプラスチックで包んだ電線。さわっても感電せず、線どうしがふれてもショートしない。","電気を通す「導体」（銅）と、通さない「絶縁体」（プラスチック）の組み合わせ。回路づくりの基本です。");
+  PT("switch",[PRD,ELC],"🎚️","スイッチ","すいっち","Switch","回路をつないだり切ったりする部品。つながると電気が流れる。","電気は、輪になった道（回路）がつながっているときだけ流れます。スイッチは道の「はね橋」です。");
+  PT("relay",[PRD,ELC],"🧲","リレー","りれー","Relay","電磁石の力でスイッチを動かす部品。電気で電気を入れたり切ったりできる。","小さな電流で電磁石を動かし、別の回路のスイッチを切り替えます。初期のコンピューターは、リレーを何千個も使って計算しました。");
+  PT("resistor",[PRD,ELC],"🟤","抵抗器","ていこうき","Resistor","電気の流れをわざと流れにくくする部品。流れすぎて部品がこわれるのを防ぐ。","炭素は金属より電気を通しにくい性質があります。電流の大きさを決める、回路の「じゃ口」です。");
+  PT("capacitor",[PRD,ELC],"🥫","コンデンサー","こんでんさー","Capacitor","2枚のアルミ箔の間に紙をはさんだ部品。電気を少しの間ためておける。","向かい合った金属の板に、プラスとマイナスの電気が引き合ってたまります。記憶回路や通信機に欠かせません。");
+  PT("board",[MAT,ELC],"🟩","回路基板","かいろきばん","Circuit board","複合素材の板に銅の道をはりつけたもの。部品をならべて、決まった通りにつなぐ。","電線を1本ずつ引くかわりに、板の上の銅の模様でつなぎます。まちがいが減り、同じ回路を何枚も作れます。");
+  PT("oscillator",[PRD,ELC],"⏱️","水晶振動子","すいしょうしんどうし","Quartz oscillator","石英の小さな板。電気をかけると、決まった速さで正確にふるえ続ける。","石英は、押すと電気が生まれ、電気をかけると形が変わります（圧電効果）。このふるえが、時計やコンピューターの「拍子」になります。");
+  PT("gateboard",[PRD,ELC],"🔣","論理回路の基板","ろんりかいろのきばん","Logic gate board","トランジスタを組み合わせて、AND・OR・NOT の3種類の判断ができるようにした基板。","入力と出力を 0（切）と 1（入）の2つだけで考えます。この3種類を組み合わせると、どんな計算の回路も作れます。");
+  PT("adderboard",[PRD,ELC],"➕","加算器","かさんき","Adder","論理回路を組み合わせて、2進数の足し算ができるようにした基板。","1けたの足し算（0+0、0+1、1+1）とくり上がりを論理回路で作り、それをけたの数だけつなぎます。");
+  PT("memboard",[PRD,ELC],"💾","記憶回路","きおくかいろ","Memory board","0 か 1 かを覚えておける回路。入力を変えても、「書きこむ」まで前の値を保つ。","出力を入力へ戻す（フィードバック）と、回路が状態を保てるようになります。これが記憶の最小単位です。");
+  PT("cpuboard",[PRD,ELC],"🧠","演算・制御装置","えんざんせいぎょそうち","Processor board","計算する部分と、命令を順番に進める部分をまとめた基板。コンピューターの中心。","水晶振動子の拍子に合わせて、命令を1つ取り出す→実行する→次へ進む、をくり返します。");
+  PT("iounit",[PRD,ELC],"🎛️","入出力装置","にゅうしゅつりょくそうち","Input/output unit","スイッチの列（入力）とランプの列（出力）。人とコンピューターが値をやり取りする窓口。","コンピューターの中は 0 と 1 だけ。人が入れたり読んだりできる形に変えるのが入出力装置です。");
+  PT("computer",[PRD,ELC],"🖥️","コンピューター","こんぴゅーたー","Computer","命令を順番に実行する機械。演算・制御・記憶・入出力の4つの役割がそろっている。","命令のならび（プログラム）を変えれば、同じ機械でちがう仕事ができます。これがコンピューターのいちばんの特長です。",{unique:true});
+  PT("sensorunit",[PRD,ELC],"📟","センサー","せんさー","Sensor unit","温度・気圧・電圧をはかって、電気の信号に変える部品。","はかった量を数に変えると、コンピューターが読んで判断できます。機械の「目や皮ふ」です。");
+  PT("shipcomputer",[PRD,SPC],"🛰️","船内コンピューター","せんないこんぴゅーたー","Flight computer","センサーの値を読んで、船の状態を表示・記録するコンピューター。","このゲームの船内コンピューターは、状態の表示と試験の記録をする模擬の装置です（実際の飛行の制御は扱いません）。",{unique:true,simp:true});
+  PT("radio",[PRD,ELC],"📻","通信機","つうしんき","Radio set","電波で声や信号を送り、受け取る装置。","水晶振動子で決まった周波数の電波を作り、送る側と受ける側が同じ周波数に合わせると通じます。");
+  PT("antenna",[PRD,ELC],"📡","アンテナ","あんてな","Antenna","電波を空間へ送り出し、空間から受け取る金属の部品。","電線の中の電気のゆれが、空間を伝わる電波に変わります。形と長さで、得意な電波が決まります。");
+  PT("motor",[PRD],"🌀","モーター","もーたー","Electric motor","電気の力で回る機械。電磁石と電磁石が引き合い、反発し合って回り続ける。","発電機と同じ仕組みを逆向きに使います。電気→回転に変えるので、ポンプや送風機、工作機械を動かせます。");
+  PT("accumulator",[PRD],"🔋","蓄電池","ちくでんち","Rechargeable battery","電気をためておき、何度もくり返し使える電池。","充電すると化学変化が逆向きに進み、また電気を取り出せるようになります。発電できない間の電源になります。",{simp:true});
+  PT("powerunit",[PRD,SPC],"🔌","電源ユニット","でんげんゆにっと","Power unit","太陽電池と蓄電池をまとめた、船の電源。","光が当たる間は太陽電池で発電して蓄電池にため、かげに入ったら蓄電池から使います。",{unique:true});
+  PT("synfabric",[MAT,POL],"🧥","合成繊維の布","ごうせいせんいのぬの","Synthetic fabric","合成繊維を織った布。うすくて軽く、引きさきに強い。","織り目をつめると風を通しにくくなり、何枚も重ねると細かい粒の衝突からも守れます。");
+  PT("airtight",[MAT,POL],"🎈","気密シート","きみつしーと","Airtight sheet","布にゴムをぬった、空気を通さないシート。","布が引っぱる力を受け止め、ゴムが空気を止めます。ふくらんでも破れない風船の皮のような材料です。");
+  PT("mli",[MAT,SPC],"🪞","多層断熱シート","たそうだんねつしーと","Multi-layer insulation","アルミ箔とうすい布を何枚も重ねたシート。熱の出入りを防ぐ。","宇宙では、日なたはとても熱く、日かげはとても冷たくなります。光と熱をはね返す層を重ねて、中の温度を守ります。");
+  PT("heattile",[MAT,SPC],"🟧","耐熱タイル","たいねつたいる","Heat-resistant tile","セラミックスとガラス繊維で作ったタイル。高い熱から機体を守る。","空気の中を速く進むと、前の空気が押しつぶされて高温になります。熱に強く、熱を伝えにくい材料で守ります。");
+  PT("visor",[PRD,SPC],"🥽","バイザー","ばいざー","Visor","強化ガラスにうすい金属の膜をつけた、ヘルメットの窓。まぶしい光をやわらげる。","空気のない所では太陽の光がとても強いので、うすい金属の膜で光の一部をはね返します。",{simp:true});
+  PT("valve",[PRD],"🚰","バルブ","ばるぶ","Valve","管の途中で、流れを止めたり量を変えたりする部品。","じゃ口と同じ仕組み。すき間の広さを変えて、流れる量を調節します。");
+  PT("tankshell",[PRD],"🛢️","軽合金のタンク","けいごうきんのたんく","Light-alloy tank","軽合金の板で作った丈夫な入れ物。気体や液体を閉じこめて運ぶ。","丸い形は、内側から押す力を全体で均等に受け止められます。だからタンクやボンベは丸いのです。");
+  PT("airtank",[PRD,SPC],"🫁","空気タンク","くうきたんく","Breathing-air tank","呼吸に使う気体をつめたタンク。空気のない所で息をするために持っていく。","水を電気分解してできた酸素を、圧縮機でタンクにつめます。気体は押し縮めると、小さな入れ物にたくさん入ります。",{simp:true});
+  PT("co2scrubber",[PRD,SPC],"🧴","二酸化炭素の吸収缶","にさんかたんそのきゅうしゅうかん","CO₂ absorber","はいた息の二酸化炭素を取りのぞく缶。","消石灰などのアルカリ性の物質は、二酸化炭素と結びついて炭酸カルシウムになります。閉じた部屋では、息の二酸化炭素を取りのぞかないと苦しくなります。");
+  PT("coolingunit",[PRD,SPC],"❄️","温度調節器","おんどちょうせつき","Thermal control unit","水を管にめぐらせて、熱を運び出す装置。","体や機械から出る熱を水が受け取り、放熱する板まで運びます。汗が体を冷やすのと同じ考え方です。");
+  PT("monitor",[PRD,SPC],"🩺","状態監視パネル","じょうたいかんしぱねる","Status monitor","空気・二酸化炭素・温度・電源の様子を、ランプと数字で知らせるパネル。","見えない変化をセンサーではかり、異常があればすぐ気づけるようにします。");
+  PT("innerwear",[PRD,SPC],"👕","内側の衣服","うちがわのいふく","Inner garment","肌にふれる下着。植物の布に細い管を縫いこみ、水を通して体を冷やす。","宇宙服の中は熱がこもります。肌ざわりのよい天然の布で汗を吸い、管の水で熱を運び出します。",{unique:true});
+  PT("pressurelayer",[PRD,SPC],"🎽","気密層","きみつそう","Pressure layer","空気を閉じこめる層。体のまわりに、地上と同じように空気の圧力を保つ。","まわりに空気がない所では、体のまわりに空気の層を作って圧力を保つ必要があります。",{unique:true});
+  PT("outerlayer",[PRD,SPC],"🧥","保護層","ほごそう","Protective layer","いちばん外側の層。熱と冷たさ、細かい粒の衝突から中の層を守る。","断熱シートで温度を守り、丈夫な布で気密層を傷から守ります。役割のちがう層を重ねるのが宇宙服の考え方です。",{unique:true});
+  PT("helmet",[PRD,SPC],"⛑️","ヘルメット","へるめっと","Helmet","頭を守り、空気を閉じこめる丸いヘルメット。バイザーから外が見える。","軽くて強い複合素材の殻と、首まわりのシール材で気密を保ちます。",{unique:true});
+  PT("gloves",[PRD,SPC],"🧤","手袋とブーツ","てぶくろとぶーつ","Gloves and boots","気密を保ちながら、指と足首を動かせる手袋とブーツ。","空気でふくらんだ手袋は曲げにくくなります。関節の所を工夫して、道具を使えるようにします。",{unique:true});
+  PT("lifesupport",[PRD,SPC],"🎒","生命維持ユニット","せいめいいじゆにっと","Life-support unit","背負う箱。空気を送り、二酸化炭素を取りのぞき、温度を保ち、電源と見張りの役目もする。","呼吸用の空気・二酸化炭素の除去・温度管理・電源・状態監視の5つの働きが、全部そろって初めて人を守れます。",{unique:true});
+  PT("spacesuit",[PRD,SPC],"🧑‍🚀","宇宙服","うちゅうふく","Space suit","人ひとり分の小さな宇宙船。内側の衣服から生命維持ユニットまで、全部を組み合わせたもの。","空気・圧力・温度・通信を、体のまわりだけで保ちます。組み立てたあと、気密と各機能の試験に合格して初めて使えます。",{unique:true});
+  PT("cabinlife",[PRD,SPC],"🌬️","船内の生命維持装置","せんないのせいめいいじそうち","Cabin life-support system","搭乗カプセルの中の空気と温度を保つ装置。","宇宙服の生命維持ユニットと同じ働きを、部屋全体に対して行います。",{unique:true});
+  PT("propcell",[PRD,SPC],"🧨","推進用資材パック（架空規格）","すいしんようしざいぱっく","Propellant pack (fictional)","推進モジュールに使う資材をまとめた、このゲームだけの架空の部品。","宇宙には空気がないので、ロケットは「燃えるもの」と「燃やすための酸素のもと」の両方を持っていきます。中身と作り方は、ゲーム専用の架空の規格です（現実の推進剤とはちがいます）。",{simp:true});
+  PT("nozzle",[PRD,SPC],"🔻","噴射ノズル（架空規格）","ふんしゃのずる","Nozzle (fictional)","熱いガスを後ろへ勢いよく出す、ラッパ形の部品。","ガスを後ろへ押し出すと、その反動で前へ進みます（作用・反作用）。風船の口をはなすと飛ぶのと同じです。形や寸法はゲーム専用の架空のものです。",{simp:true});
+  PT("r_frame",[PRD,SPC],"🦴","機体構造","きたいこうぞう","Airframe","ロケットの骨組み。すべての部品を支える。","軽合金の板と骨組みで、軽さと強さを両立させます。",{unique:true});
+  PT("r_skin",[PRD,SPC],"🛡️","外装","がいそう","Outer skin","機体をおおう外板。熱と風から中の機器を守る。","先たんほど熱くなるので、耐熱タイルで守ります。",{unique:true});
+  PT("r_engine",[PRD,SPC],"🔥","推進モジュール（架空規格）","すいしんもじゅーる","Propulsion module (fictional)","ロケットを押し上げる部分。タンク・配管・バルブ・噴射ノズルをまとめた、ゲーム専用の架空の部品。","ガスを下へ噴き出す反動で上がります。このゲームでは仕組みの考え方だけを扱い、現実の設計は再現しません。",{unique:true,simp:true});
+  PT("r_capsule",[PRD,SPC],"🔔","搭乗カプセル","とうじょうかぷせる","Crew capsule","人が乗る部屋。空気をもらさず、熱から守る。","気密を保つ殻・窓・座席でできています。中の空気と温度は、船内の生命維持装置が保ちます。",{unique:true});
+  PT("shipradio",[PRD,SPC],"📶","船の通信装置","ふねのつうしんそうち","Ship radio","通信機とアンテナをまとめた、船と地上をつなぐ装置。","地上の管制と同じ周波数に合わせて、声と状態の信号をやり取りします。",{unique:true});
+
+  /* 道具・設備 */
+  T("solderiron","🖊️","はんだごて","はんだごて","Soldering iron","電気で熱くなるこて。スズを溶かして、電子部品を基板にくっつける。","スズは約230℃で溶ける金属。溶かして固めると、部品と銅の道を電気的にも機械的にもつなげます。");
+  T("compressor","🌪️","圧縮機","あっしゅくき","Compressor","モーターの力で気体を押し縮めて、タンクにつめる機械。","気体は押すと体積が小さくなります。自転車の空気入れと同じ仕組みです。");
+  T("powerdrill","🛠️","電動ドリル","でんどうどりる","Power drill","モーターで回るドリル。硬い鉱石を、少ない回数でたくさん掘れる。","回転する刃が岩を少しずつけずります。人の力のかわりに電気の力を使うと、同じ時間でずっと多く掘れます。");
+  F("press","🗜️","圧延機","あつえんき","Rolling mill","重いローラーで金属をはさみ、板にのばす機械。型で打ちぬくこともできる。","蒸気機関の力でローラーを回します。板が作れると、大きな構造物や入れ物が作れるようになります。",{ops:["roll"]});
+  F("lathe","⚙️","旋盤","せんばん","Lathe","材料を回しながら刃を当てて、正確な丸い形やねじをけずり出す工作機械。","「機械を作るための機械」。同じ寸法の部品を何個でも作れるようになり、部品の交換ができるようになりました。",{ops:["cut"]});
+  F("loom","🪡","織機","しょっき","Loom","たて糸とよこ糸を組み合わせて、布を速く織る機械。","糸を交互に上下させて、その間によこ糸を通します。この上下の決まりを穴のあいたカードで指示した織機は、コンピューターの遠い先祖です。",{ops:[]});
+  F("semifab","🔬","半導体工房","はんどうたいこうぼう","Semiconductor workshop","ほこりを取りのぞいた部屋。ウェハーを切り、細かい回路を作りこむ専用の設備。","回路はほこり1つぶより細かいので、空気をこして、きれいな部屋で作ります。",{ops:["cut","fabricate"],simp:true});
+  F("substation","🗼","電力供給設備","でんりょくきょうきゅうせつび","Power supply station","発電した電気を、電線で発射場まで送り、ためておく設備。","電気は電線で遠くへ送れます。蓄電池にためておけば、たくさん使うときにも足りなくなりません。",{ops:[],site:true});
+  F("assembly","🏭","組立棟","くみたてとう","Assembly building","クレーンのある大きな建物。ロケットの大きな部品を組み立てる。","重い部品をつり上げ、正確な位置に合わせてボルトでとめます。",{ops:[],site:true});
+  F("launchpad","🛫","発射台","はっしゃだい","Launch pad","ロケットを立てて支える、コンクリートと鉄骨の台。","重い機体を支え、噴き出す熱いガスを横へ逃がします。",{ops:[],site:true});
+  F("tower","🗼","支持塔と搭乗通路","しじとうととうじょうつうろ","Service tower","ロケットの横に立つ塔。機体を支え、人が乗りこむ通路になる。打ち上げの前に通路をはなす。","背の高い機体に人や電気を届けます。打ち上げのときは、じゃまにならないよう通路を引っこめます。",{ops:[],site:true});
+  F("control","🎛️","地上管制端末","ちじょうかんせいたんまつ","Ground control terminal","通信機と表示装置をそなえた端末。船の状態を地上で見守る。","船から届く信号を表示して、準備が整ったかを地上で確かめます。安全のため、発射台からはなれた所に置きます。",{ops:[],site:true});
+
+  /* ---------- 工作（宇宙計画） ---------- */
+  C("c_press","press",{steel:4,ironrod:2,brick:4},{tools:["steamengine"],how:"鋼のローラーを鉄の軸で支え、蒸気機関の力で回す。",why:"ローラーは重い金属を押しつぶすので、いちばん丈夫な鋼で作る。"});
+  C("c_motor","motor",{electromagnet:1,wire:2,ironrod:1},{at:"bench",tools:["generator"],how:"鉄の軸に電磁石を取りつけ、まわりにも銅線を巻く。",why:"電気を通しやすい銅線と、磁石になりやすい鉄の組み合わせ。"});
+  C("c_lathe","lathe",{steel:3,motor:1,ironrod:2},{tools:["press"],how:"鋼の台にモーターと回転軸を取りつけ、刃物の台をすべらせる。",why:"けずる側の機械は、けずられる材料より硬くゆがみにくい鋼で作る。"});
+  C("c_loom","loom",{log:2,ironrod:1,thread:2,motor:1},{at:"bench",how:"丸太のわくにたて糸を張り、モーターでよこ糸を通す。",why:"わくは軽い木、力のかかる軸は鉄。"});
+  C("c_insulwire","insulwire",{wire:2,pe:1},{qty:4,at:"bench",how:"銅線を、溶かしたポリエチレンで包む。",why:"銅は電気をよく通す導体、ポリエチレンは電気を通さない絶縁体。外へもれないよう包む。"});
+  C("c_seal","seal",{rubber:1},{qty:4,at:"press",how:"ゴムの板を、圧延機の型で輪の形に打ちぬく。",why:"ゴムはやわらかく変形して、すき間をぴったりふさぐ。"});
+  C("c_steelbeam","steelbeam",{steelplate:2},{qty:2,at:"press",how:"鋼板を折り曲げて、H の形の骨組みにする。",why:"鋼は重いが、地上の設備は動かないので、強さと安さを優先する。"});
+  C("c_valve","valve",{pipe:1,bolt:2,seal:1},{at:"lathe",how:"管の中に動く栓を入れ、ボルトでとめてシール材をはさむ。",why:"管と栓は鋼、もれ止めはゴム。"});
+  C("c_tankshell","tankshell",{alplate:2,valve:1,seal:1},{at:"press",how:"軽合金の板を丸く曲げてつなぎ、口にバルブをつける。",why:"飛ぶものに積むので、鋼より軽い軽合金を使う。"});
+  C("c_compressor","compressor",{motor:1,pipe:2,seal:2,steelplate:1},{at:"lathe",how:"モーターでピストンを動かし、管とシール材でもれなくつなぐ。",why:"高い圧力に耐える鋼と、もれを止めるゴム。"});
+  C("c_powerdrill","powerdrill",{motor:1,steel:1,insulwire:1,accumulator:1},{at:"lathe",how:"モーターの軸に鋼の刃をつけ、蓄電池で動かす。",why:"刃は硬い鋼。持ち歩くので電源は蓄電池。"});
+  C("c_solderiron","solderiron",{ironrod:1,wire:2,tin:1,twig:1},{at:"bench",tools:["generator"],how:"鉄の先に銅線を巻いて電気で熱くし、木の柄をつける。",why:"先は熱に強い鉄、柄は熱を伝えにくい木。"});
+  C("c_semifab","semifab",{steelplate:4,temperedglass:3,motor:1,cloth:2,insulwire:4},{tools:["generator","lathe"],how:"鋼板と強化ガラスで部屋を囲い、送風機と布のフィルターで空気をきれいにする。",why:"ほこりをこすための布、中が見える強化ガラス、送風機を回すモーター。"});
+  C("c_accumulator","accumulator",{zinc:2,copperplate:1,naoh:1,plasticbox:1},{at:"bench",how:"亜鉛と銅の板を、アルカリの液と一緒にプラスチック容器に入れる。",why:"2種類の金属の差が電気を生む。容器は液でさびないプラスチック。（しくみをまとめた表現です）"});
+  C("c_switch","switch",{copperplate:1,pe:1,bolt:1},{qty:2,at:"bench",how:"銅の板を2枚向かい合わせ、プラスチックのつまみで付けたり離したりする。",why:"接点は電気を通す銅、つまみは通さないプラスチック。"});
+  C("c_relay","relay",{electromagnet:1,switch:1},{at:"bench",how:"電磁石のそばにスイッチを置き、磁石の力で接点が動くようにする。",why:"電磁石（鉄と銅線）がスイッチの銅の接点を引き寄せる。"});
+  C("c_resistor","resistor",{blackpigment:1,ceramic:1,wire:1},{qty:4,at:"bench",how:"セラミックスの棒に炭素の粉をぬり、両端に銅線をつける。",why:"炭素は電気を通しにくい。土台のセラミックスは電気を通さず熱に強い。"});
+  C("c_capacitor","capacitor",{foil:2,paper:1},{qty:2,at:"bench",how:"2枚のアルミ箔の間に紙をはさんで巻く。",why:"箔は電気をためる板、紙は板どうしをふれさせない絶縁体。"});
+  C("c_board","board",{composite:1,copperplate:1},{qty:2,at:"semifab",how:"複合素材の板に銅をはり、いらない所を取りのぞいて道を残す。",why:"土台は電気を通さない複合素材、道は電気を通す銅。"});
+  C("c_oscillator","oscillator",{quartz:1,foil:1,wire:1},{at:"semifab",how:"石英をうすい板に切り、両面にアルミ箔の電極をつける。",why:"石英は、電気をかけると決まった速さでふるえる（圧電効果）。"});
+  C("c_gateboard","gateboard",{board:1,transistor:4,resistor:2,tin:1},{at:"bench",tools:["solderiron"],know:["switching"],how:"基板にトランジスタと抵抗器をならべ、スズではんだづけする。",why:"スズは低い温度で溶けて、部品と銅の道をつなぐ「はんだ」になる。"});
+  C("c_adderboard","adderboard",{gateboard:2,insulwire:2,tin:1},{at:"bench",tools:["solderiron"],know:["gates"],how:"論理回路を、足し算とくり上がりの形につなぐ。",why:"AND・OR・NOT の組み合わせだけで足し算ができる。"});
+  C("c_memboard","memboard",{gateboard:2,capacitor:2,tin:1},{at:"bench",tools:["solderiron"],know:["gates"],how:"論理回路の出力を入力へ戻して、状態を保つ回路にする。",why:"コンデンサーが電気をためて、値が消えるのを防ぐ。"});
+  C("c_cpuboard","cpuboard",{adderboard:1,memboard:1,oscillator:1,chip:1,tin:1},{at:"bench",tools:["solderiron"],know:["adder","memory"],how:"加算器・記憶回路・水晶振動子・集積回路を1枚にまとめる。",why:"計算（加算器）、覚える（記憶回路）、拍子（水晶）、手順の管理（集積回路）。"});
+  C("c_iounit","iounit",{switch:4,bulb:2,board:1,insulwire:2},{at:"bench",tools:["solderiron"],how:"スイッチの列とランプの列を基板につなぐ。",why:"スイッチは 0 と 1 を入れる入力、ランプは結果を見せる出力。"});
+  C("c_computer","computer",{cpuboard:1,iounit:1,composite:1,insulwire:2},{at:"bench",tools:["solderiron"],know:["roles"],how:"演算・制御装置と入出力装置を、複合素材の箱におさめてつなぐ。",why:"箱は軽くて電気を通さない複合素材。"});
+  C("c_sensorunit","sensorunit",{chip:1,resistor:2,wire:2,temperedglass:1},{at:"bench",tools:["solderiron"],how:"はかる部分と集積回路をつなぎ、強化ガラスのふたで守る。",why:"温度で電気の通りやすさが変わる部品を使い、数に変える。"});
+  C("c_shipcomputer","shipcomputer",{computer:1,sensorunit:1,composite:1,insulwire:2},{at:"bench",tools:["solderiron"],know:["program"],how:"コンピューターにセンサーをつなぎ、ゆれに強い箱におさめる。",why:"センサーの値を読むプログラムを入れて、船の状態を表示する。"});
+  C("c_radio","radio",{oscillator:1,transistor:2,board:1,electromagnet:1,capacitor:1,tin:1},{at:"bench",tools:["solderiron"],how:"水晶振動子で電波のもとを作り、トランジスタで強める。電磁石は音を出すスピーカーになる。",why:"水晶が周波数を決め、トランジスタが弱い信号を大きくする。"});
+  C("c_antenna","antenna",{alplate:1,wire:2,bolt:1},{at:"bench",how:"軽合金の板を皿の形にして、銅線をつなぐ。",why:"金属は電波をはね返して集める。"});
+  C("c_powerunit","powerunit",{accumulator:2,solarcell:1,insulwire:4,alplate:1},{at:"bench",tools:["solderiron"],how:"太陽電池と蓄電池を被覆電線でつなぎ、軽合金の箱におさめる。",why:"作る（太陽電池）と、ためる（蓄電池）の組み合わせ。"});
+  C("c_synfabric","synfabric",{synfiber:3},{at:"loom",how:"合成繊維を織機で目のつんだ布に織る。",why:"合成繊維は植物の糸より強く、水を吸わない。"});
+  C("c_airtight","airtight",{synfabric:1,rubber:1},{at:"press",how:"布にゴムをうすくのばして、ローラーではり合わせる。",why:"布が力を受け、ゴムが空気を止める。"});
+  C("c_mli","mli",{foil:3,synfabric:1},{at:"bench",how:"アルミ箔とうすい布を交互に重ねて縫う。",why:"箔が熱の光をはね返し、布が箔どうしをふれさせない。"});
+  C("c_heattile","heattile",{ceramic:2,glassfiber:1},{qty:2,at:"eaf",how:"セラミックスの粉にガラス繊維を混ぜ、板の形に焼く。",why:"セラミックスは熱に強く、繊維を入れるとすき間ができて熱を伝えにくい。"});
+  C("c_visor","visor",{temperedglass:1,foil:1},{at:"bench",how:"強化ガラスを曲げ、ごくうすい金属の膜をつける。",why:"割れにくい強化ガラスと、まぶしい光をはね返す金属の膜。"});
+  C("c_airtank","airtank",{tankshell:1,water:2},{at:"bench",tools:["electrolyzer","compressor"],how:"水を電気分解してできた酸素を、圧縮機でタンクにつめる。",why:"軽合金のタンクは軽くて、圧力に耐える。"});
+  C("c_co2scrubber","co2scrubber",{slaked:2,naoh:1,plasticbox:1},{at:"bench",how:"消石灰と水酸化ナトリウムの粒を、プラスチック容器につめる。",why:"アルカリ性の物質は二酸化炭素と結びつく。"});
+  C("c_coolingunit","coolingunit",{pipe:2,motor:1,foil:2,water:1},{at:"bench",how:"管に水を入れ、モーターのポンプでめぐらせる。箔の板から熱を逃がす。",why:"水は熱をたくさん運べる。金属の箔は熱を外へ放つ。"});
+  C("c_monitor","monitor",{sensorunit:1,bulb:2,board:1,tin:1},{at:"bench",tools:["solderiron"],how:"センサーの信号でランプをつける回路を組む。",why:"センサーではかり、ランプで知らせる。"});
+  C("c_innerwear","innerwear",{cloth:2,thread:2,pe:1},{at:"bench",how:"植物の布を縫い、細いポリエチレンの管を縫いこむ。",why:"肌にふれる層は、汗を吸う天然の布がよい。"});
+  C("c_pressurelayer","pressurelayer",{airtight:3,seal:2},{at:"bench",how:"気密シートを体の形に合わせてはり合わせ、つなぎ目にシール材を入れる。",why:"空気をもらさないゴム引きの布。"});
+  C("c_outerlayer","outerlayer",{mli:2,synfabric:2},{at:"bench",how:"多層断熱シートを、丈夫な布ではさんで縫う。",why:"断熱シートで温度を守り、強い布で傷から守る。"});
+  C("c_helmet","helmet",{composite:2,visor:1,seal:1},{at:"bench",how:"複合素材の丸い殻にバイザーをはめ、首の輪にシール材を入れる。",why:"軽くて強い複合素材。金属だと重くなる。"});
+  C("c_gloves","gloves",{rubber:2,synfabric:1,airtight:1},{at:"bench",how:"気密シートの手袋とブーツに、すべり止めのゴムと丈夫な布を重ねる。",why:"指先と足の裏は、やわらかくてすべらないゴム。"});
+  C("c_lifesupport","lifesupport",{airtank:1,co2scrubber:1,coolingunit:1,accumulator:1,monitor:1},{at:"bench",how:"5つの働きの部品を背負う箱におさめ、管と電線でつなぐ。",why:"空気・二酸化炭素の除去・温度・電源・見張り。1つでも欠けると人を守れない。"});
+  C("c_spacesuit","spacesuit",{innerwear:1,pressurelayer:1,outerlayer:1,helmet:1,gloves:1,radio:1,lifesupport:1},{at:"bench",how:"内側から順に重ね、ヘルメット・手袋・ブーツをつなぎ、通信機と生命維持ユニットを取りつける。",why:"役割のちがう層と装置を、順番に重ねて1着にする。"});
+  C("c_cabinlife","cabinlife",{airtank:2,co2scrubber:2,coolingunit:1,monitor:1},{at:"bench",how:"空気タンク・吸収缶・温度調節器・監視パネルを1つの装置にまとめる。",why:"部屋全体の空気と温度を保つので、タンクと吸収缶を多めに積む。"});
+  C("c_propcell","propcell",{kerosene:2,steelplate:1,seal:1},{at:"reactor",tools:["compressor"],how:"資材をゲーム専用の架空の容器におさめる。（現実の推進剤の作り方ではありません）",why:"燃えるものと、燃やすための酸素のもとを、どちらも積む必要がある。"});
+  C("c_nozzle","nozzle",{ceramic:2,steelplate:2,pipe:1},{at:"lathe",how:"鋼板をラッパ形に曲げ、内側をセラミックスでおおう。（形と寸法は架空のもの）",why:"内側は熱に強いセラミックス、外側は力を受け止める鋼。"});
+  C("c_substation","substation",{insulwire:8,steelbeam:1,accumulator:1,electromagnet:2,concrete:2},{tools:["generator"],how:"鉄骨の柱に被覆電線を張り、電磁石（変圧器）と蓄電池をつなぐ。",why:"遠くへ送る電線は被覆電線。土台は動かないコンクリート。"});
+  C("c_assembly","assembly",{steelbeam:4,concrete:6,motor:2,bolt:6,insulwire:2},{tools:["substation"],how:"コンクリートの床に鉄骨を組み、モーターのクレーンをつける。",why:"重い物をつるので、柱は鉄骨、床はコンクリート。"});
+  C("c_launchpad","launchpad",{concrete:10,steelbeam:4,pipe:4,bolt:6},{tools:["press"],how:"コンクリートの厚い台に、鉄骨の支えと配管を取りつける。",why:"熱いガスと重さに耐えるコンクリート。"});
+  C("c_tower","tower",{steelbeam:6,bolt:10,motor:1,steelplate:2},{tools:["lathe"],how:"鉄骨をボルトで高く組み、モーターで動く通路をつける。",why:"背の高い塔は、軽く組める鉄骨とボルトで作る。"});
+  C("c_control","control",{iounit:1,radio:1,antenna:1,chip:2,board:2,insulwire:4,tin:1},{tools:["solderiron"],how:"通信機とアンテナ、表示用の入出力装置を1台にまとめる。",why:"船から届く信号を受けて、ランプと数字で表示する。"});
+  C("c_r_frame","r_frame",{alplate:6,steelbeam:2,bolt:8},{tools:["assembly"],how:"組立棟で、軽合金の板と骨組みをボルトでとめる。",why:"飛ぶ部分は軽い軽合金。力のかかる所だけ鋼。"});
+  C("c_r_skin","r_skin",{alplate:3,heattile:4,composite:2,bolt:4},{tools:["assembly"],how:"軽合金の外板に、耐熱タイルと複合素材の先たんを取りつける。",why:"熱くなる所は耐熱タイル、先たんは軽い複合素材。"});
+  C("c_r_engine","r_engine",{nozzle:1,tankshell:2,valve:2,pipe:3,motor:1,propcell:2},{tools:["assembly","compressor"],how:"タンク・配管・バルブ・噴射ノズルを組み合わせ、資材パックを取りつける。（架空の規格）",why:"軽いタンク、もれない配管、熱に強いノズル。"});
+  C("c_r_capsule","r_capsule",{alplate:3,heattile:2,temperedglass:1,seal:4,composite:2,cloth:2},{tools:["assembly"],how:"軽合金の殻に窓と座席をつけ、つなぎ目をシール材でふさぐ。",why:"殻は軽合金、窓は強化ガラス、気密はゴム、座席は布。"});
+  C("c_shipradio","shipradio",{radio:1,antenna:1,insulwire:2},{at:"bench",tools:["solderiron"],how:"通信機とアンテナを被覆電線でつなぐ。",why:"アンテナで電波を送り受けする。"});
+
+  /* ---------- 宇宙計画の定義（分野・実習・組立・設備・試験） ---------- */
+  const space = {
+    /* 発射場の候補地（平らで広い野原。ここでなくても、条件を満たす所ならどこでも置ける） */
+    site:{x:-64, z:136, name:"南の野原"},
+    fields:[
+      {id:"mining",name:"採鉱と原料処理",kid:"道具と機械で、原料を集めて板や部品の形にする。",items:["press","lathe","powerdrill"],show:["steel","steamengine"]},
+      {id:"metal",name:"金属と構造材",kid:"鋼と軽合金から、骨組み・板・ねじ・管を作る。",items:["steelplate","steelbeam","bolt","pipe","alalloy","alplate"],show:["steel","aluminum"]},
+      {id:"glass",name:"ガラスとセラミックス",kid:"割れにくい窓と、熱に強い材料を作る。",items:["temperedglass","glassfiber","ceramic","heattile","visor"],show:["glass","alumina"]},
+      {id:"chem",name:"化学素材と繊維",kid:"石油からゴム・繊維・複合素材を作る。",items:["insulwire","rubber","seal","synfiber","synfabric","airtight","composite","mli"],show:["pe","naphtha"]},
+      {id:"power",name:"電力と蓄電",kid:"電気を作り、ためて、発射場まで送る。",items:["motor","accumulator","substation","powerunit"],show:["generator"]},
+      {id:"computer",name:"電子部品とコンピューター",kid:"スイッチから始めて、論理回路・加算器・記憶・コンピューターへ。",items:["switch","relay","semifab","transistor","gateboard","adderboard","memboard","cpuboard","iounit","computer","sensorunit","shipcomputer","radio"],show:["battery","bulb"]},
+      {id:"suit",name:"宇宙服と生命維持",kid:"層を重ねた服と、空気・温度を保つ装置。",items:["innerwear","pressurelayer","outerlayer","helmet","gloves","lifesupport","spacesuit"],show:["rubber","synfabric","cloth"]},
+      {id:"rocket",name:"機体の組立",kid:"8つの部分を作り、発射台の上で組み上げる。",items:["r_frame","r_engine","powerunit","shipcomputer","shipradio","r_capsule","cabinlife","r_skin"],show:["alplate","assembly"]},
+      {id:"ground",name:"地上設備と発射台",kid:"組立棟・発射台・支持塔・管制・電力を、マップに建てる。",items:["substation","assembly","launchpad","tower","control"],show:["steelbeam","concrete"]},
+      {id:"launch",name:"試験と打ち上げ",kid:"1つずつ試験して確かめ、乗りこんで宇宙へ。",items:[],show:["launchpad"]},
+    ],
+    /* 実習：中間の成果物を実際に動かして、次の段階の「知識」にする。need は持っていればよい（減らない） */
+    trials:[
+      {id:"circuit",n:1,name:"明かりをつける回路",need:["switch","bulb","insulwire"],power:true,kid:"電源・スイッチ・ランプを輪につなぐ。間にはさむ物で、導体と絶縁体を確かめる。",learn:"電気は、輪（回路）がつながったときだけ流れる。銅は通す（導体）、ゴムやガラスは通さない（絶縁体）。"},
+      {id:"switching",n:2,name:"電気で動くスイッチ",need:["relay"],power:true,kid:"リレーに合図の電気を流して、別の回路のランプをつけたり消したりする。",learn:"小さな電気の合図で、別の電気の流れを入れたり切ったりできる。トランジスタは同じ働きを、動く部分なしで速く行う。"},
+      {id:"gates",n:3,name:"0 と 1 の論理回路",need:["gateboard"],kid:"AND・OR・NOT の入力を切り替えて、出力の表を自分で確かめる。",learn:"AND は両方 1 のとき 1。OR はどちらかが 1 なら 1。NOT は反対にする。"},
+      {id:"adder",n:4,name:"2進数の足し算",need:["adderboard"],kid:"スイッチで2つの数を入れ、加算器の答えを読む。",learn:"2進数は 0 と 1 だけで数を表す。1+1 は「10」（くり上がり）。"},
+      {id:"memory",n:5,name:"値を覚える回路",need:["memboard"],kid:"値を書きこみ、入力を変えてから読み出す。",learn:"記憶回路は「書きこむ」合図のときだけ値を取りこみ、あとは保ち続ける。"},
+      {id:"roles",n:6,name:"コンピューターの4つの役割",need:["cpuboard","iounit"],kid:"演算・制御・記憶・入出力が、それぞれ何をするかを当てはめる。",learn:"演算＝計算する、制御＝命令を順に進める、記憶＝値と命令を覚える、入出力＝人や機械とやり取りする。"},
+      {id:"program",n:7,name:"命令をならべて動かす",need:["computer"],kid:"かんたんな命令をならべて、コンピューターに計算と表示をさせる。",learn:"コンピューターは命令を上から順に1つずつ実行する。命令のならびがプログラム。"},
+      {id:"sensors",n:8,name:"船内センサーの表示",need:["shipcomputer"],kid:"船内コンピューターで、模擬の船内センサーの値を読む。",learn:"センサーの値を決まった範囲とくらべれば、異常を見つけられる。（このゲーム専用の模擬機能）"},
+    ],
+    /* ロケットの組立単位（slot）。item を発射台の上の機体へ取りつける（在庫から機体へ移る）。frame が最初、skin が最後 */
+    modules:[
+      {slot:"frame",item:"r_frame",name:"機体構造"},
+      {slot:"engine",item:"r_engine",name:"推進モジュール",after:["frame"]},
+      {slot:"power",item:"powerunit",name:"電源",after:["frame"]},
+      {slot:"computer",item:"shipcomputer",name:"船内コンピューター",after:["frame"]},
+      {slot:"radio",item:"shipradio",name:"通信機器",after:["frame"]},
+      {slot:"capsule",item:"r_capsule",name:"搭乗カプセル",after:["frame"]},
+      {slot:"life",item:"cabinlife",name:"生命維持装置",after:["capsule"]},
+      {slot:"skin",item:"r_skin",name:"外装",after:["engine","power","computer","radio","capsule","life"]},
+    ],
+    /* 地上設備：作った設備（item）をマップに置く（plan は建築モードの建物ID、type は描画の種類。footprint は占有形状） */
+    ground:[
+      {item:"substation",plan:"sp-substation",type:"space-substation",name:"電力供給設備",footprint:{shape:"rect",w:3.2,d:2.6},operate:[0,1.9]},
+      {item:"assembly",plan:"sp-assembly",type:"space-assembly",name:"組立棟",footprint:{shape:"rect",w:7,d:5.4},entrance:[0,3.3]},
+      {item:"launchpad",plan:"sp-pad",type:"space-pad",name:"発射台",footprint:{shape:"circle",r:3.4}},
+      {item:"tower",plan:"sp-tower",type:"space-tower",name:"支持塔と搭乗通路",footprint:{shape:"rect",w:2.4,d:2.4},operate:[0,1.8]},
+      {item:"control",plan:"sp-control",type:"space-control",name:"地上管制端末",footprint:{shape:"rect",w:2.6,d:1.8},operate:[0,1.5]},
+    ],
+    towerNear:8, controlFar:12,     // 支持塔は発射台から8マス以内、管制端末は12マス以上はなす
+    /* 試験：短い課題。need は前提（足りなければ、何が足りないかを具体的に示す）。合格は S.space.tests に記録 */
+    tests:[
+      {id:"power",name:"電源と配線の確認",kid:"使う電気より多く、配線の限界より少なく。電源の組み合わせを選ぶ。",placed:["substation","launchpad"],slots:["power"],have:["generator"]},
+      {id:"computer",name:"コンピューターの自己診断",kid:"船内コンピューターに計算をさせて、答えを自分でも確かめる。",placed:["launchpad"],slots:["computer"],know:["sensors"]},
+      {id:"comm",name:"通信確認",kid:"船と地上管制の周波数を合わせて、信号を送り返す。",placed:["launchpad","control"],slots:["radio"]},
+      {id:"suit",name:"宇宙服の機能確認",kid:"気密・空気・二酸化炭素の除去・温度・通信を1つずつ確かめる。",have:["spacesuit"]},
+      {id:"life",name:"カプセルと生命維持の機能確認",kid:"カプセルを閉めて、空気と温度が保たれるかを確かめる。",placed:["launchpad"],slots:["capsule","life"]},
+      {id:"unmanned",name:"無人の模擬飛行試験",kid:"人を乗せずに、船内コンピューターで飛行の流れを模擬する。",placed:["launchpad","tower","control","substation"],slots:["frame","engine","power","computer","radio","capsule","life","skin"],tests:["power","computer","comm"]},
+      {id:"final",name:"総合点検",kid:"すべての試験の記録と設備の配置を、最後にもう一度確かめる。",placed:["launchpad","tower","control","substation"],slots:["frame","engine","power","computer","radio","capsule","life","skin"],tests:["power","computer","comm","suit","life","unmanned"],have:["spacesuit"]},
+    ],
+    /* エンディングに出す歩み（最初に手に入れた順にならべる） */
+    milestones:["twig","knife","campfire","pot","kiln","copper","iron","glass","battery","generator","steel","naphtha","pe","aluminum","pure_si","alplate","rubber","transistor","gateboard","computer","spacesuit","launchpad","r_frame","shipcomputer"],
+  };
 
   /* ---------- チュートリアル／目標 ---------- */
   const missions = [
@@ -841,6 +1125,15 @@ var DATA = (function(){
     {t:"油田を掘り、原油を分けよう",how:"蒸気機関で掘削やぐらを作り、精留塔で原油を「蒸留」。",tab:"lab",done:s=>s.disc.naphtha},
     {t:"「プラスチック」を作ろう",how:"化学反応装置でナフサを「熱分解」→ エチレンを「重合」。",tab:"lab",done:s=>s.disc.pe},
     {t:"「太陽電池」を完成させよう",how:"電気炉でケイ素とアルミニウムを作り、高純度ケイ素を工作で組み立てる。",tab:"craft",done:s=>s.disc.solarcell},
+    {t:"大きな目標：自分のロケットで宇宙へ。まず「圧延機」と「旋盤」を作ろう",how:"「宇宙へ」の画面で、必要なものを原料までたどれる。圧延機は鋼・鉄の棒・焼きレンガと蒸気機関で作る。",tab:"space",done:s=>s.disc.press&&s.disc.lathe},
+    {t:"「被覆電線」と「スイッチ」で、明かりをつける回路を試そう",how:"「宇宙へ」→「電子部品とコンピューター」の実習①。導体と絶縁体を確かめる。",tab:"space",done:s=>s.space&&s.space.know.circuit},
+    {t:"「軽合金の板」と「ゴム」を作ろう",how:"電気炉でアルミニウムと銅を「溶融」→ 圧延機で「圧延」。ゴムは化学反応装置で「重合」→ 硫黄と「加熱」。",tab:"lab",done:s=>s.disc.alplate&&s.disc.rubber},
+    {t:"「半導体工房」で「トランジスタ」を作り、論理回路を確かめよう",how:"高純度ケイ素を「切削」してウェハーに →「微細加工」。実習③まで進めよう。",tab:"space",done:s=>s.space&&s.space.know.gates},
+    {t:"「コンピューター」を組み立てて、命令を実行させよう",how:"加算器・記憶回路・演算制御装置・入出力装置を順に作る。実習⑦で命令をならべる。",tab:"space",done:s=>s.space&&s.space.know.program},
+    {t:"「宇宙服」を組み立てて、機能確認に合格しよう",how:"内側の衣服・気密層・保護層・ヘルメット・手袋とブーツ・通信機・生命維持ユニットをそろえる。",tab:"space",done:s=>s.space&&s.space.tests.suit},
+    {t:"発射場を建てよう（電力供給設備・組立棟・発射台・支持塔・管制端末）",how:"工作で作った設備を「建築」から平らな広い場所に置く。地図の「発射場の候補地」が目安。",tab:"space",done:s=>s.space&&["sp-substation","sp-assembly","sp-pad","sp-tower","sp-control"].every(k=>s.build&&s.build[k]&&!s.build[k].removed)},
+    {t:"ロケットを組み上げて、すべての試験に合格しよう",how:"8つの部分を発射台で取りつける。「宇宙へ」→「試験と打ち上げ」。",tab:"space",done:s=>s.space&&s.space.tests.final},
+    {t:"乗りこんで、宇宙へ！",how:"宇宙服を着て支持塔のそばへ。「宇宙へ」→「試験と打ち上げ」から搭乗する。",tab:"space",done:s=>s.space&&s.space.clear},
     {t:"図鑑のコンプリートを目指そう！",how:"「図鑑」の？？？にはヒントがある。珍しい発見も探検で探そう。",tab:"book",done:()=>false},
   ];
 
@@ -885,6 +1178,6 @@ var DATA = (function(){
         ]},
     ],
   };
-  return {items, ops, procs, crafts, regions, base, stages, eras, missions, TAGS, village};
+  return {items, ops, procs, crafts, regions, base, stages, eras, missions, TAGS, village, space};
 })();
 if (typeof module!=="undefined") module.exports = DATA;

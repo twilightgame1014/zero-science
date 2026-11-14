@@ -7,6 +7,7 @@ import { GPT_TEXTURES } from './graphics/gptTextures';
 import { BRANCH_TEXTURES } from './graphics/branchTextures';
 import { attachWorld } from './world/render';
 import { installNatureModels, tickNatureModels, natureModelStatus, prepareShared, setSharedTextures } from './world/natureModels';
+import { installSpaceModels, spaceTowerAim, spaceAnim, spaceSuit, spaceModelStatus } from './world/spaceModels';
 import * as CharMod from './graphics/CharacterRenderer';
 /* ---------- 建物の3Dモデル（Muse の GLB。assets/buildings-3d、2026-11-07） ----------
    描画モジュールは StructureRenderer.registerFactory で建物の作り方を差し替えられる（呼び出し側はそのまま）。
@@ -116,5 +117,6 @@ function diag8Check(): { ok: boolean; available: boolean; stuck: number[] } {
   return { ok: stuck.length === 0, available: true, stuck };
 }
 (window as any).HD2D = { attachWorld, diag8Check, initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, THREE, RESOURCE_VISUAL_SPECS, GPT_TEXTURES, BRANCH_TEXTURES,
+  installSpaceModels, spaceTowerAim, spaceAnim, spaceSuit, spaceModelStatus,
   ensureBuildingModel, tickBuildingParts, buildingModelStatus, setSharedTextures, installNatureModels, tickNatureModels, natureModelStatus, npcSet, npcRemove, npcTick, npcStatus };
 window.dispatchEvent(new Event('hd2d-ready'));

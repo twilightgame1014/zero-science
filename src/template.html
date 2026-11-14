@@ -678,6 +678,61 @@ img.ico.line{image-rendering:auto}
 .mat .np::before{background-image:var(--st-blocked-n)}
 .need span.ng::after{background-image:var(--st-lacking-n);margin-left:3px}
 .opt[aria-pressed="true"]::after{background-image:var(--st-selected-c);margin-left:4px}
+
+/* ===== 宇宙計画（2026-11-13）：プロジェクト画面・実習・試験・打ち上げ演出 ===== */
+.sp .spnav{margin-bottom:8px}
+.spgoal{border:1px solid var(--line2);border-radius:14px;background:var(--navy);color:var(--cream);padding:14px}
+.spgoal .t{font-weight:900;font-size:1.1rem}.spgoal p{margin:6px 0 10px;font-size:.86rem;opacity:.9}
+.spgoal .chip{background:var(--navy3);color:var(--cream);border-color:transparent}
+.spbar{height:10px;border-radius:5px;background:var(--navy3);overflow:hidden;margin-bottom:8px}.spbar i{display:block;height:100%;background:var(--teal)}
+.spgrid{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.spcard{font:inherit;text-align:left;display:flex;flex-direction:column;gap:3px;border:1px solid var(--line2);border-radius:10px;background:var(--card);color:var(--ink);padding:10px;min-height:44px;cursor:pointer;touch-action:manipulation}
+.spcard .h{font-weight:900}.spcard .h .ck{color:var(--teal);margin-right:4px}.spcard .k{font-size:.78rem;color:var(--muted)}.spcard .s{font-size:.76rem}.spcard .s b{color:var(--amber)}
+.spcard .m{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin:3px 0}.spcard .m i{display:block;height:100%;background:var(--teal)}
+.spcard.done{border-color:var(--teal)}
+.splater{margin:0;padding-left:1.2em;font-size:.84rem;color:var(--muted)}
+.splist{display:flex;flex-direction:column;gap:6px}
+.sprow{font:inherit;text-align:left;display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);padding:8px 10px;min-height:44px;width:100%}
+button.sprow{cursor:pointer;touch-action:manipulation}
+.sprow .n{flex:1;font-weight:800;min-width:0}.sprow .n small{display:block;font-weight:500;color:var(--muted);font-size:.78rem}
+.spst{display:inline-flex;align-items:center;gap:4px;border-radius:6px;border:1px solid var(--line2);padding:2px 7px;font-size:.74rem;font-weight:800;white-space:nowrap}
+.spst.ok{border-color:var(--teal);color:var(--teal)}.spst.go{border-color:var(--amber);color:var(--amber)}.spst.ng{border-color:var(--clay);color:var(--clay)}.spst.wait{border-style:dashed;color:var(--muted)}
+.btn.act{background:var(--amber);color:var(--amber-ink)}
+.sptag{background:var(--soft);color:var(--muted);border:1px dashed var(--line2);font-weight:700}
+.spwhy{font-size:.84rem;margin:6px 0 0}.spwhy b{color:var(--teal)}
+.sptree{border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--card);font-size:.86rem}
+.sptree details{margin:2px 0}.sptree summary{cursor:pointer;display:flex;gap:8px;align-items:center;min-height:36px;list-style:none}.sptree summary::before{content:"▶";font-size:.7rem;color:var(--muted)}.sptree details[open]>summary::before{content:"▼"}
+.sptree .tleaf{display:flex;gap:8px;align-items:center;min-height:32px;padding-left:18px}
+.sptree .tkids{margin-left:14px;border-left:1px solid var(--line);padding-left:8px}
+.sptree .tn{font-weight:800;flex:1}.sptree .tq{font-weight:900;font-size:.8rem}.sptree .tq.ok{color:var(--teal)}.sptree .tq.ng{color:var(--clay)}.sptree .th{font-size:.74rem;color:var(--muted)}
+.sptree .ttools{margin:2px 0 4px 22px}
+.spchk{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.spchk li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:6px 10px;min-height:40px;background:var(--card)}
+.spchk li>b{width:1.2em;text-align:center}.spchk li.ok>b{color:var(--teal)}.spchk li.ng>b{color:var(--clay)}.spchk li.ng{border-style:dashed}.spchk li span{flex:1}.spchk li small{display:block;color:var(--muted);font-size:.78rem}
+.sptrial p{margin:8px 0;font-size:.92rem}
+.trbox{border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0;background:var(--soft)}.trbox h5{margin:0 0 6px}
+.circ{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;font-weight:800}.circ>span{border:1px solid var(--line2);border-radius:6px;padding:4px 8px;background:var(--card)}.circ .w.on{border-color:var(--amber);color:var(--amber)}.circ .gap{border-style:dashed}
+.lamp{filter:grayscale(1);opacity:.55}.lamp.on{filter:none;opacity:1;border-color:var(--amber)!important;background:var(--amber-soft)!important}.lamp b{margin-left:4px;font-size:.8rem}
+.opt.sel{border-color:var(--teal);background:var(--teal-soft)}.opt.sel::before{content:"✓ "}
+.opt{min-height:44px;color:var(--ink);font:inherit;font-weight:700}
+.bitrow{display:flex;gap:6px;align-items:center;margin:4px 0}.bitrow em{font-style:normal;font-weight:900;min-width:2.6em}.bitrow i{font-style:normal;color:var(--muted)}
+.bit{font:inherit;font-weight:900;min-width:44px;min-height:44px;border-radius:10px;border:1px solid var(--line2);background:var(--card);color:var(--ink);cursor:pointer;touch-action:manipulation}.bit.on{background:var(--teal);color:var(--teal-ink);border-color:var(--teal)}
+.sumrow{margin-top:6px;font-weight:700}.bin{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.05rem;letter-spacing:.08em;background:var(--navy);color:var(--cream);border-radius:6px;padding:2px 8px}
+.gates{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.gate{border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--soft)}.gate h5{margin:0 0 6px}
+.tt{border-collapse:collapse;font-size:.84rem;margin-top:6px}.tt th,.tt td{border:1px solid var(--line);padding:3px 10px;text-align:center}.tt.wide{width:100%}.tt.wide td{padding:6px}
+.roleq{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;border-bottom:1px dashed var(--line);padding:6px 0}.roleq>span:first-child{font-weight:800}
+.prog .pl{display:flex;gap:6px;align-items:center;margin:4px 0}.prog .pl em{font-style:normal;font-weight:900;width:1.4em;text-align:right;color:var(--muted)}
+.prog select{font:inherit;min-height:40px;border-radius:8px;border:1px solid var(--line2);background:var(--card);color:var(--ink);padding:0 6px}
+.pbar{position:relative;height:16px;border-radius:8px;background:var(--line);margin:22px 0 8px}.pbar i{display:block;height:100%;border-radius:8px;background:var(--muted)}.pbar i.okk{background:var(--teal)}.pbar i.over{background:var(--clay)}
+.pbar em{position:absolute;top:-18px;font-style:normal;font-size:.7rem;font-weight:800;transform:translateX(-50%);white-space:nowrap}.pbar em::after{content:"";position:absolute;left:50%;top:16px;width:2px;height:20px;background:var(--ink)}
+.sphud{position:absolute;right:calc(var(--sar) + 10px);top:calc(var(--sat) + 58px);min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line2);background:var(--navy);color:var(--cream);font:inherit;font-weight:900;cursor:pointer;pointer-events:auto;touch-action:manipulation}
+.spcine{position:fixed;inset:0;z-index:90;touch-action:none;user-select:none}
+.spcine canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0}
+.spcine .big{position:absolute;left:0;right:0;top:22%;text-align:center;font-size:min(28vw,180px);font-weight:900;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.35);font-family:ui-monospace,Menlo,Consolas,monospace;pointer-events:none}
+.spcine .cap{position:absolute;left:0;right:0;bottom:calc(var(--sab, 0px) + 86px);text-align:center;color:#fff;font-weight:900;font-size:1.2rem;text-shadow:0 2px 6px rgba(0,0,0,.7);pointer-events:none}
+.spcine .skip{position:absolute;right:calc(var(--sar, 0px) + 14px);bottom:calc(var(--sab, 0px) + 14px);min-height:48px}
+.spend{text-align:center}.spend h2{font-size:1.6rem;margin:6px 0}.spend .stars{color:var(--amber);letter-spacing:.6em;font-size:1.2rem}.spend h5{text-align:left;margin:14px 0 4px}.spend .note,.spend .spchk{text-align:left}
+.spsteps{text-align:left;margin:0;padding-left:1.6em;font-size:.88rem}.spsteps li{padding:2px 0}.spsteps small{color:var(--muted);margin-left:8px}
 </style>
 </head>
 <body>
@@ -713,6 +768,7 @@ img.ico.line{image-rendering:auto}
     <button data-tab="map" data-icon="tech" data-only="pc" title="技術マップ：技術と物質のつながり"><span class="ico">🕸️</span>技術</button>
     <button data-tab="log" data-icon="log" data-only="pc" title="記録：実験の記録とセーブデータ"><span class="ico">📓</span>記録</button>
     <button data-tab="build" data-icon="home" data-only="pc" title="建築：作った家や設備を好きな場所に置く"><span class="ico">🏗️</span>建築</button>
+    <button data-tab="space" data-icon="space" data-only="pc" title="宇宙へ：最終目標の進み具合と、次にやること"><span class="ico">🚀</span>宇宙へ</button>
     <button data-tab="menu" data-icon="menu" data-only="touch" title="メニュー：図鑑・技術・記録・設定"><span class="ico">☰</span>メニュー</button>
   </nav>
 </div>
@@ -733,6 +789,9 @@ img.ico.line{image-rendering:auto}
 </script>
 <script>
 /*TERRAIN*/
+</script>
+<script>
+/*SPACE*/
 </script>
 <script>
 /*NATURE*/

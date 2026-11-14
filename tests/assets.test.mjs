@@ -14,7 +14,10 @@ const src = JSON.parse(rd('assets/buildings-icons/atlas.json')), built = JSON.pa
 const items = Object.keys(D.items), tag = t => items.filter(k => D.items[k].tags.includes(t));
 const want = [...tag('道具').map(k => 'tools/' + k), ...tag('研究設備').map(k => 'facilities/' + k), ...Object.keys(D.ops).map(k => 'ops/' + k)];
 const missing = want.filter(k => !built.items[k]);
-ok('道具・研究設備・操作のすべて（データから数えた ' + want.length + ' 件）に、ゲーム用アトラスのアイコンがある', missing.length === 0, missing.join(','));
+/* 宇宙計画（2026-11-13）の道具・設備・操作のアイコンは制作待ち（依頼は docs/handoff/GPT-SPACE-ASSET-REQUEST.md）。それまでは絵文字で表示する。
+   納品されてアトラスに入ったら、この一覧から外す（外し忘れもここで分かる） */
+const ICON_PENDING = ['tools/solderiron', 'tools/compressor', 'tools/powerdrill', 'facilities/press', 'facilities/lathe', 'facilities/loom', 'facilities/semifab', 'facilities/substation', 'facilities/assembly', 'facilities/launchpad', 'facilities/tower', 'facilities/control', 'ops/roll', 'ops/cut', 'ops/spin', 'ops/fabricate'];
+ok('道具・研究設備・操作（データから数えた ' + want.length + ' 件）に、ゲーム用アトラスのアイコンがある（宇宙計画の ' + ICON_PENDING.length + ' 件は制作待ちで、絵文字で出す）', JSON.stringify(missing.slice().sort()) === JSON.stringify(ICON_PENDING.slice().sort()), missing.join(','));
 ok('ゲーム用アトラスは原本のアトラスと同じキー（カテゴリ/ID）・同じ件数', Object.keys(src.entries).length === Object.keys(built.items).length && Object.keys(src.entries).every(k => built.items[k]));
 ok('設備の「ろ過器」と操作の「ろ過」は別のアイコン（キーの衝突なし）', built.items['facilities/filter'] && built.items['ops/filter'] && String(built.items['facilities/filter']) !== String(built.items['ops/filter']));
 ok('原本の名前とデータの名前が一致（道具・設備）', Object.entries(src.entries).filter(([k]) => !k.startsWith('ops/')).every(([k, v]) => D.items[k.split('/')[1]] && D.items[k.split('/')[1]].name === v.name),
