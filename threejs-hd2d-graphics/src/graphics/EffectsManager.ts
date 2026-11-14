@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { EffectType, Vec3Like } from './types';
 
 interface Burst {
-  points: THREE.Points;
+  points: THREE.Points | null;
   velocities: Float32Array;
   life: number;
   maxLife: number;
@@ -10,6 +10,10 @@ interface Burst {
   baseOpacity: number;
   /** Exhaust plume cones (round 30); flicker while the burst lives. */
   cones?: THREE.Mesh[];
+  /** Billboard puffs (padSmoke only): sprite points render as
+   *  tiny dots at this module's render scale, so smoke needs
+   *  world-sized sprites to read as smoke at all. */
+  puffs?: { sprite: THREE.Sprite; vel: THREE.Vector3; grow: number }[];
 }
 
 interface EffectStyle {
@@ -42,8 +46,9 @@ const EFFECT_STYLE: Record<string, EffectStyle> = {
   // trail, and once at the pad's Anchor_exhaust at ignition.
   exhaust: { color: 0xffc37e, count: 90, speed: 5.5, gravity: 3.0, size: 0.6, life: 1.1, dirY: -1, spread: 0.5 },
   // Round 30 (space): launch-pad smoke from Anchor_smoke_l/r.
-  // Long-lived, wide, mostly sideways roll-out.
-  padSmoke: { color: 0xcfc8bd, count: 70, speed: 2.8, gravity: -0.5, size: 4.2, life: 3.4, flat: 0.8, spread: 1.3, opacity: 0.5 },
+  // count 0: no sprite points — the puff sprites are built
+  // separately in play() (world-sized, growing, rolling out).
+  padSmoke: { color: 0xcfc8bd, count: 0, speed: 0, gravity: 0, size: 1, life: 3.4 },
 };
 
 /**
@@ -111,20 +116,23 @@ export class EffectsManager {
       velocities[i * 3 + 1] = up * style.speed * 0.7 * (style.dirY ?? 1);
       velocities[i * 3 + 2] = Math.sin(a) * r * 0.6;
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const mat = new THREE.PointsMaterial({
-      map: type === 'padSmoke' ? this.getSmokeTexture() : this.particleTexture,
-      color: style.color,
-      size: style.size,
-      transparent: true,
-      opacity: 0.95,
-      depthWrite: false,
-      blending: type === 'smoke' || type === 'padSmoke' ? THREE.NormalBlending : THREE.AdditiveBlending,
-    });
-    const points = new THREE.Points(geo, mat);
-    points.renderOrder = 6;
-    this.group.add(points);
+    let points: THREE.Points | null = null;
+    if (style.count > 0) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const mat = new THREE.PointsMaterial({
+        map: this.particleTexture,
+        color: style.color,
+        size: style.size,
+        transparent: true,
+        opacity: 0.95,
+        depthWrite: false,
+        blending: type === 'smoke' ? THREE.NormalBlending : THREE.AdditiveBlending,
+      });
+      points = new THREE.Points(geo, mat);
+      points.renderOrder = 6;
+      this.group.add(points);
+    }
     const burst: Burst = {
       points,
       velocities,
@@ -133,6 +141,41 @@ export class EffectsManager {
       gravity: style.gravity,
       baseOpacity: style.opacity ?? 0.95,
     };
+    if (type === 'padSmoke') {
+      // Launch-pad smoke as world-sized billboard puffs: they
+      // spawn around the anchor, roll outward along the deck,
+      // grow and fade over the burst life.
+      burst.puffs = [];
+      const baseY = this.groundHeightAt(position.x, position.z);
+      for (let i = 0; i < 10; i++) {
+        const mat = new THREE.SpriteMaterial({
+          map: this.getSmokeTexture(),
+          color: style.color,
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+        });
+        const sprite = new THREE.Sprite(mat);
+        const a = Math.random() * Math.PI * 2;
+        const r0 = Math.sqrt(Math.random()) * 1.5;
+        sprite.position.set(
+          position.x + Math.cos(a) * r0,
+          baseY + 0.7 + Math.random() * 0.8,
+          position.z + Math.sin(a) * r0,
+        );
+        const s0 = 3.6 + Math.random() * 1.8;
+        sprite.scale.set(s0, s0 * 0.72, 1);
+        sprite.renderOrder = 6;
+        this.group.add(sprite);
+        const dir = Math.random() * Math.PI * 2;
+        const out = 1.6 + Math.random() * 2.2;
+        burst.puffs.push({
+          sprite,
+          vel: new THREE.Vector3(Math.cos(dir) * out, 0.35 + Math.random() * 0.4, Math.sin(dir) * out),
+          grow: 1.5 + Math.random() * 1.1,
+        });
+      }
+    }
     if (type === 'exhaust') {
       // Plume body: two nested additive cones under the nozzle,
       // apex at the exhaust point, opening downward. Sized for
@@ -174,23 +217,34 @@ export class EffectsManager {
     for (let bi = this.bursts.length - 1; bi >= 0; bi--) {
       const b = this.bursts[bi];
       b.life += dt;
-      const pos = b.points.geometry.attributes.position as THREE.BufferAttribute;
-      for (let i = 0; i < pos.count; i++) {
-        const vx = b.velocities[i * 3];
-        let vy = b.velocities[i * 3 + 1];
-        const vz = b.velocities[i * 3 + 2];
-        vy -= b.gravity * dt;
-        b.velocities[i * 3 + 1] = vy;
-        pos.setXYZ(
-          i,
-          pos.getX(i) + vx * dt,
-          pos.getY(i) + vy * dt,
-          pos.getZ(i) + vz * dt,
-        );
-      }
-      pos.needsUpdate = true;
       const t = b.life / b.maxLife;
-      (b.points.material as THREE.PointsMaterial).opacity = b.baseOpacity * (1 - t);
+      if (b.points) {
+        const pos = b.points.geometry.attributes.position as THREE.BufferAttribute;
+        for (let i = 0; i < pos.count; i++) {
+          const vx = b.velocities[i * 3];
+          let vy = b.velocities[i * 3 + 1];
+          const vz = b.velocities[i * 3 + 2];
+          vy -= b.gravity * dt;
+          b.velocities[i * 3 + 1] = vy;
+          pos.setXYZ(
+            i,
+            pos.getX(i) + vx * dt,
+            pos.getY(i) + vy * dt,
+            pos.getZ(i) + vz * dt,
+          );
+        }
+        pos.needsUpdate = true;
+        (b.points.material as THREE.PointsMaterial).opacity = b.baseOpacity * (1 - t);
+      }
+      if (b.puffs) {
+        const fade = Math.min(1, b.life / 0.35) * (t < 0.55 ? 1 : 1 - (t - 0.55) / 0.45);
+        for (const puff of b.puffs) {
+          puff.sprite.position.addScaledVector(puff.vel, dt);
+          const s = puff.sprite.scale.x + puff.grow * dt;
+          puff.sprite.scale.set(s, s * 0.72, 1);
+          (puff.sprite.material as THREE.SpriteMaterial).opacity = 0.42 * fade;
+        }
+      }
       if (b.cones) {
         const flicker = 1 + Math.sin(b.life * 42) * 0.07 + Math.sin(b.life * 91) * 0.05;
         const fadeIn = Math.min(1, b.life / 0.08);
@@ -202,9 +256,17 @@ export class EffectsManager {
         }
       }
       if (t >= 1) {
-        this.group.remove(b.points);
-        b.points.geometry.dispose();
-        (b.points.material as THREE.Material).dispose();
+        if (b.points) {
+          this.group.remove(b.points);
+          b.points.geometry.dispose();
+          (b.points.material as THREE.Material).dispose();
+        }
+        if (b.puffs) {
+          for (const puff of b.puffs) {
+            this.group.remove(puff.sprite);
+            (puff.sprite.material as THREE.Material).dispose();
+          }
+        }
         if (b.cones) {
           for (const cone of b.cones) {
             this.group.remove(cone);
@@ -219,9 +281,17 @@ export class EffectsManager {
 
   dispose(): void {
     for (const b of this.bursts) {
-      this.group.remove(b.points);
-      b.points.geometry.dispose();
-      (b.points.material as THREE.Material).dispose();
+      if (b.points) {
+        this.group.remove(b.points);
+        b.points.geometry.dispose();
+        (b.points.material as THREE.Material).dispose();
+      }
+      if (b.puffs) {
+        for (const puff of b.puffs) {
+          this.group.remove(puff.sprite);
+          (puff.sprite.material as THREE.Material).dispose();
+        }
+      }
       if (b.cones) {
         for (const cone of b.cones) {
           this.group.remove(cone);
