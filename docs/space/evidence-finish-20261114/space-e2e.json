@@ -1,0 +1,16 @@
+[
+  {
+    "viewport": "desktop1280x800",
+    "realWebGL": true,
+    "graphicsQuality": "low (public preset, CPU-only CI)",
+    "screenshots": false,
+    "passed": true
+  },
+  {
+    "viewport": "mobile390x844",
+    "realWebGL": true,
+    "graphicsQuality": "low (public preset, CPU-only CI)",
+    "screenshots": false,
+    "passed": true
+  }
+]

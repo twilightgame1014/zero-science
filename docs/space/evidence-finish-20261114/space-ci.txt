@@ -1,0 +1,27 @@
+run 43588805915 / commit f80e7e5a3514a0a0903f973296c9fe03d0836d99
+2026-11-14T11:12:18.7811778Z capture pc S0
+2026-11-14T11:12:24.9353131Z capture pc S1
+2026-11-14T11:12:31.0861730Z capture pc S2
+2026-11-14T11:12:48.0061813Z capture pc S3
+2026-11-14T11:13:00.0021810Z capture pc S4
+2026-11-14T11:13:14.9281391Z capture pc low-angle
+2026-11-14T11:14:08.7042219Z skip clicked: false phase: ending
+2026-11-14T11:14:09.7974785Z PASS {
+2026-11-14T11:14:09.7988448Z   viewport: 'desktop1280x800',
+2026-11-14T11:14:09.8079260Z   realWebGL: true,
+2026-11-14T11:14:09.8107394Z   graphicsQuality: 'low (public preset, CPU-only CI)',
+2026-11-14T11:14:09.8134382Z   screenshots: false,
+2026-11-14T11:14:09.8165866Z   passed: true
+2026-11-14T11:15:01.0746500Z capture mobile S0
+2026-11-14T11:15:06.5471475Z capture mobile S1
+2026-11-14T11:15:10.2731797Z capture mobile S2
+2026-11-14T11:15:14.9341363Z capture mobile S3
+2026-11-14T11:15:19.3338528Z capture mobile S4
+2026-11-14T11:15:23.8083063Z capture mobile low-angle
+2026-11-14T11:16:13.5966675Z skip clicked: false phase: ending
+2026-11-14T11:16:14.3548892Z PASS {
+2026-11-14T11:16:14.3556837Z   viewport: 'mobile390x844',
+2026-11-14T11:16:14.3557227Z   realWebGL: true,
+2026-11-14T11:16:14.3557625Z   graphicsQuality: 'low (public preset, CPU-only CI)',
+2026-11-14T11:16:14.3558054Z   screenshots: false,
+2026-11-14T11:16:14.3558357Z   passed: true
