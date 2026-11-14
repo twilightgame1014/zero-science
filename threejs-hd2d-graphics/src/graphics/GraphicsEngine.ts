@@ -362,6 +362,17 @@ export class GraphicsEngine {
     this.character.setSpriteTexture(tex);
   }
 
+  /**
+   * Show or hide the player character only (NPCs unaffected).
+   * Round 30 (space integration request 1): the game hides the
+   * player while they are inside the capsule, from boarding
+   * until return to the ground. Purely visual; the player's
+   * state keeps updating as usual while hidden.
+   */
+  setPlayerVisible(visible: boolean): void {
+    this.character.setPlayerVisible(visible);
+  }
+
   /** Hand over the player's current visual state (owned by logic). */
   setPlayerVisualState(state: PlayerVisualState): void {
     const p = toScenePosition(state.position, this.cfg);
