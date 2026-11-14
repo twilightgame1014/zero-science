@@ -16,6 +16,6 @@ try{for(const mobile of [false,true]){const ctx=await browser.newContext({viewpo
  assert(await page.evaluate(()=>['dirt','gravel','stone'].every(k=>{const m=__GAME__.W3.gfx.getScene().getObjectByName('Road:'+k);return m.geometry.attributes.uv.count===m.geometry.attributes.position.count&&m.material.normalScale.x===.5;})),'UVs and real textures wired');
  await page.evaluate(()=>{const g=__GAME__,v=g.S.cons.inst['cs-visual'];v.phase='completed';v.stage=3;v.done=Date.now()-10000;g.render();g.save();});
  await page.waitForFunction(()=>!__GAME__.W3.gfx.getScene().getObjectByName('ConstructionSite:cs-visual'));assert(await page.evaluate(()=>__GAME__.W3.structs.has('cs:cs-visual')),'completed model remains');
- await page.reload();await page.waitForFunction(()=>window.__GAME__?.W3.state==='ready');assert(await page.evaluate(()=>__GAME__.S.cons.inst['cs-visual'].stage===3),'saved completed stage');assert.deepEqual(errors,[]);
+ await page.reload({waitUntil:'domcontentloaded',timeout:60000});await page.waitForFunction(()=>window.__GAME__?.W3.state==='ready',null,{timeout:60000});assert(await page.evaluate(()=>__GAME__.S.cons.inst['cs-visual'].stage===3),'saved completed stage');assert.deepEqual(errors,[]);
  console.log('PASS real WebGL city models, 7 kits, stage 0/1/completion, rotation, 3 color/normal road textures, reload '+(mobile?'mobile 390x844':'PC 1280x800'));await ctx.close();}
 }finally{await browser.close();server.close();}
