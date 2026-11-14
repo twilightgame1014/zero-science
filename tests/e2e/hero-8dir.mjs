@@ -107,13 +107,15 @@ try {
           assert.ok(walking.speed > 0);
           assert.equal(walking.facing, walking.face);
           rows.push(walking.row);
-          await page.evaluate(() => { __GAME__.W3.joy = null; });
+          // Capture the last simulation facing and release input in the same task.
+          // A frame between separate protocol calls can legitimately turn while the camera eases.
+          const releasedFace = await page.evaluate(() => { const w=__GAME__.W3; const face=w.face; w.joy=null; return face; });
           await page.waitForFunction(() => {
             const p = __GAME__.W3.gfx.character.player;
             return !p.state.moving && p.texture.offset.x === 0;
           });
           const stopped = await state();
-          assert.ok(Math.abs(Math.atan2(Math.sin(stopped.face-walking.face),Math.cos(stopped.face-walking.face)))<1e-6,'stopping preserves direction within floating-point precision');
+          assert.ok(Math.abs(Math.atan2(Math.sin(stopped.face-releasedFace),Math.cos(stopped.face-releasedFace)))<1e-6,'stopping preserves direction within floating-point precision');
           assert.equal(stopped.speed, 0);
           assert.equal(stopped.frame, 0);
         }
