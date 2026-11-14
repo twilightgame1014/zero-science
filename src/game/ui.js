@@ -202,6 +202,8 @@ function renderPanel(){
   dock.hidden = !open; $("#scrim").hidden = !open; $("#view").inert = open; $("#hud").inert = open; $("#app").classList.toggle("docked", open);
   if(!open){ delete $("#app").dataset.dock; return; }
   dock.dataset.size = uiMode()==="pc" ? (PC_SIZE[U.tab]||"side") : (TOUCH_SIZE[U.tab]||"sheet");
+  /* 打ち上げの演出（カウントダウン〜上昇）の間は、パネルを上の細い帯にして 3D の発射台と機体を見せる（2026-11-14 統合。以前は大きなパネルが画面を覆っていた） */
+  if(U.tab==="space" && ["countdown","retract","ignition","ascent"].includes(SPACE.state(S).phase)) dock.dataset.size="flight";
   $("#app").dataset.dock = dock.dataset.size;
   if(U.dockTab!==U.tab){ body.innerHTML=""; body.scrollTop=0; U.dockTab=U.tab; sceneSig=""; }
   $("#dockTitle").innerHTML = (TAB_ICON[U.tab] ? iconHTML(TAB_ICON[U.tab]) : "")+`<span>${TABS[U.tab]}</span>`;

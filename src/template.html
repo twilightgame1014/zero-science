@@ -279,6 +279,14 @@ img.ico{width:32px;height:32px;object-fit:contain;image-rendering:pixelated}
 [data-ui="touch"] .dock[data-size="tall"]{top:calc(var(--sat) + 8px);max-height:none}
 [data-ui="pc"] .dock{top:calc(var(--sat) + 12px);bottom:calc(var(--navh,72px) + 8px);right:calc(var(--sar) + 12px);width:min(560px,44vw);border-radius:20px}
 [data-ui="pc"] .dock[data-size="wide"]{left:calc(var(--sal) + 24px);right:calc(var(--sar) + 24px);width:auto}
+/* 打ち上げの演出中：上の細い帯（3D の発射を見せる。スキップのボタンは押せる） */
+.dock[data-size="flight"]{top:calc(var(--sat) + 10px)!important;bottom:auto!important;left:50%!important;right:auto!important;transform:translateX(-50%);width:min(520px,calc(100% - 24px))!important;max-height:none!important;border-radius:14px!important;padding:0!important}
+.dock[data-size="flight"] .dockhd{display:none}
+.dock[data-size="flight"] .dockbody{padding:0;overflow:visible}
+.dock[data-size="flight"] .sp-flight{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 12px;padding:8px 12px;text-align:center}
+.dock[data-size="flight"] .sp-flight h2{margin:0;font-size:1.05rem}.dock[data-size="flight"] .sp-flight p{margin:0;font-size:.78rem;width:100%}
+.dock[data-size="flight"] .sp-flight-rocket{display:none}
+.game[data-dock="flight"] .scrim{background:transparent;pointer-events:none}
 /* メニュー（スマホ）の大きな項目 */
 .bigmenu{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);margin:10px 0}
 .bigitem{min-height:72px;border:1.5px solid var(--line);background:var(--card);border-radius:16px;display:flex;align-items:center;gap:10px;padding:10px 12px;font:inherit;font-weight:900;font-size:1rem;cursor:pointer;text-align:left}
