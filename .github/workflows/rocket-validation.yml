@@ -1,7 +1,7 @@
 name: Rocket integration gates
 on:
   push:
-    branches: [feature/game-rocket-finish-20261114]
+    branches: [feature/game-rocket-finish-20261114, feature/game-city-exhaust-integration-20261114]
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [core, space, hero]
+        suite: [core, space, hero, construction]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,6 +31,8 @@ jobs:
         run: npm run e2e:space
       - if: matrix.suite == 'hero'
         run: node tests/e2e/hero-8dir.mjs --suit
+      - if: matrix.suite == 'construction'
+        run: npm run e2e:construction
       - uses: actions/upload-artifact@v4
         if: always()
         with:

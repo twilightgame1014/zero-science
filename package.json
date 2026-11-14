@@ -2,11 +2,11 @@
   "name": "zero-kagaku",
   "version": "0.4.0",
   "private": true,
-  "description": "ゼロからの科学 〜石と水と木から〜 自然資源から現代科学までを再建する科学シミュレーションゲーム",
+  "description": "\u30bc\u30ed\u304b\u3089\u306e\u79d1\u5b66 \u301c\u77f3\u3068\u6c34\u3068\u6728\u304b\u3089\u301c \u81ea\u7136\u8cc7\u6e90\u304b\u3089\u73fe\u4ee3\u79d1\u5b66\u307e\u3067\u3092\u518d\u5efa\u3059\u308b\u79d1\u5b66\u30b7\u30df\u30e5\u30ec\u30fc\u30b7\u30e7\u30f3\u30b2\u30fc\u30e0",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node tests/engine.test.mjs && node tests/nature.test.mjs && node tests/world.test.mjs && node tests/verify.test.mjs && node tests/assets.test.mjs && node tests/sim.mjs && node tests/space.test.mjs && node tests/space-world.test.mjs && node tests/space-assets.test.mjs && node tests/space-deps.test.mjs && node tests/space-animation.test.mjs && node tests/space-art.test.mjs && node tests/space-materials.test.mjs",
+    "test": "node tests/engine.test.mjs && node tests/nature.test.mjs && node tests/world.test.mjs && node tests/verify.test.mjs && node tests/assets.test.mjs && node tests/sim.mjs && node tests/space.test.mjs && node tests/space-world.test.mjs && node tests/space-assets.test.mjs && node tests/space-deps.test.mjs && node tests/space-animation.test.mjs && node tests/space-art.test.mjs && node tests/space-materials.test.mjs && node tests/construction.test.mjs && node tests/construction-grass.test.mjs && node tests/construction-space.test.mjs && node tests/space-exhaust.test.mjs",
     "e2e": "npm run build && node tests/e2e/play.mjs",
     "test:8dir": "node threejs-hd2d-graphics/tools/test-8dir.mjs",
     "e2e:8dir": "npm run build && node tests/e2e/hero-8dir.mjs",
@@ -15,6 +15,8 @@
     "typecheck": "tsc --noEmit",
     "serve": "npx --yes http-server dist -p 8080 -c-1",
     "test:space": "node tests/space.test.mjs && node tests/space-world.test.mjs && node tests/space-assets.test.mjs && node tests/space-deps.test.mjs",
+    "test:construction": "node tests/construction.test.mjs",
+    "e2e:construction": "node scripts/build.mjs && node tests/e2e/construction.mjs",
     "e2e:space": "node scripts/build.mjs && node tests/e2e/space.mjs"
   },
   "dependencies": {

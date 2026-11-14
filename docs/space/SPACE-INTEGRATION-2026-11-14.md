@@ -91,3 +91,17 @@ Codex の記録では `npm run e2e` と `npm run e2e:space` は環境の制限�
 4. 宇宙計画の品目の説明文の書き直しと科学レビュー（ROADMAP の PLAN-01・02、WORKPLAN の M1-01・M7-01）。終盤の採取量のバランス（数量つき到達で 1757 操作）。
 
 証拠画像：`docs/space/evidence-20261114/`（`before-fix-pc-panel-covers-launch.jpg` は修正前。ほかは修正後）。
+
+## 8. ラウンド30（Muse `feature/graphics-space-round30` 0980486）のゲーム側移行 — 2026-11-14
+ブランチ：`feature/game-space-round30-integration`（土台は ced607c に Muse の 0980486 をマージ。`src/graphics` は Muse の原本と一致）。
+
+| Muse の依頼 | 反映 |
+|---|---|
+| 1. 主人公の隠しを公開 API へ | `src/space-visual.ts` が `gfx.setPlayerVisible(false/true)` を呼ぶ（変わったときだけ）。`character.group.visible` の直接操作はなくした（テストで検査） |
+| 2. 契約 v6 の slotNodes | ビルドが `ASSETS.spaceContract` に入れ、`src/space-models.ts` が一覧どおりに表示。機体の 90 メッシュがそれぞれ1つの枠に入ることをテストで検査。`SPACE.stage` も契約の段階（S2＝＋推進、S3＝＋搭乗区画＋外装）に |
+| 3. 宇宙服ディスプレイ (−6,0,−3) | 契約の `equipmentPlacement` で置く（ほかの 9 点も表どおり） |
+| 4. 噴射と煙 | `'exhaust'` を Anchor_exhaust へ、`'padSmoke'` を Anchor_smoke_l／_r（発射台にある）へ点火から 0.8 秒ごとに 3 回。仮の円すいはエフェクトがない版だけ。噴射の間隔は、台の上は依頼どおり 0.25 秒、**上昇中は 0.1 秒**に詰めた（一回分はその場に残るので、0.25 秒では機体が 3 マス先へ進み、噴射が離れて見えた：`r30-before-pc-exhaust-gap.jpg` → `r30-pc-ascent-exhaust.jpg`） |
+| 5. 時刻は現行どおり | 変更なし |
+
+テスト（このブランチ）：typecheck・build（15.53 MB）・`npm test` 合格／`npm run e2e` 211 件合格／`npm run e2e:space` PC・スマホ幅とも合格（実 WebGL：ヘッドレス Chromium＋SwiftShader。スクリーンショットの時間切れは起きなかった）。
+実画面：段階 S1〜S4・4 方向、退避・点火（煙）・上昇（噴射）を PC とスマホ縦で確認。**実機の FPS と iPhone Safari は未確認**（この環境に実機がない）。

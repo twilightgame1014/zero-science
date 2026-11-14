@@ -363,8 +363,16 @@ export class GraphicsEngine implements PlayerVisibilityControl {
     this.character.setSpriteTexture(tex);
   }
 
-  /** Hide only the rendered player while aboard; preserve identity and saved position. */
-  setPlayerVisible(visible: boolean): void { this.character.group.visible = visible; }
+  /**
+   * Show or hide the player character only (NPCs unaffected).
+   * Round 30 (space integration request 1): the game hides the
+   * player while they are inside the capsule, from boarding
+   * until return to the ground. Purely visual; the player's
+   * state keeps updating as usual while hidden.
+   */
+  setPlayerVisible(visible: boolean): void {
+    this.character.setPlayerVisible(visible);
+  }
 
   /** Hand over the player's current visual state (owned by logic). */
   setPlayerVisualState(state: PlayerVisualState): void {
@@ -567,6 +575,20 @@ export class GraphicsEngine implements PlayerVisibilityControl {
     this.world.prepareTerrainAt(x, z, radiusM);
   }
 
+  /**
+   * Move the terrain streaming bounds, in chunk indices
+   * (round 29, Claude §24.2): chunks stream in inside the new
+   * range and are disposed outside it, so a host world wider
+   * than the default ±180 field no longer needs the module's
+   * private chunk builder. Passing null restores the field from
+   * config.world.chunkRange (or the default). The open-water
+   * plane and backdrop ring are sized from the config value at
+   * engine build and do not resize at runtime.
+   */
+  setTerrainField(range: { min: number; max: number } | null): void {
+    this.world.setTerrainField(range);
+  }
+
   setQuality(tier: QualityTier): void {
     if (tier === this.quality) return;
     this.quality = tier;
@@ -683,6 +705,27 @@ export class GraphicsEngine implements PlayerVisibilityControl {
   playVisualEffect(type: EffectType, position: Vec3Like): void {
     const p = toScenePosition(position, this.cfg);
     this.effects.play(type, { x: p.x, z: p.z, y: position.y });
+  }
+
+  /**
+   * Persistent rocket exhaust that follows the body
+   * (round 30 follow-up). While the rocket thrusts — on
+   * the pad and during ascent — call this every frame
+   * with the current Anchor_exhaust world position; the
+   * plume tracks it and the jet particles trail behind
+   * in world space. Pass null at cutoff: the plume fades
+   * out and the remaining particles finish on their own.
+   * Supersedes re-firing the 'exhaust' burst while
+   * climbing (bursts stay where they are fired, so they
+   * separated from the nozzle at ascent speed).
+   */
+  setExhaustEmitter(position: Vec3Like | null): void {
+    if (position === null) {
+      this.effects.setExhaustEmitter(null);
+      return;
+    }
+    const p = toScenePosition(position, this.cfg);
+    this.effects.setExhaustEmitter({ x: p.x, z: p.z, y: position.y });
   }
 
   /**

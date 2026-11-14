@@ -11,7 +11,7 @@ let VERIFY = (()=>{ try{ const q=new URLSearchParams(location.search).get("verif
 const curKey = ()=> VERIFY ? VERIFY_KEY : SAVE_KEY;
 let SWITCHING = false;   // モードを切り替えている間は保存しない（古い状態で上書きしないため）
 const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
-let S = load();
+let S = load(); if(S && S.cons && !S.cons.rule) S.cons.rule = "build";   /* UI の新しいゲームは「建てて作る」ルール（エンジン単体のテストは以前の工作） */
 const U = {tab:"explore", opener:null, dockTab:null, missionOpen:false, tray:{}, fac:null, op:null, busy:false, filter:"すべて", target:null, last:null,
            region:"forest", nodes:{}, combo:0, lastGather:0, walking:false};
 const $ = s=>document.querySelector(s);
@@ -39,7 +39,7 @@ const svgIc = (id, x, y, sz)=>{ const q = icoPos(id), p = q && q.p;
   return p ? `<svg x="${x}" y="${y}" width="${sz}" height="${sz}" viewBox="${p[0]*64} ${p[1]*64} 64 64" aria-hidden="true"><image href="${q.a.url}" width="${q.a.cols*64}" height="${q.a.rows*64}"/></svg>`
            : `<text text-anchor="middle" x="${x+sz/2}" y="${y+sz*0.78}" font-size="${sz*0.75}">${icT(id)}</text>`; };
 const isMat = id=>IT[id] && !IT[id].tags.includes("道具") && !IT[id].tags.includes("研究設備");
-const owned = id=>E.has(S,id);
+const owned = id=>E.hasFacility(S,id);   /* 持ち物（以前の方式）か、完成した建物（街づくり） */
 const stage = ()=>E.stageOf(S);
 /* 地図・2D表示の文明の痕跡は、段階（stage）ではなく、プレイヤーが作った設備（owned）から決める。3D の STRUCT_PLAN と同じ対応 */
 const placedSet = ()=> new Set((S.verify && S.verify.placed) || []);
@@ -903,7 +903,7 @@ function structRemove(id){ W3.gfx.removeStructureVisual(id); W3.structs.delete(i
 /* 当たり判定：建物の占有形状（structures.json の footprint）を自然物の世界へ渡す。プレビュー（vps:）は判定なし */
 function syncStructColliders(){
   if(!world()) return;
-  const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:") || id.startsWith("ghost:")) return; const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[v.type]) || (ASSETS.townSpecs && ASSETS.townSpecs[v.type]);
+  const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:") || id.startsWith("ghost:") || id.startsWith("cs:")) return; const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[v.type]) || (ASSETS.townSpecs && ASSETS.townSpecs[v.type]);
     if(sp && sp.footprint) list.push({id, type:v.type, x:v.x, z:v.z, rot:v.rot, footprint:sp.footprint}); });
   if(SPACE.placed(S)){
     const b=S.build['space-site'];
@@ -913,6 +913,7 @@ function syncStructColliders(){
       list.push({id:'space-site:'+model.id,type:'space-site',x,z,rot:b.rot,footprint:c.shape==='box'?{shape:'rect',w:c.w,d:c.d}:{shape:'circle',r:c.radius}});
     }
   }
+  CONS.colliders(S).forEach(c=>list.push(Object.assign({}, c, {id:"cs:"+c.id})));   /* 街づくり：完成・施工中は壁、予定地と広場は歩ける（ほかの建物は置けない） */
   const sig=JSON.stringify(list); if(sig===W3.colSig) return; W3.colSig=sig;
   WORLD.setStructures(list);
   /* 建物の中に入ってしまったら、近くの立てる場所へ（歩行にはしない） */
@@ -929,7 +930,9 @@ function planWanted(p){ const b=buildRec(p.id); if(b && b.removed) return false;
 function syncStructures(){
   if(!W3.gfx) return;
   /* 検証モードでは「全部持っている」ので、設備の所持ではなく、検証メニューで置いた物だけを建てる（原野を保つ） */
-  STRUCT_PLAN.forEach(p=>{ const want=planWanted(p), pos=planPos(p); let has=W3.structs.has(p.id);
+  /* 街づくりのルールでは、固定の場所の建物（STRUCT_PLAN）は出さない（検証メニューで置いた物だけ）。建物は CONS の完成した物 */
+  const fixed = !E.buildRule(S) || !!S.verify;
+  STRUCT_PLAN.forEach(p=>{ const want=fixed && planWanted(p), pos=planPos(p); let has=W3.structs.has(p.id);
     const info = has && W3.structInfo && W3.structInfo.get(p.id);
     if(want && has && info && (Math.abs(info.x-pos.x)>1e-3 || Math.abs(info.z-pos.z)>1e-3 || Math.abs(info.rot-pos.rot)>1e-4)){ structRemove(p.id); has=false; }   // 移動・回転した
     if(want && !has){ structAdd(p.id, p.type, {x:pos.x, z:pos.z}, pos.rot);
@@ -941,6 +944,7 @@ function syncStructures(){
   extra.forEach(x=>{ if(!W3.structs.has(x.id)) structAdd(x.id, x.type, {x:x.x, z:x.z}, x.rot||0); });
   [...W3.structs].forEach(id=>{ if(id.startsWith("vx:") && !ids.has(id)) structRemove(id); });
   syncVillage();
+  consSync();
   syncStructColliders();
 }
 function syncAll3D(){ if(!NODES) buildNodes(); NODES.forEach(n=>syncNode(n,true)); syncNature(true); syncStructures(); }
@@ -1174,6 +1178,7 @@ function loop3D(ts){
   W3.walkSpeed = moving ? (W3.walkSpeed||0) + ((dt>0?got/dt:0) - (W3.walkSpeed||0)) * damp(12, dt) : 0;
   W3.gfx.setPlayerVisualState(playerVisual({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving, speed:+W3.walkSpeed.toFixed(2), action: W3.work ? "gather" : undefined}));
   spaceVisualFrame();
+  consFrame();
   camFrame(dt);     // カメラは主人公の位置を渡したあと（モジュールが次のコマで使う位置で、注視点の高さの変化を打ち消す）
   tickWork(ts);
   // 地域の判定
@@ -1482,7 +1487,7 @@ function craftCard(c){
   const tl = c.tools.concat(c.at?[c.at]:[]).map(id=>`<span class="${owned(id)?"ok":"ng"}">${c.at===id?"場所：":"道具："}${S.disc[id]?ic(id)+nm(id):"❔？？？"}</span>`).join("");
   return `<div class="card"><h3><span class="i">${ic(c.out)}</span>${it.name}${own?' <span class="tag" style="background:var(--meadow);color:var(--meadow-ink)">持っている</span>':""}</h3>
     <div class="kid">${it.kid}</div><div class="need">${reqs}${tl}</div><div class="how">作り方：${c.how}</div>
-    ${own?"":`<div class="row mt"><button class="btn small" data-act="craft" data-id="${c.id}" ${pl.ok?"":"disabled"}>🔨 作る</button>${pl.ok?"":`<span class="desc" style="margin:0">${pl.msg}</span>`}</div>`}</div>`;
+    ${own?"":pl.kind==="build"?consCraftLink(c.out):`<div class="row mt"><button class="btn small" data-act="craft" data-id="${c.id}" ${pl.ok?"":"disabled"}>🔨 作る</button>${pl.ok?"":`<span class="desc" style="margin:0">${pl.msg}</span>`}${consNeedLink(c)}</div>`}</div>`;
 }
 function viewCraft(){
   const vis = D.crafts.filter(c=>!c.space && (S.disc[c.out] || Object.keys(c.inp).some(k=>S.disc[k]) || ["c_knife","c_thread"].includes(c.id)));
@@ -2157,6 +2162,7 @@ const STRUCT_FAC = {"st-bench":["bench"],"st-fire":["campfire"],"st-kiln":["kiln
 function placeLabel(p){ const sp=(ASSETS.buildingSpecs||{})[p.type]||{};
   return {name: sp.name || p.type, from: (STRUCT_FAC[p.id]||[]).filter(id=>IT[id]).map(nm).join("・")}; }
 function viewBuild(){
+  if(E.buildRule(S) && !S.verify) return consView();   // 検証モードは従来の自由配置（S.verify.placed）のまま
   const list = STRUCT_PLAN.filter(planOwned);
   const rows = list.map(p=>{ const L=placeLabel(p), b=buildRec(p.id), st = b && b.removed ? "撤去中（設備は持ち物に残っている）" : b ? "好きな場所に置いた" : "決まった場所に建っている";
     return `<div class="bit"><span class="i">${ic((STRUCT_FAC[p.id]||[])[0]||"")}</span><span class="n">${L.name}<small>${st}${L.from?"（"+L.from+"）":""}</small></span>
@@ -2181,14 +2187,16 @@ function startPlace(id){
   const bb=$("#buildbar"); bb.hidden=false; const g=$("#bbGrid"); if(g) g.checked=W3.place.grid;
   banner("🏗️ 置き場所を決める：地面をタップ（クリック）して動かし、回転して「ここに置く」");
 }
-function placeArgs(){ const P=W3.place; return [Object.assign({}, P.spec, {x:P.x, z:P.z, rot:P.rot}), {player:W3.pos, npcs:(W3.npcList||[]), reserved:PLACE_RESERVED()}]; }
+function placeArgs(){ const P=W3.place; if(P.cons) return [Object.assign({}, P.spec, {x:P.x, z:P.z, rot:P.rot}), consOpts()]; return [Object.assign({}, P.spec, {x:P.x, z:P.z, rot:P.rot}), {player:W3.pos, npcs:(W3.npcList||[]), reserved:PLACE_RESERVED()}]; }
 function placeUpdate(force){
   const P=W3.place; if(!P) return;
-  const [pp, op] = placeArgs(); P.check = WORLD.checkPlacement(S, pp, op);
-  const L=placeLabel(STRUCT_PLAN.find(x=>x.id===P.id));
-  $("#bbTitle").textContent = "🏗️ "+L.name+"を置く（向き "+Math.round(((P.rot*180/Math.PI)%360+360)%360)+"°）";
-  const m=$("#bbMsg"); m.className="bbmsg "+(P.check.ok?"ok":"ng"); m.textContent = P.check.ok ? "✅ ここに置ける" : "❌ "+P.check.reasons.join("／");
-  const ok=$("#buildbar .bbok"); if(ok) ok.disabled = !P.check.ok;
+  if(P.cons){ P.check = consCheck(P); $("#bbTitle").textContent = consTitle(P); }
+  else { const [pp, op] = placeArgs(); P.check = WORLD.checkPlacement(S, pp, op);
+    const L=placeLabel(STRUCT_PLAN.find(x=>x.id===P.id));
+    $("#bbTitle").textContent = "🏗️ "+L.name+"を置く（向き "+Math.round(((P.rot*180/Math.PI)%360+360)%360)+"°）"; }
+  const m=$("#bbMsg"); m.className="bbmsg "+(P.check.ok?"ok":"ng"); m.textContent = P.check.ok ? (P.road ? (P.road.a ? "✅ ここまで敷ける" : "✅ ここを始点にできる") : "✅ ここに置ける") : "❌ "+P.check.reasons.join("／");
+  const ok=$("#buildbar .bbok"); if(ok){ ok.disabled = !P.check.ok; ok.textContent = P.road ? (P.road.a ? "ここまで敷く" : "始点にする") : P.cons ? (P.cons.move ? "ここへ移す" : P.cons.legacy ? "ここに置く" : "予定地にする") : "ここに置く"; }
+  if(P.road) return;   /* 道は 3D の候補を出さない（地面の枠だけ） */
   /* 3Dの見た目（候補）。動かすたびに作り直すので、少し間引く */
   const sig=P.x.toFixed(2)+","+P.z.toFixed(2)+","+P.rot.toFixed(3), now=performance.now();
   if(force || (sig!==P.ghostSig && (!P.ghostAt || now-P.ghostAt>90))){ P.ghostAt=now; P.ghostSig=sig;
@@ -2203,7 +2211,8 @@ function drawPlaceOverlay(){
   let sv=$("#buildov"); const P=W3.place;
   if(!P){ if(sv) sv.innerHTML=""; return; }
   if(!sv){ const w=$("#w3"); if(!w) return; w.insertAdjacentHTML("beforeend", '<svg id="buildov" aria-hidden="true"></svg>'); sv=$("#buildov"); }
-  if(P.ghostSig !== P.x.toFixed(2)+","+P.z.toFixed(2)+","+P.rot.toFixed(3)) placeUpdate();
+  if(P.ghostSig !== P.x.toFixed(2)+","+P.z.toFixed(2)+","+P.rot.toFixed(3)){ P.ghostSig = P.x.toFixed(2)+","+P.z.toFixed(2)+","+P.rot.toFixed(3); placeUpdate(); }
+  if(P.road){ consRoadOverlay(sv, P); return; }
   const t=P.check && P.check.shape; if(!t) return;
   const pts=[]; if(t.shape==="rect"){ for(const [i,j] of [[-1,-1],[1,-1],[1,1],[-1,1]]) pts.push(WORLD.toWorld(t, i*t.w/2, j*t.d/2)); }
   else for(let k=0;k<24;k++){ const a=k/24*Math.PI*2; pts.push({x:t.x+Math.cos(a)*t.r, z:t.z+Math.sin(a)*t.r}); }
@@ -2213,11 +2222,13 @@ function drawPlaceOverlay(){
     return `<circle cx="${s2.x.toFixed(1)}" cy="${s2.y.toFixed(1)}" r="6" fill="#fff" stroke="${col}" stroke-width="3"/>`; }).join("");
   sv.innerHTML = `<polygon points="${sp.map(q=>q.x.toFixed(1)+","+q.y.toFixed(1)).join(" ")}" fill="${col}" fill-opacity=".28" stroke="${col}" stroke-width="3" ${P.check.ok?"":'stroke-dasharray="8 5"'}/>${marks}`;
 }
-function placeMoveTo(x, z){ const P=W3.place; if(!P) return; P.x=placeSnap(x); P.z=placeSnap(z); placeUpdate(); }
+function placeMoveTo(x, z){ const P=W3.place; if(!P) return; P.x=P.road?placeSnapCell(x):placeSnap(x); P.z=P.road?placeSnapCell(z):placeSnap(z); placeUpdate(); }
 function placeRotate(deg){ const P=W3.place; if(!P) return; P.rot += deg*Math.PI/180; if(P.grid) P.rot = Math.round(P.rot/(ROT_STEP*Math.PI/180))*(ROT_STEP*Math.PI/180); placeUpdate(true); }
-function endPlace(){ if(W3.structs.has("ghost:place")) structRemove("ghost:place"); if(W3.gfx && typeof W3.gfx.setStructurePreview==="function") W3.gfx.setStructurePreview(null); W3.place=null; $("#app").classList.remove("placing"); const bb=$("#buildbar"); if(bb) bb.hidden=true; drawPlaceOverlay(); syncStructures(); }
+function endPlace(){ const bb0=$("#buildbar"); if(bb0) bb0.classList.remove("road"); if(W3.structs.has("ghost:place")) structRemove("ghost:place"); if(W3.gfx && typeof W3.gfx.setStructurePreview==="function") W3.gfx.setStructurePreview(null); W3.place=null; $("#app").classList.remove("placing"); const bb=$("#buildbar"); if(bb) bb.hidden=true; drawPlaceOverlay(); syncStructures(); }
 function placeConfirm(){
-  const P=W3.place; if(!P || P.busy) return; P.busy=true;
+  const P=W3.place; if(!P || P.busy) return;
+  if(P.cons){ consPlaceConfirm(P); return; }
+  P.busy=true;
   const [pp, op] = placeArgs(); const r = WORLD.commitPlacement(S, pp, P.token, op);
   if(!r.ok){ P.busy=false; if(r.kind==="dup"){ endPlace(); return; } placeUpdate(true); banner("❌ 置けない："+(r.reasons||[]).join("／")); return; }
   const name=placeLabel(STRUCT_PLAN.find(x=>x.id===P.id)).name; save(); endPlace(); banner("🏗️ "+name+"を置いた");
@@ -2400,5 +2411,6 @@ document.addEventListener("change", ev=>{ const b=ev.target; if(b && b.dataset &
 document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="vq"){ vQuery=ev.target.value; const r=$("#vres"); if(r) r.innerHTML=vResults(); } });
 
 /*SPACE_UI*/
+/*CONS_UI*/
 window.__GAME__ = {SPACE, setTab, writeNow,get S(){return S;}, save:()=>save(), walk:{speed:WALK_SPEED, maxDt:MAX_DT, stride:1.4}, cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim(), rebase:()=>camRebase(), debug:()=>W3.camDbg, solve:(y,p,z,x,zz)=>camSolve(y,p,z,x,zz), axes:(y,p)=>camAxes(y,p), CAM}, hero:{dirs:()=>heroDirs(), sheet:h=>heroSheet3D(h), facing:()=>worldFacing()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);
