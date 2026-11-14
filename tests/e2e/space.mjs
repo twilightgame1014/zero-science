@@ -14,12 +14,13 @@ const chrome='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE_PATH||(fs.existsSync(chrome)?chrome:undefined),args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 fs.mkdirSync(path.join(root,'test-results'),{recursive:true});
 const results=[];
+const screenshots=process.env.SPACE_E2E_SCREENSHOTS==='1'; // Manual high-quality evidence is tracked in docs/space/evidence-finish-20261114.
 try{
 for(const mobile of [false,true]){
  const ctx=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1280,height:800},isMobile:mobile,hasTouch:mobile});
  const page=await ctx.newPage(),errors=[];
  const cdp=await ctx.newCDPSession(page);
- const screenshot=async name=>{let timer;try{const shot=await Promise.race([cdp.send('Page.captureScreenshot',{format:'png',fromSurface:false,captureBeyondViewport:false}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('screenshot timeout '+name)),90000);})]);fs.writeFileSync(path.join(root,'test-results',name),Buffer.from(shot.data,'base64'));}finally{clearTimeout(timer);}};page.on('pageerror',e=>{errors.push(String(e));console.error('PAGE ERROR',String(e));});
+ const screenshot=async name=>{if(!screenshots)return;let timer;try{const shot=await Promise.race([cdp.send('Page.captureScreenshot',{format:'png',fromSurface:false,captureBeyondViewport:false}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('screenshot timeout '+name)),90000);})]);fs.writeFileSync(path.join(root,'test-results',name),Buffer.from(shot.data,'base64'));}finally{clearTimeout(timer);}};page.on('pageerror',e=>{errors.push(String(e));console.error('PAGE ERROR',String(e));});
  await page.route('https://cdn.jsdelivr.net/npm/three@0.180.0/**',async route=>{
   const rel=new URL(route.request().url()).pathname.split('three@0.180.0/')[1];
   const p=path.resolve(root,'node_modules/three',rel||'');
@@ -120,7 +121,7 @@ for(const mobile of [false,true]){
  assert.equal(await page.evaluate(()=>localStorage.getItem('zero-kagaku-save')),null,'通常セーブに検証データを書かない');
  assert(await page.evaluate(()=>document.scrollingElement.scrollWidth<=innerWidth),'ページの横はみ出しなし');
  assert.deepEqual(errors,[]);
- results.push({viewport:mobile?'mobile390x844':'desktop1280x800',realWebGL:true,graphicsQuality:'low (public preset, CPU-only CI)',passed:true});console.log('PASS',results.at(-1));
+ results.push({viewport:mobile?'mobile390x844':'desktop1280x800',realWebGL:true,graphicsQuality:'low (public preset, CPU-only CI)',screenshots,passed:true});console.log('PASS',results.at(-1));
  await ctx.close();
 }
 }finally{await browser.close();server.close();fs.writeFileSync(path.join(root,'test-results/space-e2e.json'),JSON.stringify(results,null,2));}

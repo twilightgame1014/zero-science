@@ -153,34 +153,24 @@ try {
       console.log(`${hero}: diagonal speed normalized PASS`);
 
       // 行き止まり（崖・岩・水に正面から当たり、横にも滑れない所）へ押し続ける（実際の衝突判定）。動けない間は最後の向きを保つ。
-      // 2026-11-11：地域の鍵を廃止したので、以前の「未開放地域の壁」の代わりに、移動の処理で進めない所を探す
+      // Use an axis-aligned terrain boundary, not a rounded obstacle where sliding is valid.
+      await page.evaluate(()=>{const g=__GAME__,c=g.W3.cam;c.yaw=0;c.cy=0;c.snap=true;g.W3.gfx.setCameraView({yawDegrees:0},{transition:0});});
+      await page.waitForFunction(()=>{const v=new HD2D.THREE.Vector3();__GAME__.W3.gfx.getCamera().getWorldDirection(v);return Math.abs(v.x)<1e-8;});
       await page.evaluate(() => {
-        const g = __GAME__, w = g.W3, world = g.WORLD;
-        for (let x = -40; x <= 40; x += 1.3) for (let z = -40; z <= 40; z += 1.3) { if (!world.free(g.S, x, z)) continue;
-          for (let a = 0; a < Math.PI*2; a += Math.PI/8) {
-            const mx = Math.cos(a), mz = Math.sin(a); let from = { x, z };
-            for (let i = 0; i < 12; i++) { const r = world.move(g.S, from, mx*0.3, mz*0.3); from = { x: r.x, z: r.z }; }
-            const q = world.move(g.S, from, mx*0.1, mz*0.1);
-            if (Math.hypot(q.x-from.x, q.z-from.z) < 0.000001) {
-              w.pos = from; w.face = 1.234; w.keys = {}; w.path = null;
-              // 入力はカメラ基準なので、ワールドの向き (mx,mz) を逆変換する。
-              const v = new HD2D.THREE.Vector3(); w.gfx.getCamera().getWorldDirection(v);
-              const l = Math.hypot(v.x, v.z); const fx = v.x/l, fz = v.z/l;
-              w.joy = { x: mx*-fz+mz*fx, y: -(mx*fx+mz*fz) };
-            // Wall-clock delays are not a count of simulated frames on software WebGL.
-            const previousMove=world.move;window.__blockedProbe={stable:0};
-            world.move=function(...args){const r=previousMove.apply(this,args);if(args[1]===w.pos&&w.joy){const d=Math.hypot(r.x-args[1].x,r.z-args[1].z);window.__blockedProbe.stable=d<1e-6?window.__blockedProbe.stable+1:0;}return r;};
-            return;
-            }
-          } }
-        throw new Error('wall test position not found');
+        const g=__GAME__,w=g.W3,world=g.WORLD;
+        for(let x=-40;x<=40;x+=1.3)for(let z=-40;z<=40;z+=1.3){if(!world.free(g.S,x,z))continue;
+          for(const [mx,mz] of [[1,0],[-1,0],[0,1],[0,-1]]){
+            let from={x,z};for(let i=0;i<12;i++){const q=world.move(g.S,from,mx*.3,mz*.3);from={x:q.x,z:q.z};}
+            if(!world.terrainBlocked(from.x+mx*.02,from.z+mz*.02))continue;
+            if(world.nearbySolids(g.S,from.x,from.z,Date.now()).some(o=>world.sdist(o,from.x,from.z)<1))continue;
+            if(![.01,.025,.05,.1,.15,.2275,.3,.5].every(d=>{const q=world.move(g.S,from,mx*d,mz*d);return Math.hypot(q.x-from.x,q.z-from.z)<1e-9;}))continue;
+            w.pos=from;w.face=1.234;w.keys={};w.path=null;w.joy={x:mx,y:mz};
+            const previousMove=world.move;window.__blockedProbe={frames:0};
+            world.move=function(...args){const q=previousMove.apply(this,args);if(args[1]===w.pos&&w.joy)window.__blockedProbe.frames++;return q;};return;
+          }
+        }throw Error('axis-aligned impassable terrain fixture not found');
       });
-      await page.waitForFunction(()=>window.__blockedProbe.stable>=4);
-      await page.evaluate(()=>{__GAME__.W3.face=1.234;window.__blockedProbe.stable=0;});
-      await page.waitForFunction(() => {
-        const p = __GAME__.W3.gfx.character.player;
-        return window.__blockedProbe.stable>=4 && !p.state.moving && p.state.speed === 0 && p.state.facing === 1.234;
-      }, null, { timeout: 60000 }).catch(async e => { console.log('blocked-state', JSON.stringify(await page.evaluate(() => { const w = __GAME__.W3, p = w.gfx.character.player; return { pos: w.pos, joy: w.joy, face: w.face, st: { m: p.state.moving, s: p.state.speed, f: p.state.facing }, tab: __GAME__.U.tab, act: !!w.work }; }))); throw e; });
+      await page.waitForFunction(()=>{const p=__GAME__.W3.gfx.character.player;return window.__blockedProbe.frames>=8&&!p.state.moving&&p.state.speed===0;});
       const blocked = await state();
       assert.equal(blocked.moving, false);
       assert.equal(blocked.speed, 0);
