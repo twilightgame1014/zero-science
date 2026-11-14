@@ -283,9 +283,10 @@ img.ico{width:32px;height:32px;object-fit:contain;image-rendering:pixelated}
 .dock[data-size="flight"]{top:calc(var(--sat) + 10px)!important;bottom:auto!important;left:50%!important;right:auto!important;transform:translateX(-50%);width:min(520px,calc(100% - 24px))!important;max-height:none!important;border-radius:14px!important;padding:0!important}
 .dock[data-size="flight"] .dockhd{display:none}
 .dock[data-size="flight"] .dockbody{padding:0;overflow:visible}
-.dock[data-size="flight"] .sp-flight{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 12px;padding:8px 12px;text-align:center}
+.dock[data-size="flight"] .sp-flight{min-height:0!important;border-radius:14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 12px;padding:8px 12px;text-align:center}
 .dock[data-size="flight"] .sp-flight h2{margin:0;font-size:1.05rem}.dock[data-size="flight"] .sp-flight p{margin:0;font-size:.78rem;width:100%}
 .dock[data-size="flight"] .sp-flight-rocket{display:none}
+.dock[data-size="flight"] .sp-flight #sp-countdown{font-size:1.4rem}.dock[data-size="flight"] .sp-flight p:empty{display:none}
 .game[data-dock="flight"] .scrim{background:transparent;pointer-events:none}
 /* メニュー（スマホ）の大きな項目 */
 .bigmenu{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);margin:10px 0}

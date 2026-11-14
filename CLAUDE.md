@@ -93,6 +93,17 @@
   **検証モードの「街の建物・小物」から置ける。通常のゲームには置かない**（置く条件は未決。提案は `docs/handoff/REPORT-2026-11-12-assets.md`）。
 - 崖のモジュール5種・滝の岩枠・小石の山・低木（実）・DQ3 の木3種は使っていない（理由は同じ報告）。
 
+## 宇宙計画（最終目標：自作ロケットで宇宙へ。2026-11-14 統合）
+- 正本：データ `src/game/space-data.js`（追加 53 品目 `sp_*`＋ゴム 2 品目・実習 8・組込枠 9・試験 7・目標 7・段階 6）、判定 `src/game/space.js`（`SPACE`）、画面 `src/game/space-ui.js`（ビルドで `ui.js` の `/*SPACE_UI*/` へ差しこむ。ui.js のクロージャの中）、正式モデル `src/space-models.ts`・仮表示 `src/space-visual.ts`。
+- 読み込み順：data → space-data（同じ script）→ engine → space（同じ script）。`scripts/build.mjs` の `/*DATA*/`・`/*ENGINE*/`。
+- 宇宙計画の製作は**加工時間つき**（`SPACE.startCraft`→`finishCraft`、まとめ 1〜20 回）。既存の即時工作（`E.runCraft`）は `c.space` を拒否する（時間の抜け道を作らない）。
+- 発射サイトは 18×18 の 1 区画（`D.space.siteSpec`、入口はローカル (0,+10)、傾斜 0.18 まで）。設置は `nature.js` の `checkPlacement`/`commitPlacement` を通す（木や岩を消して成功させない）。搭乗は入口から 4 マス以内。
+- 組込で部品を消費、取外しで同じ部品を返す。試験は設置位置・部品の変更番号・前提試験の署名で失効する。宇宙服用と機体用の生命維持ユニットはそれぞれ必要。
+- 発射前の保存に失敗したら発射しない。演出は保存した発射時刻からの実時間（14 秒）で進み、再読み込みで続きから。スキップも同じ到達処理。初回クリア（`space.firstClear`）と再演出を区別し、資材は増やさない。演出中（カウントダウン〜上昇）のパネルは上の細い帯（`data-size="flight"`）で 3D を見せる。
+- 推進・誘導・生命維持は架空の部品と模擬の試験（現実の配合・条件・制御は扱わない）。説明には「ゲーム内で簡略化」。
+- セーブ v5（`space`）。v4 からの移行あり。Claude 試作の形式（`space.know` など）は `SPACE.state` が読み込み時に移す。
+- 未完成の素材（男女の宇宙服 8 方向シート・追加品目のアイコン・テクスチャ原画）は `docs/space/MISSING-ASSETS.md`。今は仮表示。統合の記録は `docs/space/SPACE-INTEGRATION-2026-11-14.md`。
+
 ## 建物の3Dモデルと道具・設備・操作のアイコン（Muse・2026-11-07〜）
 - 建物：Muse の `assets/buildings-3d`（原本の GLB 13種・`structures.json`）。`scripts/make-building-glb.py` でテクスチャだけを再圧縮した軽量版 `assets/build/buildings/*.glb` を作り（原本を変えたら再実行。既定は長辺512px＝第14ラウンドの色テクスチャの解像度のまま、不透明な画像は JPEG）、base64 で埋め込む。モデル内の接地影 `ContactShadow` はそのまま使う（地形と干渉したらこのノードだけ外す）。
 - 読み込みは `src/graphics-entry.ts` の `HD2D.ensureBuildingModel`：GLB を解析して雛形を持ち、`StructureRenderer.registerFactory` に「雛形の複製（ジオメトリ・材質も建物ごと）」を返すファクトリを登録する。読み終えるまでは従来の手続きモデル。読み終えたら UI がその種類の建物を置き直す。使う種類だけをその時に読む。可動部は Flame・Wheel が描画モジュールの既存アニメ、Piston・DrillPipe・Winch・Bellows は `HD2D.tickBuildingParts`（ゲームの描画ループから呼ぶ）。
