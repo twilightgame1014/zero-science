@@ -1743,7 +1743,9 @@
       "iconAsset": "icon_sp_capsule",
       "model": null,
       "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
-      "scienceSources": [],
+      "scienceSources": [
+        "https://www.nasa.gov/reference/environmental-control-and-life-support-systems-eclss/"
+      ],
       "scienceCheckedOn": "2026-11-14",
       "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },

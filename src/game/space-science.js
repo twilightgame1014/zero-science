@@ -74,6 +74,7 @@
    else if(i.group==='電力'||['insulator','cable'].includes(k))i.scienceSources=[refs.power,refs.copper];
    else if(['fiber','membrane','thermal','window'].includes(k))i.scienceSources=[sources.suit];
    else if(k==='seal')i.scienceSources=[sources.rubber];
+   else if(k==='capsule')i.scienceSources=[sources.life];
    else if(k==='ceramic'||k==='materials')i.scienceSources=[refs.ceramic];
    else if(['plate','skin'].includes(k))i.scienceSources=[refs.aluminum];
    else if(['machine','frame','fastener','hull','assembly','pad','tower'].includes(k))i.scienceSources=[refs.metal];
