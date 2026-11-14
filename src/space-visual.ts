@@ -37,5 +37,9 @@ export function syncSpaceVisual(gfx:any,site:Site|null,suited:any){
   }
   const formal=updateSpaceModels(gfx,site,(window as any).ASSETS?.spaceModels);if(formal)e.root.visible=false;
   e.suit.visible=!!suited&&!!suited.position&&!site?.phase.match(/boarded|countdown|retract|ignition|ascent|space|ending/);
+  /* 搭乗してから地上へ戻るまでは、主人公はカプセルの中（絵を出さない）。描画モジュールに公開の口がないので、
+     キャラクターの群れの visible だけを切り替える（src/graphics は変えない。Muse に setPlayerVisible を依頼中） */
+  const inside=!!site&&/^(boarded|countdown|retract|ignition|ascent|space|ending)$/.test(site.phase);
+  const ch=gfx&&gfx.character&&gfx.character.group;if(ch&&ch.visible===inside)ch.visible=!inside;
   if(e.suit.visible){const p=suited.position;e.suit.position.set(p.x,suited.y??0,p.z);}
 }

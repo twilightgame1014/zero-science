@@ -204,6 +204,8 @@ function renderPanel(){
   dock.dataset.size = uiMode()==="pc" ? (PC_SIZE[U.tab]||"side") : (TOUCH_SIZE[U.tab]||"sheet");
   /* 打ち上げの演出（カウントダウン〜上昇）の間は、パネルを上の細い帯にして 3D の発射台と機体を見せる（2026-11-14 統合。以前は大きなパネルが画面を覆っていた） */
   if(U.tab==="space" && ["countdown","retract","ignition","ascent"].includes(SPACE.state(S).phase)) dock.dataset.size="flight";
+  /* 大きさが変わったら 3D の一時停止をやり直す（スマホの全高パネル＝止める／演出の帯＝動かす。以前は搭乗で止まったまま演出が動かなかった） */
+  if(dock.dataset.size!==U.dockSize){ U.dockSize=dock.dataset.size; if(typeof updateFieldActivity==="function") setTimeout(updateFieldActivity,0); }
   $("#app").dataset.dock = dock.dataset.size;
   if(U.dockTab!==U.tab){ body.innerHTML=""; body.scrollTop=0; U.dockTab=U.tab; sceneSig=""; }
   $("#dockTitle").innerHTML = (TAB_ICON[U.tab] ? iconHTML(TAB_ICON[U.tab]) : "")+`<span>${TABS[U.tab]}</span>`;
