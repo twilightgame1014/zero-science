@@ -1,0 +1,976 @@
+{
+ "contract": "M3-02 plants v1 (Muse, 2026-11-15)",
+ "scope": "models / UV / materials / LOD / display states only. Spawning, gathering yields and conditions, regrowth and saves are game-side (Claude). Alien in-game names and recipes are NOT decided here; names below are production classifications based on Earth plants.",
+ "totals": {
+  "assets": 16,
+  "lod0Bytes": 4823584,
+  "lod1Bytes": 1860144,
+  "allBytes": 6683728
+ },
+ "plants": [
+  {
+   "assetId": "plant-bamboo-a",
+   "species": "bamboo",
+   "name": "竹",
+   "classification": "イネ科タケ亜科（群生）",
+   "productionUse": "茎材・繊維（制作上の分類）",
+   "dimensions_m": {
+    "width": 4.11,
+    "depth": 4.0,
+    "height": 6.96
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.00 so the base never floats on flat ground",
+   "states": [
+    "state_full",
+    "state_cut"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-bamboo-a.glb",
+     "tris": 7304,
+     "bytes": 493404
+    },
+    "lod1": {
+     "file": "models/plant-bamboo-a_lod1.glb",
+     "tris": 6036,
+     "bytes": 397572
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "bambooCulm",
+    "bambooDry",
+    "bambooLeaf",
+    "bambooNode"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 1.8,
+    "frequencyHz": 0.7,
+    "pivot": "culmMid",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    1.0,
+    1.15
+   ],
+   "recommendedCollider": {
+    "shape": "cylinder",
+    "radius": 0.5,
+    "height": 2.0,
+    "blocksMovement": true,
+    "canopyBlocks": false,
+    "note": "群生中心のみ。稈と稈の間は通行可とする前提"
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-bamboo-b",
+   "species": "bamboo",
+   "name": "竹",
+   "classification": "イネ科タケ亜科（群生）",
+   "productionUse": "茎材・繊維（制作上の分類）",
+   "dimensions_m": {
+    "width": 3.67,
+    "depth": 4.16,
+    "height": 5.52
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.00 so the base never floats on flat ground",
+   "states": [
+    "state_full",
+    "state_cut"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-bamboo-b.glb",
+     "tris": 3968,
+     "bytes": 272256
+    },
+    "lod1": {
+     "file": "models/plant-bamboo-b_lod1.glb",
+     "tris": 3228,
+     "bytes": 215488
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "bambooCulm",
+    "bambooLeaf",
+    "bambooNode"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 1.8,
+    "frequencyHz": 0.7,
+    "pivot": "culmMid",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    1.0,
+    1.15
+   ],
+   "recommendedCollider": {
+    "shape": "cylinder",
+    "radius": 0.5,
+    "height": 2.0,
+    "blocksMovement": true,
+    "canopyBlocks": false,
+    "note": "群生中心のみ。稈と稈の間は通行可とする前提"
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-broadleaf-a",
+   "species": "broadleaf",
+   "name": "広葉樹",
+   "classification": "落葉広葉樹",
+   "productionUse": "木材（制作上の分類。ゲーム内の採集物は未確定）",
+   "dimensions_m": {
+    "width": 6.15,
+    "depth": 7.06,
+    "height": 7.12
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.05 so the base never floats on flat ground",
+   "states": [
+    "state_standing",
+    "state_stump"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-broadleaf-a.glb",
+     "tris": 9728,
+     "bytes": 722452
+    },
+    "lod1": {
+     "file": "models/plant-broadleaf-a_lod1.glb",
+     "tris": 1584,
+     "bytes": 120040
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "bark",
+    "leafA",
+    "leafB",
+    "leafDark",
+    "stumpTop"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 1.2,
+    "frequencyHz": 0.5,
+    "pivot": "crownBase",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    1.0,
+    0.68
+   ],
+   "recommendedCollider": {
+    "shape": "cylinder",
+    "radius": 0.34,
+    "height": 3.2,
+    "blocksMovement": true,
+    "canopyBlocks": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-broadleaf-b",
+   "species": "broadleaf",
+   "name": "広葉樹",
+   "classification": "落葉広葉樹",
+   "productionUse": "木材（制作上の分類。ゲーム内の採集物は未確定）",
+   "dimensions_m": {
+    "width": 6.7,
+    "depth": 7.2,
+    "height": 8.12
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.05 so the base never floats on flat ground",
+   "states": [
+    "state_standing",
+    "state_stump"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-broadleaf-b.glb",
+     "tris": 9776,
+     "bytes": 724544
+    },
+    "lod1": {
+     "file": "models/plant-broadleaf-b_lod1.glb",
+     "tris": 1584,
+     "bytes": 119156
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "bark",
+    "leafA",
+    "leafB",
+    "stumpTop"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 1.2,
+    "frequencyHz": 0.5,
+    "pivot": "crownBase",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    1.0,
+    0.68
+   ],
+   "recommendedCollider": {
+    "shape": "cylinder",
+    "radius": 0.34,
+    "height": 3.2,
+    "blocksMovement": true,
+    "canopyBlocks": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-cotton-a",
+   "species": "cotton",
+   "name": "綿",
+   "classification": "一年草（アオイ科）",
+   "productionUse": "繊維（制作上の分類）",
+   "dimensions_m": {
+    "width": 0.81,
+    "depth": 0.89,
+    "height": 1.15
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.00 so the base never floats on flat ground",
+   "states": [
+    "state_full",
+    "parts_fruit",
+    "state_low"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-cotton-a.glb",
+     "tris": 680,
+     "bytes": 57436
+    },
+    "lod1": {
+     "file": "models/plant-cotton-a_lod1.glb",
+     "tris": 572,
+     "bytes": 49584
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "cottonBract",
+    "cottonWhite",
+    "leafA",
+    "stemDry",
+    "stemGreen"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 2.2,
+    "frequencyHz": 1.0,
+    "pivot": "base",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    0.5,
+    0
+   ],
+   "recommendedCollider": {
+    "shape": "none",
+    "radius": 0,
+    "blocksMovement": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-cotton-b",
+   "species": "cotton",
+   "name": "綿",
+   "classification": "一年草（アオイ科）",
+   "productionUse": "繊維（制作上の分類）",
+   "dimensions_m": {
+    "width": 1.04,
+    "depth": 0.93,
+    "height": 0.97
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.00 so the base never floats on flat ground",
+   "states": [
+    "state_full",
+    "parts_fruit",
+    "state_low"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-cotton-b.glb",
+     "tris": 788,
+     "bytes": 65660
+    },
+    "lod1": {
+     "file": "models/plant-cotton-b_lod1.glb",
+     "tris": 672,
+     "bytes": 57188
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "cottonBract",
+    "cottonWhite",
+    "leafB",
+    "stemDry",
+    "stemGreen"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 2.2,
+    "frequencyHz": 1.0,
+    "pivot": "base",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    0.5,
+    0
+   ],
+   "recommendedCollider": {
+    "shape": "none",
+    "radius": 0,
+    "blocksMovement": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-flax-a",
+   "species": "flax",
+   "name": "亜麻",
+   "classification": "一年草（アマ科）",
+   "productionUse": "繊維・油料（制作上の分類）",
+   "dimensions_m": {
+    "width": 0.8,
+    "depth": 0.91,
+    "height": 1.06
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.00 so the base never floats on flat ground",
+   "states": [
+    "state_full",
+    "parts_fruit",
+    "state_low"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-flax-a.glb",
+     "tris": 1064,
+     "bytes": 98436
+    },
+    "lod1": {
+     "file": "models/plant-flax-a_lod1.glb",
+     "tris": 948,
+     "bytes": 89952
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "flaxFlower",
+    "leafA",
+    "podBrown",
+    "stemDry",
+    "stemGreen"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 2.5,
+    "frequencyHz": 1.1,
+    "pivot": "base",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    0.45,
+    0
+   ],
+   "recommendedCollider": {
+    "shape": "none",
+    "radius": 0,
+    "blocksMovement": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-flax-b",
+   "species": "flax",
+   "name": "亜麻",
+   "classification": "一年草（アマ科）",
+   "productionUse": "繊維・油料（制作上の分類）",
+   "dimensions_m": {
+    "width": 0.83,
+    "depth": 0.79,
+    "height": 1.12
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.00 so the base never floats on flat ground",
+   "states": [
+    "state_full",
+    "parts_fruit",
+    "state_low"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-flax-b.glb",
+     "tris": 932,
+     "bytes": 86592
+    },
+    "lod1": {
+     "file": "models/plant-flax-b_lod1.glb",
+     "tris": 824,
+     "bytes": 78736
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "flaxFlower",
+    "leafB",
+    "podBrown",
+    "stemDry",
+    "stemGreen"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 2.5,
+    "frequencyHz": 1.1,
+    "pivot": "base",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    0.45,
+    0
+   ],
+   "recommendedCollider": {
+    "shape": "none",
+    "radius": 0,
+    "blocksMovement": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-kouzo-a",
+   "species": "kouzo",
+   "name": "コウゾ",
+   "classification": "落葉低木（クワ科）",
+   "productionUse": "樹皮繊維（制作上の分類）",
+   "dimensions_m": {
+    "width": 5.34,
+    "depth": 5.27,
+    "height": 5.82
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.04 so the base never floats on flat ground",
+   "states": [
+    "state_standing",
+    "state_stump"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-kouzo-a.glb",
+     "tris": 10040,
+     "bytes": 742520
+    },
+    "lod1": {
+     "file": "models/plant-kouzo-a_lod1.glb",
+     "tris": 1488,
+     "bytes": 112104
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "bark",
+    "barkLight",
+    "kouzoLeaf",
+    "leafA",
+    "stumpTop"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 1.4,
+    "frequencyHz": 0.55,
+    "pivot": "crownBase",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    0.9,
+    0.6
+   ],
+   "recommendedCollider": {
+    "shape": "cylinder",
+    "radius": 0.28,
+    "height": 2.6,
+    "blocksMovement": true,
+    "canopyBlocks": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-kouzo-b",
+   "species": "kouzo",
+   "name": "コウゾ",
+   "classification": "落葉低木（クワ科）",
+   "productionUse": "樹皮繊維（制作上の分類）",
+   "dimensions_m": {
+    "width": 4.83,
+    "depth": 5.31,
+    "height": 5.17
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.04 so the base never floats on flat ground",
+   "states": [
+    "state_standing",
+    "state_stump"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-kouzo-b.glb",
+     "tris": 8312,
+     "bytes": 614636
+    },
+    "lod1": {
+     "file": "models/plant-kouzo-b_lod1.glb",
+     "tris": 1600,
+     "bytes": 120840
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "bark",
+    "barkLight",
+    "kouzoLeaf",
+    "leafB",
+    "stumpTop"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 1.4,
+    "frequencyHz": 0.55,
+    "pivot": "crownBase",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    0.9,
+    0.6
+   ],
+   "recommendedCollider": {
+    "shape": "cylinder",
+    "radius": 0.28,
+    "height": 2.6,
+    "blocksMovement": true,
+    "canopyBlocks": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-pine-a",
+   "species": "pine",
+   "name": "松",
+   "classification": "常緑針葉樹",
+   "productionUse": "木材・樹脂（制作上の分類）",
+   "dimensions_m": {
+    "width": 3.63,
+    "depth": 3.39,
+    "height": 5.73
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.04 so the base never floats on flat ground",
+   "states": [
+    "state_standing",
+    "state_stump"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-pine-a.glb",
+     "tris": 3288,
+     "bytes": 294896
+    },
+    "lod1": {
+     "file": "models/plant-pine-a_lod1.glb",
+     "tris": 1508,
+     "bytes": 134832
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "barkDark",
+    "needleA",
+    "needleB",
+    "stumpTop",
+    "trunkPine"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 1.0,
+    "frequencyHz": 0.45,
+    "pivot": "crownBase",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    1.0,
+    0.62
+   ],
+   "recommendedCollider": {
+    "shape": "cylinder",
+    "radius": 0.28,
+    "height": 3.4,
+    "blocksMovement": true,
+    "canopyBlocks": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-pine-b",
+   "species": "pine",
+   "name": "松",
+   "classification": "常緑針葉樹",
+   "productionUse": "木材・樹脂（制作上の分類）",
+   "dimensions_m": {
+    "width": 3.07,
+    "depth": 3.76,
+    "height": 6.49
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.04 so the base never floats on flat ground",
+   "states": [
+    "state_standing",
+    "state_stump"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-pine-b.glb",
+     "tris": 2256,
+     "bytes": 201820
+    },
+    "lod1": {
+     "file": "models/plant-pine-b_lod1.glb",
+     "tris": 1116,
+     "bytes": 98664
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "barkDark",
+    "needleA",
+    "needleB",
+    "stumpTop",
+    "trunkPine"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 1.0,
+    "frequencyHz": 0.45,
+    "pivot": "crownBase",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    1.0,
+    0.62
+   ],
+   "recommendedCollider": {
+    "shape": "cylinder",
+    "radius": 0.28,
+    "height": 3.4,
+    "blocksMovement": true,
+    "canopyBlocks": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-rapeseed-a",
+   "species": "rapeseed",
+   "name": "菜種",
+   "classification": "一年草（アブラナ科）",
+   "productionUse": "油料・食料（制作上の分類）",
+   "dimensions_m": {
+    "width": 0.89,
+    "depth": 0.84,
+    "height": 1.44
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.00 so the base never floats on flat ground",
+   "states": [
+    "state_full",
+    "parts_fruit",
+    "state_low"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-rapeseed-a.glb",
+     "tris": 1460,
+     "bytes": 130128
+    },
+    "lod1": {
+     "file": "models/plant-rapeseed-a_lod1.glb",
+     "tris": 896,
+     "bytes": 79200
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "leafB",
+    "rapeFlower",
+    "rapePod",
+    "stemDry",
+    "stemGreen"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 2.5,
+    "frequencyHz": 1.1,
+    "pivot": "base",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    0.5,
+    0
+   ],
+   "recommendedCollider": {
+    "shape": "none",
+    "radius": 0,
+    "blocksMovement": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-rapeseed-b",
+   "species": "rapeseed",
+   "name": "菜種",
+   "classification": "一年草（アブラナ科）",
+   "productionUse": "油料・食料（制作上の分類）",
+   "dimensions_m": {
+    "width": 0.99,
+    "depth": 0.9,
+    "height": 1.24
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.00 so the base never floats on flat ground",
+   "states": [
+    "state_full",
+    "parts_fruit",
+    "state_low"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-rapeseed-b.glb",
+     "tris": 1680,
+     "bytes": 149208
+    },
+    "lod1": {
+     "file": "models/plant-rapeseed-b_lod1.glb",
+     "tris": 1032,
+     "bytes": 90484
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "leafA",
+    "rapeFlower",
+    "rapePod",
+    "stemDry",
+    "stemGreen"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 2.5,
+    "frequencyHz": 1.1,
+    "pivot": "base",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    0.5,
+    0
+   ],
+   "recommendedCollider": {
+    "shape": "none",
+    "radius": 0,
+    "blocksMovement": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-reed-a",
+   "species": "reed",
+   "name": "葦",
+   "classification": "多年草（イネ科・水辺）",
+   "productionUse": "水辺の繊維（制作上の分類）",
+   "dimensions_m": {
+    "width": 1.61,
+    "depth": 1.81,
+    "height": 2.3
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.01 so the base never floats on flat ground",
+   "states": [
+    "state_full",
+    "state_cut"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-reed-a.glb",
+     "tris": 1180,
+     "bytes": 84796
+    },
+    "lod1": {
+     "file": "models/plant-reed-a_lod1.glb",
+     "tris": 640,
+     "bytes": 48148
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "reedHead",
+    "reedLeaf",
+    "stemGreen"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 3.5,
+    "frequencyHz": 0.9,
+    "pivot": "base",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    0.8,
+    0.8
+   ],
+   "recommendedCollider": {
+    "shape": "cylinder",
+    "radius": 0.35,
+    "height": 1.2,
+    "blocksMovement": false,
+    "canopyBlocks": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  },
+  {
+   "assetId": "plant-reed-b",
+   "species": "reed",
+   "name": "葦",
+   "classification": "多年草（イネ科・水辺）",
+   "productionUse": "水辺の繊維（制作上の分類）",
+   "dimensions_m": {
+    "width": 1.82,
+    "depth": 1.64,
+    "height": 1.92
+   },
+   "origin": "base centre at (0,0,0); +Y up in glTF",
+   "groundContact": "y=0 plane; root flare sinks to y=-0.01 so the base never floats on flat ground",
+   "states": [
+    "state_full",
+    "state_cut"
+   ],
+   "stateSwitching": "toggle visibility of the named state groups; parts_fruit is a child of state_full (hide it for the no-flower/no-fruit form)",
+   "lod": {
+    "lod0": {
+     "file": "models/plant-reed-b.glb",
+     "tris": 1180,
+     "bytes": 84800
+    },
+    "lod1": {
+     "file": "models/plant-reed-b_lod1.glb",
+     "tris": 640,
+     "bytes": 48156
+    },
+    "recommendedSwitchDistance_m": 27
+   },
+   "materials": [
+    "reedHead",
+    "reedLeaf",
+    "stemGreen"
+   ],
+   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "texturesEmbedded": [],
+   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "windSway": {
+    "maxDeg": 3.5,
+    "frequencyHz": 0.9,
+    "pivot": "base",
+    "rootFixed": true
+   },
+   "gatherPoint": [
+    0,
+    0.8,
+    0.8
+   ],
+   "recommendedCollider": {
+    "shape": "cylinder",
+    "radius": 0.35,
+    "height": 1.2,
+    "blocksMovement": false,
+    "canopyBlocks": false
+   },
+   "respawnControl": "whole-asset visibility + state groups are externally switchable, so the game can suppress display on buildings/roads"
+  }
+ ]
+}
