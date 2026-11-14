@@ -1,6 +1,25 @@
 import * as THREE from 'three';
 import type { EffectType, Vec3Like } from './types';
 
+/** Persistent rocket exhaust (round 30 follow-up): a plume
+ *  that follows the body instead of one-shot bursts. */
+interface ExhaustEmitter {
+  cones: THREE.Mesh[];
+  points: THREE.Points;
+  vel: Float32Array;
+  age: Float32Array;
+  life: Float32Array;
+  origin: THREE.Vector3;
+  spawnAcc: number;
+  ring: number;
+  /** Cone fade: 1 while thrusting, eases to 0 after stop. */
+  fade: number;
+  stopping: boolean;
+  time: number;
+}
+
+const EXHAUST_POOL = 260;
+
 interface Burst {
   points: THREE.Points | null;
   velocities: Float32Array;
@@ -58,6 +77,7 @@ const EFFECT_STYLE: Record<string, EffectStyle> = {
 export class EffectsManager {
   readonly group = new THREE.Group();
   private bursts: Burst[] = [];
+  private exhaust: ExhaustEmitter | null = null;
   private particleTexture: THREE.Texture;
   private smokeTexture: THREE.Texture | null = null;
   private groundHeightAt: (x: number, z: number) => number;
@@ -213,7 +233,165 @@ export class EffectsManager {
     this.bursts.push(burst);
   }
 
+  /**
+   * Persistent exhaust that follows the rocket (round 30
+   * follow-up, replacing the re-fired 'exhaust' bursts during
+   * ascent). Call every frame with the current Anchor_exhaust
+   * world position while thrusting; pass null to stop. The
+   * plume cones track the position, and jet particles are
+   * emitted at the current origin but keep their world
+   * motion, so the trail lags behind the climbing body.
+   */
+  setExhaustEmitter(position: Vec3Like | null): void {
+    if (position === null) {
+      if (this.exhaust) this.exhaust.stopping = true;
+      return;
+    }
+    const y = position.y ?? this.groundHeightAt(position.x, position.z) + 0.9;
+    if (!this.exhaust) {
+      const cones: THREE.Mesh[] = [];
+      const coneSpecs = [
+        { radius: 1.25, color: 0xff8f3f, opacity: 0.34 },
+        { radius: 0.7, color: 0xffe9b0, opacity: 0.55 },
+      ];
+      for (const spec of coneSpecs) {
+        // Unit-height cone, scaled per frame to the plume
+        // length (scale.y only stretches the height).
+        const cone = new THREE.Mesh(
+          new THREE.ConeGeometry(spec.radius, 1, 14, 1, true),
+          new THREE.MeshBasicMaterial({
+            color: spec.color,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide,
+          }),
+        );
+        cone.rotation.z = Math.PI;
+        cone.userData.baseOpacity = spec.opacity;
+        cone.renderOrder = 7;
+        this.group.add(cone);
+        cones.push(cone);
+      }
+      const positions = new Float32Array(EXHAUST_POOL * 3);
+      const colors = new Float32Array(EXHAUST_POOL * 3);
+      for (let i = 0; i < EXHAUST_POOL; i++) positions[i * 3 + 1] = -10000;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      const points = new THREE.Points(
+        geo,
+        new THREE.PointsMaterial({
+          map: this.particleTexture,
+          size: 0.85,
+          transparent: true,
+          opacity: 1,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          vertexColors: true,
+        }),
+      );
+      points.renderOrder = 6;
+      points.frustumCulled = false;
+      this.group.add(points);
+      const life = new Float32Array(EXHAUST_POOL).fill(0.5);
+      this.exhaust = {
+        cones,
+        points,
+        vel: new Float32Array(EXHAUST_POOL * 3),
+        age: new Float32Array(EXHAUST_POOL).fill(1),
+        life,
+        origin: new THREE.Vector3(position.x, y, position.z),
+        spawnAcc: 0,
+        ring: 0,
+        fade: 0,
+        stopping: false,
+        time: 0,
+      };
+    }
+    this.exhaust.origin.set(position.x, y, position.z);
+    this.exhaust.stopping = false;
+  }
+
+  private updateExhaust(dt: number): void {
+    const ex = this.exhaust;
+    if (!ex) return;
+    ex.time += dt;
+    const target = ex.stopping ? 0 : 1;
+    const step = dt / (ex.stopping ? 0.3 : 0.08);
+    ex.fade += Math.sign(target - ex.fade) * Math.min(Math.abs(target - ex.fade), step);
+    const groundY = this.groundHeightAt(ex.origin.x, ex.origin.z);
+    const len = Math.min(6.5, Math.max(2.2, ex.origin.y - groundY + 0.4));
+    const flicker = 1 + Math.sin(ex.time * 42) * 0.07 + Math.sin(ex.time * 91) * 0.05;
+    for (const cone of ex.cones) {
+      cone.position.set(ex.origin.x, ex.origin.y - len / 2, ex.origin.z);
+      cone.scale.set(flicker, len, flicker);
+      (cone.material as THREE.MeshBasicMaterial).opacity =
+        (cone.userData.baseOpacity as number) * ex.fade;
+    }
+    const pos = ex.points.geometry.attributes.position as THREE.BufferAttribute;
+    const col = ex.points.geometry.attributes.color as THREE.BufferAttribute;
+    if (!ex.stopping) {
+      ex.spawnAcc += dt * 110;
+      while (ex.spawnAcc >= 1) {
+        ex.spawnAcc -= 1;
+        for (let tries = 0; tries < EXHAUST_POOL; tries++) {
+          const i = (ex.ring + tries) % EXHAUST_POOL;
+          if (ex.age[i] < ex.life[i]) continue;
+          const a = Math.random() * Math.PI * 2;
+          const r = Math.sqrt(Math.random()) * 0.45;
+          pos.setXYZ(i, ex.origin.x + Math.cos(a) * r, ex.origin.y - 0.15, ex.origin.z + Math.sin(a) * r);
+          ex.vel[i * 3] = (Math.random() - 0.5) * 1.4;
+          ex.vel[i * 3 + 1] = -(5.0 + Math.random() * 2.2);
+          ex.vel[i * 3 + 2] = (Math.random() - 0.5) * 1.4;
+          ex.age[i] = 0;
+          ex.life[i] = 0.45 + Math.random() * 0.3;
+          ex.ring = i + 1;
+          break;
+        }
+      }
+    }
+    let anyAlive = false;
+    for (let i = 0; i < EXHAUST_POOL; i++) {
+      if (ex.age[i] >= ex.life[i]) continue;
+      ex.age[i] += dt;
+      if (ex.age[i] >= ex.life[i]) {
+        pos.setY(i, -10000);
+        col.setXYZ(i, 0, 0, 0);
+        continue;
+      }
+      anyAlive = true;
+      let vx = ex.vel[i * 3];
+      let vy = ex.vel[i * 3 + 1];
+      let vz = ex.vel[i * 3 + 2];
+      vy += (-1.6 - vy) * 1.6 * dt;
+      vx *= 1 - 0.8 * dt;
+      vz *= 1 - 0.8 * dt;
+      ex.vel[i * 3] = vx;
+      ex.vel[i * 3 + 1] = vy;
+      ex.vel[i * 3 + 2] = vz;
+      pos.setXYZ(i, pos.getX(i) + vx * dt, pos.getY(i) + vy * dt, pos.getZ(i) + vz * dt);
+      const heat = (1 - ex.age[i] / ex.life[i]) * 0.9;
+      col.setXYZ(i, heat, heat * 0.7, heat * 0.36);
+    }
+    pos.needsUpdate = true;
+    col.needsUpdate = true;
+    if (ex.stopping && ex.fade <= 0 && !anyAlive) {
+      for (const cone of ex.cones) {
+        this.group.remove(cone);
+        cone.geometry.dispose();
+        (cone.material as THREE.Material).dispose();
+      }
+      this.group.remove(ex.points);
+      ex.points.geometry.dispose();
+      (ex.points.material as THREE.Material).dispose();
+      this.exhaust = null;
+    }
+  }
+
   update(dt: number): void {
+    this.updateExhaust(dt);
     for (let bi = this.bursts.length - 1; bi >= 0; bi--) {
       const b = this.bursts[bi];
       b.life += dt;
@@ -280,6 +458,17 @@ export class EffectsManager {
   }
 
   dispose(): void {
+    if (this.exhaust) {
+      for (const cone of this.exhaust.cones) {
+        this.group.remove(cone);
+        cone.geometry.dispose();
+        (cone.material as THREE.Material).dispose();
+      }
+      this.group.remove(this.exhaust.points);
+      this.exhaust.points.geometry.dispose();
+      (this.exhaust.points.material as THREE.Material).dispose();
+      this.exhaust = null;
+    }
     for (const b of this.bursts) {
       if (b.points) {
         this.group.remove(b.points);

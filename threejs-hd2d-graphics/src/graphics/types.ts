@@ -121,8 +121,10 @@ export type EffectType =
   | 'smoke'
   | 'levelup'
   /** Round 30 (space): rocket exhaust plume segment (~1.1 s).
-   *  Play at the exhaust point; re-play every ~0.25 s at the
-   *  current position while the rocket climbs. */
+   *  Play at the exhaust point. For continuous thrust —
+   *  ignition and the climb — prefer the persistent
+   *  setExhaustEmitter() on the engine, which follows the
+   *  body; bursts stay where they are fired. */
   | 'exhaust'
   /** Round 30 (space): launch-pad smoke (~3.4 s), played at
    *  the pad's Anchor_smoke_l / Anchor_smoke_r at ignition. */

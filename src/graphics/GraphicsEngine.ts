@@ -707,6 +707,27 @@ export class GraphicsEngine {
   }
 
   /**
+   * Persistent rocket exhaust that follows the body
+   * (round 30 follow-up). While the rocket thrusts — on
+   * the pad and during ascent — call this every frame
+   * with the current Anchor_exhaust world position; the
+   * plume tracks it and the jet particles trail behind
+   * in world space. Pass null at cutoff: the plume fades
+   * out and the remaining particles finish on their own.
+   * Supersedes re-firing the 'exhaust' burst while
+   * climbing (bursts stay where they are fired, so they
+   * separated from the nozzle at ascent speed).
+   */
+  setExhaustEmitter(position: Vec3Like | null): void {
+    if (position === null) {
+      this.effects.setExhaustEmitter(null);
+      return;
+    }
+    const p = toScenePosition(position, this.cfg);
+    this.effects.setExhaustEmitter({ x: p.x, z: p.z, y: position.y });
+  }
+
+  /**
    * Public pause API (2026-11-06): stop the render loop while another
    * screen covers the field. Only rendering stops; all scene state is
    * kept and no game state is touched. Safe to call repeatedly.
