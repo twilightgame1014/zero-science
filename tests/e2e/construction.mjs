@@ -41,7 +41,8 @@ const site = (page, id) => ev(page, id => JSON.parse(JSON.stringify(window.__GAM
 /* ---------------- PC ---------------- */
 {
   const { page, errors } = await newPage({ width: 1280, height: 800 }, false);
-  ok('Muse の契約の欄（museFields）は、今は空として画面に渡る（工程別の見た目・道の素材は仮表示のまま）', await ev(page, () => JSON.stringify(ASSETS.consMuse) === '{"buildings":{},"roads":{}}'));
+  ok('Muse の正式素材が画面に渡る（24 建物の工程の一覧・道 3 種の色と法線・予定地／足場／資材の山 7 点）', await ev(page, () => { const M = ASSETS.consMuse, K = ASSETS.consKit || {};
+    return Object.values(M.buildings).filter(b => b.stageNodes).length === 24 && ['dirt', 'gravel', 'stone'].every(k => /^data:image\/webp/.test(M.roads[k].tileTexture) && M.roads[k].normalTexture) && Object.keys(K).length === 7 && CONS.connectorsOf('kiln')[0].muse; }));
   ok('UI の新しいゲームは「建てて作る」ルール・セーブは v6', await ev(page, () => window.__GAME__.S.cons.rule === 'build' && window.__GAME__.S.v === 6));
   ok('開始地点に建物は1つもない（固定の場所に自動で建たない）', await ev(page, () => !Object.keys(window.__FAKE.structures).some(k => /^(st-|cs:)/.test(k))));
   await give(page, { twig: 12, thread: 6, cobble: 6, knife: 1 });

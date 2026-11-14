@@ -161,9 +161,12 @@ function consVisual(){
     const d = CONS.DEF[v.def], f = d.footprint, st = d.stages, need = CONS.totalMat(d), tot = Object.values(need).reduce((a,b)=>a+b,0)||1, got = Object.keys(need).reduce((a,k)=>a+Math.min(need[k], v.delivered[k]||0),0);
     const part = v.work ? Math.min(1, Math.max(0, 1-(v.work.until-now)/Math.max(1, v.work.until-(v.work.started||now)))) : 0;
     sites.push({id:v.id, x:v.x, z:v.z, rot:v.rot, shape:f.shape==="rect"?"rect":"circle", w:f.w||0, d:f.d||0, r:f.r||0, phase:v.phase, progress:(v.stage+part)/st.length, supplied:got/tot,
-      tall: d.cat==="factory"||d.cat==="housing"||d.cat==="storage" ? 3 : 1.2, entrance:d.entrance||d.operate||null, formal:!!(W3.consFormal && W3.consFormal.has(v.id))}); });
+      tall: d.cat==="factory"||d.cat==="housing"||d.cat==="storage" ? 3 : 1.2, entrance:d.entrance||d.operate||null, formal:!!(W3.consFormal && W3.consFormal.has(v.id)),
+      stage:v.stage, stages:st.length, height:((((ASSETS.consMuse||{}).buildings||{})[v.def]||{}).size||{}).h||null,
+      /* 資材の山の種類：まだ運んでいない資材（全部運んだら運んだ資材）。山の形は construction-stage.ts の pileKind */
+      piles:(()=>{ const left = Object.keys(need).filter(k=>(v.delivered[k]||0) < need[k]); return (left.length ? left : Object.keys(need)).slice(0,6); })()}); });
   const roads = Object.entries(c.roads).map(([k,kind])=>{ const [i,j] = k.split(",").map(Number); return {i, j, kind}; });
-  H.syncConstructionVisual(W3.gfx, {sites, roads, pending, cell:CX.CELL, colors:Object.fromEntries(Object.values(CX.roads).map(r=>[r.id, r.color])), textures:Object.fromEntries(Object.entries(((ASSETS.consMuse||{}).roads)||{}).filter(([,m])=>m.tileTexture).map(([k,m])=>[k, m.tileTexture]))}, (x,z)=>groundY(x,z));
+  H.syncConstructionVisual(W3.gfx, {sites, roads, pending, cell:CX.CELL, colors:Object.fromEntries(Object.values(CX.roads).map(r=>[r.id, r.color])), textures:Object.fromEntries(Object.entries(((ASSETS.consMuse||{}).roads)||{}).filter(([,m])=>m.tileTexture).map(([k,m])=>[k, m.tileTexture])), normals:Object.fromEntries(Object.entries(((ASSETS.consMuse||{}).roads)||{}).filter(([,m])=>m.normalTexture).map(([k,m])=>[k, m.normalTexture]))}, (x,z)=>groundY(x,z));
 }
 /* 施工の時間：終わったら、そばにいれば仕上げる。現場が近いときは右上に近道 */
 let consTickN = 0;

@@ -1,0 +1,236 @@
+{
+ "note": "scripts/make-construction-glb.py が作る。GLB の画像は assets/build/nature-tex の共有テクスチャ（tex:<hash>）",
+ "models": {
+  "construction-site": {
+   "bytesIn": 581568,
+   "bytesOut": 73816,
+   "textures": [
+    "5256f0ec84",
+    "6154ef6b6c",
+    "76ce0cb231"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.54,
+    -0.027,
+    -0.541
+   ],
+   "max": [
+    0.54,
+    0.427,
+    0.537
+   ],
+   "tris": 960,
+   "meshes": 12
+  },
+  "pile-crated": {
+   "bytesIn": 926252,
+   "bytesOut": 56780,
+   "textures": [
+    "19b899b732",
+    "23495cd09a",
+    "3349ba1316",
+    "34aa494ca1",
+    "a4d4b0d7e8",
+    "c59b2d9e9f"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.57,
+    -0.02,
+    -0.57
+   ],
+   "max": [
+    0.57,
+    1.13,
+    0.57
+   ],
+   "tris": 756,
+   "meshes": 7
+  },
+  "pile-lumber": {
+   "bytesIn": 1056344,
+   "bytesOut": 94372,
+   "textures": [
+    "19b899b732",
+    "3349ba1316",
+    "34aa494ca1",
+    "5256f0ec84",
+    "6154ef6b6c",
+    "76ce0cb231"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.85,
+    0.0,
+    -0.55
+   ],
+   "max": [
+    0.85,
+    0.405,
+    0.59
+   ],
+   "tris": 1296,
+   "meshes": 12
+  },
+  "pile-metal": {
+   "bytesIn": 82928,
+   "bytesOut": 82928,
+   "textures": [],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.9,
+    -0.02,
+    -0.265
+   ],
+   "max": [
+    0.9,
+    0.34,
+    0.265
+   ],
+   "tris": 1188,
+   "meshes": 11
+  },
+  "pile-sacks": {
+   "bytesIn": 142248,
+   "bytesOut": 142248,
+   "textures": [],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.64,
+    0.0,
+    -0.63
+   ],
+   "max": [
+    0.64,
+    0.699,
+    0.49
+   ],
+   "tris": 1896,
+   "meshes": 8
+  },
+  "pile-stone": {
+   "bytesIn": 539116,
+   "bytesOut": 41508,
+   "textures": [
+    "5dc817c28b",
+    "8b23880bca",
+    "a80616efd7"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.647,
+    0.01,
+    -0.342
+   ],
+   "max": [
+    0.669,
+    0.82,
+    0.36
+   ],
+   "tris": 540,
+   "meshes": 5
+  },
+  "scaffold-kit": {
+   "bytesIn": 1055708,
+   "bytesOut": 93800,
+   "textures": [
+    "19b899b732",
+    "3349ba1316",
+    "34aa494ca1",
+    "5256f0ec84",
+    "6154ef6b6c",
+    "76ce0cb231"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.5,
+    -0.06,
+    -0.17
+   ],
+   "max": [
+    0.5,
+    3.0,
+    0.17
+   ],
+   "tris": 1272,
+   "meshes": 12
+  }
+ },
+ "roads": {
+  "dirt": {
+   "color": {
+    "file": "assets/build/construction/road-dirt.webp",
+    "bytesIn": 129126,
+    "bytesOut": 12770,
+    "size": [
+     512,
+     512
+    ]
+   },
+   "normal": {
+    "file": "assets/build/construction/road-dirt_n.webp",
+    "bytesIn": 277022,
+    "bytesOut": 20678,
+    "size": [
+     256,
+     256
+    ]
+   }
+  },
+  "gravel": {
+   "color": {
+    "file": "assets/build/construction/road-gravel.webp",
+    "bytesIn": 112806,
+    "bytesOut": 56918,
+    "size": [
+     512,
+     512
+    ]
+   },
+   "normal": {
+    "file": "assets/build/construction/road-gravel_n.webp",
+    "bytesIn": 47330,
+    "bytesOut": 30438,
+    "size": [
+     256,
+     256
+    ]
+   }
+  },
+  "stone": {
+   "color": {
+    "file": "assets/build/construction/road-stone.webp",
+    "bytesIn": 66165,
+    "bytesOut": 10468,
+    "size": [
+     512,
+     512
+    ]
+   },
+   "normal": {
+    "file": "assets/build/construction/road-stone_n.webp",
+    "bytesIn": 7006,
+    "bytesOut": 4754,
+    "size": [
+     256,
+     256
+    ]
+   }
+  }
+ },
+ "textures": {
+  "5256f0ec84": true,
+  "6154ef6b6c": true,
+  "76ce0cb231": true,
+  "19b899b732": true,
+  "23495cd09a": true,
+  "3349ba1316": true,
+  "34aa494ca1": true,
+  "a4d4b0d7e8": true,
+  "c59b2d9e9f": true,
+  "5dc817c28b": true,
+  "8b23880bca": true,
+  "a80616efd7": true
+ }
+}

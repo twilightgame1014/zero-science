@@ -147,13 +147,23 @@ ASSETS.spaceModels = {};
       e.stageNodes = m.stageNodes; }
     if (m.roadConnectors) e.roadConnectors = m.roadConnectors;
     if (m.lod) e.lod = m.lod; if (m.materialSlots) e.materialSlots = m.materialSlots;
+    if (Object.keys(e).length) { e.size = b.size; e.model = b.modelId; }   // 足場の高さ（建物の高さ）と、工程のノードを引く完成モデル
     if (Object.keys(e).length) out.buildings[b.id] = e; }
   for (const r of ca.roads) { const m = r.museFields || {}; const e = {};
-    if (m.tileTexture) { const f = path.join(root, m.tileTexture); if (!fs.existsSync(f)) errs.push(r.id + '：道のテクスチャ ' + m.tileTexture + ' がない'); else e.tileTexture = dataUrl(m.tileTexture, /\.png$/i.test(f) ? 'image/png' : /\.jpe?g$/i.test(f) ? 'image/jpeg' : 'image/webp'); }
+    /* 道のテクスチャ：scripts/make-construction-glb.py の WebP（assets/build/construction/road-<kind>.webp）があればそれ、なければ契約のファイルそのまま */
+    const tex = (rel, lite) => { const lf = path.join(root, 'assets/build/construction', lite); if (fs.existsSync(lf)) return dataUrl('assets/build/construction/' + lite, 'image/webp');
+      const f = path.join(root, rel); if (!fs.existsSync(f)) { errs.push(r.id + '：道のテクスチャ ' + rel + ' がない'); return null; } return dataUrl(rel, /\.png$/i.test(f) ? 'image/png' : /\.jpe?g$/i.test(f) ? 'image/jpeg' : 'image/webp'); };
+    if (m.tileTexture) { const t = tex(m.tileTexture, 'road-' + r.id + '.webp'); if (t) e.tileTexture = t; }
+    if (m.normalTexture) { const t = tex(m.normalTexture, 'road-' + r.id + '_n.webp'); if (t) e.normalTexture = t; }
     if (m.edgeTreatment) e.edgeTreatment = m.edgeTreatment; if (m.joinPieces) e.joinPieces = m.joinPieces;
     if (Object.keys(e).length) out.roads[r.id] = e; }
   if (errs.length) throw new Error('construction-assets.json の museFields：\n' + errs.join('\n'));
-  ASSETS.consMuse = out; }
+  ASSETS.consMuse = out;
+  /* 予定地キット・足場キット・資材の山（assets/build/construction の軽量版。画像は共有テクスチャ ASSETS.sharedTex） */
+  const cm = path.join(root, 'assets/build/construction/manifest.json');
+  if (fs.existsSync(cm)) { const m = JSON.parse(fs.readFileSync(cm, 'utf8')); ASSETS.consKit = {};
+    for (const id of Object.keys(m.models)) ASSETS.consKit[id] = fs.readFileSync(path.join(root, 'assets/build/construction', id + '.glb')).toString('base64');
+    ASSETS.sharedTex = ASSETS.sharedTex || {}; for (const h of Object.keys(m.textures)) ASSETS.sharedTex[h] = ASSETS.sharedTex[h] || dataUrl('assets/build/nature-tex/' + h + '.webp', 'image/webp'); } }
 ASSETS.spaceContract=JSON.parse(rd('assets/rocket/rocket-contract.json'));
 ASSETS.spacePlacement={'launch-pad':[0,0],'rocket':[0,0],'support-tower':[-4.6,0],'control-terminal':[5,5],'electronics-fab':[-2,6],'computer-bench':[1,6],'test-terminal':[4,-6],'power-distribution':[6,-2],'life-support':[6,1],'suit-stand':[-6,-5],'parts-rack':[-2,-5]};
 for(const q of ASSETS.spaceContract.equipmentPlacement.items)ASSETS.spacePlacement[q.model]=[q.position[0],q.position[2]];

@@ -56,6 +56,9 @@ function ensureBuildingModel(gfx: any, type: string, b64: string | undefined): P
     try {
       new GLTFLoader().parse(b64ToBuffer(b64), '', (gltf) => {
         prepareShared(gltf.scene);                  // 街のモデル（DQ3）は共有テクスチャを使う（画像を抜いた軽量版。普通の建物には何もしない）
+        /* GLTF のノードに当たる物に印（工程別の表示はノード単位。複数の材質のメッシュは子に分かれるので、属するノードの名前で決める）。userData は複製にも写る */
+        const assoc = (gltf as any).parser && (gltf as any).parser.associations;
+        gltf.scene.traverse((o) => { const a = assoc && assoc.get(o); if (a && a.nodes !== undefined) o.userData.gltfNode = true; });
         templates.set(type, gltf.scene);
         const sr = gfx && gfx.structures;          // 描画モジュールの StructureRenderer（公開の registerFactory を使う）
         if (sr && typeof sr.registerFactory === 'function') sr.registerFactory(type, () => cloneBuilding(type));
@@ -76,8 +79,8 @@ function stagedBuildingType(gfx: any, type: string, key: string, stageNodes: Sta
   const sr = gfx && gfx.structures; if (!sr || typeof sr.registerFactory !== 'function') return null;
   sr.registerFactory(name, () => {
     const g = cloneBuilding(type);
-    g.traverse((o) => { if (o === g) return; const chain: string[] = []; for (let q: THREE.Object3D | null = o; q && q !== g; q = q.parent) chain.push(q.name);
-      if ((o as THREE.Mesh).isMesh || SCAFFOLD.test(o.name)) o.visible = stageVisible(chain, key, stageNodes); });
+    g.traverse((o) => { if (!(o as THREE.Mesh).isMesh) return; let q: THREE.Object3D | null = o; while (q && q !== g && !q.userData.gltfNode) q = q.parent;
+      o.visible = stageVisible(q && q !== g ? q.name : o.name, key, stageNodes); });
     g.name = 'BuildingStage:' + name; return g; });
   stagedTypes.add(name); return name;
 }
