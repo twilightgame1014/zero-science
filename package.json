@@ -6,14 +6,16 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node tests/engine.test.mjs && node tests/nature.test.mjs && node tests/world.test.mjs && node tests/verify.test.mjs && node tests/assets.test.mjs && node tests/sim.mjs",
+    "test": "node tests/engine.test.mjs && node tests/nature.test.mjs && node tests/world.test.mjs && node tests/verify.test.mjs && node tests/assets.test.mjs && node tests/sim.mjs && node tests/space.test.mjs && node tests/space-world.test.mjs && node tests/space-assets.test.mjs",
     "e2e": "npm run build && node tests/e2e/play.mjs",
     "test:8dir": "node threejs-hd2d-graphics/tools/test-8dir.mjs",
     "e2e:8dir": "npm run build && node tests/e2e/hero-8dir.mjs",
     "test:camera-focus": "node tests/camera-focus-fade.mjs",
     "e2e:camera-focus": "npm run build && node tests/e2e/camera-focus-fade.mjs",
     "typecheck": "tsc --noEmit",
-    "serve": "npx --yes http-server dist -p 8080 -c-1"
+    "serve": "npx --yes http-server dist -p 8080 -c-1",
+    "test:space": "node tests/space.test.mjs && node tests/space-world.test.mjs && node tests/space-assets.test.mjs",
+    "e2e:space": "node scripts/build.mjs && node tests/e2e/space.mjs"
   },
   "dependencies": {
     "three": "0.180.0"

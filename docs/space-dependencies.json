@@ -1,0 +1,5571 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "sp_machine",
+      "name": "精密加工台",
+      "yomi": "精密加工台",
+      "en": "精密加工台",
+      "tags": [
+        "研究設備"
+      ],
+      "icon": "🛠️",
+      "el": [
+        "Fe",
+        "C",
+        "Cu",
+        "Si",
+        "O",
+        "Ca"
+      ],
+      "kid": "材料を一定の形に加工する設備。最初は手動計器で調整する。",
+      "more": "材料を一定の形に加工する設備。最初は手動計器で調整する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": true,
+      "facility": true,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_machine",
+      "model": null
+    },
+    {
+      "id": "sp_materials",
+      "name": "材料評価台",
+      "yomi": "材料評価台",
+      "en": "材料評価台",
+      "tags": [
+        "研究設備"
+      ],
+      "icon": "🛠️",
+      "el": [
+        "Fe",
+        "C",
+        "Si",
+        "O",
+        "Ca",
+        "Cu"
+      ],
+      "kid": "用途に合う強さ・絶縁・気密を模擬試験で確かめる。",
+      "more": "用途に合う強さ・絶縁・気密を模擬試験で確かめる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": true,
+      "facility": true,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_materials",
+      "model": null
+    },
+    {
+      "id": "sp_plate",
+      "name": "軽量外装板",
+      "yomi": "軽量外装板",
+      "en": "軽量外装板",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Al",
+        "Fe",
+        "C"
+      ],
+      "kid": "軽いアルミと丈夫な補強材を形にする。",
+      "more": "軽いアルミと丈夫な補強材を形にする。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_plate",
+      "model": null
+    },
+    {
+      "id": "sp_frame",
+      "name": "構造フレーム",
+      "yomi": "構造フレーム",
+      "en": "構造フレーム",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Fe",
+        "C"
+      ],
+      "kid": "荷重を支える骨格。外装とは役割が違う。",
+      "more": "荷重を支える骨格。外装とは役割が違う。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_frame",
+      "model": null
+    },
+    {
+      "id": "sp_fastener",
+      "name": "締結部品",
+      "yomi": "締結部品",
+      "en": "締結部品",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Fe",
+        "C"
+      ],
+      "kid": "部品を固定し、点検時には交換できるようにする。",
+      "more": "部品を固定し、点検時には交換できるようにする。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_fastener",
+      "model": null
+    },
+    {
+      "id": "sp_insulator",
+      "name": "絶縁部品",
+      "yomi": "絶縁部品",
+      "en": "絶縁部品",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "H",
+        "Si",
+        "O",
+        "Ca"
+      ],
+      "kid": "電気を通しにくい層で導体を分離する。",
+      "more": "電気を通しにくい層で導体を分離する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_insulator",
+      "model": null
+    },
+    {
+      "id": "sp_cable",
+      "name": "被覆配線",
+      "yomi": "被覆配線",
+      "en": "被覆配線",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Cu",
+        "C",
+        "H",
+        "Si",
+        "O",
+        "Ca"
+      ],
+      "kid": "銅が電気を運び、被覆が接触を防ぐ。",
+      "more": "銅が電気を運び、被覆が接触を防ぐ。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "電力",
+      "iconAsset": "icon_sp_cable",
+      "model": null
+    },
+    {
+      "id": "sp_fiber",
+      "name": "機能繊維",
+      "yomi": "機能繊維",
+      "en": "機能繊維",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "H",
+        "O",
+        "N"
+      ],
+      "kid": "天然布を試作の基材とし、機能高分子の加工を抽象化した丈夫な繊維。",
+      "more": "天然布を試作の基材とし、機能高分子の加工を抽象化した丈夫な繊維。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_fiber",
+      "model": null
+    },
+    {
+      "id": "sp_seal",
+      "name": "柔軟シール材",
+      "yomi": "柔軟シール材",
+      "en": "柔軟シール材",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "H"
+      ],
+      "kid": "つなぎ目をふさぐ柔軟な架空規格材。普通のPEと同じ性能ではない。",
+      "more": "つなぎ目をふさぐ柔軟な架空規格材。普通のPEと同じ性能ではない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_seal",
+      "model": null
+    },
+    {
+      "id": "sp_membrane",
+      "name": "気密膜",
+      "yomi": "気密膜",
+      "en": "気密膜",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "H",
+        "O",
+        "N"
+      ],
+      "kid": "布の強さとは別に空気を保持する役割を持つ。",
+      "more": "布の強さとは別に空気を保持する役割を持つ。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_membrane",
+      "model": null
+    },
+    {
+      "id": "sp_thermal",
+      "name": "積層断熱材",
+      "yomi": "積層断熱材",
+      "en": "積層断熱材",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "H",
+        "O",
+        "N",
+        "Si",
+        "Ca",
+        "Al"
+      ],
+      "kid": "層を重ねて熱のやり取りを抑える。白い布一枚とは異なる。",
+      "more": "層を重ねて熱のやり取りを抑える。白い布一枚とは異なる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_thermal",
+      "model": null
+    },
+    {
+      "id": "sp_ceramic",
+      "name": "耐熱セラミック",
+      "yomi": "耐熱セラミック",
+      "en": "耐熱セラミック",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Al",
+        "O",
+        "Si"
+      ],
+      "kid": "熱にさらされる部位を保護する用途適合品。普通の土器とは区別する。",
+      "more": "熱にさらされる部位を保護する用途適合品。普通の土器とは区別する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_ceramic",
+      "model": null
+    },
+    {
+      "id": "sp_window",
+      "name": "透明保護材",
+      "yomi": "透明保護材",
+      "en": "透明保護材",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Si",
+        "O",
+        "Ca",
+        "C",
+        "H"
+      ],
+      "kid": "見通しと保護を両立させる架空の積層材。",
+      "more": "見通しと保護を両立させる架空の積層材。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "材料",
+      "iconAsset": "icon_sp_window",
+      "model": null
+    },
+    {
+      "id": "sp_powerbench",
+      "name": "電源組立台",
+      "yomi": "電源組立台",
+      "en": "電源組立台",
+      "tags": [
+        "研究設備"
+      ],
+      "icon": "🛠️",
+      "el": [
+        "Fe",
+        "C",
+        "Cu",
+        "H",
+        "Si",
+        "O",
+        "Ca"
+      ],
+      "kid": "蓄電・配電を組み立てる。作る前の蓄電器には依存しない。",
+      "more": "蓄電・配電を組み立てる。作る前の蓄電器には依存しない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": true,
+      "facility": true,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "電力",
+      "iconAsset": "icon_sp_powerbench",
+      "model": "power-distribution"
+    },
+    {
+      "id": "sp_storage",
+      "name": "蓄電モジュール",
+      "yomi": "蓄電モジュール",
+      "en": "蓄電モジュール",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Cu",
+        "Zn",
+        "C",
+        "K",
+        "Ca",
+        "H",
+        "Si",
+        "O"
+      ],
+      "kid": "発電が途切れる間の電力を蓄える架空規格。ボルタ電池の充電ではない。",
+      "more": "発電が途切れる間の電力を蓄える架空規格。ボルタ電池の充電ではない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "電力",
+      "iconAsset": "icon_sp_storage",
+      "model": null
+    },
+    {
+      "id": "sp_power",
+      "name": "電源配電ユニット",
+      "yomi": "電源配電ユニット",
+      "en": "電源配電ユニット",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Cu",
+        "Zn",
+        "C",
+        "K",
+        "Ca",
+        "H",
+        "Si",
+        "O"
+      ],
+      "kid": "電源・蓄電・負荷をつなぎ、異常時には停止する。",
+      "more": "電源・蓄電・負荷をつなぎ、異常時には停止する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "電力",
+      "iconAsset": "icon_sp_power",
+      "model": null
+    },
+    {
+      "id": "sp_fab",
+      "name": "電子部品製造設備",
+      "yomi": "電子部品製造設備",
+      "en": "電子部品製造設備",
+      "tags": [
+        "研究設備"
+      ],
+      "icon": "🛠️",
+      "el": [
+        "Fe",
+        "C",
+        "Si",
+        "O",
+        "Ca",
+        "Cu",
+        "H"
+      ],
+      "kid": "清浄化と微細加工を設備能力に抽象化。砂から直接CPUは作れない。",
+      "more": "清浄化と微細加工を設備能力に抽象化。砂から直接CPUは作れない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": true,
+      "facility": true,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_fab",
+      "model": "electronics-fab"
+    },
+    {
+      "id": "sp_switch",
+      "name": "スイッチ回路",
+      "yomi": "スイッチ回路",
+      "en": "スイッチ回路",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Cu",
+        "C",
+        "H",
+        "Si",
+        "O",
+        "Ca"
+      ],
+      "kid": "導体をつなぐ・離すことで電流の通り道を切り替える。",
+      "more": "導体をつなぐ・離すことで電流の通り道を切り替える。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_switch",
+      "model": null
+    },
+    {
+      "id": "sp_transistor",
+      "name": "切替素子",
+      "yomi": "切替素子",
+      "en": "切替素子",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Si",
+        "Cu",
+        "C",
+        "H",
+        "O",
+        "Ca"
+      ],
+      "kid": "小さな電気信号で状態を切り替える。素子加工の詳細は省略。",
+      "more": "小さな電気信号で状態を切り替える。素子加工の詳細は省略。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_transistor",
+      "model": null
+    },
+    {
+      "id": "sp_pcb",
+      "name": "配線基板",
+      "yomi": "配線基板",
+      "en": "配線基板",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Cu",
+        "C",
+        "H",
+        "Si",
+        "O",
+        "Ca"
+      ],
+      "kid": "配線を安定して保持する土台。",
+      "more": "配線を安定して保持する土台。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_pcb",
+      "model": null
+    },
+    {
+      "id": "sp_passive",
+      "name": "受動部品セット",
+      "yomi": "受動部品セット",
+      "en": "受動部品セット",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "K",
+        "Ca",
+        "Al",
+        "O",
+        "Si",
+        "Cu"
+      ],
+      "kid": "抵抗やコンデンサーの役割をまとめ、信号を安定させる。",
+      "more": "抵抗やコンデンサーの役割をまとめ、信号を安定させる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_passive",
+      "model": null
+    },
+    {
+      "id": "sp_gate",
+      "name": "論理ゲートセット",
+      "yomi": "論理ゲートセット",
+      "en": "論理ゲートセット",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Si",
+        "Cu",
+        "C",
+        "H",
+        "O",
+        "Ca",
+        "K",
+        "Al"
+      ],
+      "kid": "0と1をAND・OR・NOTの規則で組み合わせる。",
+      "more": "0と1をAND・OR・NOTの規則で組み合わせる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_gate",
+      "model": null
+    },
+    {
+      "id": "sp_adder",
+      "name": "加算回路",
+      "yomi": "加算回路",
+      "en": "加算回路",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Si",
+        "Cu",
+        "C",
+        "H",
+        "O",
+        "Ca",
+        "K",
+        "Al"
+      ],
+      "kid": "論理ゲートをつなぎ二進数の足し算を行う。",
+      "more": "論理ゲートをつなぎ二進数の足し算を行う。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_adder",
+      "model": null
+    },
+    {
+      "id": "sp_memory",
+      "name": "記憶回路",
+      "yomi": "記憶回路",
+      "en": "記憶回路",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Si",
+        "Cu",
+        "C",
+        "H",
+        "O",
+        "Ca",
+        "K",
+        "Al"
+      ],
+      "kid": "入力を変えても値を保持し、必要なとき読み出せる。",
+      "more": "入力を変えても値を保持し、必要なとき読み出せる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_memory",
+      "model": null
+    },
+    {
+      "id": "sp_cpu",
+      "name": "演算制御モジュール",
+      "yomi": "演算制御モジュール",
+      "en": "演算制御モジュール",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Si",
+        "Cu",
+        "C",
+        "H",
+        "O",
+        "Ca",
+        "K",
+        "Al"
+      ],
+      "kid": "演算器と制御部が順番に命令を処理する。",
+      "more": "演算器と制御部が順番に命令を処理する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_cpu",
+      "model": null
+    },
+    {
+      "id": "sp_io",
+      "name": "表示入力モジュール",
+      "yomi": "表示入力モジュール",
+      "en": "表示入力モジュール",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Si",
+        "O",
+        "Ca",
+        "Cu",
+        "C",
+        "H"
+      ],
+      "kid": "操作を入力し、計算結果を表示する。",
+      "more": "操作を入力し、計算結果を表示する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_io",
+      "model": null
+    },
+    {
+      "id": "sp_computerbench",
+      "name": "計算機組立台",
+      "yomi": "計算機組立台",
+      "en": "計算機組立台",
+      "tags": [
+        "研究設備"
+      ],
+      "icon": "🛠️",
+      "el": [
+        "Fe",
+        "C",
+        "Cu",
+        "H",
+        "Si",
+        "O",
+        "Ca"
+      ],
+      "kid": "演算・記憶・入出力を接続し動作を確認する。",
+      "more": "演算・記憶・入出力を接続し動作を確認する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": true,
+      "facility": true,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_computerbench",
+      "model": "computer-bench"
+    },
+    {
+      "id": "sp_computer",
+      "name": "学習用コンピューター",
+      "yomi": "学習用コンピューター",
+      "en": "学習用コンピューター",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Si",
+        "Cu",
+        "C",
+        "H",
+        "O",
+        "Ca",
+        "K",
+        "Al",
+        "Zn"
+      ],
+      "kid": "簡単な命令列を実行できる計算機。飛行制御には使用しない。",
+      "more": "簡単な命令列を実行できる計算機。飛行制御には使用しない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_computer",
+      "model": null
+    },
+    {
+      "id": "sp_sensor",
+      "name": "模擬環境センサー",
+      "yomi": "模擬環境センサー",
+      "en": "模擬環境センサー",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Si",
+        "Cu",
+        "C",
+        "H",
+        "O",
+        "Ca"
+      ],
+      "kid": "船内環境を架空の状態値へ変換する。",
+      "more": "船内環境を架空の状態値へ変換する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_sensor",
+      "model": null
+    },
+    {
+      "id": "sp_flightcomputer",
+      "name": "船内コンピューター",
+      "yomi": "船内コンピューター",
+      "en": "船内コンピューター",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Si",
+        "Cu",
+        "C",
+        "H",
+        "O",
+        "Ca",
+        "K",
+        "Al",
+        "Zn",
+        "Fe"
+      ],
+      "kid": "環境状態と試験履歴を表示する。実際の誘導アルゴリズムは持たない。",
+      "more": "環境状態と試験履歴を表示する。実際の誘導アルゴリズムは持たない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_flightcomputer",
+      "model": null
+    },
+    {
+      "id": "sp_radio",
+      "name": "通信ユニット",
+      "yomi": "通信ユニット",
+      "en": "通信ユニット",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Cu",
+        "C",
+        "H",
+        "Si",
+        "O",
+        "Ca"
+      ],
+      "kid": "地上と船内の模擬信号をやり取りする。",
+      "more": "地上と船内の模擬信号をやり取りする。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "計算機",
+      "iconAsset": "icon_sp_radio",
+      "model": null
+    },
+    {
+      "id": "sp_suitbench",
+      "name": "宇宙服組立台",
+      "yomi": "宇宙服組立台",
+      "en": "宇宙服組立台",
+      "tags": [
+        "研究設備"
+      ],
+      "icon": "🛠️",
+      "el": [
+        "Fe",
+        "C",
+        "H",
+        "O",
+        "N"
+      ],
+      "kid": "衣服・気密・保護の各層と装備を組み合わせる。",
+      "more": "衣服・気密・保護の各層と装備を組み合わせる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": true,
+      "facility": true,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "宇宙服",
+      "iconAsset": "icon_sp_suitbench",
+      "model": "suit-stand"
+    },
+    {
+      "id": "sp_liner",
+      "name": "内側の衣服",
+      "yomi": "内側の衣服",
+      "en": "内側の衣服",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "H",
+        "O",
+        "N"
+      ],
+      "kid": "肌に触れる層。気密を保持する層とは別。",
+      "more": "肌に触れる層。気密を保持する層とは別。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "宇宙服",
+      "iconAsset": "icon_sp_liner",
+      "model": null
+    },
+    {
+      "id": "sp_pressurelayer",
+      "name": "宇宙服の気密層",
+      "yomi": "宇宙服の気密層",
+      "en": "宇宙服の気密層",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "H",
+        "O",
+        "N"
+      ],
+      "kid": "空気を保持する架空規格の層。圧力値や製法は扱わない。",
+      "more": "空気を保持する架空規格の層。圧力値や製法は扱わない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "宇宙服",
+      "iconAsset": "icon_sp_pressurelayer",
+      "model": null
+    },
+    {
+      "id": "sp_protectlayer",
+      "name": "宇宙服の保護層",
+      "yomi": "宇宙服の保護層",
+      "en": "宇宙服の保護層",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "H",
+        "O",
+        "N",
+        "Si",
+        "Ca",
+        "Al"
+      ],
+      "kid": "外からのこすれと熱環境への保護を担当する。",
+      "more": "外からのこすれと熱環境への保護を担当する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "宇宙服",
+      "iconAsset": "icon_sp_protectlayer",
+      "model": null
+    },
+    {
+      "id": "sp_helmet",
+      "name": "ヘルメットとバイザー",
+      "yomi": "ヘルメットとバイザー",
+      "en": "ヘルメットとバイザー",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Si",
+        "O",
+        "Ca",
+        "C",
+        "H",
+        "Al",
+        "Fe"
+      ],
+      "kid": "視界と保護、他の層との接続を担う。",
+      "more": "視界と保護、他の層との接続を担う。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "宇宙服",
+      "iconAsset": "icon_sp_helmet",
+      "model": null
+    },
+    {
+      "id": "sp_gloves",
+      "name": "手袋とブーツ",
+      "yomi": "手袋とブーツ",
+      "en": "手袋とブーツ",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "H",
+        "O",
+        "N"
+      ],
+      "kid": "動きやすさと気密を両立する手足の装備。",
+      "more": "動きやすさと気密を両立する手足の装備。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "宇宙服",
+      "iconAsset": "icon_sp_gloves",
+      "model": null
+    },
+    {
+      "id": "sp_air",
+      "name": "呼吸環境供給部",
+      "yomi": "呼吸環境供給部",
+      "en": "呼吸環境供給部",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "H",
+        "O",
+        "C"
+      ],
+      "kid": "電解設備で得た気体を直接装置へ移す工程と、適切な呼吸環境の調整を抽象化。酸素は既存仕様で保管不可。現実の混合比や高圧系統は扱わない。",
+      "more": "電解設備で得た気体を直接装置へ移す工程と、適切な呼吸環境の調整を抽象化。酸素は既存仕様で保管不可。現実の混合比や高圧系統は扱わない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "生命維持",
+      "iconAsset": "icon_sp_air",
+      "model": null
+    },
+    {
+      "id": "sp_scrubber",
+      "name": "空気再生部",
+      "yomi": "空気再生部",
+      "en": "空気再生部",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "K",
+        "Ca",
+        "H",
+        "Al",
+        "Fe"
+      ],
+      "kid": "専用吸着材によるCO₂処理と汚染物除去を抽象化。木炭単独の働きではない。",
+      "more": "専用吸着材によるCO₂処理と汚染物除去を抽象化。木炭単独の働きではない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "生命維持",
+      "iconAsset": "icon_sp_scrubber",
+      "model": null
+    },
+    {
+      "id": "sp_waterunit",
+      "name": "水衛生部",
+      "yomi": "水衛生部",
+      "en": "水衛生部",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "H",
+        "O",
+        "C",
+        "Cu",
+        "Si",
+        "Ca"
+      ],
+      "kid": "飲用適合・湿度回収・衛生をまとめる。布ろ過だけで安全な飲み水にはならない。",
+      "more": "飲用適合・湿度回収・衛生をまとめる。布ろ過だけで安全な飲み水にはならない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "生命維持",
+      "iconAsset": "icon_sp_waterunit",
+      "model": null
+    },
+    {
+      "id": "sp_cooling",
+      "name": "温度管理部",
+      "yomi": "温度管理部",
+      "en": "温度管理部",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Cu",
+        "Al",
+        "H",
+        "O",
+        "C",
+        "N",
+        "Si",
+        "Ca"
+      ],
+      "kid": "熱を運んで環境を保つ。断熱だけでは熱を捨てられない。",
+      "more": "熱を運んで環境を保つ。断熱だけでは熱を捨てられない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "生命維持",
+      "iconAsset": "icon_sp_cooling",
+      "model": null
+    },
+    {
+      "id": "sp_lifesupport",
+      "name": "生命維持ユニット",
+      "yomi": "生命維持ユニット",
+      "en": "生命維持ユニット",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "H",
+        "O",
+        "C",
+        "K",
+        "Ca",
+        "Al",
+        "Fe",
+        "Cu",
+        "Si",
+        "N",
+        "Zn"
+      ],
+      "kid": "呼吸・水・熱・電源・監視の各機能をまとめる。",
+      "more": "呼吸・水・熱・電源・監視の各機能をまとめる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "生命維持",
+      "iconAsset": "icon_sp_lifesupport",
+      "model": "life-support"
+    },
+    {
+      "id": "sp_suit",
+      "name": "組立済み宇宙服",
+      "yomi": "組立済み宇宙服",
+      "en": "組立済み宇宙服",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "C",
+        "H",
+        "O",
+        "N",
+        "Si",
+        "Ca",
+        "Al",
+        "Fe",
+        "Cu",
+        "K",
+        "Zn"
+      ],
+      "kid": "部品を組み立てた搭乗用宇宙服。有人飛行には装着と機能試験も必要。",
+      "more": "部品を組み立てた搭乗用宇宙服。有人飛行には装着と機能試験も必要。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "宇宙服",
+      "iconAsset": "icon_sp_suit",
+      "model": "spacesuit-display"
+    },
+    {
+      "id": "sp_assembly",
+      "name": "機体組立設備",
+      "yomi": "機体組立設備",
+      "en": "機体組立設備",
+      "tags": [
+        "研究設備"
+      ],
+      "icon": "🛠️",
+      "el": [
+        "Fe",
+        "C",
+        "Cu",
+        "H",
+        "Si",
+        "O",
+        "Ca"
+      ],
+      "kid": "骨格・外装・機器を順番に固定する。",
+      "more": "骨格・外装・機器を順番に固定する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": true,
+      "facility": true,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "機体",
+      "iconAsset": "icon_sp_assembly",
+      "model": "parts-rack"
+    },
+    {
+      "id": "sp_hull",
+      "name": "機体構造",
+      "yomi": "機体構造",
+      "en": "機体構造",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Fe",
+        "C"
+      ],
+      "kid": "全ての機器を支える構造。ゲーム用の形であり実機設計ではない。",
+      "more": "全ての機器を支える構造。ゲーム用の形であり実機設計ではない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "機体",
+      "iconAsset": "icon_sp_hull",
+      "model": null
+    },
+    {
+      "id": "sp_skin",
+      "name": "機体外装",
+      "yomi": "機体外装",
+      "en": "機体外装",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Al",
+        "Fe",
+        "C",
+        "H",
+        "O",
+        "N",
+        "Si",
+        "Ca"
+      ],
+      "kid": "内部を覆い保護する外装。構造とは別に製作する。",
+      "more": "内部を覆い保護する外装。構造とは別に製作する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "機体",
+      "iconAsset": "icon_sp_skin",
+      "model": null
+    },
+    {
+      "id": "sp_propulsion",
+      "name": "架空推進モジュール",
+      "yomi": "架空推進モジュール",
+      "en": "架空推進モジュール",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Fe",
+        "C",
+        "Al",
+        "O",
+        "Si",
+        "H",
+        "Ca"
+      ],
+      "kid": "完全架空の航行規格。推進の配合・寸法・製造条件は再現しない。",
+      "more": "完全架空の航行規格。推進の配合・寸法・製造条件は再現しない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "機体",
+      "iconAsset": "icon_sp_propulsion",
+      "model": null
+    },
+    {
+      "id": "sp_charge",
+      "name": "架空推進用カートリッジ",
+      "yomi": "架空推進用カートリッジ",
+      "en": "架空推進用カートリッジ",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Al",
+        "Fe",
+        "C",
+        "H",
+        "Si",
+        "O",
+        "Ca"
+      ],
+      "kid": "物語内の認定資材。実在の推進剤や燃料レシピには対応しない。",
+      "more": "物語内の認定資材。実在の推進剤や燃料レシピには対応しない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "機体",
+      "iconAsset": "icon_sp_charge",
+      "model": null
+    },
+    {
+      "id": "sp_capsule",
+      "name": "搭乗カプセル",
+      "yomi": "搭乗カプセル",
+      "en": "搭乗カプセル",
+      "tags": [
+        "工業製品"
+      ],
+      "icon": "🔧",
+      "el": [
+        "Al",
+        "Fe",
+        "C",
+        "Si",
+        "O",
+        "Ca",
+        "H"
+      ],
+      "kid": "主人公が搭乗する区画。機器の組込みと機能試験は別途行う。",
+      "more": "主人公が搭乗する区画。機器の組込みと機能試験は別途行う。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": false,
+      "facility": false,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "機体",
+      "iconAsset": "icon_sp_capsule",
+      "model": null
+    },
+    {
+      "id": "sp_pad",
+      "name": "発射台",
+      "yomi": "発射台",
+      "en": "発射台",
+      "tags": [
+        "研究設備"
+      ],
+      "icon": "🛠️",
+      "el": [
+        "Ca",
+        "Si",
+        "Al",
+        "Fe",
+        "O",
+        "H",
+        "C"
+      ],
+      "kid": "支持と整備の場所。持っているだけでは打ち上げできず、マップへの設置が必要。",
+      "more": "支持と整備の場所。持っているだけでは打ち上げできず、マップへの設置が必要。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": true,
+      "facility": true,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "地上設備",
+      "iconAsset": "icon_sp_pad",
+      "model": "launch-pad"
+    },
+    {
+      "id": "sp_tower",
+      "name": "支持塔と搭乗通路",
+      "yomi": "支持塔と搭乗通路",
+      "en": "支持塔と搭乗通路",
+      "tags": [
+        "研究設備"
+      ],
+      "icon": "🛠️",
+      "el": [
+        "Fe",
+        "C",
+        "Al"
+      ],
+      "kid": "主人公が機体へ近づくための支持設備。",
+      "more": "主人公が機体へ近づくための支持設備。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": true,
+      "facility": true,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "地上設備",
+      "iconAsset": "icon_sp_tower",
+      "model": "support-tower"
+    },
+    {
+      "id": "sp_control",
+      "name": "地上管制端末",
+      "yomi": "地上管制端末",
+      "en": "地上管制端末",
+      "tags": [
+        "研究設備"
+      ],
+      "icon": "🛠️",
+      "el": [
+        "Si",
+        "Cu",
+        "C",
+        "H",
+        "O",
+        "Ca",
+        "K",
+        "Al",
+        "Zn"
+      ],
+      "kid": "試験の結果と発射条件を表示する。",
+      "more": "試験の結果と発射条件を表示する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": true,
+      "facility": true,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "地上設備",
+      "iconAsset": "icon_sp_control",
+      "model": "control-terminal"
+    },
+    {
+      "id": "sp_testbench",
+      "name": "総合試験端末",
+      "yomi": "総合試験端末",
+      "en": "総合試験端末",
+      "tags": [
+        "研究設備"
+      ],
+      "icon": "🛠️",
+      "el": [
+        "Si",
+        "Cu",
+        "C",
+        "H",
+        "O",
+        "Ca",
+        "K",
+        "Al",
+        "Zn"
+      ],
+      "kid": "装置を壊さず不足機能を確認する模擬試験装置。",
+      "more": "装置を壊さず不足機能を確認する模擬試験装置。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "store": true,
+      "unique": true,
+      "facility": true,
+      "ops": [],
+      "color": "#e8dfc8",
+      "space": true,
+      "group": "地上設備",
+      "iconAsset": "icon_sp_testbench",
+      "model": "test-terminal"
+    }
+  ],
+  "recipes": [
+    {
+      "id": "c_sp_machine",
+      "out": "sp_machine",
+      "inp": {
+        "steel": 2,
+        "wire": 2,
+        "glass": 1
+      },
+      "qty": 1,
+      "at": "bench",
+      "tools": [
+        "generator"
+      ],
+      "how": "材料を一定の形に加工する設備。最初は手動計器で調整する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_materials",
+      "out": "sp_materials",
+      "inp": {
+        "steel": 1,
+        "glass": 1,
+        "wire": 1
+      },
+      "qty": 1,
+      "at": "bench",
+      "tools": [
+        "balance",
+        "thermometer"
+      ],
+      "how": "用途に合う強さ・絶縁・気密を模擬試験で確かめる。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_plate",
+      "out": "sp_plate",
+      "inp": {
+        "aluminum": 2,
+        "steel": 1
+      },
+      "qty": 6,
+      "at": "sp_machine",
+      "tools": [],
+      "how": "軽いアルミと丈夫な補強材を形にする。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_frame",
+      "out": "sp_frame",
+      "inp": {
+        "steel": 2,
+        "ironrod": 1
+      },
+      "qty": 4,
+      "at": "sp_machine",
+      "tools": [],
+      "how": "荷重を支える骨格。外装とは役割が違う。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_fastener",
+      "out": "sp_fastener",
+      "inp": {
+        "steel": 1
+      },
+      "qty": 12,
+      "at": "sp_machine",
+      "tools": [],
+      "how": "部品を固定し、点検時には交換できるようにする。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_insulator",
+      "out": "sp_insulator",
+      "inp": {
+        "pe": 2,
+        "glass": 1
+      },
+      "qty": 8,
+      "at": "reactor",
+      "tools": [],
+      "how": "電気を通しにくい層で導体を分離する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_cable",
+      "out": "sp_cable",
+      "inp": {
+        "wire": 2,
+        "sp_insulator": 1
+      },
+      "qty": 6,
+      "at": "sp_machine",
+      "tools": [],
+      "how": "銅が電気を運び、被覆が接触を防ぐ。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_fiber",
+      "out": "sp_fiber",
+      "inp": {
+        "naphtha": 1,
+        "cloth": 1
+      },
+      "qty": 6,
+      "at": "reactor",
+      "tools": [
+        "sp_materials"
+      ],
+      "how": "天然布を試作の基材とし、機能高分子の加工を抽象化した丈夫な繊維。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_seal",
+      "out": "sp_seal",
+      "inp": {
+        "naphtha": 1,
+        "pe": 1
+      },
+      "qty": 8,
+      "at": "reactor",
+      "tools": [
+        "sp_materials"
+      ],
+      "how": "つなぎ目をふさぐ柔軟な架空規格材。普通のPEと同じ性能ではない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_membrane",
+      "out": "sp_membrane",
+      "inp": {
+        "sp_fiber": 1,
+        "sp_seal": 1
+      },
+      "qty": 4,
+      "at": "reactor",
+      "tools": [],
+      "how": "布の強さとは別に空気を保持する役割を持つ。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_thermal",
+      "out": "sp_thermal",
+      "inp": {
+        "sp_fiber": 1,
+        "sp_insulator": 1,
+        "aluminum": 1
+      },
+      "qty": 4,
+      "at": "sp_machine",
+      "tools": [],
+      "how": "層を重ねて熱のやり取りを抑える。白い布一枚とは異なる。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_ceramic",
+      "out": "sp_ceramic",
+      "inp": {
+        "alumina": 1,
+        "quartzpowder": 1
+      },
+      "qty": 4,
+      "at": "eaf",
+      "tools": [
+        "sp_materials"
+      ],
+      "how": "熱にさらされる部位を保護する用途適合品。普通の土器とは区別する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_window",
+      "out": "sp_window",
+      "inp": {
+        "glass": 1,
+        "pe": 1
+      },
+      "qty": 3,
+      "at": "sp_machine",
+      "tools": [
+        "sp_materials"
+      ],
+      "how": "見通しと保護を両立させる架空の積層材。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_powerbench",
+      "out": "sp_powerbench",
+      "inp": {
+        "steel": 1,
+        "sp_cable": 2,
+        "sp_insulator": 2
+      },
+      "qty": 1,
+      "at": "sp_machine",
+      "tools": [
+        "generator"
+      ],
+      "how": "蓄電・配電を組み立てる。作る前の蓄電器には依存しない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_storage",
+      "out": "sp_storage",
+      "inp": {
+        "copper": 1,
+        "zinc": 1,
+        "charcoal": 1,
+        "sp_insulator": 2
+      },
+      "qty": 2,
+      "at": "sp_powerbench",
+      "tools": [],
+      "how": "発電が途切れる間の電力を蓄える架空規格。ボルタ電池の充電ではない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_power",
+      "out": "sp_power",
+      "inp": {
+        "sp_storage": 1,
+        "sp_cable": 3,
+        "sp_insulator": 1
+      },
+      "qty": 1,
+      "at": "sp_powerbench",
+      "tools": [],
+      "how": "電源・蓄電・負荷をつなぎ、異常時には停止する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_fab",
+      "out": "sp_fab",
+      "inp": {
+        "steel": 2,
+        "glass": 2,
+        "sp_cable": 2,
+        "sp_insulator": 2
+      },
+      "qty": 1,
+      "at": "sp_machine",
+      "tools": [
+        "generator"
+      ],
+      "how": "清浄化と微細加工を設備能力に抽象化。砂から直接CPUは作れない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_switch",
+      "out": "sp_switch",
+      "inp": {
+        "wire": 1,
+        "sp_insulator": 1,
+        "copperplate": 1
+      },
+      "qty": 1,
+      "at": "bench",
+      "tools": [],
+      "how": "導体をつなぐ・離すことで電流の通り道を切り替える。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_transistor",
+      "out": "sp_transistor",
+      "inp": {
+        "pure_si": 1,
+        "copper": 1,
+        "sp_insulator": 1
+      },
+      "qty": 12,
+      "at": "sp_fab",
+      "tools": [],
+      "how": "小さな電気信号で状態を切り替える。素子加工の詳細は省略。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": "switch",
+      "space": true
+    },
+    {
+      "id": "c_sp_pcb",
+      "out": "sp_pcb",
+      "inp": {
+        "copperplate": 1,
+        "sp_insulator": 1
+      },
+      "qty": 8,
+      "at": "sp_fab",
+      "tools": [],
+      "how": "配線を安定して保持する土台。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_passive",
+      "out": "sp_passive",
+      "inp": {
+        "charcoal": 1,
+        "sp_ceramic": 1,
+        "copper": 1
+      },
+      "qty": 8,
+      "at": "sp_fab",
+      "tools": [],
+      "how": "抵抗やコンデンサーの役割をまとめ、信号を安定させる。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_gate",
+      "out": "sp_gate",
+      "inp": {
+        "sp_transistor": 2,
+        "sp_pcb": 1,
+        "sp_passive": 1
+      },
+      "qty": 4,
+      "at": "sp_fab",
+      "tools": [],
+      "how": "0と1をAND・OR・NOTの規則で組み合わせる。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": "transistor",
+      "space": true
+    },
+    {
+      "id": "c_sp_adder",
+      "out": "sp_adder",
+      "inp": {
+        "sp_gate": 2,
+        "sp_pcb": 1
+      },
+      "qty": 2,
+      "at": "sp_fab",
+      "tools": [],
+      "how": "論理ゲートをつなぎ二進数の足し算を行う。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": "gates",
+      "space": true
+    },
+    {
+      "id": "c_sp_memory",
+      "out": "sp_memory",
+      "inp": {
+        "sp_gate": 2,
+        "sp_pcb": 1,
+        "sp_transistor": 2
+      },
+      "qty": 2,
+      "at": "sp_fab",
+      "tools": [],
+      "how": "入力を変えても値を保持し、必要なとき読み出せる。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": "gates",
+      "space": true
+    },
+    {
+      "id": "c_sp_cpu",
+      "out": "sp_cpu",
+      "inp": {
+        "sp_adder": 1,
+        "sp_gate": 2,
+        "sp_pcb": 1
+      },
+      "qty": 1,
+      "at": "sp_fab",
+      "tools": [],
+      "how": "演算器と制御部が順番に命令を処理する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": "adder",
+      "space": true
+    },
+    {
+      "id": "c_sp_io",
+      "out": "sp_io",
+      "inp": {
+        "glass": 1,
+        "sp_pcb": 1,
+        "sp_transistor": 1,
+        "sp_cable": 1
+      },
+      "qty": 1,
+      "at": "sp_fab",
+      "tools": [],
+      "how": "操作を入力し、計算結果を表示する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_computerbench",
+      "out": "sp_computerbench",
+      "inp": {
+        "steel": 1,
+        "sp_cable": 1,
+        "glass": 1
+      },
+      "qty": 1,
+      "at": "sp_machine",
+      "tools": [
+        "generator"
+      ],
+      "how": "演算・記憶・入出力を接続し動作を確認する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_computer",
+      "out": "sp_computer",
+      "inp": {
+        "sp_cpu": 1,
+        "sp_memory": 1,
+        "sp_io": 1,
+        "sp_power": 1
+      },
+      "qty": 1,
+      "at": "sp_computerbench",
+      "tools": [],
+      "how": "簡単な命令列を実行できる計算機。飛行制御には使用しない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": "architecture",
+      "space": true
+    },
+    {
+      "id": "c_sp_sensor",
+      "out": "sp_sensor",
+      "inp": {
+        "sp_transistor": 1,
+        "sp_pcb": 1,
+        "glass": 1,
+        "sp_cable": 1
+      },
+      "qty": 3,
+      "at": "sp_fab",
+      "tools": [],
+      "how": "船内環境を架空の状態値へ変換する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_flightcomputer",
+      "out": "sp_flightcomputer",
+      "inp": {
+        "sp_computer": 1,
+        "sp_sensor": 1,
+        "sp_plate": 1
+      },
+      "qty": 1,
+      "at": "sp_computerbench",
+      "tools": [],
+      "how": "環境状態と試験履歴を表示する。実際の誘導アルゴリズムは持たない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": "sensors",
+      "space": true
+    },
+    {
+      "id": "c_sp_radio",
+      "out": "sp_radio",
+      "inp": {
+        "sp_pcb": 1,
+        "sp_transistor": 1,
+        "sp_cable": 2,
+        "copper": 1
+      },
+      "qty": 2,
+      "at": "sp_fab",
+      "tools": [],
+      "how": "地上と船内の模擬信号をやり取りする。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_suitbench",
+      "out": "sp_suitbench",
+      "inp": {
+        "steel": 1,
+        "cloth": 1,
+        "sp_fastener": 2
+      },
+      "qty": 1,
+      "at": "sp_machine",
+      "tools": [],
+      "how": "衣服・気密・保護の各層と装備を組み合わせる。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_liner",
+      "out": "sp_liner",
+      "inp": {
+        "cloth": 2,
+        "thread": 1
+      },
+      "qty": 1,
+      "at": "bench",
+      "tools": [],
+      "how": "肌に触れる層。気密を保持する層とは別。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_pressurelayer",
+      "out": "sp_pressurelayer",
+      "inp": {
+        "sp_membrane": 2,
+        "sp_seal": 2
+      },
+      "qty": 1,
+      "at": "sp_suitbench",
+      "tools": [],
+      "how": "空気を保持する架空規格の層。圧力値や製法は扱わない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_protectlayer",
+      "out": "sp_protectlayer",
+      "inp": {
+        "sp_fiber": 2,
+        "sp_thermal": 1
+      },
+      "qty": 1,
+      "at": "sp_suitbench",
+      "tools": [],
+      "how": "外からのこすれと熱環境への保護を担当する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_helmet",
+      "out": "sp_helmet",
+      "inp": {
+        "sp_window": 1,
+        "sp_plate": 1,
+        "sp_seal": 1
+      },
+      "qty": 1,
+      "at": "sp_suitbench",
+      "tools": [],
+      "how": "視界と保護、他の層との接続を担う。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_gloves",
+      "out": "sp_gloves",
+      "inp": {
+        "sp_fiber": 1,
+        "sp_membrane": 1,
+        "sp_seal": 1
+      },
+      "qty": 1,
+      "at": "sp_suitbench",
+      "tools": [],
+      "how": "動きやすさと気密を両立する手足の装備。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_air",
+      "out": "sp_air",
+      "inp": {
+        "cylinder": 1,
+        "water": 1,
+        "sp_seal": 1
+      },
+      "qty": 1,
+      "at": "sp_machine",
+      "tools": [
+        "electrolyzer"
+      ],
+      "how": "電解設備で得た気体を直接装置へ移す工程と、適切な呼吸環境の調整を抽象化。酸素は既存仕様で保管不可。現実の混合比や高圧系統は扱わない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_scrubber",
+      "out": "sp_scrubber",
+      "inp": {
+        "charcoal": 1,
+        "naphtha": 1,
+        "sp_plate": 1
+      },
+      "qty": 1,
+      "at": "reactor",
+      "tools": [],
+      "how": "専用吸着材によるCO₂処理と汚染物除去を抽象化。木炭単独の働きではない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_waterunit",
+      "out": "sp_waterunit",
+      "inp": {
+        "water": 2,
+        "plasticbox": 1,
+        "sp_cable": 1
+      },
+      "qty": 1,
+      "at": "sp_machine",
+      "tools": [
+        "filter",
+        "sp_materials"
+      ],
+      "how": "飲用適合・湿度回収・衛生をまとめる。布ろ過だけで安全な飲み水にはならない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_cooling",
+      "out": "sp_cooling",
+      "inp": {
+        "copper": 1,
+        "aluminum": 1,
+        "water": 1,
+        "sp_thermal": 1
+      },
+      "qty": 1,
+      "at": "sp_machine",
+      "tools": [],
+      "how": "熱を運んで環境を保つ。断熱だけでは熱を捨てられない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_lifesupport",
+      "out": "sp_lifesupport",
+      "inp": {
+        "sp_air": 1,
+        "sp_scrubber": 1,
+        "sp_waterunit": 1,
+        "sp_cooling": 1,
+        "sp_power": 1,
+        "sp_sensor": 1
+      },
+      "qty": 1,
+      "at": "sp_machine",
+      "tools": [],
+      "how": "呼吸・水・熱・電源・監視の各機能をまとめる。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_suit",
+      "out": "sp_suit",
+      "inp": {
+        "sp_liner": 1,
+        "sp_pressurelayer": 1,
+        "sp_protectlayer": 1,
+        "sp_helmet": 1,
+        "sp_gloves": 1,
+        "sp_radio": 1,
+        "sp_lifesupport": 1
+      },
+      "qty": 1,
+      "at": "sp_suitbench",
+      "tools": [],
+      "how": "部品を組み立てた搭乗用宇宙服。有人飛行には装着と機能試験も必要。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_assembly",
+      "out": "sp_assembly",
+      "inp": {
+        "sp_frame": 2,
+        "sp_fastener": 4,
+        "sp_cable": 2
+      },
+      "qty": 1,
+      "at": "sp_machine",
+      "tools": [],
+      "how": "骨格・外装・機器を順番に固定する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_hull",
+      "out": "sp_hull",
+      "inp": {
+        "sp_frame": 3,
+        "sp_fastener": 4
+      },
+      "qty": 1,
+      "at": "sp_assembly",
+      "tools": [],
+      "how": "全ての機器を支える構造。ゲーム用の形であり実機設計ではない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_skin",
+      "out": "sp_skin",
+      "inp": {
+        "sp_plate": 4,
+        "sp_thermal": 2,
+        "sp_ceramic": 2
+      },
+      "qty": 1,
+      "at": "sp_assembly",
+      "tools": [],
+      "how": "内部を覆い保護する外装。構造とは別に製作する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_propulsion",
+      "out": "sp_propulsion",
+      "inp": {
+        "sp_frame": 1,
+        "sp_ceramic": 1,
+        "sp_insulator": 2,
+        "sp_fastener": 2
+      },
+      "qty": 1,
+      "at": "sp_assembly",
+      "tools": [],
+      "how": "完全架空の航行規格。推進の配合・寸法・製造条件は再現しない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_charge",
+      "out": "sp_charge",
+      "inp": {
+        "sp_plate": 1,
+        "sp_insulator": 1,
+        "sp_seal": 1
+      },
+      "qty": 2,
+      "at": "sp_assembly",
+      "tools": [],
+      "how": "物語内の認定資材。実在の推進剤や燃料レシピには対応しない。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_capsule",
+      "out": "sp_capsule",
+      "inp": {
+        "sp_plate": 2,
+        "sp_window": 1,
+        "sp_seal": 2,
+        "sp_fastener": 2
+      },
+      "qty": 1,
+      "at": "sp_assembly",
+      "tools": [],
+      "how": "主人公が搭乗する区画。機器の組込みと機能試験は別途行う。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_pad",
+      "out": "sp_pad",
+      "inp": {
+        "concrete": 3,
+        "sp_frame": 2,
+        "sp_fastener": 4
+      },
+      "qty": 1,
+      "at": "sp_assembly",
+      "tools": [],
+      "how": "支持と整備の場所。持っているだけでは打ち上げできず、マップへの設置が必要。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_tower",
+      "out": "sp_tower",
+      "inp": {
+        "sp_frame": 2,
+        "sp_plate": 1,
+        "sp_fastener": 4
+      },
+      "qty": 1,
+      "at": "sp_assembly",
+      "tools": [],
+      "how": "主人公が機体へ近づくための支持設備。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_control",
+      "out": "sp_control",
+      "inp": {
+        "sp_computer": 1,
+        "sp_radio": 1,
+        "sp_cable": 2
+      },
+      "qty": 1,
+      "at": "sp_computerbench",
+      "tools": [],
+      "how": "試験の結果と発射条件を表示する。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    },
+    {
+      "id": "c_sp_testbench",
+      "out": "sp_testbench",
+      "inp": {
+        "sp_computer": 1,
+        "sp_sensor": 1,
+        "sp_cable": 1
+      },
+      "qty": 1,
+      "at": "sp_computerbench",
+      "tools": [],
+      "how": "装置を壊さず不足機能を確認する模擬試験装置。（ゲーム内で簡略化）",
+      "seconds": 2,
+      "lesson": null,
+      "space": true
+    }
+  ],
+  "lessons": [
+    {
+      "id": "switch",
+      "name": "導体・絶縁体とスイッチ",
+      "need": [
+        "sp_switch",
+        "battery",
+        "bulb"
+      ],
+      "prev": [],
+      "help": "スイッチを閉じると回路がつながり、ランプが点く。"
+    },
+    {
+      "id": "transistor",
+      "name": "電流で切り替える素子",
+      "need": [
+        "sp_transistor"
+      ],
+      "prev": [
+        "switch"
+      ],
+      "help": "制御入力が1なら、出力側も1になる模擬スイッチ。"
+    },
+    {
+      "id": "gates",
+      "name": "AND・OR・NOT",
+      "need": [
+        "sp_gate"
+      ],
+      "prev": [
+        "transistor"
+      ],
+      "help": "ANDは両方1、ORはどちらか1、NOTは入力を反転する。"
+    },
+    {
+      "id": "adder",
+      "name": "二進数の足し算",
+      "need": [
+        "sp_adder"
+      ],
+      "prev": [
+        "gates"
+      ],
+      "help": "3 + 2 = 5。二進数では0011 + 0010 = 0101。"
+    },
+    {
+      "id": "memory",
+      "name": "値の保存と読み出し",
+      "need": [
+        "sp_memory"
+      ],
+      "prev": [
+        "gates"
+      ],
+      "help": "書き込み後に入力を変えても、保存した値は残る。"
+    },
+    {
+      "id": "architecture",
+      "name": "演算・制御・記憶・入出力",
+      "need": [
+        "sp_cpu",
+        "sp_memory",
+        "sp_io"
+      ],
+      "prev": [
+        "adder",
+        "memory"
+      ],
+      "help": "演算は計算、制御は順番、記憶は保存、入出力は外との窓口。"
+    },
+    {
+      "id": "program",
+      "name": "簡単な命令列を実行",
+      "need": [
+        "sp_computer"
+      ],
+      "prev": [
+        "architecture"
+      ],
+      "help": "LOAD 2 → ADD 3 → STORE → OUT を模擬実行する。飛行制御ではない。"
+    },
+    {
+      "id": "sensors",
+      "name": "船内の状態を表示",
+      "need": [
+        "sp_computer",
+        "sp_sensor"
+      ],
+      "prev": [
+        "program"
+      ],
+      "help": "架空の環境値を読み、異常を表示する。誘導計算は行わない。"
+    }
+  ],
+  "slots": [
+    {
+      "id": "structure",
+      "name": "機体構造",
+      "item": "sp_hull"
+    },
+    {
+      "id": "skin",
+      "name": "外装",
+      "item": "sp_skin"
+    },
+    {
+      "id": "propulsion",
+      "name": "架空推進部",
+      "item": "sp_propulsion"
+    },
+    {
+      "id": "power",
+      "name": "電源",
+      "item": "sp_power"
+    },
+    {
+      "id": "computer",
+      "name": "船内計算機",
+      "item": "sp_flightcomputer"
+    },
+    {
+      "id": "radio",
+      "name": "通信",
+      "item": "sp_radio"
+    },
+    {
+      "id": "capsule",
+      "name": "搭乗区画",
+      "item": "sp_capsule"
+    },
+    {
+      "id": "life",
+      "name": "生命維持",
+      "item": "sp_lifesupport"
+    },
+    {
+      "id": "charge",
+      "name": "架空推進用資材",
+      "item": "sp_charge"
+    }
+  ],
+  "tests": [
+    {
+      "id": "power",
+      "name": "電源と配線",
+      "slots": [
+        "power"
+      ],
+      "prior": [],
+      "answer": "配線"
+    },
+    {
+      "id": "computer",
+      "name": "計算機自己診断",
+      "slots": [
+        "computer"
+      ],
+      "prior": [
+        "power"
+      ],
+      "answer": "記憶"
+    },
+    {
+      "id": "radio",
+      "name": "通信確認",
+      "slots": [
+        "radio"
+      ],
+      "prior": [
+        "power"
+      ],
+      "answer": "通信"
+    },
+    {
+      "id": "suit",
+      "name": "宇宙服の機能",
+      "slots": [],
+      "prior": [
+        "power"
+      ],
+      "answer": "気密"
+    },
+    {
+      "id": "life",
+      "name": "生命維持とカプセル",
+      "slots": [
+        "life",
+        "capsule"
+      ],
+      "prior": [
+        "power"
+      ],
+      "answer": "空気再生"
+    },
+    {
+      "id": "uncrewed",
+      "name": "無人模擬飛行",
+      "slots": [
+        "structure",
+        "skin",
+        "propulsion",
+        "power",
+        "computer",
+        "radio",
+        "capsule",
+        "life",
+        "charge"
+      ],
+      "prior": [
+        "computer",
+        "radio",
+        "suit",
+        "life"
+      ],
+      "answer": "模擬"
+    },
+    {
+      "id": "final",
+      "name": "総合点検",
+      "slots": [
+        "structure",
+        "skin",
+        "propulsion",
+        "power",
+        "computer",
+        "radio",
+        "capsule",
+        "life",
+        "charge"
+      ],
+      "prior": [
+        "uncrewed"
+      ],
+      "answer": "全項目"
+    }
+  ],
+  "existingRecipes": {
+    "crafts": [
+      {
+        "id": "c_knife",
+        "out": "knife",
+        "inp": {
+          "flint": 1,
+          "cobble": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": null,
+        "how": "丸い石で火打ち石をたたいて、鋭く割る。"
+      },
+      {
+        "id": "c_knife2",
+        "out": "knife",
+        "inp": {
+          "obsidian": 1,
+          "cobble": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": null,
+        "how": "黒曜石を割ると、火打ち石よりも鋭い刃になる。"
+      },
+      {
+        "id": "c_thread",
+        "out": "thread",
+        "inp": {
+          "vine": 2
+        },
+        "qty": 1,
+        "tools": [],
+        "at": null,
+        "how": "つるを2本ねじり合わせる。"
+      },
+      {
+        "id": "c_axe",
+        "out": "axe",
+        "inp": {
+          "flint": 1,
+          "twig": 1,
+          "thread": 1
+        },
+        "qty": 1,
+        "tools": [
+          "knife"
+        ],
+        "at": null,
+        "how": "石の刃を枝に糸でしばる。"
+      },
+      {
+        "id": "c_hammer",
+        "out": "hammer",
+        "inp": {
+          "basalt": 1,
+          "twig": 1,
+          "thread": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": null,
+        "how": "玄武岩を枝に糸でしばる。"
+      },
+      {
+        "id": "c_bench",
+        "out": "bench",
+        "inp": {
+          "twig": 4,
+          "thread": 2,
+          "cobble": 2
+        },
+        "qty": 1,
+        "tools": [
+          "knife"
+        ],
+        "at": null,
+        "how": "枝を組んでしばり、石で足を支える。"
+      },
+      {
+        "id": "c_firedrill",
+        "out": "firedrill",
+        "inp": {
+          "twig": 2,
+          "grass": 1
+        },
+        "qty": 1,
+        "tools": [
+          "knife"
+        ],
+        "at": null,
+        "how": "枝を削って棒と板を作り、枯れ草を火だねにする。"
+      },
+      {
+        "id": "c_campfire",
+        "out": "campfire",
+        "inp": {
+          "twig": 3,
+          "cobble": 3,
+          "leaves": 1
+        },
+        "qty": 1,
+        "tools": [
+          "firedrill"
+        ],
+        "at": null,
+        "how": "石で丸く囲み、落ち葉に火をつける。"
+      },
+      {
+        "id": "c_torch",
+        "out": "torch",
+        "inp": {
+          "twig": 1,
+          "resin": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "campfire",
+        "how": "枝に松やにを塗って、たき火で火をつける。"
+      },
+      {
+        "id": "c_candle",
+        "out": "candle",
+        "inp": {
+          "wax": 1,
+          "thread": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "campfire",
+        "how": "たき火で蜜蝋をやわらかくして、糸を芯にする。"
+      },
+      {
+        "id": "c_rack",
+        "out": "rack",
+        "inp": {
+          "twig": 3,
+          "thread": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "枝をはしごのように組む。"
+      },
+      {
+        "id": "c_cloth",
+        "out": "cloth",
+        "inp": {
+          "thread": 3
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "糸を縦と横に編む。"
+      },
+      {
+        "id": "c_filter",
+        "out": "filter",
+        "inp": {
+          "cloth": 1,
+          "pot": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "土器の口に布を張る。（土器を1つ使う）"
+      },
+      {
+        "id": "c_mill",
+        "out": "mill",
+        "inp": {
+          "granite": 2,
+          "twig": 1
+        },
+        "qty": 1,
+        "tools": [
+          "hammer"
+        ],
+        "at": "bench",
+        "how": "花崗岩をハンマーで平らにして2枚重ね、枝で取っ手をつける。"
+      },
+      {
+        "id": "c_kiln",
+        "out": "kiln",
+        "inp": {
+          "clay": 3,
+          "cobble": 4
+        },
+        "qty": 1,
+        "tools": [
+          "campfire"
+        ],
+        "at": null,
+        "how": "石を積み、すき間を粘土で塗り固めて火の部屋を作る。"
+      },
+      {
+        "id": "c_charkiln",
+        "out": "charkiln",
+        "inp": {
+          "clay": 4,
+          "cobble": 4,
+          "twig": 2
+        },
+        "qty": 1,
+        "tools": [
+          "kiln"
+        ],
+        "at": null,
+        "how": "粘土で小さな山のような窯を作り、空気穴を小さくする。"
+      },
+      {
+        "id": "c_fermenter",
+        "out": "fermenter",
+        "inp": {
+          "pot": 1,
+          "cloth": 1,
+          "clay": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "土器に布をかぶせ、粘土でふたをする。（土器を1つ使う）"
+      },
+      {
+        "id": "c_pickaxe",
+        "out": "pickaxe",
+        "inp": {
+          "basalt": 1,
+          "log": 1,
+          "thread": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "とがらせた玄武岩を丸太の柄にしばる。"
+      },
+      {
+        "id": "c_basket",
+        "out": "basket",
+        "inp": {
+          "vine": 4
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "つるを縦横に編む。"
+      },
+      {
+        "id": "c_basket2",
+        "out": "basket",
+        "inp": {
+          "bark": 2,
+          "vine": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "ヤナギの樹皮を編み、つるでふちを留める。"
+      },
+      {
+        "id": "c_bellows",
+        "out": "bellows",
+        "inp": {
+          "log": 1,
+          "cloth": 1,
+          "resin": 1
+        },
+        "qty": 1,
+        "tools": [
+          "knife"
+        ],
+        "at": "bench",
+        "how": "丸太を削って板にし、布を松やにで張りつけて袋にする。"
+      },
+      {
+        "id": "c_furnace",
+        "out": "furnace",
+        "inp": {
+          "brick": 4,
+          "clay": 2,
+          "bellows": 1
+        },
+        "qty": 1,
+        "tools": [
+          "kiln"
+        ],
+        "at": null,
+        "how": "焼きレンガを積んで炉を作り、ふいごを取りつける。"
+      },
+      {
+        "id": "c_storehouse",
+        "out": "storehouse",
+        "inp": {
+          "log": 4,
+          "plaster": 2,
+          "thread": 2
+        },
+        "qty": 1,
+        "tools": [
+          "axe"
+        ],
+        "at": "bench",
+        "how": "丸太で柱を立て、壁をしっくいで塗る。"
+      },
+      {
+        "id": "c_notebook",
+        "out": "notebook",
+        "inp": {
+          "paper": 2,
+          "blackpigment": 1,
+          "thread": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "紙を糸でとじて、黒い顔料で表紙に名前を書く。"
+      },
+      {
+        "id": "c_still",
+        "out": "still",
+        "inp": {
+          "copperplate": 2,
+          "pot": 1,
+          "clay": 1
+        },
+        "qty": 1,
+        "tools": [
+          "hammer"
+        ],
+        "at": "bench",
+        "how": "銅板を曲げてふたと管を作り、土器にのせて粘土ですき間をふさぐ。（土器を1つ使う）"
+      },
+      {
+        "id": "c_balance",
+        "out": "balance",
+        "inp": {
+          "copperplate": 2,
+          "twig": 2,
+          "thread": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "枝の両端に銅の皿を糸でつるす。"
+      },
+      {
+        "id": "c_balance2",
+        "out": "balance",
+        "inp": {
+          "bronze": 1,
+          "twig": 2,
+          "thread": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "青銅を皿にして、枝につるす。"
+      },
+      {
+        "id": "c_ironpick",
+        "out": "ironpick",
+        "inp": {
+          "ironrod": 1,
+          "log": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "鉄の棒の先をとがらせ、丸太の柄にはめる。"
+      },
+      {
+        "id": "c_ironaxe",
+        "out": "ironaxe",
+        "inp": {
+          "ironrod": 1,
+          "twig": 1,
+          "thread": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "鉄を刃にして、枝にしばる。"
+      },
+      {
+        "id": "c_bottle",
+        "out": "bottle",
+        "inp": {
+          "glass": 2
+        },
+        "qty": 1,
+        "tools": [
+          "ironrod"
+        ],
+        "at": "furnace",
+        "how": "溶かしたガラスを鉄の棒の先につけて、息を吹きこんでふくらませる。"
+      },
+      {
+        "id": "c_thermometer",
+        "out": "thermometer",
+        "inp": {
+          "glass": 1,
+          "ethanol": 1,
+          "redpigment": 1
+        },
+        "qty": 1,
+        "tools": [
+          "ironrod"
+        ],
+        "at": "furnace",
+        "how": "ガラスを細い管に延ばし、赤く染めたエタノールを閉じこめる。"
+      },
+      {
+        "id": "c_battery",
+        "out": "battery",
+        "inp": {
+          "copperplate": 2,
+          "zinc": 2,
+          "cloth": 1,
+          "cleanbrine": 1
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "bench",
+        "how": "銅板と亜鉛を、食塩水にひたした布をはさみながら交互に積み重ねる。"
+      },
+      {
+        "id": "c_electrolyzer",
+        "out": "electrolyzer",
+        "inp": {
+          "wire": 2,
+          "bottle": 1,
+          "pot": 1
+        },
+        "qty": 1,
+        "tools": [
+          "battery"
+        ],
+        "at": "bench",
+        "how": "土器に液を入れ、電池につないだ2本の銅線を差しこみ、出てくる気体をびんで受ける。"
+      },
+      {
+        "id": "c_waterwheel",
+        "out": "waterwheel",
+        "inp": {
+          "log": 4,
+          "ironrod": 2
+        },
+        "qty": 1,
+        "tools": [
+          "ironaxe"
+        ],
+        "at": "bench",
+        "how": "丸太で羽根車を組み、鉄の棒を軸にして川に据える。"
+      },
+      {
+        "id": "c_electromagnet",
+        "out": "electromagnet",
+        "inp": {
+          "ironrod": 1,
+          "wire": 3
+        },
+        "qty": 1,
+        "tools": [
+          "battery"
+        ],
+        "at": "bench",
+        "how": "鉄の棒に銅線を何百回も巻きつける。電池をつなぐと磁石になる。"
+      },
+      {
+        "id": "c_generator",
+        "out": "generator",
+        "inp": {
+          "electromagnet": 2,
+          "wire": 4
+        },
+        "qty": 1,
+        "tools": [
+          "waterwheel"
+        ],
+        "at": null,
+        "how": "水車の軸に電磁石を取りつけ、まわりを銅線のコイルで囲む。回すと電気が生まれる。"
+      },
+      {
+        "id": "c_blastfurnace",
+        "out": "blastfurnace",
+        "inp": {
+          "brick": 8,
+          "ironrod": 2,
+          "clay": 3
+        },
+        "qty": 1,
+        "tools": [
+          "waterwheel"
+        ],
+        "at": null,
+        "how": "焼きレンガで背の高い炉を作り、水車で動くふいごから熱風を送る。"
+      },
+      {
+        "id": "c_steamengine",
+        "out": "steamengine",
+        "inp": {
+          "steel": 2,
+          "copperplate": 2,
+          "brick": 2
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "blastfurnace",
+        "how": "鋼でボイラーとピストンを作り、焼きレンガのかまどにのせる。"
+      },
+      {
+        "id": "c_cylinder",
+        "out": "cylinder",
+        "inp": {
+          "steel": 2
+        },
+        "qty": 1,
+        "tools": [],
+        "at": "blastfurnace",
+        "how": "鋼の板を丸めて溶接し、高い圧力に耐える入れ物を作る。"
+      },
+      {
+        "id": "c_rig",
+        "out": "rig",
+        "inp": {
+          "steel": 4,
+          "wire": 2
+        },
+        "qty": 1,
+        "tools": [
+          "steamengine"
+        ],
+        "at": null,
+        "how": "鋼で塔を組み、蒸気機関でドリルを回す。"
+      },
+      {
+        "id": "c_refinery",
+        "out": "refinery",
+        "inp": {
+          "steel": 3,
+          "copperplate": 2,
+          "glass": 2
+        },
+        "qty": 1,
+        "tools": [
+          "generator"
+        ],
+        "at": null,
+        "how": "鋼で背の高い塔を作り、中に何段もの棚を取りつける。"
+      },
+      {
+        "id": "c_reactor",
+        "out": "reactor",
+        "inp": {
+          "steel": 2,
+          "glass": 2,
+          "wire": 2
+        },
+        "qty": 1,
+        "tools": [
+          "generator",
+          "thermometer"
+        ],
+        "at": null,
+        "how": "鋼の容器に温度計と電気ヒーターを取りつけ、ガラス窓から中を見られるようにする。"
+      },
+      {
+        "id": "c_eaf",
+        "out": "eaf",
+        "inp": {
+          "brick": 6,
+          "wire": 4,
+          "coke": 2
+        },
+        "qty": 1,
+        "tools": [
+          "generator"
+        ],
+        "at": null,
+        "how": "焼きレンガの炉に、発電機につないだ炭素の電極を差しこむ。"
+      },
+      {
+        "id": "c_bulb",
+        "out": "bulb",
+        "inp": {
+          "glass": 1,
+          "wire": 1,
+          "charcoal": 1
+        },
+        "qty": 1,
+        "tools": [
+          "generator"
+        ],
+        "at": "bench",
+        "how": "ガラス球の中に細い炭の線を入れ、銅線とつないで空気を抜く。"
+      },
+      {
+        "id": "c_solar",
+        "out": "solarcell",
+        "inp": {
+          "pure_si": 1,
+          "glass": 1,
+          "aluminum": 1,
+          "wire": 2
+        },
+        "qty": 1,
+        "tools": [
+          "generator"
+        ],
+        "at": "bench",
+        "how": "高純度ケイ素の薄い板に銅線をつなぎ、ガラスでおおってアルミニウムの枠にはめる。"
+      }
+    ],
+    "processes": [
+      {
+        "id": "burn_twig",
+        "op": "burn",
+        "at": [
+          "campfire"
+        ],
+        "inp": {
+          "twig": 2
+        },
+        "out": {
+          "ash": 1,
+          "co2": 1
+        },
+        "why": "木は空気中の酸素と結びついて燃え、熱と光を出した。燃えないミネラルが灰として残った。",
+        "tools": [],
+        "air": true,
+        "temp": 600
+      },
+      {
+        "id": "burn_leaves",
+        "op": "burn",
+        "at": [
+          "campfire"
+        ],
+        "inp": {
+          "leaves": 3
+        },
+        "out": {
+          "ash": 1,
+          "co2": 1
+        },
+        "why": "落ち葉も木と同じ炭素の仲間。燃えると二酸化炭素になって空気に出ていき、灰が残る。",
+        "tools": [],
+        "air": true,
+        "temp": 550
+      },
+      {
+        "id": "burn_grass",
+        "op": "burn",
+        "at": [
+          "campfire"
+        ],
+        "inp": {
+          "grass": 3
+        },
+        "out": {
+          "ash": 1,
+          "co2": 1
+        },
+        "why": "乾いた草は勢いよく燃えて、灰になった。",
+        "tools": [],
+        "air": true,
+        "temp": 550
+      },
+      {
+        "id": "burn_seaweed",
+        "op": "burn",
+        "at": [
+          "campfire"
+        ],
+        "inp": {
+          "seaweed": 2
+        },
+        "out": {
+          "seaash": 1,
+          "co2": 1
+        },
+        "why": "海藻は海のナトリウムをたくさん含んでいる。だから灰にもナトリウムが多く残る。",
+        "tools": [],
+        "air": true,
+        "temp": 600
+      },
+      {
+        "id": "burn_sulfur",
+        "op": "burn",
+        "at": [
+          "campfire"
+        ],
+        "inp": {
+          "sulfur": 1
+        },
+        "out": {
+          "so2": 1
+        },
+        "why": "硫黄は青い炎を上げて燃え、鼻をつくにおいの二酸化硫黄になった。現実では換気が必要な危ない実験だ。",
+        "tools": [],
+        "air": true,
+        "temp": 250
+      },
+      {
+        "id": "settle_river",
+        "op": "settle",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "river": 1
+        },
+        "out": {
+          "supernatant": 1,
+          "mud": 1
+        },
+        "why": "しばらく置くと、水より重い土の粒が下に沈んだ。上の水をそっと取り分けた。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "filter_super",
+        "op": "filter",
+        "at": [
+          "filter"
+        ],
+        "inp": {
+          "supernatant": 1
+        },
+        "out": {
+          "water": 1
+        },
+        "why": "布の目より大きい粒が引っかかって、澄んだ水が下にたれてきた。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "filter_spring",
+        "op": "filter",
+        "at": [
+          "filter"
+        ],
+        "inp": {
+          "spring": 1
+        },
+        "out": {
+          "water": 1
+        },
+        "why": "もともときれいな湧き水を、念のため布でこした。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "filter_rain",
+        "op": "filter",
+        "at": [
+          "filter"
+        ],
+        "inp": {
+          "rain": 1
+        },
+        "out": {
+          "water": 1
+        },
+        "why": "雨水に混ざった小さなゴミを布でこし取った。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "evap_sea",
+        "op": "evaporate",
+        "at": [
+          "campfire",
+          "kiln"
+        ],
+        "inp": {
+          "seawater": 2
+        },
+        "out": {
+          "crudesalt": 1,
+          "steam": 1
+        },
+        "why": "水だけが気体（水蒸気）になって飛んでいき、溶けていた塩が残った。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 100
+      },
+      {
+        "id": "distill_sea",
+        "op": "distill",
+        "at": [
+          "still"
+        ],
+        "inp": {
+          "seawater": 2
+        },
+        "out": {
+          "water": 1,
+          "crudesalt": 1
+        },
+        "why": "海水を温めると水だけが気体になる。それを冷やして集めると、塩のない水ができる。塩はなべに残る。",
+        "tools": [
+          "bottle"
+        ],
+        "air": false,
+        "temp": 100
+      },
+      {
+        "id": "grind_rocksalt",
+        "op": "grind",
+        "at": [
+          "mill"
+        ],
+        "inp": {
+          "rocksalt": 1
+        },
+        "out": {
+          "saltpowder": 1
+        },
+        "why": "硬い岩塩を石臼ですりつぶして粉にした。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "dissolve_crude",
+        "op": "dissolve",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "crudesalt": 1,
+          "water": 1
+        },
+        "out": {
+          "brine": 1
+        },
+        "why": "塩の粒が水の中でばらばらになって見えなくなった。これが「溶ける」ということ。でも砂やゴミは溶けない。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "dissolve_rock",
+        "op": "dissolve",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "saltpowder": 1,
+          "water": 1
+        },
+        "out": {
+          "brine": 1
+        },
+        "why": "岩塩の塩は水に溶けたが、混ざっていた石の粒は溶けずににごっている。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "filter_brine",
+        "op": "filter",
+        "at": [
+          "filter"
+        ],
+        "inp": {
+          "brine": 1
+        },
+        "out": {
+          "cleanbrine": 1
+        },
+        "why": "溶けていない粒は布に残り、溶けた塩は水と一緒に布を通り抜けた。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "crystal_salt",
+        "op": "crystallize",
+        "at": [
+          "campfire",
+          "kiln"
+        ],
+        "inp": {
+          "cleanbrine": 1
+        },
+        "out": {
+          "salt": 1,
+          "nigari": 1,
+          "steam": 1
+        },
+        "why": "水が減ると塩は粒（結晶）になって出てくる。でもにがりの成分は水に溶けやすいので液に残る。溶けやすさの違いで分けたのだ。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 70
+      },
+      {
+        "id": "leach_ash",
+        "op": "filter",
+        "at": [
+          "filter"
+        ],
+        "inp": {
+          "ash": 1,
+          "water": 1
+        },
+        "out": {
+          "lye": 1
+        },
+        "why": "灰の上から水を注ぐと、水に溶けるアルカリの成分だけが下にたれてきた。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "leach_seaash",
+        "op": "filter",
+        "at": [
+          "filter"
+        ],
+        "inp": {
+          "seaash": 1,
+          "water": 1
+        },
+        "out": {
+          "seajuice": 1
+        },
+        "why": "海藻の灰から、水に溶ける成分を溶かし出した。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "evap_lye",
+        "op": "evaporate",
+        "at": [
+          "campfire",
+          "kiln"
+        ],
+        "inp": {
+          "lye": 1
+        },
+        "out": {
+          "potash": 1,
+          "steam": 1
+        },
+        "why": "灰汁の水を飛ばすと、溶けていた炭酸カリウムが白い粉として残った。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 100
+      },
+      {
+        "id": "evap_seajuice",
+        "op": "evaporate",
+        "at": [
+          "campfire",
+          "kiln"
+        ],
+        "inp": {
+          "seajuice": 1
+        },
+        "out": {
+          "soda": 1,
+          "steam": 1
+        },
+        "why": "汁の水を飛ばすと、白いソーダ灰（炭酸ナトリウム）が残った。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 100
+      },
+      {
+        "id": "calcine_lime",
+        "op": "fire",
+        "at": [
+          "kiln",
+          "blastfurnace"
+        ],
+        "inp": {
+          "limestone": 1
+        },
+        "out": {
+          "quicklime": 1,
+          "co2": 1
+        },
+        "why": "石灰石（炭酸カルシウム）は900℃くらいで分解して、二酸化炭素が出ていく。残ったのが生石灰だ。",
+        "tools": [],
+        "air": false,
+        "temp": 900
+      },
+      {
+        "id": "calcine_shell",
+        "op": "fire",
+        "at": [
+          "kiln",
+          "blastfurnace"
+        ],
+        "inp": {
+          "shell": 2
+        },
+        "out": {
+          "quicklime": 1,
+          "co2": 1
+        },
+        "why": "貝殻も石灰石と同じ炭酸カルシウム。だから焼くと同じ生石灰になる。",
+        "tools": [],
+        "air": false,
+        "temp": 900
+      },
+      {
+        "id": "slake",
+        "op": "mix",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "quicklime": 1,
+          "water": 1
+        },
+        "out": {
+          "slaked": 1,
+          "steam": 1
+        },
+        "why": "生石灰に水をかけると、じゅわっと熱くなって湯気が出た。水と結びついて消石灰に変わった（発熱反応）。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "plaster",
+        "op": "mix",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "slaked": 1,
+          "sand": 1,
+          "water": 1
+        },
+        "out": {
+          "plaster": 1
+        },
+        "why": "消石灰と砂と水をよく混ぜた。空気に触れると、ゆっくり石のように固まっていく。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "causticize",
+        "op": "mix",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "slaked": 1,
+          "lye": 1
+        },
+        "out": {
+          "stronglye": 1,
+          "caco3": 1
+        },
+        "why": "灰汁の炭酸の部分がカルシウムとくっついて、白い粒になって沈んだ（沈殿）。残った液はとても強いアルカリになった。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "crush_seed",
+        "op": "crush",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "seed": 2
+        },
+        "out": {
+          "crushedseed": 1
+        },
+        "why": "ハンマーで実の殻と中身をつぶした。",
+        "tools": [
+          "hammer"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "press_oil",
+        "op": "heat",
+        "at": [
+          "campfire",
+          "kiln"
+        ],
+        "inp": {
+          "crushedseed": 1,
+          "water": 1
+        },
+        "out": {
+          "oil": 1
+        },
+        "why": "温めると実から油がしみ出した。油は水より軽いので上に浮く。それをすくい取った。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 90
+      },
+      {
+        "id": "soap_strong",
+        "op": "heat",
+        "at": [
+          "campfire",
+          "kiln"
+        ],
+        "inp": {
+          "oil": 1,
+          "stronglye": 1
+        },
+        "out": {
+          "soap": 1,
+          "glycerinwater": 1
+        },
+        "why": "油が強いアルカリで分かれて、石けんとグリセリンになった（けん化）。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 80
+      },
+      {
+        "id": "soap_lye",
+        "op": "heat",
+        "at": [
+          "campfire",
+          "kiln"
+        ],
+        "inp": {
+          "oil": 1,
+          "lye": 2
+        },
+        "out": {
+          "soap": 1,
+          "glycerinwater": 1
+        },
+        "why": "ふつうの灰汁でも、時間をかけて温めればやわらかい石けんができる。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 80
+      },
+      {
+        "id": "soap_naoh",
+        "op": "heat",
+        "at": [
+          "campfire",
+          "kiln"
+        ],
+        "inp": {
+          "oil": 1,
+          "naoh": 1
+        },
+        "out": {
+          "soap": 1,
+          "glycerinwater": 1
+        },
+        "why": "工業で作った水酸化ナトリウムを使うと、硬くて質のよい石けんがすぐにできる。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 80
+      },
+      {
+        "id": "char_log",
+        "op": "char",
+        "at": [
+          "charkiln"
+        ],
+        "inp": {
+          "log": 2
+        },
+        "out": {
+          "charcoal": 1,
+          "woodvinegar": 1
+        },
+        "why": "空気が少ないので木は燃えきらない。水やガスが抜けて、炭素の多い木炭が残った。煙を冷やすと木酢液も取れた。",
+        "tools": [],
+        "air": false,
+        "temp": 450
+      },
+      {
+        "id": "char_coal",
+        "op": "char",
+        "at": [
+          "charkiln"
+        ],
+        "inp": {
+          "coal": 2
+        },
+        "out": {
+          "coke": 1,
+          "coaltar": 1
+        },
+        "why": "石炭を蒸し焼きにすると、ねばねばのコールタールが出ていき、硬いコークスが残った。",
+        "tools": [],
+        "air": false,
+        "temp": 1000
+      },
+      {
+        "id": "shape_pot",
+        "op": "shape",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "clay": 2
+        },
+        "out": {
+          "greenware": 1
+        },
+        "why": "粘土をこねて、器の形にした。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "dry_pot",
+        "op": "dry",
+        "at": [
+          "rack",
+          "campfire"
+        ],
+        "inp": {
+          "greenware": 1
+        },
+        "out": {
+          "driedware": 1
+        },
+        "why": "器の中の水分をゆっくり飛ばした。これで焼いても割れにくい。",
+        "tools": [],
+        "air": false,
+        "temp": 40
+      },
+      {
+        "id": "fire_pot",
+        "op": "fire",
+        "at": [
+          "campfire",
+          "kiln"
+        ],
+        "inp": {
+          "driedware": 1
+        },
+        "out": {
+          "pot": 1
+        },
+        "why": "粘土は600℃より熱くすると化学変化して、水に戻らない硬い土器になる。",
+        "tools": [],
+        "air": false,
+        "temp": 700
+      },
+      {
+        "id": "shape_brick",
+        "op": "shape",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "clay": 2,
+          "grass": 1
+        },
+        "out": {
+          "greenbrick": 1
+        },
+        "why": "粘土に草を混ぜて、四角い形にした。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "dry_brick",
+        "op": "dry",
+        "at": [
+          "rack"
+        ],
+        "inp": {
+          "greenbrick": 1
+        },
+        "out": {
+          "sunbrick": 1
+        },
+        "why": "風と日光でじっくり乾かした。",
+        "tools": [],
+        "air": false,
+        "temp": 35
+      },
+      {
+        "id": "fire_brick",
+        "op": "fire",
+        "at": [
+          "kiln"
+        ],
+        "inp": {
+          "sunbrick": 1
+        },
+        "out": {
+          "brick": 1
+        },
+        "why": "高い温度で焼くと、粘土の粒どうしがくっついて、水にも熱にも強いレンガになった。混ぜた草は燃えてなくなった。",
+        "tools": [],
+        "air": true,
+        "temp": 950
+      },
+      {
+        "id": "shape_crucible",
+        "op": "shape",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "clay": 1,
+          "quartzpowder": 1
+        },
+        "out": {
+          "greencrucible": 1
+        },
+        "why": "石英の粉を混ぜた粘土で、小さな器を作った。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "fire_crucible",
+        "op": "fire",
+        "at": [
+          "kiln"
+        ],
+        "inp": {
+          "greencrucible": 1
+        },
+        "out": {
+          "crucible": 1
+        },
+        "why": "とても高い温度でも形が崩れない、熱に強い器ができた。",
+        "tools": [],
+        "air": false,
+        "temp": 1000
+      },
+      {
+        "id": "grind_quartz",
+        "op": "grind",
+        "at": [
+          "mill"
+        ],
+        "inp": {
+          "quartz": 1
+        },
+        "out": {
+          "quartzpowder": 1
+        },
+        "why": "硬い石英を石臼ですりつぶして粉にした。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "grind_crystal",
+        "op": "grind",
+        "at": [
+          "mill"
+        ],
+        "inp": {
+          "crystal": 1
+        },
+        "out": {
+          "quartzpowder": 2
+        },
+        "why": "水晶も石英と同じ二酸化ケイ素。粉にすると、とても純粋な石英の粉になった。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "wash_sand",
+        "op": "wash",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "sand": 2,
+          "water": 1
+        },
+        "out": {
+          "cleansand": 1,
+          "mud": 1
+        },
+        "why": "水を注いでかき混ぜると、軽い泥は水と流れ、重い砂の粒が残った。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "grind_ochre",
+        "op": "grind",
+        "at": [
+          "mill"
+        ],
+        "inp": {
+          "ochre": 1
+        },
+        "out": {
+          "redpigment": 1
+        },
+        "why": "赤土を細かくすりつぶすと、あざやかな赤い粉になった。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "grind_charcoal",
+        "op": "grind",
+        "at": [
+          "mill"
+        ],
+        "inp": {
+          "charcoal": 1
+        },
+        "out": {
+          "blackpigment": 1
+        },
+        "why": "木炭をすりつぶして、真っ黒な粉にした。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "paint",
+        "op": "mix",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "redpigment": 1,
+          "oil": 1
+        },
+        "out": {
+          "redpaint": 1
+        },
+        "why": "赤い粉を油で練って、絵の具にした。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "crush_mal",
+        "op": "crush",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "malachite": 1
+        },
+        "out": {
+          "oremalachite": 1
+        },
+        "why": "孔雀石をたたいて粉にした。",
+        "tools": [
+          "hammer"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "crush_hem",
+        "op": "crush",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "hematite": 1
+        },
+        "out": {
+          "orehematite": 1
+        },
+        "why": "赤鉄鉱をたたいて粉にした。",
+        "tools": [
+          "hammer"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "crush_cass",
+        "op": "crush",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "cassiterite": 1
+        },
+        "out": {
+          "orecass": 1
+        },
+        "why": "錫石をたたいて粉にした。",
+        "tools": [
+          "hammer"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "crush_zn",
+        "op": "crush",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "sphalerite": 1
+        },
+        "out": {
+          "orezinc": 1
+        },
+        "why": "閃亜鉛鉱をたたいて粉にした。",
+        "tools": [
+          "hammer"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "smelt_cu",
+        "op": "smelt",
+        "at": [
+          "furnace",
+          "blastfurnace"
+        ],
+        "inp": {
+          "oremalachite": 1,
+          "charcoal": 1
+        },
+        "out": {
+          "copper": 1,
+          "co2": 1
+        },
+        "why": "熱い木炭が孔雀石の中の酸素を奪い取った。残ったのは金属の銅。これを「還元」という。",
+        "tools": [],
+        "air": true,
+        "temp": 1100
+      },
+      {
+        "id": "smelt_fe",
+        "op": "smelt",
+        "at": [
+          "furnace"
+        ],
+        "inp": {
+          "orehematite": 2,
+          "charcoal": 2
+        },
+        "out": {
+          "iron": 1,
+          "slag": 1,
+          "co2": 1
+        },
+        "why": "鉄は酸素と離れにくいので、銅より高い温度が必要。木炭が酸素を奪って鉄が取り出せた。邪魔な成分は鉱さいになった。",
+        "tools": [],
+        "air": true,
+        "temp": 1200
+      },
+      {
+        "id": "smelt_fe_coke",
+        "op": "smelt",
+        "at": [
+          "furnace"
+        ],
+        "inp": {
+          "orehematite": 2,
+          "coke": 1
+        },
+        "out": {
+          "iron": 1,
+          "slag": 1,
+          "co2": 1
+        },
+        "why": "コークスは木炭より高い温度で燃える。少ない量で鉄が取り出せた。",
+        "tools": [],
+        "air": true,
+        "temp": 1250
+      },
+      {
+        "id": "smelt_sn",
+        "op": "smelt",
+        "at": [
+          "furnace",
+          "blastfurnace"
+        ],
+        "inp": {
+          "orecass": 1,
+          "charcoal": 1
+        },
+        "out": {
+          "tin": 1,
+          "co2": 1
+        },
+        "why": "木炭が錫石の酸素を奪って、銀色のスズが溶け出した。",
+        "tools": [],
+        "air": true,
+        "temp": 900
+      },
+      {
+        "id": "roast_zn",
+        "op": "fire",
+        "at": [
+          "kiln"
+        ],
+        "inp": {
+          "orezinc": 1
+        },
+        "out": {
+          "zno": 1,
+          "so2": 1
+        },
+        "why": "焼くと、硫黄は空気中の酸素と結びついて二酸化硫黄になって抜け、亜鉛は酸素と結びついて白い粉になった（焙焼）。",
+        "tools": [],
+        "air": true,
+        "temp": 900
+      },
+      {
+        "id": "smelt_zn",
+        "op": "smelt",
+        "at": [
+          "furnace",
+          "blastfurnace"
+        ],
+        "inp": {
+          "zno": 1,
+          "charcoal": 1
+        },
+        "out": {
+          "zinc": 1,
+          "co2": 1
+        },
+        "why": "亜鉛は沸点が907℃と低いので、取り出すといったん気体になる。それを冷やして集めると金属の亜鉛になる。",
+        "tools": [
+          "crucible"
+        ],
+        "air": true,
+        "temp": 1100
+      },
+      {
+        "id": "alloy_bronze",
+        "op": "melt",
+        "at": [
+          "furnace"
+        ],
+        "inp": {
+          "copper": 2,
+          "tin": 1
+        },
+        "out": {
+          "bronze": 3
+        },
+        "why": "溶けた銅とスズを混ぜて冷やすと、どちらよりも硬い合金になった。",
+        "tools": [
+          "crucible"
+        ],
+        "air": false,
+        "temp": 1000
+      },
+      {
+        "id": "glass_soda",
+        "op": "melt",
+        "at": [
+          "furnace",
+          "blastfurnace"
+        ],
+        "inp": {
+          "quartzpowder": 2,
+          "soda": 1,
+          "quicklime": 1
+        },
+        "out": {
+          "moltenglass": 1,
+          "co2": 1
+        },
+        "why": "ソーダ灰が石英を溶けやすくして、ふつうよりずっと低い温度でどろどろになった。",
+        "tools": [
+          "crucible"
+        ],
+        "air": false,
+        "temp": 1100
+      },
+      {
+        "id": "glass_potash",
+        "op": "melt",
+        "at": [
+          "furnace"
+        ],
+        "inp": {
+          "cleansand": 2,
+          "potash": 1,
+          "quicklime": 1
+        },
+        "out": {
+          "moltenglass": 1,
+          "co2": 1
+        },
+        "why": "炭酸カリウムでも同じように砂を溶かせる。森の灰から作るガラスの作り方だ。",
+        "tools": [
+          "crucible"
+        ],
+        "air": false,
+        "temp": 1150
+      },
+      {
+        "id": "cool_glass",
+        "op": "cool",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "moltenglass": 1
+        },
+        "out": {
+          "glass": 1
+        },
+        "why": "溶けたガラスは、粒がきちんと並ぶひまがないまま固まる。だから透き通っている。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "shape_copper",
+        "op": "shape",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "copper": 1
+        },
+        "out": {
+          "copperplate": 1
+        },
+        "why": "銅はたたくと薄く広がる。板に延ばした。",
+        "tools": [
+          "hammer"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "draw_wire",
+        "op": "shape",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "copperplate": 1
+        },
+        "out": {
+          "wire": 2
+        },
+        "why": "銅板を細く切り、鉄の棒に開けた小さな穴に通して引っぱると、細い線になった。",
+        "tools": [
+          "hammer",
+          "ironrod"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "forge_iron",
+        "op": "shape",
+        "at": [
+          "kiln"
+        ],
+        "inp": {
+          "iron": 1
+        },
+        "out": {
+          "ironrod": 1
+        },
+        "why": "鉄を赤くなるまで熱するとやわらかくなる。たたくとすき間のかすが出ていって、丈夫な棒になった。",
+        "tools": [
+          "hammer"
+        ],
+        "air": false,
+        "temp": 900
+      },
+      {
+        "id": "forge_meteor",
+        "op": "shape",
+        "at": [
+          "kiln"
+        ],
+        "inp": {
+          "meteorite": 1
+        },
+        "out": {
+          "ironrod": 1
+        },
+        "why": "宇宙から来た鉄も、熱してたたけば棒になる。古代の人もこうして隕石の鉄で道具を作った。",
+        "tools": [
+          "hammer"
+        ],
+        "air": false,
+        "temp": 900
+      },
+      {
+        "id": "rust_iron",
+        "op": "mix",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "iron": 1,
+          "water": 1
+        },
+        "out": {
+          "rust": 1
+        },
+        "why": "鉄が水と空気中の酸素に触れて、茶色いさびになった。せっかく取り出した鉄が、元の石に戻ろうとしている。",
+        "tools": [],
+        "air": true,
+        "temp": 25
+      },
+      {
+        "id": "crush_grape",
+        "op": "crush",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "grape": 3
+        },
+        "out": {
+          "crushedgrape": 1
+        },
+        "why": "ブドウをつぶして、甘い汁を出した。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "ferment_wine",
+        "op": "ferment",
+        "at": [
+          "fermenter"
+        ],
+        "inp": {
+          "crushedgrape": 1
+        },
+        "out": {
+          "wine": 1,
+          "co2": 1
+        },
+        "why": "酵母がブドウの甘さ（糖）を食べて、アルコールと二酸化炭素に変えた。ぷくぷく出てくる泡が二酸化炭素だ。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "ferment_vinegar",
+        "op": "ferment",
+        "at": [
+          "fermenter"
+        ],
+        "inp": {
+          "wine": 1
+        },
+        "out": {
+          "vinegar": 1
+        },
+        "why": "空気に触れさせると、酢酸菌がアルコールを酸素と結びつけて、酸っぱい酢に変えた。",
+        "tools": [],
+        "air": true,
+        "temp": 30
+      },
+      {
+        "id": "distill_wine",
+        "op": "distill",
+        "at": [
+          "still"
+        ],
+        "inp": {
+          "wine": 2
+        },
+        "out": {
+          "ethanol": 1
+        },
+        "why": "アルコールは水より低い温度（78℃）で気体になる。先に出てきた気体を冷やして集めた。",
+        "tools": [
+          "bottle"
+        ],
+        "air": false,
+        "temp": 80
+      },
+      {
+        "id": "distill_resin",
+        "op": "distill",
+        "at": [
+          "still"
+        ],
+        "inp": {
+          "resin": 2
+        },
+        "out": {
+          "turpentine": 1,
+          "rosin": 1
+        },
+        "why": "松やにを温めると、いいにおいの油だけが気体になって分かれた。残ったかたまりがロジン。",
+        "tools": [
+          "bottle"
+        ],
+        "air": false,
+        "temp": 160
+      },
+      {
+        "id": "pulp_grass",
+        "op": "heat",
+        "at": [
+          "campfire",
+          "kiln"
+        ],
+        "inp": {
+          "grass": 3,
+          "lye": 1
+        },
+        "out": {
+          "pulp": 1
+        },
+        "why": "灰汁で煮ると、草の繊維をくっつけている成分がゆるんで、ばらばらにほぐれた。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 100
+      },
+      {
+        "id": "pulp_vine",
+        "op": "heat",
+        "at": [
+          "campfire",
+          "kiln"
+        ],
+        "inp": {
+          "vine": 2,
+          "lye": 1
+        },
+        "out": {
+          "pulp": 1
+        },
+        "why": "つるの繊維も灰汁で煮るとほぐれる。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 100
+      },
+      {
+        "id": "make_paper",
+        "op": "dry",
+        "at": [
+          "rack"
+        ],
+        "inp": {
+          "pulp": 1
+        },
+        "out": {
+          "paper": 1
+        },
+        "why": "繊維が絡み合ったまま乾いて、薄いシートになった。",
+        "tools": [],
+        "air": false,
+        "temp": 35
+      },
+      {
+        "id": "elec_brine",
+        "op": "electrolyze",
+        "at": [
+          "electrolyzer",
+          "eaf"
+        ],
+        "inp": {
+          "cleanbrine": 2
+        },
+        "out": {
+          "naoh": 1,
+          "chlorine": 1,
+          "hydrogen": 1
+        },
+        "why": "電気を流すと、＋極から塩素、－極から水素の泡が出て、液には水酸化ナトリウムが残った。塩から化学工業の基本薬品が生まれる（食塩電解）。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "elec_water",
+        "op": "electrolyze",
+        "at": [
+          "electrolyzer"
+        ],
+        "inp": {
+          "water": 2,
+          "soda": 1
+        },
+        "out": {
+          "hydrogen": 1,
+          "oxygen": 1,
+          "soda": 1
+        },
+        "why": "純粋な水は電気を通しにくいので、ソーダ灰を少し溶かした。電気で水が分解され、－極から水素、＋極から酸素が出てきた。ソーダ灰は変化せずに残る。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "pig_iron",
+        "op": "smelt",
+        "at": [
+          "blastfurnace"
+        ],
+        "inp": {
+          "orehematite": 2,
+          "coke": 1,
+          "limestone": 1
+        },
+        "out": {
+          "pigiron": 2,
+          "slag": 1,
+          "co2": 1
+        },
+        "why": "高炉の中は1500℃以上。鉄は溶けて下にたまり、石灰石が邪魔な成分と結びついて鉱さいになって浮いた。大量の鉄が一度に取れた。",
+        "tools": [],
+        "air": true,
+        "temp": 1500
+      },
+      {
+        "id": "make_steel",
+        "op": "melt",
+        "at": [
+          "blastfurnace"
+        ],
+        "inp": {
+          "pigiron": 2
+        },
+        "out": {
+          "steel": 1,
+          "co2": 1
+        },
+        "why": "溶けた銑鉄に空気を吹きこむと、余分な炭素が燃えて二酸化炭素になって抜け、強くしなやかな鋼になった（転炉法のしくみ）。",
+        "tools": [],
+        "air": true,
+        "temp": 1550
+      },
+      {
+        "id": "make_cement",
+        "op": "fire",
+        "at": [
+          "blastfurnace"
+        ],
+        "inp": {
+          "limestone": 2,
+          "clay": 1
+        },
+        "out": {
+          "cement": 1,
+          "co2": 1
+        },
+        "why": "石灰石と粘土を1450℃で焼くと、新しい鉱物ができた。これを粉にしたものがセメントだ。",
+        "tools": [],
+        "air": false,
+        "temp": 1450
+      },
+      {
+        "id": "make_concrete",
+        "op": "mix",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "cement": 1,
+          "sand": 2,
+          "cobble": 2,
+          "water": 1
+        },
+        "out": {
+          "concrete": 2
+        },
+        "why": "セメントが水と反応して結晶を作り、砂と砂利をがっちりつなぎとめた。現代の町はこの石でできている。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "fractionate",
+        "op": "distill",
+        "at": [
+          "refinery"
+        ],
+        "inp": {
+          "crude": 2
+        },
+        "out": {
+          "gasoline": 1,
+          "kerosene": 1,
+          "naphtha": 1,
+          "heavyoil": 1
+        },
+        "why": "原油を熱すると、軽い成分ほど塔の上の方で液体に戻る。沸点の違いで4つの成分に分けられた。",
+        "tools": [],
+        "air": false,
+        "temp": 350
+      },
+      {
+        "id": "crack_naphtha",
+        "op": "crack",
+        "at": [
+          "reactor"
+        ],
+        "inp": {
+          "naphtha": 1
+        },
+        "out": {
+          "ethylene": 1,
+          "hydrogen": 1
+        },
+        "why": "ナフサの長い分子を800℃以上で一瞬だけ熱すると、小さく切れてエチレンができた。",
+        "tools": [
+          "cylinder"
+        ],
+        "air": false,
+        "temp": 850
+      },
+      {
+        "id": "polymerize_pe",
+        "op": "polymerize",
+        "at": [
+          "reactor"
+        ],
+        "inp": {
+          "ethylene": 3
+        },
+        "out": {
+          "pe": 1
+        },
+        "why": "触媒の働きで、エチレンの小さな分子が何万個も手をつないで長い鎖になった。これがプラスチックだ。",
+        "tools": [],
+        "air": false,
+        "temp": 100
+      },
+      {
+        "id": "mold_pe",
+        "op": "shape",
+        "at": [
+          "reactor"
+        ],
+        "inp": {
+          "pe": 1
+        },
+        "out": {
+          "plasticbox": 1
+        },
+        "why": "ポリエチレンは温めるとやわらかくなる。型に流して冷やすと、容器の形に固まった。",
+        "tools": [],
+        "air": false,
+        "temp": 150
+      },
+      {
+        "id": "grind_bauxite",
+        "op": "grind",
+        "at": [
+          "mill"
+        ],
+        "inp": {
+          "bauxite": 1
+        },
+        "out": {
+          "orebauxite": 1
+        },
+        "why": "ボーキサイトをすりつぶして粉にした。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "bayer",
+        "op": "heat",
+        "at": [
+          "kiln"
+        ],
+        "inp": {
+          "orebauxite": 2,
+          "naoh": 1
+        },
+        "out": {
+          "aluminate": 1,
+          "redmud": 1
+        },
+        "why": "強いアルカリにはアルミニウムの成分だけが溶け、鉄の成分は赤い泥として残った（バイヤー法）。",
+        "tools": [
+          "pot"
+        ],
+        "air": false,
+        "temp": 150
+      },
+      {
+        "id": "precip_aloh",
+        "op": "cool",
+        "at": [
+          "bench"
+        ],
+        "inp": {
+          "aluminate": 1
+        },
+        "out": {
+          "aloh": 1,
+          "naoh": 1
+        },
+        "why": "液を冷やすと、溶けきれなくなった水酸化アルミニウムが白い粉になって出てきた。水酸化ナトリウムはまた使える。",
+        "tools": [],
+        "air": false,
+        "temp": 25
+      },
+      {
+        "id": "calcine_alumina",
+        "op": "fire",
+        "at": [
+          "blastfurnace",
+          "eaf"
+        ],
+        "inp": {
+          "aloh": 2
+        },
+        "out": {
+          "alumina": 1,
+          "steam": 1
+        },
+        "why": "水酸化アルミニウムを1000℃以上で焼くと、水が抜けてアルミナになった。",
+        "tools": [],
+        "air": false,
+        "temp": 1100
+      },
+      {
+        "id": "hall_heroult",
+        "op": "electrolyze",
+        "at": [
+          "eaf"
+        ],
+        "inp": {
+          "alumina": 1,
+          "coke": 1
+        },
+        "out": {
+          "aluminum": 1,
+          "co2": 1
+        },
+        "why": "アルミニウムは酸素と強く結びついているので、炭素だけでは取り出せない。溶かしたアルミナに大量の電気を流して、ようやく金属が取り出せた（ホール・エルー法）。",
+        "tools": [],
+        "air": false,
+        "temp": 960
+      },
+      {
+        "id": "smelt_si",
+        "op": "smelt",
+        "at": [
+          "eaf"
+        ],
+        "inp": {
+          "quartzpowder": 2,
+          "coke": 2
+        },
+        "out": {
+          "silicon": 1,
+          "co2": 1
+        },
+        "why": "約1900℃の電気炉の中で、コークスが石英の酸素を奪い、ケイ素が取り出せた。",
+        "tools": [],
+        "air": false,
+        "temp": 1900
+      },
+      {
+        "id": "refine_si",
+        "op": "melt",
+        "at": [
+          "eaf"
+        ],
+        "inp": {
+          "silicon": 2
+        },
+        "out": {
+          "pure_si": 1
+        },
+        "why": "ケイ素を少しずつ溶かしては固めると、不純物は溶けた部分に集まって端に追い出される。これを繰り返して、ほぼ純粋なケイ素にした。",
+        "tools": [],
+        "air": false,
+        "temp": 1420
+      }
+    ]
+  },
+  "natural": [
+    {
+      "id": "forest",
+      "name": "森林",
+      "resources": [
+        {
+          "id": "twig",
+          "n": 2,
+          "p": [
+            14,
+            72
+          ]
+        },
+        {
+          "id": "leaves",
+          "n": 2,
+          "p": [
+            34,
+            82
+          ]
+        },
+        {
+          "id": "vine",
+          "n": 1,
+          "p": [
+            56,
+            50
+          ]
+        },
+        {
+          "id": "seed",
+          "n": 1,
+          "p": [
+            78,
+            62
+          ]
+        },
+        {
+          "id": "resin",
+          "n": 1,
+          "need": [
+            "knife"
+          ],
+          "p": [
+            24,
+            46
+          ]
+        },
+        {
+          "id": "log",
+          "n": 1,
+          "need": [
+            "axe",
+            "ironaxe"
+          ],
+          "bonus": "ironaxe",
+          "p": [
+            46,
+            66
+          ]
+        },
+        {
+          "id": "wax",
+          "n": 1,
+          "need": [
+            "torch"
+          ],
+          "p": [
+            86,
+            38
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grassland",
+      "name": "草原",
+      "resources": [
+        {
+          "id": "grass",
+          "n": 2,
+          "p": [
+            18,
+            74
+          ]
+        },
+        {
+          "id": "grape",
+          "n": 2,
+          "p": [
+            44,
+            60
+          ]
+        },
+        {
+          "id": "ochre",
+          "n": 1,
+          "p": [
+            76,
+            70
+          ]
+        },
+        {
+          "id": "rain",
+          "n": 1,
+          "need": [
+            "pot"
+          ],
+          "p": [
+            60,
+            36
+          ]
+        }
+      ]
+    },
+    {
+      "id": "river",
+      "name": "河原",
+      "resources": [
+        {
+          "id": "cobble",
+          "n": 2,
+          "p": [
+            14,
+            80
+          ]
+        },
+        {
+          "id": "flint",
+          "n": 1,
+          "p": [
+            32,
+            70
+          ]
+        },
+        {
+          "id": "clay",
+          "n": 2,
+          "p": [
+            52,
+            82
+          ]
+        },
+        {
+          "id": "sand",
+          "n": 2,
+          "p": [
+            72,
+            78
+          ]
+        },
+        {
+          "id": "river",
+          "n": 1,
+          "need": [
+            "pot"
+          ],
+          "p": [
+            50,
+            52
+          ]
+        },
+        {
+          "id": "bark",
+          "n": 1,
+          "need": [
+            "knife"
+          ],
+          "p": [
+            86,
+            46
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coast",
+      "name": "海岸",
+      "resources": [
+        {
+          "id": "shell",
+          "n": 2,
+          "p": [
+            22,
+            78
+          ]
+        },
+        {
+          "id": "seaweed",
+          "n": 2,
+          "p": [
+            56,
+            62
+          ]
+        },
+        {
+          "id": "sand",
+          "n": 2,
+          "p": [
+            40,
+            86
+          ]
+        },
+        {
+          "id": "seawater",
+          "n": 1,
+          "need": [
+            "pot"
+          ],
+          "p": [
+            76,
+            50
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mountain",
+      "name": "山岳",
+      "resources": [
+        {
+          "id": "basalt",
+          "n": 1,
+          "p": [
+            16,
+            78
+          ]
+        },
+        {
+          "id": "limestone",
+          "n": 1,
+          "need": [
+            "hammer"
+          ],
+          "bonus": "ironpick",
+          "p": [
+            36,
+            64
+          ]
+        },
+        {
+          "id": "granite",
+          "n": 1,
+          "need": [
+            "hammer"
+          ],
+          "bonus": "ironpick",
+          "p": [
+            58,
+            74
+          ]
+        },
+        {
+          "id": "quartz",
+          "n": 1,
+          "need": [
+            "hammer"
+          ],
+          "bonus": "ironpick",
+          "p": [
+            76,
+            52
+          ]
+        },
+        {
+          "id": "spring",
+          "n": 1,
+          "need": [
+            "pot"
+          ],
+          "p": [
+            44,
+            40
+          ]
+        },
+        {
+          "id": "limestone",
+          "key": "limestone-loose",
+          "loose": true,
+          "n": 1,
+          "p": [
+            26,
+            51
+          ]
+        },
+        {
+          "id": "granite",
+          "key": "granite-loose",
+          "loose": true,
+          "n": 1,
+          "p": [
+            46,
+            86
+          ]
+        },
+        {
+          "id": "quartz",
+          "key": "quartz-loose",
+          "loose": true,
+          "n": 1,
+          "p": [
+            88,
+            66
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cave",
+      "name": "洞窟",
+      "resources": [
+        {
+          "id": "coal",
+          "n": 1,
+          "need": [
+            "hammer"
+          ],
+          "bonus": "ironpick",
+          "p": [
+            28,
+            70
+          ]
+        },
+        {
+          "id": "rocksalt",
+          "n": 1,
+          "need": [
+            "hammer"
+          ],
+          "bonus": "ironpick",
+          "p": [
+            66,
+            64
+          ]
+        },
+        {
+          "id": "coal",
+          "key": "coal-loose",
+          "loose": true,
+          "n": 1,
+          "p": [
+            44,
+            84
+          ]
+        },
+        {
+          "id": "rocksalt",
+          "key": "rocksalt-loose",
+          "loose": true,
+          "n": 1,
+          "p": [
+            84,
+            78
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mine",
+      "name": "鉱山地帯",
+      "resources": [
+        {
+          "id": "hematite",
+          "n": 1,
+          "bonus": "ironpick",
+          "p": [
+            16,
+            72
+          ]
+        },
+        {
+          "id": "malachite",
+          "n": 1,
+          "bonus": "ironpick",
+          "p": [
+            36,
+            58
+          ]
+        },
+        {
+          "id": "cassiterite",
+          "n": 1,
+          "bonus": "ironpick",
+          "p": [
+            56,
+            74
+          ]
+        },
+        {
+          "id": "sphalerite",
+          "n": 1,
+          "need": [
+            "ironpick"
+          ],
+          "p": [
+            74,
+            56
+          ]
+        },
+        {
+          "id": "bauxite",
+          "n": 1,
+          "need": [
+            "ironpick"
+          ],
+          "p": [
+            88,
+            76
+          ]
+        },
+        {
+          "id": "sphalerite",
+          "key": "sphalerite-loose",
+          "loose": true,
+          "n": 1,
+          "p": [
+            64,
+            40
+          ]
+        },
+        {
+          "id": "bauxite",
+          "key": "bauxite-loose",
+          "loose": true,
+          "n": 1,
+          "p": [
+            96,
+            60
+          ]
+        }
+      ]
+    },
+    {
+      "id": "volcano",
+      "name": "火山地帯",
+      "resources": [
+        {
+          "id": "basalt",
+          "key": "basalt-foot",
+          "n": 1,
+          "at": {
+            "x": -83.9,
+            "z": -89.3
+          },
+          "p": [
+            78,
+            80
+          ],
+          "zone": "麓"
+        },
+        {
+          "id": "obsidian",
+          "n": 1,
+          "at": {
+            "x": -167.5,
+            "z": -99.6
+          },
+          "p": [
+            14,
+            78
+          ],
+          "zone": "麓（古い溶岩の流れ）"
+        },
+        {
+          "id": "obsidian",
+          "key": "obsidian-flow",
+          "n": 1,
+          "at": {
+            "x": -116.9,
+            "z": -165.9
+          },
+          "p": [
+            30,
+            86
+          ],
+          "zone": "麓（古い溶岩の流れ）"
+        },
+        {
+          "id": "obsidian",
+          "key": "obsidian-trail",
+          "n": 1,
+          "at": {
+            "x": -106.6,
+            "z": -84.3
+          },
+          "p": [
+            62,
+            68
+          ],
+          "zone": "登山道のわき"
+        },
+        {
+          "id": "basalt",
+          "key": "basalt-ledge",
+          "n": 1,
+          "at": {
+            "x": -125.11,
+            "z": -81.45
+          },
+          "p": [
+            46,
+            58
+          ],
+          "zone": "山腹の岩棚"
+        },
+        {
+          "id": "obsidian",
+          "key": "obsidian-ledge",
+          "n": 1,
+          "at": {
+            "x": -102.67,
+            "z": -111.29
+          },
+          "p": [
+            70,
+            46
+          ],
+          "zone": "上の岩棚"
+        },
+        {
+          "id": "hematite",
+          "key": "hematite-volcano",
+          "n": 1,
+          "at": {
+            "x": -131.35,
+            "z": -97.79
+          },
+          "p": [
+            36,
+            40
+          ],
+          "zone": "上の岩棚（熱水で赤く変わった岩）"
+        },
+        {
+          "id": "sulfur",
+          "n": 1,
+          "solid": false,
+          "at": {
+            "x": -115.3,
+            "z": -121.7
+          },
+          "p": [
+            56,
+            26
+          ],
+          "zone": "火口縁"
+        },
+        {
+          "id": "sulfur",
+          "key": "sulfur-rim",
+          "n": 1,
+          "solid": false,
+          "at": {
+            "x": -119.5,
+            "z": -107.9
+          },
+          "p": [
+            24,
+            24
+          ],
+          "zone": "火口縁"
+        }
+      ]
+    },
+    {
+      "id": "oilfield",
+      "name": "油田",
+      "resources": [
+        {
+          "id": "crude",
+          "n": 1,
+          "need": [
+            "pot"
+          ],
+          "bonus": "rig",
+          "p": [
+            50,
+            66
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -89,14 +89,14 @@ function afterChange(news){
 /* 探索フィールドがホーム。ほかの画面は下部タブから「パネル」として上に重ねて開く。
    U.tab==="explore" はパネルが閉じている状態を表す。フィールドのDOMと3D描画は保ったまま。 */
 const TABS = {explore:"探索", lab:"研究室", craft:"工作", book:"図鑑", map:"技術マップ", log:"記録",
-  world:"地図・地域", menu:"メニュー", settings:"設定・ヘルプ", verify:"検証モード", build:"建築"};
+  world:"地図・地域", menu:"メニュー", settings:"設定・ヘルプ", verify:"検証モード", build:"建築", space:"宇宙へ"};
 /* パネルの見出しのアイコン（Muse の UI アイコン。ないものは絵文字。必ず文字と組み合わせる。2026-11-11） */
 const TAB_ICON = {lab:"lab", craft:"craft", book:"book", map:"tech", log:"log", world:"map", menu:"menu", settings:"settings", build:"home"};
 /* パネルの大きさ。PC：右側のパネル（side）か大きなオーバーレイ（wide）。スマホ：下からのシート（sheet）か全高近く（tall） */
 /* 2026-11-11：PC の研究室は、探索のマップを左に見せたまま右側の広いパネル（side-l）で、材料・操作と実験台を並べる。図鑑・技術は大きなオーバーレイ */
-const PC_SIZE = {book:"wide", map:"wide", lab:"side-l"};
-const TOUCH_SIZE = {lab:"tall", craft:"tall", book:"tall", map:"tall", log:"tall", verify:"tall", build:"tall"};
-const MENU_TABS = ["menu","book","map","log","settings","verify","build"];   /* スマホでは「メニュー」の中にある画面 */
+const PC_SIZE = {space:"wide",book:"wide", map:"wide", lab:"side-l"};
+const TOUCH_SIZE = {space:"tall",lab:"tall", craft:"tall", book:"tall", map:"tall", log:"tall", verify:"tall", build:"tall"};
+const MENU_TABS = ["space","menu","book","map","log","settings","verify","build"];   /* スマホでは「メニュー」の中にある画面 */
 /* 画面幅だけでなく入力方法（タッチかマウスか）も見て、PC用とスマホ用の配置を切り替える */
 const MQ_COARSE = matchMedia("(pointer:coarse)");
 const uiMode = ()=>{ const a=$("#app"); return a ? a.dataset.ui : "pc"; };
@@ -135,6 +135,8 @@ function renderChrome(){
     <span class="mtx"><span class="lab">目標 ${i+1}/${D.missions.length}</span><span class="t">${m.t}</span></span><span class="more" aria-hidden="true"></span></summary>
     <div class="how">${m.how}</div>
     ${m.tab!=="explore" && U.tab!==m.tab?`<button class="btn small sub go" data-act="tab" data-tab="${m.tab}">${TABS[m.tab]}を開く</button>`:""}</details>`;
+  $("#mission").insertAdjacentHTML("beforeend", `<button class="btn small" data-act="tab" data-tab="space">宇宙へ — 最終目標</button>`);
+  if(U.space?.overview)$("#mission").insertAdjacentHTML("beforeend",`<button class="btn small" data-sp="exit-overview">見学を終える</button>`);
   layout();
 }
 document.addEventListener("toggle", e=>{ if(e.target.id==="missionBox"){ U.missionOpen=e.target.open; } }, true);
@@ -176,6 +178,7 @@ function clearStraySelection(target){
   if(!inEditable(elOf(sel.anchorNode))) sel.removeAllRanges();
 }
 function setTab(t, opener){
+  if(SPACE.locked(S))t="space";
   if(!TABS[t]) t="explore";
   const was = U.tab;
   if(t===was){
@@ -203,6 +206,7 @@ function renderPanel(){
   if(U.dockTab!==U.tab){ body.innerHTML=""; body.scrollTop=0; U.dockTab=U.tab; sceneSig=""; }
   $("#dockTitle").innerHTML = (TAB_ICON[U.tab] ? iconHTML(TAB_ICON[U.tab]) : "")+`<span>${TABS[U.tab]}</span>`;
   if(U.tab==="lab") renderLab(body);
+  else if(U.tab==="space") body.innerHTML = spaceProject();
   else if(U.tab==="craft") body.innerHTML = viewCraft();
   else if(U.tab==="book") body.innerHTML = viewBook();
   else if(U.tab==="map") body.innerHTML = viewMap();
@@ -895,6 +899,7 @@ function syncStructColliders(){
   if(!world()) return;
   const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:") || id.startsWith("ghost:")) return; const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[v.type]) || (ASSETS.townSpecs && ASSETS.townSpecs[v.type]);
     if(sp && sp.footprint) list.push({id, type:v.type, x:v.x, z:v.z, rot:v.rot, footprint:sp.footprint}); });
+  if(SPACE.placed(S)) list.push({id:"space-site",type:"space-site",...S.build["space-site"],footprint:D.space.siteSpec.footprint});
   const sig=JSON.stringify(list); if(sig===W3.colSig) return; W3.colSig=sig;
   WORLD.setStructures(list);
   /* 建物の中に入ってしまったら、近くの立てる場所へ（歩行にはしない） */
@@ -1034,7 +1039,7 @@ function resume3D(){ if(W3.state!=="ready" || W3.raf) return;
 function fieldShown(){ return U.tab==="explore" || !(uiMode()==="touch" && $("#dock").dataset.size==="tall"); }
 const modalOpen = ()=> $("#modal").classList.contains("open");
 /* フィールドが入力を受け付けるのは、パネルも案内（モーダル）も開いていないときだけ */
-function fieldInputActive(){ return U.tab==="explore" && !modalOpen() && W3.state==="ready" && S.flags.view!=="2d" && !document.hidden; }
+function fieldInputActive(){ return !SPACE.locked(S) && !U.space?.overview && U.tab==="explore" && !modalOpen() && W3.state==="ready" && S.flags.view!=="2d" && !document.hidden; }
 /* 押しっぱなしのキー・スティック・タップ中の指・移動予約をすべて解除する（閉じた瞬間に勝手に歩かないように） */
 function haltField(){
   W3.keys={}; W3.joy=null; W3.down=null; W3.target=null; W3.path=null; W3.intent=null;
@@ -1155,6 +1160,7 @@ function loop3D(ts){
   /* speed：実際に進んだ速さ（マス/秒、少しならした値）。Muse §31 の歩行位相（進んだ距離 ÷ 0.35 マスで1コマ）へ渡す。止まっているときは 0 */
   W3.walkSpeed = moving ? (W3.walkSpeed||0) + ((dt>0?got/dt:0) - (W3.walkSpeed||0)) * damp(12, dt) : 0;
   W3.gfx.setPlayerVisualState(playerVisual({position:{x:W3.pos.x, z:W3.pos.z}, direction:W3.dir, moving, speed:+W3.walkSpeed.toFixed(2), action: W3.work ? "gather" : undefined}));
+  spaceVisualFrame();
   camFrame(dt);     // カメラは主人公の位置を渡したあと（モジュールが次のコマで使う位置で、注視点の高さの変化を打ち消す）
   tickWork(ts);
   // 地域の判定
@@ -1466,7 +1472,7 @@ function craftCard(c){
     ${own?"":`<div class="row mt"><button class="btn small" data-act="craft" data-id="${c.id}" ${pl.ok?"":"disabled"}>🔨 作る</button>${pl.ok?"":`<span class="desc" style="margin:0">${pl.msg}</span>`}</div>`}</div>`;
 }
 function viewCraft(){
-  const vis = D.crafts.filter(c=>S.disc[c.out] || Object.keys(c.inp).some(k=>S.disc[k]) || ["c_knife","c_thread"].includes(c.id));
+  const vis = D.crafts.filter(c=>!c.space && (S.disc[c.out] || Object.keys(c.inp).some(k=>S.disc[k]) || ["c_knife","c_thread"].includes(c.id)));
   const todo = vis.filter(c=>!(IT[c.out].unique&&owned(c.out))).sort((a,b)=>(E.planCraft(S,b).ok?1:0)-(E.planCraft(S,a).ok?1:0));
   const done = vis.filter(c=>IT[c.out].unique&&owned(c.out)).filter((c,i,a)=>a.findIndex(x=>x.out===c.out)===i);
   const hidden = D.crafts.length - vis.length;
@@ -1663,7 +1669,7 @@ function closeModal(){
 }
 
 /* 自動採取 */
-setInterval(()=>{ if(document.hidden || !S.auto.length) return; const got=E.autoTick(S); if(got.length){ afterChange(got.flatMap(g=>g.news)); if(U.tab==="lab" && !U.busy) drawLabCtl(); drawRegion(); } }, 10000);
+setInterval(()=>{ if(document.hidden || SPACE.locked(S) || !S.auto.length) return; const got=E.autoTick(S); if(got.length){ afterChange(got.flatMap(g=>g.news)); if(U.tab==="lab" && !U.busy) drawLabCtl(); drawRegion(); } }, 10000);
 
 /* はじめに */
 function intro(){
@@ -1912,6 +1918,7 @@ function camPickDist(sol){ const c=W3.cam, rank=d=>CAM.distSteps.indexOf(d), cur
 function camDistLim(sol){ const c=W3.cam; if(!sol) return "置けない"; if(!sol.clear) return "見通しなし（地形・建物が主人公の手前）"; return c.dSel!==CAM.dist ? "距離を"+c.dSel+"に" : ""; }
 /* 毎フレーム1回だけ：希望の値をなめらかにし、置ける値を決め、モジュールの注視点の高さの変化を打ち消して渡す */
 function camFrame(dt){
+  if(spaceCamera())return;
   const c=W3.cam; if(!c || !camSupported() || !(dt>0)) return;
   const k = damp(c.rate, dt);
   c.cy += (c.yaw - c.cy) * k; c.cp += (c.pitch - c.cp) * k; c.cz += (c.zoom - c.cz) * k;
@@ -2379,5 +2386,6 @@ document.addEventListener("click", ev=>{ const b=ev.target.closest && ev.target.
 document.addEventListener("change", ev=>{ const b=ev.target; if(b && b.dataset && b.dataset.act==="v-flag") verifyAct("v-flag", b.dataset.id, b); });
 document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="vq"){ vQuery=ev.target.value; const r=$("#vres"); if(r) r.innerHTML=vResults(); } });
 
-window.__GAME__ = {get S(){return S;}, save:()=>save(), walk:{speed:WALK_SPEED, maxDt:MAX_DT, stride:1.4}, cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim(), rebase:()=>camRebase(), debug:()=>W3.camDbg, solve:(y,p,z,x,zz)=>camSolve(y,p,z,x,zz), axes:(y,p)=>camAxes(y,p), CAM}, hero:{dirs:()=>heroDirs(), sheet:h=>heroSheet3D(h), facing:()=>worldFacing()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
+/*SPACE_UI*/
+window.__GAME__ = {SPACE, setTab, writeNow,get S(){return S;}, save:()=>save(), walk:{speed:WALK_SPEED, maxDt:MAX_DT, stride:1.4}, cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim(), rebase:()=>camRebase(), debug:()=>W3.camDbg, solve:(y,p,z,x,zz)=>camSolve(y,p,z,x,zz), axes:(y,p)=>camAxes(y,p), CAM}, hero:{dirs:()=>heroDirs(), sheet:h=>heroSheet3D(h), facing:()=>worldFacing()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);
