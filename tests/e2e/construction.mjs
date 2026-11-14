@@ -59,6 +59,7 @@ const site = (page, id) => ev(page, id => JSON.parse(JSON.stringify(window.__GAM
   const ids = await ev(page, () => Object.keys(window.__GAME__.S.cons.inst));
   ok('予定地にする（二重押しでも1つだけ）。資材はまだ使わない', ids.length === 1 && inv0 === await ev(page, () => JSON.stringify(window.__GAME__.S.inv)), JSON.stringify(ids));
   const id1 = ids[0];
+  ok('予定地の微調整は自分自身の占有形状を除外する', await ev(page,id=>{const g=window.__GAME__,v=g.S.cons.inst[id];return CONS.checkBuilding(g.S,g.WORLD,v.def,v.x,v.z,v.rot,{player:null,npcs:[],reserved:[]},id).ok;},id1));
   ok('現場の画面が開き、所持・必要・搬入済み・不足が出る。遠いので運べない', await ev(page, () => document.getElementById('modal').classList.contains('open') && /不足/.test(document.getElementById('sheet').textContent) && document.querySelector('[data-act="cs-dlall"]').disabled));
   await page.click('#sheet .close');
   await ev(page, id => { const g = window.__GAME__, v = g.S.cons.inst[id]; g.W3.pos = { x: v.x, z: v.z + 1.4 }; g.W3.path = null; }, id1); await page.waitForTimeout(800);

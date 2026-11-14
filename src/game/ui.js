@@ -913,7 +913,7 @@ function syncStructColliders(){
       list.push({id:'space-site:'+model.id,type:'space-site',x,z,rot:b.rot,footprint:c.shape==='box'?{shape:'rect',w:c.w,d:c.d}:{shape:'circle',r:c.radius}});
     }
   }
-  CONS.colliders(S).forEach(c=>list.push(Object.assign({}, c, {id:"cs:"+c.id})));   /* 街づくり：完成・施工中は壁、予定地と広場は歩ける（ほかの建物は置けない） */
+  CONS.colliders(S).forEach(c=>list.push(c));   /* 街づくり：完成・施工中は壁、予定地と広場は歩ける（ほかの建物は置けない） */
   const sig=JSON.stringify(list); if(sig===W3.colSig) return; W3.colSig=sig;
   WORLD.setStructures(list);
   /* 建物の中に入ってしまったら、近くの立てる場所へ（歩行にはしない） */
