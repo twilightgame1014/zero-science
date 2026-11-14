@@ -62,14 +62,14 @@ export function updateSpaceModels(gfx:any,site:Snapshot|null,assets:Record<strin
  const equipment:Record<string,string>={'electronics-fab':'sp_fab','computer-bench':'sp_computerbench','test-terminal':'sp_testbench','power-distribution':'sp_power','life-support':'sp_lifesupport','suit-stand':'sp_suitbench','spacesuit-display':'sp_suit'};
  for(const [model,item]of Object.entries(equipment)){const m=e.models.get(model);if(m)m.scene.visible=!!site.owned[item];}
  const rack=e.models.get('parts-rack');if(rack)rack.scene.visible=site.stage===2||site.stage===3;
- /* 噴射と煙（Muse ラウンド30 の 'exhaust'・'padSmoke'）。噴射は点火から上昇の終わりまで 0.25 秒ごと、煙は点火の時刻から 0.8 秒ごとに 3 回、左右の接続点へ。
+ /* 噴射と煙（Muse ラウンド30 の 'exhaust'・'padSmoke'）。噴射は点火から上昇の終わりまで（台の上では 0.25 秒・上昇中は 0.1 秒ごと）、煙は点火の時刻から 0.8 秒ごとに 3 回、左右の接続点へ。
     playVisualEffect がない版だけ、ゲームの仮の円すいを出す */
  const burning=['ignition','ascent'].includes(site.phase),fxOk=typeof gfx.playVisualEffect==='function';
  e.flame.visible=burning&&!fxOk;e.flame.position.set(0,(rocket?.scene.position.y||0)-.7,0);
  const key=site.phase==='ground'||site.phase==='boarded'?'':String(Math.round(Date.now()/1000-site.elapsed));
  if(key!==e.fx.launchKey){e.fx={exhaustAt:0,smoke:0,launchKey:key};}
  if(fxOk&&burning&&rocket){const now=performance.now();
-  if(now-e.fx.exhaustAt>=250){e.fx.exhaustAt=now;const a=rocket.scene.getObjectByName('Anchor_exhaust');if(a){const w=a.getWorldPosition(new THREE.Vector3());try{gfx.playVisualEffect('exhaust',{x:w.x,y:w.y,z:w.z});}catch(err){}}}
+  if(now-e.fx.exhaustAt>=(site.phase==='ascent'?100:250)){   /* 噴射の一回分はその場に残るので、上昇中は間隔を詰める（12 マス/秒 × 0.1 秒＝ノズルとの隙間 1.2 マスまで） */e.fx.exhaustAt=now;const a=rocket.scene.getObjectByName('Anchor_exhaust');if(a){const w=a.getWorldPosition(new THREE.Vector3());try{gfx.playVisualEffect('exhaust',{x:w.x,y:w.y,z:w.z});}catch(err){}}}
   const sinceIgnite=site.elapsed-5;
   while(e.fx.smoke<3&&sinceIgnite>=e.fx.smoke*0.8){e.fx.smoke++;for(const nm of ['Anchor_smoke_l','Anchor_smoke_r']){const a=e.root.getObjectByName(nm);if(a){const w=a.getWorldPosition(new THREE.Vector3());try{gfx.playVisualEffect('padSmoke',{x:w.x,y:w.y,z:w.z});}catch(err){}}}}
  }

@@ -102,7 +102,7 @@
 - 発射前の保存に失敗したら発射しない。演出は保存した発射時刻からの実時間（14 秒）で進み、再読み込みで続きから。スキップも同じ到達処理。初回クリア（`space.firstClear`）と再演出を区別し、資材は増やさない。演出中（カウントダウン〜上昇）のパネルは上の細い帯（`data-size="flight"`）で 3D を見せる。
 - 正式モデルの契約は `assets/rocket/rocket-contract.json` v6（Muse ラウンド30）。ビルドが `ASSETS.spaceContract`（`slotNodes`・`equipmentPlacement`）に入れ、`src/space-models.ts` がその一覧どおりに表示する：機体のメッシュ 90 個は組込枠（骨組み・推進・搭乗区画・外装）のどれか1つ（テストで検査）。骨組みは外装がないときだけ。設備の置き場所も契約の表（宇宙服ディスプレイは (−6,0,−3)）。
   段階（`SPACE.stage`）は契約どおり S1＝骨組み、S2＝＋推進、S3＝＋搭乗区画＋外装、S4＝全部。部分外装の S2 は使わない。搭乗から地上へ戻るまで主人公は `gfx.setPlayerVisible(false)`（公開 API。NPC は変えない）。
-  噴射は `playVisualEffect('exhaust')` を Anchor_exhaust の位置へ 0.25 秒ごと（点火〜上昇）、煙は `'padSmoke'` を Anchor_smoke_l／_r へ点火から 0.8 秒ごとに 3 回。打ち上げの時刻（退避 +3・解除 +5・上昇 +7 秒）は Muse の検品で現行どおり。LOD0 は同梱しない。
+  噴射は `playVisualEffect('exhaust')` を Anchor_exhaust の位置へ点火中は 0.25 秒・上昇中は 0.1 秒ごと（一回分はその場に残るので、動く機体に追いつかせる）、煙は `'padSmoke'` を Anchor_smoke_l／_r へ点火から 0.8 秒ごとに 3 回。打ち上げの時刻（退避 +3・解除 +5・上昇 +7 秒）は Muse の検品で現行どおり。LOD0 は同梱しない。
 - 推進・誘導・生命維持は架空の部品と模擬の試験（現実の配合・条件・制御は扱わない）。説明には「ゲーム内で簡略化」。
 - セーブ v5（`space`）。v4 からの移行あり。Claude 試作の形式（`space.know` など）は `SPACE.state` が読み込み時に移す。
 - 未完成の素材（男女の宇宙服 8 方向シート・追加品目のアイコン・テクスチャ原画）は `docs/space/MISSING-ASSETS.md`。今は仮表示。統合の記録は `docs/space/SPACE-INTEGRATION-2026-11-14.md`。
