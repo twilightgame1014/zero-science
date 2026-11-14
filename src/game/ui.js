@@ -205,7 +205,7 @@ function renderPanel(){
   /* 打ち上げの演出（カウントダウン〜上昇）の間は、パネルを上の細い帯にして 3D の発射台と機体を見せる（2026-11-14 統合。以前は大きなパネルが画面を覆っていた） */
   if(U.tab==="space" && ["countdown","retract","ignition","ascent"].includes(SPACE.state(S).phase)) dock.dataset.size="flight";
   /* 大きさが変わったら 3D の一時停止をやり直す（スマホの全高パネル＝止める／演出の帯＝動かす。以前は搭乗で止まったまま演出が動かなかった） */
-  if(dock.dataset.size!==U.dockSize){ U.dockSize=dock.dataset.size; if(typeof updateFieldActivity==="function") setTimeout(updateFieldActivity,0); }
+  if(dock.dataset.size!==U.dockSize){ U.dockSize=dock.dataset.size; setTimeout(()=>{ if(W3.state!=="ready" || S.flags.view==="2d") return; const want=fieldShown() && !document.hidden; if(want && !W3.raf) resume3D(); else if(!want && W3.raf) pause3D(); },0); }   /* 止める・動かすのは状態が変わるときだけ（描画ループの開始と停止を対にする） */
   $("#app").dataset.dock = dock.dataset.size;
   if(U.dockTab!==U.tab){ body.innerHTML=""; body.scrollTop=0; U.dockTab=U.tab; sceneSig=""; }
   $("#dockTitle").innerHTML = (TAB_ICON[U.tab] ? iconHTML(TAB_ICON[U.tab]) : "")+`<span>${TABS[U.tab]}</span>`;
