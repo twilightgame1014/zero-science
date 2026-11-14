@@ -116,6 +116,8 @@
 - 道：2×2 の格子（`"i,j"`）、10 マスの区間、重なりは請求しない、種類の変更は差の工程だけ。歩ける・壁にならない。水・川・急な斜面・木や岩の上は不可。橋・トンネル・地形の変更はしない。
 - 取消・解体：使っていない資材は全部、施工済みの工程は返却表の分だけ戻す（表がなければ戻らない。勝手な割合を作らない）。木や岩を自動で消して置けるようにしない。
 - 発射サイトは宇宙計画のまま（この仕組みへ移さない）。工程別の見た目は Muse 待ちで仮表示。
+- Muse の受け取り口（2026-11-14）：`construction-assets.json` の `museFields` を `scripts/build.mjs` が検査して `ASSETS.consMuse` へ。`stageNodes` は既存の完成モデルの複製から工程のノードだけを出す（`src/construction-stage.ts`・`HD2D.stagedBuildingType`、`Scaffold_*` は完成で隠す）、`roadConnectors` は `CONS.connectorsOf`、道の `tileTexture` は UV で貼る。欄が null なら仮表示のまま。
+- 案内（2026-11-14）：宇宙計画の製作の足りない物はボタン（建物の設備は状態と「現場を開く／建設する」、実習は「実習へ」、材料は作り方へ）。完成した設備の画面に「次に使う所」。画面の操作だけの通し確認は `tests/e2e/playthrough.mjs`（かまどまで）。記録は `docs/construction/PLAYTHROUGH-2026-11-14.md`。
 
 ## 建物の3Dモデルと道具・設備・操作のアイコン（Muse・2026-11-07〜）
 - 建物：Muse の `assets/buildings-3d`（原本の GLB 13種・`structures.json`）。`scripts/make-building-glb.py` でテクスチャだけを再圧縮した軽量版 `assets/build/buildings/*.glb` を作り（原本を変えたら再実行。既定は長辺512px＝第14ラウンドの色テクスチャの解像度のまま、不透明な画像は JPEG）、base64 で埋め込む。モデル内の接地影 `ContactShadow` はそのまま使う（地形と干渉したらこのノードだけ外す）。
