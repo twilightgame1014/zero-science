@@ -8,6 +8,10 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [core, space, hero]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -15,18 +19,21 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run typecheck
+      - if: matrix.suite == 'core'
+        run: npm run typecheck
       - run: npm run build
-      - run: npm test
-      - run: npm run e2e
-      - if: ${{ !cancelled() }}
+      - if: matrix.suite == 'core'
+        run: npm test
+      - if: matrix.suite == 'core'
+        run: npm run e2e
+      - if: matrix.suite == 'space'
         run: npm run e2e:space
-      - if: ${{ !cancelled() }}
+      - if: matrix.suite == 'hero'
         run: node tests/e2e/hero-8dir.mjs --suit
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: rocket-validation
+          name: rocket-validation-${{ matrix.suite }}
           path: |
             test-results
             dist

@@ -17,7 +17,9 @@ const results=[];
 try{
 for(const mobile of [false,true]){
  const ctx=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1280,height:800},isMobile:mobile,hasTouch:mobile});
- const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>{errors.push(String(e));console.error('PAGE ERROR',String(e));});
+ const page=await ctx.newPage(),errors=[];
+ const cdp=await ctx.newCDPSession(page);
+ const screenshot=async name=>{const shot=await cdp.send('Page.captureScreenshot',{format:'png',fromSurface:false,captureBeyondViewport:false});fs.writeFileSync(path.join(root,'test-results',name),Buffer.from(shot.data,'base64'));};page.on('pageerror',e=>{errors.push(String(e));console.error('PAGE ERROR',String(e));});
  await page.route('https://cdn.jsdelivr.net/npm/three@0.180.0/**',async route=>{
   const rel=new URL(route.request().url()).pathname.split('three@0.180.0/')[1];
   const p=path.resolve(root,'node_modules/three',rel||'');
@@ -65,9 +67,10 @@ for(const mobile of [false,true]){
   await page.evaluate(()=>{__GAME__.U.space.overview=true;__GAME__.setTab('explore');});
   await page.waitForFunction(()=>window.HD2D.spaceModelStatus(__GAME__.W3.gfx)==='ready');
   await page.waitForTimeout(2000);
+  console.log('capture',mobile?'mobile':'pc',name);
   // Preserve a real rendered frame while avoiding saturation of CI software rasterization during readback.
   await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());
-  try{await page.screenshot({path:path.join(root,`test-results/${mobile?'mobile':'pc'}-${name}.png`),timeout:60000});}
+  try{await screenshot(`${mobile?'mobile':'pc'}-${name}.png`);}
   finally{await page.evaluate(()=>__GAME__.W3.gfx.resumeGraphics());}
   await page.locator('[data-act="tab"][data-tab="space"]:visible').first().click();await section('組立');
  };
@@ -86,7 +89,7 @@ for(const mobile of [false,true]){
  await page.waitForFunction(()=>window.HD2D.spaceModelStatus(__GAME__.W3.gfx)==='ready');
  const visual=await page.evaluate(()=>{const r=__GAME__.W3.gfx.getScene().getObjectByName('SpaceSiteModels');return {visible:r?.visible,rocket:r?.children.some(o=>o.name==='space-model:rocket'&&o.visible)};});
  assert(visual.visible&&visual.rocket,JSON.stringify(visual));
- await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());await page.screenshot({path:path.join(root,`test-results/space-${mobile?'mobile':'desktop'}-site.png`),timeout:60000});await page.evaluate(()=>__GAME__.W3.gfx.resumeGraphics());
+ await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());await screenshot(`space-${mobile?'mobile':'desktop'}-site.png`);await page.evaluate(()=>__GAME__.W3.gfx.resumeGraphics());
  await page.evaluate(()=>{__GAME__.U.space.section='打ち上げ';__GAME__.setTab('space');});
  await page.locator('[data-sp="board"]').click();
  assert.equal(await page.evaluate(()=>__GAME__.S.space.phase),'boarded');
@@ -95,7 +98,7 @@ for(const mobile of [false,true]){
  // Hold a deterministic instant of the real game renderer, not a standalone model demo.
  await page.evaluate(()=>{window.__RealDate=Date;const now=Date.now();window.Date=class extends window.__RealDate{static now(){return now;}};__GAME__.S.space.launchAt=now-9100;__GAME__.SPACE.advance(__GAME__.S);__GAME__.setTab('explore');});
  await page.waitForTimeout(2000);await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());
- await page.screenshot({path:path.join(root,`test-results/${mobile?'mobile':'pc'}-ignition.png`),timeout:60000});
+ await screenshot(`${mobile?'mobile':'pc'}-ignition.png`);
  await page.evaluate(()=>{window.Date=window.__RealDate;__GAME__.W3.gfx.resumeGraphics();});
  await page.reload();await page.waitForFunction(()=>!!window.__GAME__);
  await page.waitForFunction(()=>__GAME__.W3.state==='ready' && !!__GAME__.W3.gfx, null, {timeout:120000});
@@ -104,7 +107,7 @@ for(const mobile of [false,true]){
  const skipped=await page.evaluate(()=>{const b=document.querySelector('[data-sp="skip"]');if(b&&__GAME__.SPACE.active.includes(__GAME__.S.space.phase)){b.click();return true;}return false;});
  console.log('skip clicked:',skipped,'phase:',await page.evaluate(()=>__GAME__.S.space.phase));
  await page.waitForFunction(()=>__GAME__.S.space.phase==='ending');
- await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());await page.screenshot({path:path.join(root,`test-results/space-${mobile?'mobile':'desktop'}-ending.png`),timeout:60000});await page.evaluate(()=>__GAME__.W3.gfx.resumeGraphics());
+ await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());await screenshot(`space-${mobile?'mobile':'desktop'}-ending.png`);await page.evaluate(()=>__GAME__.W3.gfx.resumeGraphics());
  const first=await page.evaluate(()=>JSON.stringify(__GAME__.S.space.firstClear));
  await page.locator('[data-sp="back"]').click();
  assert.equal(await page.evaluate(()=>__GAME__.S.space.phase),'ground');

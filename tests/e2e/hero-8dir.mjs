@@ -167,15 +167,19 @@ try {
               const v = new HD2D.THREE.Vector3(); w.gfx.getCamera().getWorldDirection(v);
               const l = Math.hypot(v.x, v.z); const fx = v.x/l, fz = v.z/l;
               w.joy = { x: mx*-fz+mz*fx, y: -(mx*fx+mz*fz) };
-            // 最初の数コマで壁に寄り切ってから（ここでは少し進むので向きが変わってよい）、向きを決まった値にして押し続ける
-            setTimeout(() => { w.face = 1.234; }, 600); return;
+            // Wall-clock delays are not a count of simulated frames on software WebGL.
+            const previousMove=world.move;window.__blockedProbe={stable:0};
+            world.move=function(...args){const r=previousMove.apply(this,args);if(args[1]===w.pos&&w.joy){const d=Math.hypot(r.x-args[1].x,r.z-args[1].z);window.__blockedProbe.stable=d<1e-6?window.__blockedProbe.stable+1:0;}return r;};
+            return;
             }
           } }
         throw new Error('wall test position not found');
       });
+      await page.waitForFunction(()=>window.__blockedProbe.stable>=4);
+      await page.evaluate(()=>{__GAME__.W3.face=1.234;window.__blockedProbe.stable=0;});
       await page.waitForFunction(() => {
         const p = __GAME__.W3.gfx.character.player;
-        return !p.state.moving && p.state.speed === 0 && p.state.facing === 1.234;
+        return window.__blockedProbe.stable>=4 && !p.state.moving && p.state.speed === 0 && p.state.facing === 1.234;
       }, null, { timeout: 60000 }).catch(async e => { console.log('blocked-state', JSON.stringify(await page.evaluate(() => { const w = __GAME__.W3, p = w.gfx.character.player; return { pos: w.pos, joy: w.joy, face: w.face, st: { m: p.state.moving, s: p.state.speed, f: p.state.facing }, tab: __GAME__.U.tab, act: !!w.work }; }))); throw e; });
       const blocked = await state();
       assert.equal(blocked.moving, false);
