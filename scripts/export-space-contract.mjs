@@ -10,3 +10,9 @@ for(const sex of ['boy','girl'])assets.push({assetId:`player-spritesheet-${sex}-
 fs.writeFileSync(new URL('../docs/space-assets.json',import.meta.url),JSON.stringify({version:2,note:'制作・ゲームコードへの導入済み。実機iPhone 17の表示とFPSは未測定。70画像生成＋既存金属再利用。',assets},null,2)+'\n');
 fs.writeFileSync(new URL('../docs/space-dependencies.json',import.meta.url),JSON.stringify({version:2,items:ids.map(id=>D.items[id]),recipes:D.space.recipes,lessons:D.space.lessons,slots:D.space.slots,tests:D.space.tests,existingRecipes:{crafts:D.crafts.filter(c=>!c.space),processes:D.procs},natural:D.regions.map(r=>({id:r.id,name:r.name,resources:r.res}))},null,2)+'\n');
 console.log('Updated dependency graph and production ledger',assets.length);
+
+const csvCell=x=>'"'+String(x??'').replaceAll('"','""')+'"';
+fs.mkdirSync(new URL('../docs/science/',import.meta.url),{recursive:true});
+const columns=['id','name','yomi','kid','more','simp','sources','checked_on','notes'];
+const csv=[columns,...ids.map(id=>{const i=D.items[id];return [id,i.name,i.yomi,i.kid,i.more,i.simplification,i.scienceSources.join(' | '),i.scienceCheckedOn,i.scienceNotes];})].map(row=>row.map(csvCell).join(',')).join('\n')+'\n';
+fs.writeFileSync(new URL('../docs/science/space-items.csv',import.meta.url),csv);

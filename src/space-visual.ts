@@ -37,9 +37,9 @@ export function syncSpaceVisual(gfx:any,site:Site|null,suited:any){
   }
   const formal=updateSpaceModels(gfx,site,(window as any).ASSETS?.spaceModels);if(formal)e.root.visible=false;
   e.suit.visible=false; // 正式8方向シートをUI側で切り替える。仮の立体服は使わない。
-  /* 搭乗してから地上へ戻るまでは、主人公はカプセルの中（絵を出さない）。描画モジュールに公開の口がないので、
-     キャラクターの群れの visible だけを切り替える（src/graphics は変えない。Muse に setPlayerVisible を依頼中） */
+  /* 公開APIで搭乗中の絵だけ隠す。旧描画モジュールにも互換の経路を残す。 */
   const inside=!!site&&/^(boarded|countdown|retract|ignition|ascent|space|ending)$/.test(site.phase);
-  const ch=gfx&&gfx.character&&gfx.character.group;if(ch&&ch.visible===inside)ch.visible=!inside;
+  if(typeof gfx.setPlayerVisible==='function')gfx.setPlayerVisible(!inside);
+  else {const ch=gfx&&gfx.character&&gfx.character.group;if(ch&&ch.visible===inside)ch.visible=!inside;}
   if(e.suit.visible){const p=suited.position;e.suit.position.set(p.x,suited.y??0,p.z);}
 }

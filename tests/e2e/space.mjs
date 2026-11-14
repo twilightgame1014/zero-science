@@ -33,6 +33,7 @@ for(const mobile of [false,true]){
  const section=async id=>{await page.locator(`[data-sp="section"][data-id="${id}"]`).click();};
  await page.locator('[data-act="tab"][data-tab="space"]:visible').first().click();
  await page.locator('[data-sp="select"][data-id="sp_plate"]').click();
+ assert(await page.locator('.sp-card .sic').first().evaluate(e=>getComputedStyle(e).backgroundImage.startsWith('url(')),'space atlas visible, no safe-area CSS variable collision');
  await page.locator('#sp-count').fill('2');
  await page.locator('[data-sp="craft"][data-id="c_sp_plate"]').click();
  await page.locator('[data-sp="finish"]').click();
@@ -97,6 +98,7 @@ for(const mobile of [false,true]){
  await page.screenshot({path:path.join(root,`test-results/${mobile?'mobile':'pc'}-ignition.png`),timeout:60000});
  await page.evaluate(()=>{window.Date=window.__RealDate;__GAME__.W3.gfx.resumeGraphics();});
  await page.reload();await page.waitForFunction(()=>!!window.__GAME__);
+ await page.waitForFunction(()=>__GAME__.W3.state==='ready' && !!__GAME__.W3.gfx, null, {timeout:120000});
  await page.waitForFunction(()=>__GAME__.S.space.phase!=='boarded');
  // 演出の時刻は保存した発射時刻からの実時間。ソフトウェア描画では再読み込みの間に終わっていることがあるので、まだ飛んでいるときだけスキップを押す
  const skipped=await page.evaluate(()=>{const b=document.querySelector('[data-sp="skip"]');if(b&&__GAME__.SPACE.active.includes(__GAME__.S.space.phase)){b.click();return true;}return false;});

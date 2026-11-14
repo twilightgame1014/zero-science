@@ -106,6 +106,6 @@
   D.space={ids:defs,recipes,lessons,slots,tests,groups:['材料','電力','計算機','宇宙服','生命維持','機体','地上設備'],
     siteItems:['sp_pad','sp_tower','sp_control','sp_power','sp_assembly','generator'],
     siteSpec:{id:'space-site',type:'space-site',footprint:{shape:'rect',w:18,d:18},entrance:[0,10],operate:[0,10],maxSlope:0.18},
-    modelStatus:'Muse確定版LOD1導入。読込失敗時と着用宇宙服は仮表示。原本は未変更'};
+    modelStatus:'Muse v5 LOD0/LOD1・色画像・男女宇宙服を導入。読込失敗時のみ代替表示。原本は未変更'};
 })(typeof DATA!=='undefined'?DATA:require('./data.js'));
 if(typeof module!=='undefined') module.exports=require('./data.js').space;

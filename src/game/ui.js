@@ -25,7 +25,7 @@ function makeAtlas(a, v){ if(!a || !a.src) return null;
   const r=document.documentElement.style; r.setProperty("--"+v, `url("${url}")`); r.setProperty("--"+v+"-c", a.cols); r.setProperty("--"+v+"-r", a.rows);
   return {url, cols:a.cols, rows:a.rows, pos:a.pos||{}}; }
 const ITEM_ICO = makeAtlas(window.ASSETS && ASSETS.items, "iat");
-const SPACE_ICO = makeAtlas(window.ASSETS && ASSETS.spaceIcons, "sat");
+const SPACE_ICO = makeAtlas(window.ASSETS && ASSETS.spaceIcons, "sp-atlas");
 const TOOL_ICO = makeAtlas(window.ASSETS && ASSETS.tools, "tat");
 /* 道具・設備のアイコンの位置（新しい62点を優先）。なければ null */
 const toolKey = id=> IT[id] ? (IT[id].tags.includes("研究設備") ? "facilities/"+id : IT[id].tags.includes("道具") ? "tools/"+id : null) : null;

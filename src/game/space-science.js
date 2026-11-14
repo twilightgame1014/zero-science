@@ -65,5 +65,24 @@
  D.items.rubber.kid='分子の鎖どうしをつなぎ、変形しても戻りやすくしたゴム。すき間をふさぐ材料に使います。';
  D.items.rubber.more='加硫は高分子の鎖の間に結びつきを作る加工です。硫黄による架橋は代表例で、材料や架橋の程度によって性質が変わります。空気や水を完全に通さない万能材料ではありません。';
  for(const id of ['rawrubber','rubber']){D.items[id].scienceSources=[sources.rubber];D.items[id].simplification='ゲーム内で簡略化：反応欄の材料・加熱表示は抽象的な加工段階であり、製造条件ではありません。';}
+
+ const refs={metal:'https://www.usgs.gov/centers/national-minerals-information-center/iron-and-steel-statistics-and-information',aluminum:'https://www.usgs.gov/centers/national-minerals-information-center/aluminum-statistics-and-information',copper:'https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information',power:'https://www.eia.gov/energyexplained/electricity/batteries-circuits-and-transformers.php',logic:'https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/',ceramic:'https://srdata.nist.gov/CeramicDataPortal/scd'};
+ for(const id of [...D.space.ids,'rawrubber','rubber']){
+  const i=D.items[id],k=id.replace('sp_','');i.scienceCheckedOn='2026-11-14';
+  if(!i.scienceSources.length){
+   if(i.group==='計算機')i.scienceSources=[refs.logic,refs.copper];
+   else if(i.group==='電力'||['insulator','cable'].includes(k))i.scienceSources=[refs.power,refs.copper];
+   else if(['fiber','membrane','thermal','window'].includes(k))i.scienceSources=[sources.suit];
+   else if(k==='seal')i.scienceSources=[sources.rubber];
+   else if(k==='ceramic'||k==='materials')i.scienceSources=[refs.ceramic];
+   else if(['plate','skin'].includes(k))i.scienceSources=[refs.aluminum];
+   else if(['machine','frame','fastener','hull','assembly','pad','tower'].includes(k))i.scienceSources=[refs.metal];
+  }
+  const omit=i.group==='計算機'?'微細な加工・配線・検査を設備の操作にまとめます。':i.group==='宇宙服'?'布の成形・層の接合・寸法調整を組立にまとめます。':i.group==='生命維持'?'機能を抽象部品で表し、気体の配合・圧力・運転性能は再現しません。':i.group==='電力'?'配線の細かな接続と電力損失を省き、機能試験にまとめます。':'成形・測定・組付けの細かな作業をまとめます。';
+  if(id.startsWith('sp_'))i.simplification='ゲーム内で簡略化：'+omit+' 材料数と加工時間は学習用の規格です。';
+  i.scienceNotes=['sp_propulsion','sp_charge','sp_control','sp_testbench'].includes(id)?'ゲーム専用の規格・判定。実機仕様の出典を付けない（実在規格としては未確認・検証対象外）。':'出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。';
+ }
+ const transistor=D.space.lessons.find(x=>x.id==='transistor');transistor.name='電気信号で切り替える素子';transistor.help='小さな制御信号で、別の回路の状態を切り替える。ここでは入力1で出力1になる模擬スイッチを試します。';
+ D.space.lessons.find(x=>x.id==='gates').help='ANDは両方1なら1、ORは少なくとも片方が1なら1、NOTは0と1を反転する。';
  D.space.scienceReviewedAt='2026-11-14';
 })(DATA);

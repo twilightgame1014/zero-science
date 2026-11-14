@@ -50,7 +50,7 @@ try {
       if(suited){
         await page.evaluate(()=>{__GAME__.S.space.suit=true;});
         await page.waitForFunction(()=>/Suit$/.test(__GAME__.W3.spaceHeroKey));
-        await page.waitForFunction(()=>__GAME__.W3.gfx.character.player.texture.image.width===1024);
+        await page.waitForFunction(hero=>__GAME__.W3.gfx.character.player.texture.image.src===ASSETS[hero+'Suit'],hero);
       }
       const initial = await page.evaluate(() => {
         const g = __GAME__, p = g.W3.gfx.character.player;
@@ -113,7 +113,7 @@ try {
             return !p.state.moving && p.texture.offset.x === 0;
           });
           const stopped = await state();
-          assert.equal(stopped.face, walking.face);
+          assert.ok(Math.abs(Math.atan2(Math.sin(stopped.face-walking.face),Math.cos(stopped.face-walking.face)))<1e-6,'stopping preserves direction within floating-point precision');
           assert.equal(stopped.speed, 0);
           assert.equal(stopped.frame, 0);
         }

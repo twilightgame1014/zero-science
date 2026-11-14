@@ -25,3 +25,21 @@ for(const suffix of ['-lod1','']){
  assert.equal(anchor.position.y,17.299999237060547);
 }
 console.log('PASS v5 partial panels, sequential clips, hatch end poses in both LODs');
+// Sample every built-in clip without modifying the canonical GLB. Includes the loop midpoint.
+let sampled=0;
+for(const suffix of ['', '-lod1'])for(const id of ['rocket','launch-pad','support-tower','boarding-corridor']){
+ const b=fs.readFileSync(new URL('../assets/rocket/models/'+id+suffix+'.glb',import.meta.url));
+ const g=await new GLTFLoader().parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');
+ for(const clip of g.animations){
+  const mixer=new THREE.AnimationMixer(g.scene),action=mixer.clipAction(clip);action.play();action.paused=true;
+  const poses=[];
+  for(const fraction of [0,.5,1]){
+   action.time=clip.duration*fraction;mixer.update(0);g.scene.updateMatrixWorld(true);
+   const values=[];g.scene.traverse(n=>{assert(n.matrixWorld.elements.every(Number.isFinite),id+':'+clip.name);values.push(...n.position.toArray(),...n.quaternion.toArray());});poses.push(values);
+  }
+  assert(poses[0].some((x,i)=>Math.abs(x-poses[1][i])>1e-5),id+':'+clip.name+' has a changing midpoint');
+  mixer.stopAllAction();sampled++;
+ }
+}
+assert.equal(sampled,16,'eight clips in both LODs');
+console.log('PASS all eight clip start/mid/end transforms in both LODs');

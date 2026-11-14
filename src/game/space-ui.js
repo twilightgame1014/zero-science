@@ -10,7 +10,7 @@ function spaceProject(){
   let body='';
   if(u.section==='製作'){
     body=`<label>分野 <select id="sp-group">${C.groups.map(g=>`<option ${u.group===g?'selected':''}>${g}</option>`).join('')}</select></label>
-    <p>材料・設備・実習がそろえば製作できます。文明段階による制限はありません。工程と数量はゲーム内で簡略化しています。</p>
+    <p>材料・設備・実習がそろえば製作できます。文明段階による制限はありません。工程と数量はゲーム内で簡略化しています。同じ部品は最大20回のまとめ製作を使えます。原料集めには既存の自動採取も活用できます。</p>
     <div class="sp-grid">${C.recipes.filter(c=>IT[c.out].group===u.group).map(c=>{const n=SPACE.needs(S,c,1),made=SPACE.owned(S,c.out),status=made?'完成済み':n.some(x=>x.kind==='equipment')?'設備不足':n.some(x=>x.kind==='lesson')?'実習待ち':n.length?'材料不足':'製作可能';
       return `<article class="sp-card"><h4>${spaceItemLink(c.out)}</h4><b>${status} ${made?'（在庫'+E.cnt(S,c.out)+'・設置や組込を含む）':''}</b><p>${spEscape(IT[c.out].kid)}</p><small>${c.seconds}秒／回・生成${c.qty}個</small><p>${n.map(x=>spEscape(x.text)).join('／')}</p>${spBtn('select','材料と工程を見る',c.out)}</article>`;}).join('')}</div>`;
     if(u.item)body+=spaceRecipe(u.item);
