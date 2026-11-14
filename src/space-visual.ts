@@ -31,12 +31,12 @@ export function syncSpaceVisual(gfx:any,site:Site|null,suited:any){
   let e=entries.get(gfx);if(!e){e=create();entries.set(gfx,e);gfx.getScene().add(e.root,e.suit);}
   e.root.visible=!!site;if(site){e.root.position.set(site.x,site.y,site.z);e.root.rotation.y=site.rot;
     e.parts[0].visible=!!site.installed.structure;e.parts[1].visible=!!site.installed.skin;e.parts[2].visible=!!site.installed.capsule;e.parts[3].visible=!!site.installed.capsule;
-    const flying=['ascent','space','ending'].includes(site.phase);e.ship.position.y=flying?Math.min(55,Math.max(0,site.elapsed-7)*9):0;
+    const flying=['ascent','space','ending'].includes(site.phase);e.ship.position.y=flying?Math.min(55,Math.max(0,site.elapsed-10)*9):0;
     e.root.visible=!['space','ending'].includes(site.phase);e.flame.visible=['ignition','ascent'].includes(site.phase);
     e.tower.position.x=['retract','ignition','ascent'].includes(site.phase)?-Math.min(3,Math.max(0,site.elapsed-3)*1.5):0;
   }
   const formal=updateSpaceModels(gfx,site,(window as any).ASSETS?.spaceModels);if(formal)e.root.visible=false;
-  e.suit.visible=!!suited&&!!suited.position&&!site?.phase.match(/boarded|countdown|retract|ignition|ascent|space|ending/);
+  e.suit.visible=false; // 正式8方向シートをUI側で切り替える。仮の立体服は使わない。
   /* 搭乗してから地上へ戻るまでは、主人公はカプセルの中（絵を出さない）。描画モジュールに公開の口がないので、
      キャラクターの群れの visible だけを切り替える（src/graphics は変えない。Muse に setPlayerVisible を依頼中） */
   const inside=!!site&&/^(boarded|countdown|retract|ignition|ascent|space|ending)$/.test(site.phase);

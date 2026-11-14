@@ -2,10 +2,11 @@
 function spaceUI(){return U.space||(U.space={section:'製作',group:'材料',item:'sp_machine',lesson:'switch',message:'',detail:false,output:null});}
 function spEscape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function spBtn(action,text,id,disabled){return `<button class="btn small" data-sp="${action}" data-id="${id||''}" ${disabled?'disabled':''}>${text}</button>`;}
-function spaceItemLink(id){const name=S.disc[id]||spaceUI().detail?nm(id):'未発見の'+(IT[id]?.group||'材料');return spBtn('item',spEscape(name),id);}
+function spaceItemLink(id){const name=S.disc[id]||spaceUI().detail?nm(id):'未発見の'+(IT[id]?.group||'材料');return spBtn('item',(S.disc[id]||spaceUI().detail?ic(id):'？')+' '+spEscape(name),id);}
 function spaceProject(){
   const p=SPACE.state(S),u=spaceUI(),C=D.space;
-  if(p.phase!=='ground'&&p.phase!=='boarded')return spaceFlight();
+  if(p.phase==='boarded')return `<div class="sp-flight"><h2>搭乗完了</h2><p>宇宙服・生命維持・機体の点検は合格済みです。</p>${spBtn('launch','保存して打ち上げ')}${spBtn('back','搭乗を取り消す')}</div>`;
+  if(p.phase!=='ground')return spaceFlight();
   let body='';
   if(u.section==='製作'){
     body=`<label>分野 <select id="sp-group">${C.groups.map(g=>`<option ${u.group===g?'selected':''}>${g}</option>`).join('')}</select></label>
@@ -20,13 +21,13 @@ function spaceProject(){
     body=`<p>発射台・支持塔と通路・管制端末・地上電源をまとめて設置します。占有範囲と見学用の空きを含めて確認します。</p><p>${SPACE.placed(S)?'設置済み：'+b.x+', '+b.z:'未設置'}</p>
     <p>${C.siteItems.map(spaceItemLink).join(' ')}</p>
     <div class="sp-fields"><label>X <input id="sp-x" type="number" value="${draft.x}" step="1"></label><label>Z <input id="sp-z" type="number" value="${draft.z}" step="1"></label><label>回転 <select id="sp-rot">${[0,90,180,270].map(a=>`<option value="${a}" ${draft.rot===a?'selected':''}>${a}°</option>`).join('')}</select></label></div>
-    ${spBtn('find-site','空いている候補を探す')}${spBtn('check-site','候補を確認')}${spBtn('place-site','この場所に設置')}${SPACE.placed(S)?spBtn('walk-site','搭乗口へ歩く')+spBtn('overview','発射場を見渡す'):''}
-    <p>木・岩が重なるときは採集で片付けるか、別の候補を選んでください。平地でも占有・入口・地形の条件を満たす必要があります。</p>
-    <p class="desc">モデル：${W3.gfx&&window.HD2D?.spaceModelStatus?.(W3.gfx)==='ready'?'Muse確定版LOD1を表示':'読込み中／仮表示'}。着用中の宇宙服スプライトは仮装備です。</p>`;
+    ${spBtn('find-site','空いている候補を探す')}${spBtn('check-site','候補を確認')}${spBtn('place-site','この場所に設置')}${SPACE.placed(S)?spBtn('walk-site','搭乗口へ歩く')+spBtn('overview','発射場を見渡す')+spBtn('low-angle','低い視点から見上げる'):''}
+    <p><button class="btn small" data-sp-performance>10秒の描画計測</button> ${U.spacePerf?.fps!=null?spEscape(U.spacePerf.fps+' FPS／'+U.spacePerf.width+'×'+U.spacePerf.height):'この端末の表示フレームを計測します。計測を始めると発射場の表示に切り替わります。'}</p><p>木・岩が重なるときは採集で片付けるか、別の候補を選んでください。平地でも占有・入口・地形の条件を満たす必要があります。</p>
+    <p class="desc">モデル：${W3.gfx&&window.HD2D?.spaceModelStatus?.(W3.gfx)==='ready'?'Muse正式モデルを表示（PC近景LOD0／遠景・スマホLOD1）':'読込み中／仮表示'}。宇宙服は男女それぞれの8方向シートを使用します。</p>`;
   }
   if(u.section==='組立')body=`<p>機体構造を最初に組み込み、以後の順番は自由です。段階 S${SPACE.stage(S)}。部品の取外し・交換や移設後は、関連する試験が失効します。</p>
     ${C.slots.map(s=>`<div class="sp-card"><b>${s.name}：${p.installed[s.id]?'組込済み':'未組込'}</b> ${spaceItemLink(s.item)} ${spBtn(p.installed[s.id]?'remove':'install',p.installed[s.id]?'取り外す':'組み込む',s.id,SPACE.locked(S))}</div>`).join('')}
-    <div class="sp-card">宇宙服：${p.suit?'装着済み（仮表示）':'未装着'} ${spaceItemLink('sp_suit')}${spBtn('equip','宇宙服を装着','',!!p.suit)}</div>`;
+    <div class="sp-card">宇宙服：${p.suit?'装着済み（男女別8方向）':'未装着'} ${spaceItemLink('sp_suit')}${spBtn('equip','宇宙服を装着','',!!p.suit)}</div>`;
   if(u.section==='試験')body=`<p>故障の原因に対応する工程を選びます。不合格でも部品は壊れません。試験は現在の構成だけに有効です。</p>${C.tests.map(t=>{const n=SPACE.testNeeds(S,t.id),status=SPACE.valid(S,t.id)?'合格':p.tests[t.id]?.pass?'失効':p.tests[t.id]?'要改善':'未実施';
     const prompts={power:'電気が負荷へ届かない。確認するのは？',computer:'保存した値が戻らない。確認するのは？',radio:'地上へ信号が届かない。確認するのは？',suit:'空気を保持できない。確認するのは？',life:'CO₂の状態が要点検。確認するのは？',uncrewed:'搭乗前に飛行のつながりを確かめる方法は？',final:'部分試験の後、最後に確認する範囲は？'};
     return `<article class="sp-card"><h4>${t.name}：${status}</h4><p>${n.map(spEscape).join('／')||prompts[t.id]}</p><label>確認する工程 <select id="sp-test-${t.id}">${['選んでください','配線','記憶','通信','気密','空気再生','模擬','全項目','外装の色'].map(v=>`<option>${v}</option>`).join('')}</select></label>${spBtn('test','試験する',t.id,n.length>0)}</article>`;}).join('')}`;
@@ -53,7 +54,7 @@ function spaceVerifyAct(a){
 }
 function spaceRecipe(id){
   const u=spaceUI(),r=E.producers(id),it=IT[id];if(!it)return '';
-  const recipes=[...r.crafts,...r.procs];return `<section class="sp-card" id="sp-recipe"><h3>${S.disc[id]||u.detail?spEscape(nm(id)):'未発見の設計のヒント'}</h3><p>${spEscape(it.kid)}</p><p>${spEscape(it.more)}</p>
+  const recipes=[...r.crafts,...r.procs];return `<section class="sp-card" id="sp-recipe"><h3>${S.disc[id]||u.detail?spEscape(nm(id)):'未発見の設計のヒント'}</h3><p>${spEscape(it.kid)}</p><p>${spEscape(it.more)}</p><p class="desc">${spEscape(it.simplification||'')}</p>${(it.scienceSources||[]).length?`<details><summary>科学の参考資料</summary>${it.scienceSources.map(url=>`<a href="${spEscape(url)}" target="_blank" rel="noopener noreferrer">参考資料を開く</a>`).join(' ／ ')}</details>`:''}
     ${r.regions.length?`<p>天然資源：${r.regions.map(x=>spEscape(x.name)).join('・')}</p>${spBtn('book','採集と加工を図鑑で確認',id)}`:''}
     ${recipes.map(c=>`<div><p>材料：${Object.entries(c.inp).map(([k,n])=>spaceItemLink(k)+' ×'+n).join(' ')} → ${typeof c.out==='string'?c.qty:c.out[id]}個</p><p>設備：${(Array.isArray(c.at)?c.at:c.at?[c.at]:[]).map(spaceItemLink).join(' ')||'手作業'} 道具：${c.tools.map(spaceItemLink).join(' ')||'なし'}</p><p>${spEscape(c.how||c.why)}</p>
     ${c.space?`<label>まとめ製作 <input id="sp-count" type="number" min="1" max="${it.unique?1:20}" value="1"></label>${spBtn('craft','製作を始める',c.id,!!SPACE.state(S).job)}`:spBtn('book','既存の工作・実験を確認',id)}</div>`).join('')}
@@ -75,10 +76,11 @@ function spaceLesson(){
   return `<label>実習<select id="sp-lesson">${D.space.lessons.map(x=>`<option value="${x.id}" ${x.id===l.id?'selected':''}>${p.lessons[x.id]?'✓ ':''}${x.name}</option>`).join('')}</select></label><h3>${l.name}</h3><p>${l.help}</p><p>${n.join('／')}</p><div class="sp-fields">${form}</div>${spBtn('practice',l.id==='memory'?'読み出して確認':'実行して確認',l.id,!!n.length)}${l.id==='switch'&&u.tried&&u.tried.length&&!p.lessons.switch&&!u.tried.some(k=>!SPACE.CONDUCT[k])?'<p class="desc">電気を通さない物も、はさんで確かめよう。</p>':''}${['switch','transistor'].includes(l.id)&&u.output!==null?`<p role="status">${u.output===1?'💡 ランプ点灯（1）':'○ ランプ消灯（0）'}</p>`:''}<pre class="sp-output">${spEscape(u.output===null?'ここに実行結果を表示します':typeof u.output==='object'?JSON.stringify(u.output,null,2):u.output)}</pre>`;
 }
 function spaceFlight(){const p=SPACE.state(S),names={countdown:'カウントダウン',retract:'支持設備を退避',ignition:'噴射開始',ascent:'空へ上昇',space:'宇宙到達',ending:'宇宙へ到達しました'};
-  return `<div class="sp-flight ${p.phase==='space'||p.phase==='ending'?'sp-stars':''}" role="status"><div class="sp-flight-rocket" aria-hidden="true">▲<br>┃<br>┃<br>╱╲</div><h2>${names[p.phase]}</h2><strong id="sp-countdown">${p.phase==='countdown'?Math.max(1,3-Math.floor((Date.now()-p.launchAt)/1000)):''}</strong><p>主人公：${S.flags.hero==='boy'?'男の子':'女の子'}・宇宙服装着／船内生命維持 正常（模擬）</p>
+  return `<div class="sp-flight ${p.phase==='space'||p.phase==='ending'?'sp-stars':''}" role="status"><div class="sp-flight-rocket" aria-hidden="true">${ic('sp_capsule')}</div><h2>${names[p.phase]}</h2><strong id="sp-countdown">${p.phase==='countdown'?Math.max(1,3-Math.floor((Date.now()-p.launchAt)/1000)):''}</strong><p>主人公：${S.flags.hero==='boy'?'男の子':'女の子'}・宇宙服装着／船内生命維持 正常（模擬）</p>
   ${p.phase==='ending'?`<p>実績：ゼロから宇宙へ ${p.firstClear?.runId===p.runId?'初回到達':'再演出'}</p><p>最初の採集から ${Object.keys(S.disc).length}種類の発見へ。</p><details><summary>発見と製作の記録</summary><ol>${Object.entries(S.disc).sort((a,b)=>a[1].first-b[1].first).slice(0,12).map(([id])=>`<li>${spEscape(nm(id))}</li>`).join('')}${p.history.filter(h=>['craft','lesson','assembly','test','clear'].includes(h.kind)).slice(-25).map(h=>`<li>${spEscape(h.text)}</li>`).join('')}</ol></details><p>打ち上げ前の時間に戻って探索を続けます。初回クリア記録は残り、資材や報酬は増えません。</p>${spBtn('back','打ち上げ前の世界で探索を続ける')}`:`<p>再読み込みしても進行は保存されます。</p>${spBtn('skip','演出をスキップして到達する')}`}</div>`;
 }
 function spaceVisualFrame(){
+  const key=heroAssetKey();if(W3.gfx&&W3.spaceHeroKey!==key){W3.spaceHeroKey=key;heroSheet3D().then(url=>{if(W3.spaceHeroKey===key)W3.gfx.setPlayerSpriteSheet(url);});}
   const p=SPACE.state(S),b=S.build&&S.build['space-site'];
   if(W3.gfx&&window.HD2D?.syncSpaceVisual)HD2D.syncSpaceVisual(W3.gfx,SPACE.placed(S)?{...b,y:groundY(b.x,b.z),stage:SPACE.stage(S),installed:p.installed,owned:Object.fromEntries(D.space.ids.map(id=>[id,SPACE.owned(S,id)])),phase:p.phase,elapsed:p.launchAt?(Date.now()-p.launchAt)/1000:0}:null,p.suit?{position:W3.pos,y:W3.pos?groundY(W3.pos.x,W3.pos.z):0,hero:S.flags.hero}:null);
 }
@@ -108,7 +110,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest?.('[data-sp]');
     if(found){u.site=found;r={ok:true,msg:'候補を見つけました。座標と周囲を確認して設置してください'};}else r={ok:false,msg:'空いた候補が見つかりません。木や岩を採集して空きを作り、座標を指定してください'};
   }
   if(a==='check-site'||a==='place-site'){const d=spaceSiteDraft();u.site={...d,rot:d.rot*180/Math.PI};if(!WORLD)r={ok:false,msg:'3D読み込み待ち'};else if(a==='place-site')r=SPACE.place(S,WORLD,d.x,d.z,d.rot,{player:W3.pos,npcs:W3.npcList||[],reserved:PLACE_RESERVED()});else{const q=WORLD.checkPlacement(S,{...D.space.siteSpec,...d},{player:W3.pos,npcs:W3.npcList||[],reserved:PLACE_RESERVED()});r={ok:q.ok,msg:q.ok?'この場所に設置できます':q.reasons.join('／')};}}
-  if(a==='overview'){haltField();u.overview=true;setTab('explore');renderChrome();return;}
+  if(a==='overview'||a==='low-angle'){haltField();u.lowAngle=a==='low-angle';u.overview=true;setTab('explore');renderChrome();return;}
   if(a==='exit-overview'){u.overview=false;renderChrome();return;}
   if(a==='walk-site'){const site=S.build['space-site'];if(site&&!site.removed){setTab('explore');goTo3D(site.x+Math.sin(site.rot)*11,site.z+Math.cos(site.rot)*11);return;}}
   if(a==='resolve'){u.section=id.startsWith('test:')?'試験':id==='site'?'発射サイト':id==='generator'?'製作':'組立';if(id==='generator')u.item='generator';renderPanel();return;}
@@ -132,10 +134,30 @@ function spaceCamera(){
   if(!W3.gfx||typeof W3.gfx.setCameraView!=='function')return false;
   const p=SPACE.state(S),u=spaceUI(),b=S.build&&S.build['space-site'];
   if(u.overview&&U.tab!=='explore')u.overview=false;
-  const on=SPACE.placed(S)&&(u.overview||SPACE.active.includes(p.phase));
+  const on=SPACE.placed(S)&&(u.overview||p.phase==='boarded'||SPACE.active.includes(p.phase));
   $('#app').classList.toggle('space-overview',!!u.overview);
   if(!on){if(W3.spaceCamera){W3.gfx.restoreCameraView();W3.gfx.setCameraTarget(null);W3.camSent=null;W3.spaceCamera=false;if(W3.cam)W3.cam.snap=true;}return false;}
-  if(!W3.spaceCamera){W3.gfx.setCameraView({yawDegrees:32,pitchDegrees:25,viewSize:44,distance:90},{temporary:true,transition:.6});W3.spaceCamera=true;}
-  const rise=p.phase==='ascent'?Math.min(45,Math.max(0,(Date.now()-p.launchAt)/1000-7)*12):0;
+  const cameraMode=p.phase==='boarded'?'boarding':u.lowAngle&&p.phase==='ground'?'low':'overview';
+  if(W3.spaceCamera!==cameraMode){W3.gfx.setCameraView(cameraMode==='boarding'?{yawDegrees:-52.7+b.rot*180/Math.PI,pitchDegrees:3.25,viewSize:6,distance:10}:cameraMode==='low'?{yawDegrees:38.6598+b.rot*180/Math.PI,pitchDegrees:4,viewSize:32,distance:18}:{yawDegrees:38.6598+b.rot*180/Math.PI,pitchDegrees:13.185,viewSize:44,distance:90},{temporary:true,transition:.6});W3.spaceCamera=cameraMode;}
+  if(cameraMode==='boarding'){const x=3.75,z=-2.86;W3.gfx.setCameraTarget({x:b.x+x*Math.cos(b.rot)+z*Math.sin(b.rot),z:b.z-x*Math.sin(b.rot)+z*Math.cos(b.rot),y:groundY(b.x,b.z)+17.033});return true;}
+  const rise=p.phase==='ascent'?Math.min(70,Math.max(0,(Date.now()-p.launchAt)/1000-10)*12):0;
   W3.gfx.setCameraTarget({x:b.x,z:b.z,y:groundY(b.x,b.z)+9+rise});return true;
 }
+
+// 実機確認用。表示フレームの更新を10秒間数える。結果はこの端末の画面にだけ表示する。
+function spaceMeasureFrames(){
+ if(!W3.gfx||U.spacePerf?.running)return;
+ U.spacePerf={running:true};spaceUI().overview=true;setTab('explore');let start=performance.now(),last=-1,count=0;
+ const sample=()=>{
+  if(document.hidden){U.spacePerf={running:false,message:'中断：画面を表示したまま再計測してください'};banner(U.spacePerf.message);return;}
+  const frame=W3.gfx.getRenderer?.().info.render.frame;
+  if(frame!==undefined&&frame!==last){last=frame;count++;}
+  const seconds=(performance.now()-start)/1000;
+  if(seconds<10){requestAnimationFrame(sample);return;}
+  const fps=Math.round(count/seconds*10)/10;
+  U.spacePerf={running:false,fps,seconds,width:innerWidth,height:innerHeight,pixelRatio:devicePixelRatio,userAgent:navigator.userAgent};
+  banner('この端末の描画更新：'+fps+' FPS（10秒平均）。発射サイト画面から結果を確認できます。');
+ };
+ requestAnimationFrame(sample);
+}
+document.addEventListener('click',e=>{if(e.target.closest?.('[data-sp-performance]'))spaceMeasureFrames();});

@@ -12,6 +12,7 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const selectedHero = process.argv.find(a => a.startsWith('--hero='))?.slice(7);
 assert.ok(selectedHero === undefined || ['boy', 'girl'].includes(selectedHero), 'invalid --hero');
 const motionOnly = process.argv.includes('--motion-only');
+const suited = process.argv.includes('--suit');
 const html = await fs.readFile(path.join(root, 'dist/index.html'));
 const server = createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -46,6 +47,11 @@ try {
       await page.click(`.heropick[data-id="${hero}"]`);
       await page.click('#introGo');
       await page.waitForFunction(() => __GAME__.W3.state === 'ready');
+      if(suited){
+        await page.evaluate(()=>{__GAME__.S.space.suit=true;});
+        await page.waitForFunction(()=>/Suit$/.test(__GAME__.W3.spaceHeroKey));
+        await page.waitForFunction(()=>__GAME__.W3.gfx.character.player.texture.image.width===1024);
+      }
       const initial = await page.evaluate(() => {
         const g = __GAME__, p = g.W3.gfx.character.player;
         return { diag: HD2D.diag8Check(), dirs: g.hero.dirs(), rows: p.sheetRows,
@@ -57,7 +63,7 @@ try {
       assert.equal(initial.rows, 8);
       assert.deepEqual(initial.size, [1024, 2048]);
       assert.equal(typeof initial.facing, 'number');
-      console.log(`${hero}: diag8Check PASS / 1024×2048 / 8 rows / continuous facing`);
+      console.log(`${hero}${suited?' suit':''}: diag8Check PASS / 1024×2048 / 8 rows / continuous facing`);
 
       // 実描画に渡った状態・UVを読む。privateメンバー参照は検証専用。
       const state = () => page.evaluate(() => {

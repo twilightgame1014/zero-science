@@ -41,16 +41,40 @@ for(const mobile of [false,true]){
  assert(await page.evaluate(()=>!__GAME__.S.space.lessons.switch),'絶縁体だけでは合格しない');
  await page.locator('#sp-gap').selectOption('copper');await page.locator('#sp-on').check();await page.locator('[data-sp="practice"]').click();
  assert(await page.evaluate(()=>__GAME__.S.space.lessons.switch));
- await page.evaluate(()=>{for(const l of __GAME__.D.space.lessons)__GAME__.S.space.lessons[l.id]=true;__GAME__.writeNow();});
+ const lesson=async id=>page.locator('#sp-lesson').selectOption(id);
+ const practice=async()=>page.locator('[data-sp="practice"]').click();
+ await lesson('transistor');await page.locator('#sp-on').check();await practice();
+ await lesson('gates');
+ for(const gate of ['AND','OR','NOT'])for(const a of [0,1])for(const b of gate==='NOT'?[0]:[0,1]){
+  await page.locator('#sp-gate').selectOption(gate);await page.locator('#sp-a').fill(String(a));await page.locator('#sp-b').fill(String(b));
+  await page.locator('#sp-answer').fill(String(gate==='AND'?a&b:gate==='OR'?a|b:1-a));await practice();
+ }
+ await lesson('adder');await page.locator('#sp-answer').fill('5');await practice();
+ await lesson('memory');await page.locator('[data-sp="memory-write"]').click();await page.locator('#sp-answer').fill('7');await practice();
+ await lesson('architecture');for(const [k,v]of Object.entries({compute:'演算',sequence:'制御',store:'記憶',interface:'入出力'}))await page.locator('#sp-'+k).selectOption(v);await practice();
+ await lesson('program');await practice();await lesson('sensors');await page.locator('#sp-answer').selectOption('空気再生');await practice();
+ assert(await page.evaluate(()=>__GAME__.D.space.lessons.every(l=>__GAME__.S.space.lessons[l.id])),'8実習をUIから完了');
  await section('発射サイト');await page.locator('[data-sp="find-site"]').click();
  await page.waitForFunction(()=>!!__GAME__.U.space.site);
  await page.locator('[data-sp="check-site"]').click();
  assert((await page.locator('#sp-message').textContent()).includes('設置できます'));
  await page.locator('[data-sp="place-site"]').click();
  assert(await page.evaluate(()=>__GAME__.SPACE.placed(__GAME__.S)));
- await section('組立');
+ const capture=async name=>{
+  await page.evaluate(()=>{__GAME__.U.space.overview=true;__GAME__.setTab('explore');});
+  await page.waitForFunction(()=>window.HD2D.spaceModelStatus(__GAME__.W3.gfx)==='ready');
+  await page.waitForTimeout(2000);
+  // Preserve a real rendered frame while avoiding saturation of CI software rasterization during readback.
+  await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());
+  try{await page.screenshot({path:path.join(root,`test-results/${mobile?'mobile':'pc'}-${name}.png`),timeout:60000});}
+  finally{await page.evaluate(()=>__GAME__.W3.gfx.resumeGraphics());}
+  await page.locator('[data-act="tab"][data-tab="space"]:visible').first().click();await section('組立');
+ };
+ await capture('S0');
  const slots=await page.evaluate(()=>__GAME__.D.space.slots.map(x=>x.id));
- for(const id of slots)await page.locator(`[data-sp="install"][data-id="${id}"]`).click();
+ let previousStage=0;
+ for(const id of slots){await page.locator(`[data-sp="install"][data-id="${id}"]`).click();const stage=await page.evaluate(()=>__GAME__.SPACE.stage(__GAME__.S));if(stage!==previousStage){await capture('S'+stage);previousStage=stage;}}
+ await page.evaluate(()=>__GAME__.U.space.lowAngle=true);await capture('low-angle');await page.evaluate(()=>__GAME__.U.space.lowAngle=false);
  await page.locator('[data-sp="equip"]').click();
  await section('試験');
  const tests=await page.evaluate(()=>__GAME__.D.space.tests.map(x=>({id:x.id,answer:x.answer})));
@@ -59,21 +83,26 @@ for(const mobile of [false,true]){
  await page.evaluate(()=>{const g=__GAME__,b=g.S.build['space-site'];g.W3.pos={x:b.x,z:b.z+11};g.S.pos={...g.W3.pos};g.setTab('explore');});
  await page.waitForTimeout(600);
  await page.waitForFunction(()=>window.HD2D.spaceModelStatus(__GAME__.W3.gfx)==='ready');
- const visual=await page.evaluate(()=>{const r=__GAME__.W3.gfx.getScene().getObjectByName('SpaceSiteModels');return {visible:r?.visible,rocket:r?.getObjectByName('space-model:rocket')?.visible};});
+ const visual=await page.evaluate(()=>{const r=__GAME__.W3.gfx.getScene().getObjectByName('SpaceSiteModels');return {visible:r?.visible,rocket:r?.children.some(o=>o.name==='space-model:rocket'&&o.visible)};});
  assert(visual.visible&&visual.rocket,JSON.stringify(visual));
- await page.screenshot({path:path.join(root,`test-results/space-${mobile?'mobile':'desktop'}-site.png`)});
+ await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());await page.screenshot({path:path.join(root,`test-results/space-${mobile?'mobile':'desktop'}-site.png`),timeout:60000});await page.evaluate(()=>__GAME__.W3.gfx.resumeGraphics());
  await page.evaluate(()=>{__GAME__.U.space.section='打ち上げ';__GAME__.setTab('space');});
  await page.locator('[data-sp="board"]').click();
  assert.equal(await page.evaluate(()=>__GAME__.S.space.phase),'boarded');
  await page.locator('[data-sp="launch"]').click();
  assert(await page.evaluate(()=>!!__GAME__.S.space.runId));
+ // Hold a deterministic instant of the real game renderer, not a standalone model demo.
+ await page.evaluate(()=>{window.__RealDate=Date;const now=Date.now();window.Date=class extends window.__RealDate{static now(){return now;}};__GAME__.S.space.launchAt=now-9100;__GAME__.SPACE.advance(__GAME__.S);__GAME__.setTab('explore');});
+ await page.waitForTimeout(2000);await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());
+ await page.screenshot({path:path.join(root,`test-results/${mobile?'mobile':'pc'}-ignition.png`),timeout:60000});
+ await page.evaluate(()=>{window.Date=window.__RealDate;__GAME__.W3.gfx.resumeGraphics();});
  await page.reload();await page.waitForFunction(()=>!!window.__GAME__);
  await page.waitForFunction(()=>__GAME__.S.space.phase!=='boarded');
  // 演出の時刻は保存した発射時刻からの実時間。ソフトウェア描画では再読み込みの間に終わっていることがあるので、まだ飛んでいるときだけスキップを押す
  const skipped=await page.evaluate(()=>{const b=document.querySelector('[data-sp="skip"]');if(b&&__GAME__.SPACE.active.includes(__GAME__.S.space.phase)){b.click();return true;}return false;});
  console.log('skip clicked:',skipped,'phase:',await page.evaluate(()=>__GAME__.S.space.phase));
  await page.waitForFunction(()=>__GAME__.S.space.phase==='ending');
- await page.screenshot({path:path.join(root,`test-results/space-${mobile?'mobile':'desktop'}-ending.png`)});
+ await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());await page.screenshot({path:path.join(root,`test-results/space-${mobile?'mobile':'desktop'}-ending.png`),timeout:60000});await page.evaluate(()=>__GAME__.W3.gfx.resumeGraphics());
  const first=await page.evaluate(()=>JSON.stringify(__GAME__.S.space.firstClear));
  await page.locator('[data-sp="back"]').click();
  assert.equal(await page.evaluate(()=>__GAME__.S.space.phase),'ground');

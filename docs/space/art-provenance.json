@@ -1,0 +1,329 @@
+{
+  "mode": "built-in image_gen",
+  "icons": [
+    {
+      "id": "sp_machine",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a small precision workbench with a compact vice and handwheel. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-a3377fdb-95d1-4ce0-b511-9902b4e790bd.png"
+    },
+    {
+      "id": "sp_materials",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a materials testing bench with a small sample clamp and balance. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-8146cda5-5f57-48ec-92b7-82b20ce28620.png"
+    },
+    {
+      "id": "sp_frame",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a single rectangular silver structural frame with cross braces. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-d6a9e808-b1be-4896-86c7-548f28de0289.png"
+    },
+    {
+      "id": "sp_fastener",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a tidy set of three short bolts nuts and washers. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-41296405-021f-4b0c-ab8b-c33778db6569.png"
+    },
+    {
+      "id": "sp_insulator",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: two ivory ceramic insulating blocks with dark holes. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-45acde8a-9b7b-49e5-b7df-8aa921bc469c.png"
+    },
+    {
+      "id": "sp_plate",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: three stacked thin ivory painted curved metal plates. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-610b9198-3154-4989-be6c-80831f75bbf6.png"
+    },
+    {
+      "id": "sp_cable",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a coil of navy insulated cable with copper tips. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-b84dc836-77ed-4300-af7c-d8771c9c72bb.png"
+    },
+    {
+      "id": "sp_fiber",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: two spools of ivory and teal technical fiber. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-fa69c181-4f6e-4e42-982b-20a20966fdc6.png"
+    },
+    {
+      "id": "sp_seal",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: three flexible dark rubber sealing rings. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-86d2bf6a-3856-4b7a-ae5a-37baed135ae8.png"
+    },
+    {
+      "id": "sp_thermal",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a cut stack of ivory cloth and muted tan insulation layers. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-e3f78756-7058-4ee2-ab5b-885f09f86a6b.png"
+    },
+    {
+      "id": "sp_ceramic",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: three thick matte charcoal ceramic tiles. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-bc3974b2-8e0a-4f81-a249-42cf6f13bf78.png"
+    },
+    {
+      "id": "sp_membrane",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a rolled pale translucent airtight membrane. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-5b56de54-dbae-4b2d-a02f-572c34079b4f.png"
+    },
+    {
+      "id": "sp_window",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: one thick pale teal transparent rounded window plate. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-8ada7faa-92a2-47ec-942d-0c95ab609f2a.png"
+    },
+    {
+      "id": "sp_powerbench",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a power assembly workbench with a battery and cables. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-f60fd6bf-7458-4258-9e68-55486ab9031c.png"
+    },
+    {
+      "id": "sp_storage",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a navy battery pack with two terminal posts and teal band. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-9421d96b-3433-4523-86d5-6bf598fd6fe9.png"
+    },
+    {
+      "id": "sp_fab",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a compact ivory electronics manufacturing cabinet with teal inspection window. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-58630c79-3fa6-4725-b448-c8ba205944aa.png"
+    },
+    {
+      "id": "sp_switch",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a small toggle switch wired to a round lamp on a little board. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-67459c99-0c40-4116-ac72-2eb4cc756fb2.png"
+    },
+    {
+      "id": "sp_transistor",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a single black three-legged transistor. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-7a72dcc4-2925-4ae0-b672-35c244ad0bd2.png"
+    },
+    {
+      "id": "sp_power",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a small teal distribution cabinet with round amber indicator lights. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-0e0cad56-2cf9-4df9-95c2-8c607b788cb2.png"
+    },
+    {
+      "id": "sp_pcb",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a simple teal circuit board with gold traces and no components. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-a14ac82c-192c-41ff-acde-9f3646ead1c5.png"
+    },
+    {
+      "id": "sp_gate",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: three black logic chips on a small teal board. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-38365ead-b42b-474a-9da4-38d2e1bd8b67.png"
+    },
+    {
+      "id": "sp_memory",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a compact board with a neat row of four dark memory chips. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-1dbe409a-c6fc-4037-b4fa-d2ab47737225.png"
+    },
+    {
+      "id": "sp_passive",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a small resistor and two cylindrical capacitors as one component kit. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-94eb0dfc-2174-4c0d-bd1c-ac65d9f54e67.png"
+    },
+    {
+      "id": "sp_adder",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a teal board with two input connectors and an amber output connector. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-bae036b2-b1bb-44a5-aafb-383ed6e72781.png"
+    },
+    {
+      "id": "sp_cpu",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a square navy processing module with gold pins on four edges. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-4dc9d74e-d13f-42ba-9214-d3f3bdc4a377.png"
+    },
+    {
+      "id": "sp_io",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a compact display with four ivory physical buttons. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-926b41c3-792a-4421-b289-be812f0bc07c.png"
+    },
+    {
+      "id": "sp_computerbench",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: an electronics assembly bench with a monitor and open circuit board. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-f52d843b-82da-4e8b-9580-604c8ff4b5cb.png"
+    },
+    {
+      "id": "sp_sensor",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a small ivory sensor module with two circular probes and teal cable. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-35f07fbe-fbc6-4c91-af30-0731ad4389d0.png"
+    },
+    {
+      "id": "sp_computer",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a small educational computer with teal screen and simple chunky keyboard. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-d56d2f69-9b25-4f64-800d-94ad8c2c865d.png"
+    },
+    {
+      "id": "sp_flightcomputer",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a rugged ivory enclosed fictional onboard computer with teal screen and navy corner protectors. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-d7cbeb29-3457-41a6-8261-a2fb85beced4.png"
+    },
+    {
+      "id": "sp_suitbench",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: an ivory spacesuit inspection stand with empty support frame and teal side monitor. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-eb285170-be03-4159-9f4b-c4d66fa2a4e8.png"
+    },
+    {
+      "id": "sp_radio",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a compact navy communications unit with short antenna and round speaker. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-c03d2602-92f3-45b3-8778-cf4979711ed5.png"
+    },
+    {
+      "id": "sp_liner",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a folded ivory long sleeved inner garment. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-ca88f43f-cdd7-44de-be6b-5ed48f573e22.png"
+    },
+    {
+      "id": "sp_protectlayer",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: an ivory protective outer suit jacket with navy reinforcement patches. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-59f5fe9a-f41d-432e-bd24-304d7ba0e95a.png"
+    },
+    {
+      "id": "sp_pressurelayer",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a pale blue airtight inner suit with sealed cuffs and neck ring. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-0ca3e197-7373-44aa-9818-5dd4cb1d40e6.png"
+    },
+    {
+      "id": "sp_helmet",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a round ivory spacesuit helmet with opaque navy visor and thin amber rim. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-67c016ea-e96d-450e-ac17-f3ab8928b98f.png"
+    },
+    {
+      "id": "sp_air",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a fictional breathing air supply unit with two white cylinders and teal connecting block. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-7d09c463-a566-481b-9212-b0b209551aee.png"
+    },
+    {
+      "id": "sp_scrubber",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a white removable air cleaning cartridge with teal vent grille. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-3e343219-8e5a-4756-8ba4-d8efc7ea4a18.png"
+    },
+    {
+      "id": "sp_gloves",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a pair of navy reinforced gloves and boots as one kit. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-2c7dfd03-1f14-4258-a1ce-c30fed8f0ada.png"
+    },
+    {
+      "id": "sp_cooling",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a compact silver cooling module with navy radiator fins and teal loop. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-32d84101-8211-4e53-8a83-6e85c3a79d7c.png"
+    },
+    {
+      "id": "sp_waterunit",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a small pale teal water hygiene unit with a clear reservoir. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-abc9943f-3955-457d-9701-317f653f6ead.png"
+    },
+    {
+      "id": "sp_lifesupport",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a metal life support backpack with two white tanks and teal band. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-6928f2da-f89e-43e6-988c-4a8797dbee46.png"
+    },
+    {
+      "id": "sp_suit",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a complete ivory fictional spacesuit with opaque navy visor amber rim teal chest box navy gloves and boots. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-138894a8-54c2-4e16-9220-3fc9ddbe4608.png"
+    },
+    {
+      "id": "sp_assembly",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a small gantry assembly station with two upright posts and hoist. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-f5fdd562-927e-4e0e-be44-e35b5fa81615.png"
+    },
+    {
+      "id": "sp_propulsion",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a sealed fictional propulsion module shaped as a navy rounded cube with teal glowing core and broad abstract outlet, no real engine detail. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-82b87cba-ead1-48af-94f4-da8a5634f1c4.png"
+    },
+    {
+      "id": "sp_hull",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a tall cylindrical fictional vehicle skeleton of silver hoops and vertical supports. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-02c43412-63df-44d3-87e0-c7a1489e8dc8.png"
+    },
+    {
+      "id": "sp_charge",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a sealed abstract fictional energy cartridge, teal cylinder with navy caps and amber inset, no chemical markings. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-f378dff4-9c11-489f-aeec-e1e66bd68922.png"
+    },
+    {
+      "id": "sp_skin",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: two curved ivory exterior shell panels with navy trim. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-238def2a-b308-4dcc-992c-0930bf84f9fd.png"
+    },
+    {
+      "id": "sp_capsule",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a compact ivory crew capsule with navy circular window and closed side hatch. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-06573792-b601-4459-958c-d98d03c51047.png"
+    },
+    {
+      "id": "sp_tower",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a tall navy lattice support tower with a short teal boarding walkway. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-dc6af064-7220-4d74-b387-2e05167cf5fe.png"
+    },
+    {
+      "id": "sp_pad",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a square grey launch platform with round central mounting ring. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-31b39ae5-1893-4d0b-8e31-87b769e4250a.png"
+    },
+    {
+      "id": "sp_testbench",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a compact tall inspection terminal with teal screen and three amber lights. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-e069f53b-b7f7-44ec-a8c8-e50562e5dea1.png"
+    },
+    {
+      "id": "sp_control",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a freestanding ground control console with teal screen and navy legs. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-047eafd2-e6e8-4ebb-8f2a-21f7ede285a6.png"
+    },
+    {
+      "id": "rawrubber",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a soft pale tan lump of unprocessed synthetic rubber. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-880772ba-5d0e-472c-8ce1-caffe35e100c.png"
+    },
+    {
+      "id": "rubber",
+      "prompt": "Use case: stylized-concept. Create ONE standalone transparent inventory icon: a dark charcoal rubber sheet rolled at one end. Match the provided existing game icon atlas style only, do not reproduce the atlas. Soft hand-painted pixel game illustration, crisp dark brown/navy outlines, limited medium-scale details, light from upper left, three-quarter view. Readable at32-48pixels. Center one coherent object or kit occupying75% of square canvas, equal padding, ivory grey navy teal palette with sparse amber. No floor or cast shadow, no text, no numbers, no logo, no label, no card, no border. Transparent background. This is one icon, not a sheet.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-2f7fa315-2261-49f2-8c06-2ec8e740d908.png"
+    }
+  ],
+  "textures": [
+    {
+      "id": "tex-heat-resistant",
+      "prompt": "Use case: stylized-concept. Single game raster asset for a soft HD-2D science game. Flat charcoal grey #3A3733 heat resistant ceramic surface, broad subtle speckled matte variation, no cracks or tile borders.1024square tile. Uniform lighting, no baked specular highlights, no vignette, no logos, no watermark. Texture assets fill frame edge to edge flat front view. Not a normal map.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-80190de4-22a5-4f73-9e62-61c1c4929ea7.png"
+    },
+    {
+      "id": "tex-rubber-seal",
+      "prompt": "Use case: stylized-concept. Single game raster asset for a soft HD-2D science game. Flat almost solid dark grey rubber surface, extremely subtle matte variation, no grooves or objects.512square tile. Uniform lighting, no baked specular highlights, no vignette, no logos, no watermark. Texture assets fill frame edge to edge flat front view. Not a normal map.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-a0866fdf-3fa4-47f2-bcc3-7225003dd5b0.png"
+    },
+    {
+      "id": "tex-terminal-screen",
+      "prompt": "Use case: stylized-concept. Single game raster asset for a soft HD-2D science game. Dark navy teal terminal screen BACKGROUND only, understated thin teal graph axes and sparse grid lines, generous empty central space for UI to overlay readings. No readings, no symbols, no text, no numbers.1024x640. Uniform lighting, no baked specular highlights, no vignette, no logos, no watermark. Texture assets fill frame edge to edge flat front view. Not a normal map.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-e5985e83-a668-4ab4-a86c-1cabc3fa49dd.png"
+    },
+    {
+      "id": "fx-exhaust-1",
+      "prompt": "Use case: stylized-concept. Single game raster asset for a soft HD-2D science game. ONE isolated soft ivory smoke puff for a game particle, variation1: rounded three-lobed cloud. Pale grey soft shapes, opaque center fading smoothly to fully transparent edges. No ground, shadow, flame, scene.512square. Uniform lighting, no baked specular highlights, no vignette, no logos, no watermark. Texture assets fill frame edge to edge flat front view. Not a normal map.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-b10496a1-5205-4cb6-af1e-7a1a02b366b2.png"
+    },
+    {
+      "id": "fx-exhaust-3",
+      "prompt": "Use case: stylized-concept. Single game raster asset for a soft HD-2D science game. ONE isolated soft ivory smoke puff for a game particle, variation3: wispy upward curl. Pale grey soft shapes, opaque center fading smoothly to fully transparent edges. No ground, shadow, flame, scene.512square. Uniform lighting, no baked specular highlights, no vignette, no logos, no watermark. Texture assets fill frame edge to edge flat front view. Not a normal map.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-f13b9ab0-99f5-4b58-8490-9bd558fe2aec.png"
+    },
+    {
+      "id": "fx-exhaust-2",
+      "prompt": "Use case: stylized-concept. Single game raster asset for a soft HD-2D science game. ONE isolated soft ivory smoke puff for a game particle, variation2: asymmetric spreading low cloud. Pale grey soft shapes, opaque center fading smoothly to fully transparent edges. No ground, shadow, flame, scene.512square. Uniform lighting, no baked specular highlights, no vignette, no logos, no watermark. Texture assets fill frame edge to edge flat front view. Not a normal map.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-35bceab7-b18f-439a-9dd3-261e3aa8ea83.png"
+    },
+    {
+      "id": "fx-exhaust-4",
+      "prompt": "Use case: stylized-concept. Single game raster asset for a soft HD-2D science game. ONE isolated soft ivory smoke puff for a game particle, variation4: small dense five-lobed puff. Pale grey soft shapes, opaque center fading smoothly to fully transparent edges. No ground, shadow, flame, scene.512square. Uniform lighting, no baked specular highlights, no vignette, no logos, no watermark. Texture assets fill frame edge to edge flat front view. Not a normal map.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-3a9823ee-7f92-405e-b66e-09af06b404be.png"
+    },
+    {
+      "id": "tex-circuit-board",
+      "prompt": "Use case: stylized-concept. Single game raster asset for a soft HD-2D science game. ONE teal #1D7F7B decorative circuit board face, simplified abstract gold traces, large component pads, aesthetically arranged fictional disconnected schematic forms, no text or numbers, no actual electronic schematic.1024square non-tile. Uniform lighting, no baked specular highlights, no vignette, no logos, no watermark. Texture assets fill frame edge to edge flat front view. Not a normal map.",
+      "source": "/Users/hr/.codex/generated_images/01a1d537-ad50-7153-9ebd-f330ca2ea9a7/exec-48ceca30-c931-4079-90af-2ff559c616ca.png"
+    }
+  ],
+  "additional": {
+    "suits": "既存男女8方向スプライトとMuse宇宙服前後参照を入力し、8行4列、同じ人物・方向・足元・歩行を維持して生成。実際の出力サイズを検査してセル単位に正規化。",
+    "uv": "Muse胴体2048x1024・カプセル1024x512 UVテンプレートを参照。生成りの平坦なベースカラー、文字ガイドなし、左右wrap。",
+    "cloth": "生成り宇宙服布、濃紺補強布、生成り断熱布を別画像として生成。均一光、微細写真ノイズなし、タイル前提。"
+  },
+  "generatedCount": 70,
+  "reused": "tex-metal-dullは既存iron.pngを再利用。"
+}
