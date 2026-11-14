@@ -201,7 +201,7 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   ok('描画ループの開始と停止が対になっている', after.starts === after.stops || after.starts === after.stops + 1, JSON.stringify(after));
 
   // 「もう一度」
-  await page.evaluate(`(()=>{ const S=${G}.S, E=${G}.E, now=Date.now(); S.inv.campfire=1; S.inv.notebook=1; ['campfire','notebook'].forEach(k=>{ S.disc[k]=S.disc[k]||{first:now,made:1,total:1,routes:[],best:0}; }); S.inv.twig=10; E.runExperiment(S,{twig:2},'campfire','burn',S.seq); })()`);
+  await page.evaluate(`(()=>{ const S=${G}.S, E=${G}.E, now=Date.now(); /* 建設の決まりでは、たき火は完成した建物で使う（持ち物にあるだけでは使えない） */ S.cons.inst['cs-fire']={id:'cs-fire',def:'campfire',x:900,z:900,rot:0,phase:'completed',stage:2,delivered:{},consumed:{},work:null,done:1}; S.inv.notebook=1; ['campfire','notebook'].forEach(k=>{ S.disc[k]=S.disc[k]||{first:now,made:1,total:1,routes:[],best:0}; }); S.inv.twig=10; E.runExperiment(S,{twig:2},'campfire','burn',S.seq); })()`);
   const ash0 = await page.evaluate(`${G}.S.inv.ash||0`);
   await page.click('nav [data-tab="menu"]'); await page.click('#dockBody .bigitem[data-tab="log"]'); await page.waitForTimeout(100);
   await page.click('#dockBody [data-act="again"]'); await page.waitForTimeout(2600);
@@ -364,7 +364,7 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   // 位置は、旧「石積みの壁」の跡に新しく置いた岩の中心（ロード時に近くの空いた所へ補正されるはず）
   const prep = await page.evaluate(`(()=>{ const G=${G}, S=G.S, E=G.E; const rock=G.WORLD.objects.find(o=>o.kind==='rock' && Math.hypot(o.x-10.2,o.z-15.1)<4);
     ['bench','campfire','kiln','furnace','pot','glass','twig'].forEach((id,i)=>{ S.inv[id]=(id==='twig'?7:id==='glass'?3:1); if(!S.disc[id]) S.disc[id]={first:Date.now(),made:1,total:1,routes:[],best:0}; });
-    S.pos={x:rock.x, z:rock.z}; const o=JSON.parse(E.serialize(S)); o.v=5; delete o.cons; localStorage.setItem('zero-kagaku-save', JSON.stringify(o)); Storage.prototype.setItem=function(){};  /* 再読み込み前の自動保存で v6 に上書きされないように（このページだけ） */ return {rock:{id:rock.id,x:rock.x,z:rock.z,r:rock.r}, st:E.stageOf(S)}; })()`);
+    S.pos={x:rock.x, z:rock.z}; const o=JSON.parse(E.serialize(S)); o.v=5; delete o.cons; localStorage.setItem('zero-kagaku-save', JSON.stringify(o)); Storage.prototype.setItem=function(){};  /* 再読み込み前の自動保存で v6 に上書きされないように（このページだけ） */ return {rock:{id:rock.id,x:rock.x,z:rock.z,r:rock.r}, st:E.stageOf(JSON.parse(JSON.stringify(o)))}; })()`);
   await page.reload(); await page.waitForTimeout(900);
   const after = await page.evaluate(`(()=>{ const G=${G}, S=G.S, p=G.W3.pos; return {structs:Object.keys(__FAKE.structures).filter(k=>!/^v[hp]:/.test(k)).map(k=>/^cs:/.test(k)?__FAKE.structures[k].type:k).sort(), legacy:S.cons.legacy, v:S.v, left:(__FAKE.opts.decor.stonework===false?[]:['Stonework']), st:G.E.stageOf(S),
     inv:{twig:S.inv.twig, glass:S.inv.glass, bench:S.inv.bench}, d:Math.hypot(p.x-(${prep.rock.x}), p.z-(${prep.rock.z}))}; })()`);
