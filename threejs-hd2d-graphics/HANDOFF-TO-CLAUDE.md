@@ -730,3 +730,13 @@ gpt-forest の上に積んだブランチ。詳細は INTEGRATION.md §16。
 - §28.4 のエリアすり合わせ提案と §28.5 の DQ3
   ライフサイクル提案は引き続き確認待ち。発電所は暫定の
   まま触っていない。
+
+## §38 街づくり正式素材（2026-11-14、Muse、ブランチ feature/graphics-city-construction-final、土台 305b714）
+
+対象ファイル宣言（この作業で触れたゲーム側ファイル）：`docs/construction/construction-assets.json`（museFields のみ）、`docs/construction/CONSTRUCTION-CONTRACT.md`（追記のみ）。新規素材は `assets/construction/`（site/scaffold/pile の GLB、道テクスチャ、README、生成スクリプト）。`src/` は一切変更していない。建設の表示接続（construction-visual.ts の仮表示→正式表示への差し替え）は Claude／GPT 側の作業として、適用規則を CONSTRUCTION-CONTRACT.md の「Muse の納品」節に書いた。
+
+- 全 24 建物の stageNodes を既存正式 GLB から機械抽出（累積式、ロケット v6 の slotNodes と同じ読み方）。支持関係の数値検査で全工程・全部品の浮き 0 件。ContactShadow は最終工程のみ。
+- 照合の要点：GLTFLoader はノード名の `.` を除去する（post.001→post001）。stageNodes は GLB 正式名で記載し、照合側で正規化すること（契約文書に明記、衝突なし確認済み）。
+- 足場は共有キット `assets/construction/models/scaffold-kit.glb`（Scaffold_Post/Beam/Plank/Brace/Ladder、単位部品＋配置式）。予定地は `construction-site.glb`、資材は pile 5 種。
+- 道 3 種：テクスチャ納品（セルごとに UV 0..1 の割り当てが接続側の作業）、縁は境界フェード仕様、joinPieces 不要。roadConnectors は全実建物に確定（入口／作業点から占有端＋0.8）。
+- 検証：素材ハーネスで工程別表示・足場組立・道の接続/斜面を撮影確認。実ゲームへの接続は未実施（仮表示のまま）＝「素材制作完了／ゲーム導入は接続待ち」。
