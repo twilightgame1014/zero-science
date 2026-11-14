@@ -1810,3 +1810,58 @@ threejs-hd2d-graphics/src/graphics、byte 一致）と素材追加、
   Chromium／SwiftShader）：exhaust のプルーム、
   padSmoke の雲、setPlayerVisible の表示／非表示を
   実画面で確認。実機 FPS・iPhone Safari は未確認。
+
+## 36. ラウンド30追随：機体に追随する噴射（2026-11-14）
+
+Claude からのお願い（SPACE-INTEGRATION §8）への回答。
+土台は `feature/game-space-round30-integration`
+（6b4a5e8）、作業ブランチは
+`feature/graphics-space-round30-exhaust-follow`。
+変更はグラフィックス側のみ（EffectsManager /
+GraphicsEngine / types の両ツリー）。
+
+### 36.1 API：setExhaustEmitter
+
+`gfx.setExhaustEmitter(position | null)` を追加。
+
+- 推力中は毎フレーム、Anchor_exhaust の現在地
+  （ワールド座標、y含む）を渡す。プルームのコーンが
+  その位置に追随し、噴射粒子は発生点で生まれて
+  ワールド座標のまま落ちるので、上昇する機体の
+  後ろに尾を引く。
+- 到達（推力終了）で `null` を渡すと、コーンが
+  約 0.3 秒でフェードし、残りの粒子は寿命まで
+  落ち切って消える。再度位置を渡せば再点火できる。
+- プルーム長はバースト版と同じ規則（地面までの
+  距離で自動調整、上限 6.5 m）。点火時（台の上）も
+  この API でよい。
+- 粒子プールは 260 個を再利用し、毎フレームの
+  割り当てはない。バースト版 `'exhaust'` は互換の
+  ため残してあるが、上昇中はこちらへの切り替えで
+  約40回の再発火とノズルとの隙間が両方なくなる。
+
+### 36.2 ゲーム側の移行
+
+`src/space-visual.ts` の噴射まわりを次へ置換する。
+
+- 点火から到達まで：毎フレーム
+  `gfx.setExhaustEmitter(anchor_exhaust の現在地)`。
+- 到達の瞬間に `gfx.setExhaustEmitter(null)` を
+  1 回呼ぶ。
+- いまの 0.25 秒／0.1 秒間隔の再発火ループは不要に
+  なる。`'padSmoke'` は現行どおり（点火時 0.8 秒
+  ごとに3回）でよい。
+
+### 36.3 確認
+
+ゲームビルド（検証モード）で確認した。点火位置で
+プルームが立つこと、発生点を 12 マス/秒で持ち上げると
+プルームが追随して上がること（点火位置とは別の高さで
+撮影）、null を渡すと stopping になって fade が
+0.63 → 0 へ落ちることを数値で追った（この VM では
+描画フレームが極端に少なく、壁時計では約12秒かかって
+見える。実フレームレートではフェード 0.3 秒＋粒子の
+残り寿命最大 0.75 秒で消える設計）。粒子の尾は
+発生点のワールド座標に残る実装で、コーンの追随と
+合わせてコード上も担保している。撮影は
+検証フォルダ round30 の exhaust-emitter-*.png。
