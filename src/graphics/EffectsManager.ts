@@ -25,6 +25,8 @@ interface EffectStyle {
   flat?: number;
   /** Initial spawn disc radius (a point spawn reads as specks). */
   spread?: number;
+  /** Base opacity override (dense smoke reads better faded). */
+  opacity?: number;
 }
 
 const EFFECT_STYLE: Record<string, EffectStyle> = {
@@ -41,7 +43,7 @@ const EFFECT_STYLE: Record<string, EffectStyle> = {
   exhaust: { color: 0xffc37e, count: 90, speed: 5.5, gravity: 3.0, size: 0.6, life: 1.1, dirY: -1, spread: 0.5 },
   // Round 30 (space): launch-pad smoke from Anchor_smoke_l/r.
   // Long-lived, wide, mostly sideways roll-out.
-  padSmoke: { color: 0xcfc8bd, count: 80, speed: 2.8, gravity: -0.5, size: 2.6, life: 3.4, flat: 0.8, spread: 1.3 },
+  padSmoke: { color: 0xcfc8bd, count: 70, speed: 2.8, gravity: -0.5, size: 4.2, life: 3.4, flat: 0.8, spread: 1.3, opacity: 0.5 },
 };
 
 /**
@@ -100,7 +102,7 @@ export class EffectsManager {
       life: 0,
       maxLife: style.life,
       gravity: style.gravity,
-      baseOpacity: 0.95,
+      baseOpacity: style.opacity ?? 0.95,
     };
     if (type === 'exhaust') {
       // Plume body: two nested additive cones under the nozzle,
