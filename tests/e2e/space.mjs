@@ -19,7 +19,7 @@ for(const mobile of [false,true]){
  const ctx=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1280,height:800},isMobile:mobile,hasTouch:mobile});
  const page=await ctx.newPage(),errors=[];
  const cdp=await ctx.newCDPSession(page);
- const screenshot=async name=>{const shot=await cdp.send('Page.captureScreenshot',{format:'png',fromSurface:false,captureBeyondViewport:false});fs.writeFileSync(path.join(root,'test-results',name),Buffer.from(shot.data,'base64'));};page.on('pageerror',e=>{errors.push(String(e));console.error('PAGE ERROR',String(e));});
+ const screenshot=async name=>{let timer;try{const shot=await Promise.race([cdp.send('Page.captureScreenshot',{format:'png',fromSurface:false,captureBeyondViewport:false}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('screenshot timeout '+name)),90000);})]);fs.writeFileSync(path.join(root,'test-results',name),Buffer.from(shot.data,'base64'));}finally{clearTimeout(timer);}};page.on('pageerror',e=>{errors.push(String(e));console.error('PAGE ERROR',String(e));});
  await page.route('https://cdn.jsdelivr.net/npm/three@0.180.0/**',async route=>{
   const rel=new URL(route.request().url()).pathname.split('three@0.180.0/')[1];
   const p=path.resolve(root,'node_modules/three',rel||'');
@@ -31,6 +31,9 @@ for(const mobile of [false,true]){
  await page.waitForFunction(()=>!!window.__GAME__,null,{timeout:30000});
  if(await page.locator('#introGo').isVisible()){await page.locator(`.heropick[data-id="${mobile?'girl':'boy'}"]`).click();await page.locator('#introGo').click();}
  await page.waitForFunction(()=>__GAME__.W3.state==='ready',null,{timeout:60000});
+ // Real renderer and formal models, low-quality public preset for deterministic CPU-only CI.
+ // High-quality PC visuals are reviewed separately in the manual game screenshots.
+ await page.evaluate(()=>__GAME__.W3.gfx.setQuality('low'));
  await page.locator('#hud [data-tab="settings"]').click();await page.locator(`.heropick[data-id="${mobile?'girl':'boy'}"]`).click();await page.locator('button[data-act="closepanel"]').click();
  const section=async id=>{await page.locator(`[data-sp="section"][data-id="${id}"]`).click();};
  await page.locator('[data-act="tab"][data-tab="space"]:visible').first().click();
@@ -102,6 +105,7 @@ for(const mobile of [false,true]){
  await page.evaluate(()=>{window.Date=window.__RealDate;__GAME__.W3.gfx.resumeGraphics();});
  await page.reload();await page.waitForFunction(()=>!!window.__GAME__);
  await page.waitForFunction(()=>__GAME__.W3.state==='ready' && !!__GAME__.W3.gfx, null, {timeout:120000});
+ await page.evaluate(()=>__GAME__.W3.gfx.setQuality('low'));
  await page.waitForFunction(()=>__GAME__.S.space.phase!=='boarded');
  // 演出の時刻は保存した発射時刻からの実時間。ソフトウェア描画では再読み込みの間に終わっていることがあるので、まだ飛んでいるときだけスキップを押す
  const skipped=await page.evaluate(()=>{const b=document.querySelector('[data-sp="skip"]');if(b&&__GAME__.SPACE.active.includes(__GAME__.S.space.phase)){b.click();return true;}return false;});
@@ -116,7 +120,7 @@ for(const mobile of [false,true]){
  assert.equal(await page.evaluate(()=>localStorage.getItem('zero-kagaku-save')),null,'通常セーブに検証データを書かない');
  assert(await page.evaluate(()=>document.scrollingElement.scrollWidth<=innerWidth),'ページの横はみ出しなし');
  assert.deepEqual(errors,[]);
- results.push({viewport:mobile?'mobile390x844':'desktop1280x800',realWebGL:true,passed:true});console.log('PASS',results.at(-1));
+ results.push({viewport:mobile?'mobile390x844':'desktop1280x800',realWebGL:true,graphicsQuality:'low (public preset, CPU-only CI)',passed:true});console.log('PASS',results.at(-1));
  await ctx.close();
 }
 }finally{await browser.close();server.close();fs.writeFileSync(path.join(root,'test-results/space-e2e.json'),JSON.stringify(results,null,2));}
