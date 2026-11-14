@@ -355,7 +355,7 @@ var NATURE = (function(){
         const dc = T.distanceToRiver(t.x,t.z);
         if(!(dc > 3.4 && dc < 6.4 && Math.min(...dr) < 4.6)) why.add("水車は川の水ぎわ（半分が水にかかる所）に置く");
       } else if(Math.min(...dr) < 5.0) why.add("川（水の中・水ぎわ）には置けない");
-      for(const o of structs){ if(o.id===ignore) continue;
+      for(const o of structs){ if(o.id===ignore || o.id.startsWith(ignore+":")) continue;
         if(pts.some(q=>sdist(o,q.x,q.z) < 0.5) || samples(o).some(q=>sdist(t,q.x,q.z) < 0.5)) { why.add("ほかの建物と重なる"); break; } }
       const near = around(t.x, t.z, t.r+2.5);
       if(near.some(o=>o.block && present(S,o,now) && sdist(t,o.x,o.z) < o.r+0.15)) why.add("木や岩と重なる（先に伐る・割るか、場所を変える）");
@@ -369,7 +369,7 @@ var NATURE = (function(){
         const L=Math.hypot(lp[0],lp[1])||1, w=toWorld(t, lp[0]+lp[0]/L*0.6, lp[1]+lp[1]/L*0.6);
         // 主人公は川の中も歩けるので、水ぎわに置く設備（水車）は使う場所が浅瀬でもよい
         let bad = !inWorld(w.x,w.z,0.5) || (p.rule!=="waterside" && T.distanceToRiver(w.x,w.z) < 4.6) || slope(w.x,w.z) > 0.7;
-        if(!bad) for(const o of nearbySolids(S,w.x,w.z,now)){ if(o.id===ignore) continue; if(sdist(o,w.x,w.z) < PLAYER_R){ bad=true; break; } }
+        if(!bad) for(const o of nearbySolids(S,w.x,w.z,now)){ if(o.id===ignore || o.id.startsWith(ignore+":")) continue; if(sdist(o,w.x,w.z) < PLAYER_R){ bad=true; break; } }
         if(!bad && sdist(t,w.x,w.z) < PLAYER_R*0.5) bad=true;
         if(bad){ why.add(k==="entrance" ? "入口の前があいていない" : "設備を使う場所（前）があいていない"); } }
       return {ok: why.size===0, reasons:[...why], shape:t};

@@ -3,6 +3,23 @@ function spaceUI(){return U.space||(U.space={section:'製作',group:'材料',ite
 function spEscape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function spBtn(action,text,id,disabled){return `<button class="btn small" data-sp="${action}" data-id="${id||''}" ${disabled?'disabled':''}>${text}</button>`;}
 function spaceItemLink(id){const name=S.disc[id]||spaceUI().detail?nm(id):'未発見の'+(IT[id]?.group||'材料');return spBtn('item',(S.disc[id]||spaceUI().detail?ic(id):'？')+' '+spEscape(name),id);}
+/* 足りない物を「次に押すボタン」にする（2026-11-14 Claude）。建物の設備は建設の状態（予定地・搬入中・施工中）と現場／建設の入口、
+   実習は実習の画面、材料・作る設備・道具はその作り方へ。判定は SPACE.needs・CONS のまま（ここでは表示と移動だけ） */
+function spNeedHtml(x){
+  if(x.kind==='equipment'){const d=typeof CONS!=='undefined'&&E.buildRule(S)&&!S.verify?CONS.facilityBuilding(x.id):null;
+    if(d){const site=consSiteOf(x.id),st=site?CONS.stagesOf(site):null;
+      return `<span class="sp-need">${spEscape(x.text)}（${site?PHASE_NAME[site.phase]+'・工程 '+Math.min(site.stage,st.length)+'/'+st.length:'未着手：現地に建てる'}）</span>${site?`<button class="btn small sub" data-act="cs-open" data-id="${site.id}">現場を開く</button>`:`<button class="btn small sub" data-act="cs-place" data-id="${d.id}">建設する</button>`}`;}
+    return `<span class="sp-need">${spEscape(x.text)}</span>${spBtn('item','作り方を見る',x.id)}`;}
+  if(x.kind==='lesson')return `<span class="sp-need">${spEscape(x.text)}</span>${spBtn('lesson-go','実習へ',x.id)}`;
+  if(x.kind==='material')return `<span class="sp-need">${spEscape(x.text)}</span>${spBtn('item','作り方・原料',x.id)}`;
+  return `<span class="sp-need">${spEscape(x.text)}</span>`;
+}
+/* 現地に建てる設備（発電機・作業台など）なら、作り方の画面にも建設の状態と入口を出す */
+function spBuildNote(id){if(typeof CONS==='undefined'||!E.buildRule(S)||S.verify||!CONS.facilityBuilding(id))return '';
+  return E.hasTool(S,id)?`<p class="desc">「${spEscape(nm(id))}」は完成した建物がある（使える）</p>`:`<div class="sp-needs">${spNeedHtml({kind:'equipment',id,text:nm(id)})}</div>`;}
+function spStatus(n,made){if(made)return '完成済み';const eq=n.filter(x=>x.kind==='equipment');
+  if(eq.length){const site=eq.map(x=>typeof CONS!=='undefined'&&E.buildRule(S)&&!S.verify?consSiteOf(x.id):null).find(Boolean);return site?(site.phase==='constructing'?'設備を施工中':'設備の建設待ち'):'設備不足';}
+  return n.some(x=>x.kind==='lesson')?'実習待ち':n.length?'材料不足':'製作可能';}
 function spaceProject(){
   const p=SPACE.state(S),u=spaceUI(),C=D.space;
   if(p.phase==='boarded')return `<div class="sp-flight"><h2>搭乗完了</h2><p>宇宙服・生命維持・機体の点検は合格済みです。</p>${spBtn('launch','保存して打ち上げ')}${spBtn('back','搭乗を取り消す')}</div>`;
@@ -11,8 +28,8 @@ function spaceProject(){
   if(u.section==='製作'){
     body=`<label>分野 <select id="sp-group">${C.groups.map(g=>`<option ${u.group===g?'selected':''}>${g}</option>`).join('')}</select></label>
     <p>材料・設備・実習がそろえば製作できます。文明段階による制限はありません。工程と数量はゲーム内で簡略化しています。同じ部品は最大20回のまとめ製作を使えます。原料集めには既存の自動採取も活用できます。</p>
-    <div class="sp-grid">${C.recipes.filter(c=>IT[c.out].group===u.group).map(c=>{const n=SPACE.needs(S,c,1),made=SPACE.owned(S,c.out),status=made?'完成済み':n.some(x=>x.kind==='equipment')?'設備不足':n.some(x=>x.kind==='lesson')?'実習待ち':n.length?'材料不足':'製作可能';
-      return `<article class="sp-card"><h4>${spaceItemLink(c.out)}</h4><b>${status} ${made?'（在庫'+E.cnt(S,c.out)+'・設置や組込を含む）':''}</b><p>${spEscape(IT[c.out].kid)}</p><small>${c.seconds}秒／回・生成${c.qty}個</small><p>${n.map(x=>spEscape(x.text)).join('／')}</p>${spBtn('select','材料と工程を見る',c.out)}</article>`;}).join('')}</div>`;
+    <div class="sp-grid">${C.recipes.filter(c=>IT[c.out].group===u.group).map(c=>{const n=SPACE.needs(S,c,1),made=SPACE.owned(S,c.out),status=spStatus(n,made);
+      return `<article class="sp-card"><h4>${spaceItemLink(c.out)}</h4><b>${status} ${made?'（在庫'+E.cnt(S,c.out)+'・設置や組込を含む）':''}</b><p>${spEscape(IT[c.out].kid)}</p><small>${c.seconds}秒／回・生成${c.qty}個</small><div class="sp-needs">${made?'':n.filter(x=>x.kind!=='owned').map(spNeedHtml).join('')}</div>${spBtn('select','材料と工程を見る',c.out)}</article>`;}).join('')}</div>`;
     if(u.item)body+=spaceRecipe(u.item);
   }
   if(u.section==='実習')body=spaceLesson();
@@ -31,7 +48,7 @@ function spaceProject(){
   if(u.section==='試験')body=`<p>故障の原因に対応する工程を選びます。不合格でも部品は壊れません。試験は現在の構成だけに有効です。</p>${C.tests.map(t=>{const n=SPACE.testNeeds(S,t.id),status=SPACE.valid(S,t.id)?'合格':p.tests[t.id]?.pass?'失効':p.tests[t.id]?'要改善':'未実施';
     const prompts={power:'電気が負荷へ届かない。確認するのは？',computer:'保存した値が戻らない。確認するのは？',radio:'地上へ信号が届かない。確認するのは？',suit:'空気を保持できない。確認するのは？',life:'CO₂の状態が要点検。確認するのは？',uncrewed:'搭乗前に飛行のつながりを確かめる方法は？',final:'部分試験の後、最後に確認する範囲は？'};
     return `<article class="sp-card"><h4>${t.name}：${status}</h4><p>${n.map(spEscape).join('／')||prompts[t.id]}</p><label>確認する工程 <select id="sp-test-${t.id}">${['選んでください','配線','記憶','通信','気密','空気再生','模擬','全項目','外装の色'].map(v=>`<option>${v}</option>`).join('')}</select></label>${spBtn('test','試験する',t.id,n.length>0)}</article>`;}).join('')}`;
-  if(u.section==='打ち上げ')body=`<p>初回は宇宙への到達が目標です。軌道投入・帰還は条件に含めません。</p><ul>${SPACE.conditions(S).map(c=>`<li>${c.ok?'✓':'不足'} ${c.name} ${!c.ok?spBtn('resolve','確認する',c.id):''}</li>`).join('')}</ul>
+  if(u.section==='打ち上げ')body=`<p>初回は宇宙への到達が目標です。軌道投入・帰還は条件に含めません。</p><ul>${SPACE.conditions(S).map(c=>`<li>${c.ok?'✓':'不足'} ${c.name} ${c.ok?'':c.id==='generator'&&spBuildNote('generator')?spBuildNote('generator'):spBtn('resolve','確認する',c.id)}</li>`).join('')}</ul>
     <p>主人公：${p.phase==='boarded'?'搭乗済み':'未搭乗'}</p>${spBtn('board','搭乗する','',p.phase!=='ground')}${spBtn('launch','保存して打ち上げ','',p.phase!=='boarded')}${p.phase==='boarded'?spBtn('back','搭乗を取り消す'):''}`;
   return `<div class="sp-project"><p><strong>宇宙へ</strong> — 原料から、主人公の宇宙到達まで ${p.firstClear?'／初回クリア済み':''}</p>
     <div class="sp-tabs">${['製作','実習','発射サイト','組立','試験','打ち上げ'].map(s=>`<button class="btn small ${u.section===s?'':'sub'}" data-sp="section" data-id="${s}" aria-pressed="${u.section===s}">${s}</button>`).join('')}</div>
@@ -54,10 +71,10 @@ function spaceVerifyAct(a){
 }
 function spaceRecipe(id){
   const u=spaceUI(),r=E.producers(id),it=IT[id];if(!it)return '';
-  const recipes=[...r.crafts,...r.procs];return `<section class="sp-card" id="sp-recipe"><h3>${S.disc[id]||u.detail?spEscape(nm(id)):'未発見の設計のヒント'}</h3><p>${spEscape(it.kid)}</p><p>${spEscape(it.more)}</p><p class="desc">${spEscape(it.simplification||'')}</p>${(it.scienceSources||[]).length?`<details><summary>科学の参考資料</summary>${it.scienceSources.map(url=>`<a href="${spEscape(url)}" target="_blank" rel="noopener noreferrer">参考資料を開く</a>`).join(' ／ ')}</details>`:''}
+  const recipes=[...r.crafts,...r.procs];return `<section class="sp-card" id="sp-recipe"><h3>${S.disc[id]||u.detail?spEscape(nm(id)):'未発見の設計のヒント'}</h3><p>${spEscape(it.kid)}</p>${spBuildNote(id)}<p>${spEscape(it.more)}</p><p class="desc">${spEscape(it.simplification||'')}</p>${(it.scienceSources||[]).length?`<details><summary>科学の参考資料</summary>${it.scienceSources.map(url=>`<a href="${spEscape(url)}" target="_blank" rel="noopener noreferrer">参考資料を開く</a>`).join(' ／ ')}</details>`:''}
     ${r.regions.length?`<p>天然資源：${r.regions.map(x=>spEscape(x.name)).join('・')}</p>${spBtn('book','採集と加工を図鑑で確認',id)}`:''}
     ${recipes.map(c=>`<div><p>材料：${Object.entries(c.inp).map(([k,n])=>spaceItemLink(k)+' ×'+n).join(' ')} → ${typeof c.out==='string'?c.qty:c.out[id]}個</p><p>設備：${(Array.isArray(c.at)?c.at:c.at?[c.at]:[]).map(spaceItemLink).join(' ')||'手作業'} 道具：${c.tools.map(spaceItemLink).join(' ')||'なし'}</p><p>${spEscape(c.how||c.why)}</p>
-    ${c.space?`<label>まとめ製作 <input id="sp-count" type="number" min="1" max="${it.unique?1:20}" value="1"></label>${spBtn('craft','製作を始める',c.id,!!SPACE.state(S).job)}`:spBtn('book','既存の工作・実験を確認',id)}</div>`).join('')}
+    ${c.space?`<div class="sp-needs">${SPACE.needs(S,c,1).filter(x=>x.kind!=='owned').map(spNeedHtml).join('')}</div><label>まとめ製作 <input id="sp-count" type="number" min="1" max="${it.unique?1:20}" value="1"></label>${spBtn('craft','製作を始める',c.id,!!SPACE.state(S).job)}`:spBtn('book','既存の工作・実験を確認',id)}</div>`).join('')}
     <p>材料または設備を選ぶと、その原料へ戻れます。</p></section>`;
 }
 function spaceLesson(){
@@ -93,6 +110,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest?.('[data-sp]');
   if(a.startsWith('v-')){if(!S.verify)return;r=spaceVerifyAct(a);if(r)spaceResult(r);return;}
   if(a==='item'||a==='select'){u.item=id;u.section='製作';if(IT[id]?.group)u.group=IT[id].group;renderPanel();$('#sp-recipe')?.scrollIntoView({block:'start'});return;}
   if(a==='book'){openItem(id);return;}
+  if(a==='lesson-go'){u.section='実習';u.lesson=id;u.output=null;u.message='';renderPanel();return;}
   if(a==='craft')r=SPACE.startCraft(S,id,Number($('#sp-count')?.value||1));
   if(a==='finish')r=SPACE.finishCraft(S);
   if(a==='cancel-job')r=SPACE.cancelCraft(S);

@@ -136,7 +136,10 @@ if (fs.existsSync(path.join(root, toolAtlas)) && fs.existsSync(path.join(root, t
 // 宇宙計画の契約 v6（Muse ラウンド30）：組込枠ごとの表示ノード一覧と、発射サイトの設備の置き場所。ゲームはこの一覧で表示を切り替える
 ASSETS.construction={contract:JSON.parse(rd('docs/construction/construction-assets.json')),models:{},textures:{}};
 for(const f of fs.readdirSync(path.join(root,'assets/build/construction')))if(f.endsWith('.glb'))ASSETS.construction.models[f.slice(0,-4)]=fs.readFileSync(path.join(root,'assets/build/construction',f)).toString('base64');
-for(const f of fs.readdirSync(path.join(root,'assets/construction/textures')))if(f.endsWith('.png')){const p='assets/construction/textures/'+f;ASSETS.construction.textures[p]=dataUrl(p,'image/png');}
+/* 道のテクスチャ：鍵は契約のパス（assets/construction/textures/*.png）のまま、中身は scripts/make-construction-glb.py の WebP（なければ原本の PNG）。
+   予定地・足場・資材の山の GLB の画像は共有テクスチャ（tex:<hash>。拠点の建物と同じ画像は 1 枚）なので、その画像を ASSETS.sharedTex へ足す */
+for(const f of fs.readdirSync(path.join(root,'assets/construction/textures')))if(f.endsWith('.png')){const p='assets/construction/textures/'+f,w='assets/build/construction/'+f.replace(/\.png$/,'.webp');ASSETS.construction.textures[p]=fs.existsSync(path.join(root,w))?dataUrl(w,'image/webp'):dataUrl(p,'image/png');}
+{const cm=path.join(root,'assets/build/construction/manifest.json');if(fs.existsSync(cm)){ASSETS.sharedTex=ASSETS.sharedTex||{};for(const h of Object.keys(JSON.parse(fs.readFileSync(cm,'utf8')).textures))ASSETS.sharedTex[h]=ASSETS.sharedTex[h]||dataUrl('assets/build/nature-tex/'+h+'.webp','image/webp');}}
 ASSETS.spaceModels = {};
 ASSETS.spaceContract=JSON.parse(rd('assets/rocket/rocket-contract.json'));
 ASSETS.spacePlacement={'launch-pad':[0,0],'rocket':[0,0],'support-tower':[-4.6,0],'control-terminal':[5,5],'electronics-fab':[-2,6],'computer-bench':[1,6],'test-terminal':[4,-6],'power-distribution':[6,-2],'life-support':[6,1],'suit-stand':[-6,-5],'parts-rack':[-2,-5]};
