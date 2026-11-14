@@ -142,11 +142,11 @@ for(const id of ['rocket','launch-pad','support-tower','boarding-corridor','cont
 const parts = {
   '/*GFX*/': gfxCode,
   '/*ASSETS*/': 'var ASSETS=' + JSON.stringify(ASSETS) + ';',
-  '/*DATA*/': rd('src/game/data.js')+'\n'+rd('src/game/space-data.js'),
-  '/*ENGINE*/': rd('src/game/engine.js')+'\n'+rd('src/game/space.js'),
+  '/*DATA*/': rd('src/game/data.js')+'\n'+rd('src/game/space-data.js')+'\n'+rd('src/game/construction-data.js'),
+  '/*ENGINE*/': rd('src/game/engine.js')+'\n'+rd('src/game/space.js')+'\n'+rd('src/game/construction.js'),
   '/*TERRAIN*/': terrainCode,
   '/*NATURE*/': rd('src/game/nature.js'),
-  '/*UI*/': rd('src/game/ui.js').replace('/*SPACE_UI*/',()=>rd('src/game/space-ui.js')),
+  '/*UI*/': rd('src/game/ui.js').replace('/*SPACE_UI*/',()=>rd('src/game/space-ui.js')).replace('/*CONS_UI*/',()=>rd('src/game/construction-ui.js')),
 };
 let html = rd('src/template.html');
 for (const [key, code] of Object.entries(parts)) {

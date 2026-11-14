@@ -130,6 +130,19 @@ var CONS = (function(D, E){
     const back = giveBack(S, inst.delivered); inst.delivered = {}; inst.consumed = {}; inst.phase = "planned";
     inst.x = +x.toFixed(2); inst.z = +z.toFixed(2); inst.rot = +norm(rot).toFixed(4); S.seq++; return {ok:true, returned:back};
   }
+  /* 以前の版で作って持ち物にある設備（移行で持ち物のまま残した物）を、選んだ場所の完成した建物にする。素材は求めない。持ち物からは消す（二重に持たない） */
+  function placeLegacy(S, world, fac, x, z, rot, opts, token){
+    if(!tokenOk(S, token)) return fail("二重の操作は取り消した", {kind:"dup"});
+    const d = facilityBuilding(fac); if(!d) return fail("建物にできない設備");
+    if(!E.has(S, fac)) return fail("持ち物にない");
+    const chk = checkBuilding(S, world, d.id, x, z, rot, opts); if(!chk.ok) return fail("ここには置けない："+chk.reasons.join("／"), {reasons:chk.reasons});
+    const c = state(S), id = newId(c);
+    c.inst[id] = {id, def:d.id, x:+x.toFixed(2), z:+z.toFixed(2), rot:+norm(rot).toFixed(4), phase:"completed", stage:d.stages.length, delivered:{}, consumed:add({}, totalMat(d)), legacy:true, created:Date.now(), done:Date.now()};
+    S.inv[fac] = E.cnt(S,fac) - 1; if(S.inv[fac]<=0) delete S.inv[fac];
+    S.seq++; return {ok:true, id};
+  }
+  /* 持ち物にある、建物にできる設備（以前の版の物） */
+  const legacyItems = S=> C.defs.filter(d=>d.facility && !d.facility.startsWith("sp_") && E.has(S, d.facility)).map(d=>d.facility);
   /* 取消・解体で戻る物と失う物（確定の前に画面へ出す） */
   function removalPreview(S, id){
     const inst = state(S).inst[id]; if(!inst) return null;
@@ -199,7 +212,7 @@ var CONS = (function(D, E){
     const r = stageReady(S, inst); if(!r.ok) return fail(r.why.join("／"), {why:r.why});
     now = now||Date.now();
     const sec = r.stage.work * (inst.kind==="road" ? inst.cells.filter(q=>q.need.includes(r.stage.id)).length : 1);
-    inst.work = {stage:inst.stage, until: now + (E.vflag(S,"instant") ? 0 : Math.round(sec*1000))}; inst.phase = "constructing";
+    inst.work = {stage:inst.stage, started:now, until: now + (E.vflag(S,"instant") ? 0 : Math.round(sec*1000))}; inst.phase = "constructing";
     S.seq++; return {ok:true, until:inst.work.until, seconds:sec};
   }
   /* 施工を終える：時間が過ぎていて、現場のそばにいるとき。その工程の資材を使い、次の工程へ。最後なら完成 */
@@ -312,6 +325,6 @@ var CONS = (function(D, E){
 
   return {DEF, state, rule, built, list, plan, move, relocate, remove, removalPreview, deliver, deliverAll, supplyTable, remainingNeed, stageReady, startWork, finishWork,
     checkBuilding, colliders, roadPlan, planRoad, removeRoadCells, roadShape, roadStagesOf, cellKey, cellOf, cellCenter, lineCells, connected, towns, totalMat, stagesOf,
-    near, distTo, shapeOfInst, facilityBuilding, known, migrateLegacy, spec};
+    near, distTo, shapeOfInst, placeLegacy, legacyItems, facilityBuilding, known, migrateLegacy, spec};
 })(typeof DATA!=="undefined"?DATA:(require("./construction-data.js"), require("./data.js")), typeof ENGINE!=="undefined"?ENGINE:require("./engine.js"));
 if(typeof module!=="undefined") module.exports = CONS;
