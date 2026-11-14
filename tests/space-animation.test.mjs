@@ -4,12 +4,14 @@ import {transform} from 'esbuild';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const {code}=await transform(fs.readFileSync(new URL('../src/space-animation.ts',import.meta.url),'utf8'),{loader:'ts',format:'esm'});
-const {visibleAtStage,flightPose,FLIGHT}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
-const visible=stage=>name=>visibleAtStage(name,stage);
-assert(visible(1)('Frame_TankLower'));assert(!visible(1)('Capsule'));
-assert(visible(2)('Skin_Lower_P1'));assert(visible(2)('Skin_Lower_P3'));assert(!visible(2)('Skin_Lower_P4'));
-assert(visible(2)('Frame_BodyLower'));assert(visible(2)('Skin_Upper_P2'));assert(!visible(2)('Skin_Upper_P1'));assert(!visible(2)('Capsule'));assert(!visible(2)('NoseTip'));
-assert(visible(3)('Capsule'));assert(visible(3)('BayPanel'));assert(!visible(3)('Frame_BodyLower'));
+const {slotVisible,flightPose,FLIGHT}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
+const sn=JSON.parse(fs.readFileSync(new URL('../assets/rocket/rocket-contract.json',import.meta.url))).slotNodes;
+const at=inst=>name=>slotVisible(name,inst,sn), S1={structure:1}, S2={structure:1,propulsion:1}, S3={structure:1,propulsion:1,capsule:1,skin:1};
+const one=(k)=>sn[k][0];
+assert(!at({})(one('frame')),'S0 は何も出さない');
+assert(at(S1)(one('frame'))&&!at(S1)(one('propulsion'))&&!at(S1)(one('capsule'))&&!at(S1)(one('skin')),'S1＝骨組み');
+assert(at(S2)(one('frame'))&&at(S2)(one('propulsion'))&&!at(S2)(one('skin')),'S2＝骨組み＋推進（部分外装なし）');
+assert(!at(S3)(one('frame'))&&at(S3)(one('capsule'))&&at(S3)(one('skin'))&&at(S3)(one('propulsion')),'S3＝外装で骨組みは隠れる');
 assert.equal(flightPose(3.7,true).corridor,0);assert.equal(flightPose(5.2,true).tower,0);assert.equal(flightPose(7.7,true).mount,0);assert.equal(flightPose(9.9,true).rise,0);
 assert.equal(flightPose(5.3,true).corridor,1.5);assert.equal(flightPose(7.8,true).tower,2.5);assert.equal(flightPose(10,true).mount,.6);
 assert.equal(flightPose(100,false).rise,0,'return to prelaunch pose');
@@ -24,7 +26,7 @@ for(const suffix of ['-lod1','']){
  assert(hatch.getWorldPosition(new THREE.Vector3()).distanceTo(start)<1e-4,'closed pose restores '+suffix);
  assert.equal(anchor.position.y,17.299999237060547);
 }
-console.log('PASS v5 partial panels, sequential clips, hatch end poses in both LODs');
+console.log('PASS contract v6 slot visibility, sequential clips, hatch end poses in both LODs');
 // Sample every built-in clip without modifying the canonical GLB. Includes the loop midpoint.
 let sampled=0;
 for(const suffix of ['', '-lod1'])for(const id of ['rocket','launch-pad','support-tower','boarding-corridor']){

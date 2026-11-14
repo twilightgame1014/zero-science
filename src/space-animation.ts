@@ -8,9 +8,16 @@ export function flightPose(elapsed:number,active:boolean){
  mount:Math.min(.6,Math.max(0,t-FLIGHT.mount)),
  rise:active?Math.min(70,Math.max(0,t-FLIGHT.ascent)*12):0};
 }
-export function visibleAtStage(name:string,stage:number){
- if(stage===0)return false;
- if(stage===1)return /^Frame_/.test(name);
- if(stage===2)return /^(Propulsion|PropSkirt|Nozzle|NozzleInner|BodyLowerInsul|Skin_Lower_P[123]|Skin_Upper_P2|SeamRing_70|Frame_BodyLower|Frame_BodyUpper|Frame_TankUpper)(?:$|[_.])/.test(name);
- return !/^Frame_/.test(name);
+/* 契約 v6（Muse ラウンド30）：組込枠ごとの表示ノード一覧。S1＝骨組み、S2＝＋推進、S3＝＋搭乗区画＋外装、S4＝全部。部分外装の S2 は使わない（v6 で廃止）。 */
+export type SlotNodes={frame:string[];propulsion:string[];capsule:string[];skin:string[]};
+export function slotOf(name:string,sn?:SlotNodes):'frame'|'propulsion'|'capsule'|'skin'|undefined{
+ if(sn){for(const k of ['frame','propulsion','capsule','skin'] as const)if(sn[k].includes(name))return k;return undefined;}
+ // 契約がないときだけ旧いノード名の判定
+ return /^Frame_/.test(name)?'frame':/^(Propulsion|PropSkirt|Nozzle|Fin)/.test(name)?'propulsion':/^(Capsule|Hatch|Nose|Window|RCS)/.test(name)?'capsule':'skin';
+}
+/** 組み込んだ枠から、機体のメッシュを出すかを決める。骨組みは外装がないときだけ。 */
+export function slotVisible(name:string,installed:Record<string,unknown>,sn?:SlotNodes){
+ if(!installed.structure)return false;
+ const slot=slotOf(name,sn);
+ return slot==='frame'?!installed.skin:slot==='propulsion'?!!installed.propulsion:slot==='capsule'?!!installed.capsule:slot==='skin'?!!installed.skin:false;
 }

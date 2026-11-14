@@ -38,7 +38,8 @@ var SPACE=(function(D,E){
   function log(S,kind,text){const p=state(S);p.history.push({t:Date.now(),kind,text});p.history=p.history.slice(-200);}
   const locked=S=>state(S).phase!=='ground';
   const placed=S=>{const b=S.build&&S.build['space-site'];return !!b&&!b.removed&&Number.isFinite(b.x)&&Number.isFinite(b.z)&&Number.isFinite(b.rot);};
-  const stage=S=>{const i=state(S).installed;return !i.structure?0:C.slots.every(s=>i[s.id])?4:i.skin&&i.propulsion&&i.capsule?3:i.skin&&i.propulsion?2:1;};
+  /* 段階は契約 v6（Muse ラウンド30）の組込枠の組合せ：S1＝骨組み、S2＝＋推進、S3＝＋搭乗区画＋外装、S4＝全部（完成形） */
+  const stage=S=>{const i=state(S).installed;return C.slots.every(s=>i[s.id])?4:i.capsule&&i.skin?3:i.propulsion?2:i.structure?1:0;};
   function owned(S,id){const p=state(S);return E.has(S,id)||(id==='sp_suit'&&!!p.suit)||(!!p.ground&&['sp_pad','sp_tower','sp_control','sp_power'].includes(id))||C.slots.some(slot=>slot.item===id&&!!p.installed[slot.id]);}
   function cancelCraft(S){const p=state(S);if(locked(S))return fail('演出中です');if(!p.job)return fail('製作中ではありません');delete p.job;S.seq++;return {ok:true};}
   function needs(S,c,batches){

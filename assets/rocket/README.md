@@ -155,3 +155,26 @@ HoldPivot_1〜4）。
   機体の接続数値確認、通路とハッチの干渉確認
 - 「素材の制作完了」と「ゲームへの導入完了」は分けて報告する。
   本書の段階では素材側の契約であり、導入は Claude の統合後。
+
+## Round 30 amendments (2026-11-14, contract v6)
+
+- **Stages are slot combinations** (contract `assemblyStages` /
+  `slotNodes`): the v5 partial-skin S2 is removed — the game has
+  a single skin slot. S2 is now frame + propulsion. Visibility
+  should switch by the exact per-slot node lists in
+  `rocket-contract.json` (`slotNodes`), not by name patterns.
+- **Equipment placement** is contractual now:
+  `equipmentPlacement` in the contract (site-local positions +
+  facing). One change from the first integration:
+  `spacesuit-display` moves to (-6, 0, -3.0) — at (-6, 0, -5) it
+  overlapped `suit-stand` whenever both items were owned.
+- **Clips fully verified** (all 8, sampled at 0/50/100%):
+  see `animationsVerified` in the contract and
+  `tools/verify_round30.py`. The game's timing (retract +3 s,
+  mount release +5 s, ascent +7 s) is confirmed as-is.
+- **Effects**: the module provides `playVisualEffect` kinds
+  `exhaust` and `padSmoke` (see contract `effects`).
+- UV templates for the GPT texture pass live in
+  `textures/uv-template-rocket-body.png` (2048x1024) and
+  `textures/uv-template-capsule.png` (1024x512), generated
+  from the shipped models' UVs.

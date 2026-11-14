@@ -99,7 +99,10 @@
 - 宇宙計画の製作は**加工時間つき**（`SPACE.startCraft`→`finishCraft`、まとめ 1〜20 回）。既存の即時工作（`E.runCraft`）は `c.space` を拒否する（時間の抜け道を作らない）。
 - 発射サイトは 18×18 の 1 区画（`D.space.siteSpec`、入口はローカル (0,+10)、傾斜 0.18 まで）。設置は `nature.js` の `checkPlacement`/`commitPlacement` を通す（木や岩を消して成功させない）。搭乗は入口から 4 マス以内。
 - 組込で部品を消費、取外しで同じ部品を返す。試験は設置位置・部品の変更番号・前提試験の署名で失効する。宇宙服用と機体用の生命維持ユニットはそれぞれ必要。
-- 発射前の保存に失敗したら発射しない。演出は保存した発射時刻からの実時間（14 秒）で進み、再読み込みで続きから。スキップも同じ到達処理。初回クリア（`space.firstClear`）と再演出を区別し、資材は増やさない。演出中（カウントダウン〜上昇）のパネルは上の細い帯（`data-size="flight"`）で 3D を見せる。
+- 発射前の保存に失敗したら発射しない。演出は保存した発射時刻からの実時間（GPT/Codex の統合 PR #4 から 18 秒：秒読み 0〜3・退避 3〜8.4・点火 8.4〜10・上昇 10〜14・宇宙 14〜18。`src/space-animation.ts` の `FLIGHT`）で進み、再読み込みで続きから。スキップも同じ到達処理。初回クリア（`space.firstClear`）と再演出を区別し、資材は増やさない。演出中（カウントダウン〜上昇）のパネルは上の細い帯（`data-size="flight"`）で 3D を見せる。
+- 正式モデルの契約は `assets/rocket/rocket-contract.json` v6（Muse ラウンド30）。ビルドが契約の全体を `ASSETS.spaceContract` に入れ（当たり判定の `ASSETS.spacePlacement` も `equipmentPlacement` から作る）、`src/space-models.ts` がその一覧どおりに表示する：機体のメッシュ 90 個は組込枠（骨組み・推進・搭乗区画・外装）のどれか1つ（テストで検査）。骨組みは外装がないときだけ。設備の置き場所も契約の表（宇宙服ディスプレイは (−6,0,−3)）。
+  段階（`SPACE.stage`）は契約どおり S1＝骨組み、S2＝＋推進、S3＝＋搭乗区画＋外装、S4＝全部。部分外装の S2 は使わない。搭乗から地上へ戻るまで主人公は `gfx.setPlayerVisible(false)`（公開 API。NPC は変えない）。
+  噴射は `playVisualEffect('exhaust')` を Anchor_exhaust の位置へ点火中は 0.25 秒・上昇中は 0.1 秒ごと（一回分はその場に残るので、動く機体に追いつかせる）、煙は `'padSmoke'` を Anchor_smoke_l／_r へ点火（`FLIGHT.ignition`）から 0.8 秒ごとに 3 回。描画モジュールに `playVisualEffect` がないときだけ、ゲームの円すいと GPT の煙の絵（`ASSETS.spaceSmoke`）で代わりに出す。打ち上げの時刻はラウンド30 の検品（+3・+5・+7 秒）のあと PR #4 で上の 18 秒に変わった（クリップを順に再生するため。Muse の再確認は未）。LOD0 は PR #4 から同梱し、PC の近景（カメラから 100 マス以内）だけで使う（スマホは LOD1 のみ）。ノード名は LOD0・LOD1 とも同じ 90 個で、slotNodes がそのまま効く。
 - 推進・誘導・生命維持は架空の部品と模擬の試験（現実の配合・条件・制御は扱わない）。説明には「ゲーム内で簡略化」。
 - セーブ v5（`space`）。v4 からの移行あり。Claude 試作の形式（`space.know` など）は `SPACE.state` が読み込み時に移す。
 - 未完成の素材（男女の宇宙服 8 方向シート・追加品目のアイコン・テクスチャ原画）は `docs/space/MISSING-ASSETS.md`。今は仮表示。統合の記録は `docs/space/SPACE-INTEGRATION-2026-11-14.md`。

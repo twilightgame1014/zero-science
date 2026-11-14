@@ -135,7 +135,9 @@ if (fs.existsSync(path.join(root, toolAtlas)) && fs.existsSync(path.join(root, t
 // Muse確定版のLOD1を可逆圧縮して1ファイルHTMLへ。読込み失敗は仮表示へ戻る。
 ASSETS.spaceModels = {};
 ASSETS.spaceContract=JSON.parse(rd('assets/rocket/rocket-contract.json'));
+// 契約 v6（Muse ラウンド30）：組込枠の表示ノード（slotNodes）と設備の置き場所（equipmentPlacement）。space-models.ts はこの一覧で表示し、当たり判定（spacePlacement）も同じ表から作る
 ASSETS.spacePlacement={'launch-pad':[0,0],'rocket':[0,0],'support-tower':[-4.6,0],'control-terminal':[5,5],'electronics-fab':[-2,6],'computer-bench':[1,6],'test-terminal':[4,-6],'power-distribution':[6,-2],'life-support':[6,1],'suit-stand':[-6,-5],'parts-rack':[-2,-5]};
+for(const q of (ASSETS.spaceContract.equipmentPlacement?.items||[]))ASSETS.spacePlacement[q.model]=[q.position[0],q.position[2]];
 for(const id of ['rocket','launch-pad','support-tower','boarding-corridor','control-terminal','electronics-fab','computer-bench','test-terminal','suit-stand','life-support','power-distribution','parts-rack','spacesuit-display']){
   const f=path.join(root,'assets/rocket/models',id+'-lod1.glb');
   if(fs.existsSync(f)){

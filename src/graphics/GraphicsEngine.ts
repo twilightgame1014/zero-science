@@ -10,7 +10,6 @@ import type {
   GroundPick,
   NpcVisualState,
   PlayerVisualState,
-  PlayerVisibilityControl,
   QualityTier,
   ResourceVisualState,
   StructurePreviewState,
@@ -49,7 +48,7 @@ import { toScenePosition } from './utils';
  *    through the methods below. It never mutates logic state, never
  *    decides collisions, gathering, building permission or progress.
  */
-export class GraphicsEngine implements PlayerVisibilityControl {
+export class GraphicsEngine {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private container: HTMLElement;
@@ -363,8 +362,16 @@ export class GraphicsEngine implements PlayerVisibilityControl {
     this.character.setSpriteTexture(tex);
   }
 
-  /** Hide only the rendered player while aboard; preserve identity and saved position. */
-  setPlayerVisible(visible: boolean): void { this.character.group.visible = visible; }
+  /**
+   * Show or hide the player character only (NPCs unaffected).
+   * Round 30 (space integration request 1): the game hides the
+   * player while they are inside the capsule, from boarding
+   * until return to the ground. Purely visual; the player's
+   * state keeps updating as usual while hidden.
+   */
+  setPlayerVisible(visible: boolean): void {
+    this.character.setPlayerVisible(visible);
+  }
 
   /** Hand over the player's current visual state (owned by logic). */
   setPlayerVisualState(state: PlayerVisualState): void {
@@ -565,6 +572,20 @@ export class GraphicsEngine implements PlayerVisibilityControl {
    */
   prepareTerrainAt(x: number, z: number, radiusM = 90): void {
     this.world.prepareTerrainAt(x, z, radiusM);
+  }
+
+  /**
+   * Move the terrain streaming bounds, in chunk indices
+   * (round 29, Claude §24.2): chunks stream in inside the new
+   * range and are disposed outside it, so a host world wider
+   * than the default ±180 field no longer needs the module's
+   * private chunk builder. Passing null restores the field from
+   * config.world.chunkRange (or the default). The open-water
+   * plane and backdrop ring are sized from the config value at
+   * engine build and do not resize at runtime.
+   */
+  setTerrainField(range: { min: number; max: number } | null): void {
+    this.world.setTerrainField(range);
   }
 
   setQuality(tier: QualityTier): void {

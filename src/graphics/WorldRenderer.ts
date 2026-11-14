@@ -50,6 +50,11 @@ export class WorldRenderer {
     this.terrain.prepareAround(x, z, radiusM);
   }
 
+  /** Move the terrain streaming bounds (round 29, Claude §24.2). */
+  setTerrainField(range: { min: number; max: number } | null): void {
+    this.terrain.setTerrainField(range);
+  }
+
   /** Ground height in scene coordinates (used for grounding sprites
    *  and structures — rendering concern only). */
   getGroundHeight(x: number, z: number): number {

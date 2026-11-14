@@ -18,3 +18,16 @@
 ※ 科学系UIのデザイン仕様書・モック一式は
 `feature/graphics-volcano-walk-ui`（ラウンド27）側の
 `assets/ui-science/` にある。本ファイルはその配色に合わせてある。
+
+## デザイン一式（ラウンド27 → ラウンド29で載せ直し）
+
+| ファイル | 内容 |
+|---|---|
+| `design-spec.md` | 配色・余白・角丸・文字・状態色・タブ状態・レイアウトの正本仕様 |
+| `mock.html` | PCサイドパネル／スマホ下部ナビ＋ボトムシートの寸法見本モック |
+| `previews/mock-pc-panel.png` | PCモックの描画確認 |
+| `previews/mock-phone-sheet.png` | スマホモックの描画確認 |
+
+コンセプトは「文明再建を進める科学者のフィールドノートと実験器具」。
+実装はゲーム側（ui.js）。ラウンド27ブランチから地形変更を除いて
+ラウンド29（feature/graphics-round29-open-items）で載せ直した。

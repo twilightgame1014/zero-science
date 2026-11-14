@@ -42,6 +42,20 @@ const drymaskCfg = new URLSearchParams(location.search).has('drymask')
     })()
   : undefined;
 
+// Round-29 verification hook (demo only): ?field=min,max declares
+// a wider terrain field via config.world.chunkRange (§24.2), and
+// the engine is exposed as window.__gfx for inspection scripts.
+const fieldParam = new URLSearchParams(location.search).get('field');
+const fieldCfg = fieldParam
+  ? (() => {
+      const [min, max] = fieldParam.split(',').map(Number);
+      const c = resolveConfig();
+      c.world.chunkRange = { min, max };
+      return c;
+    })()
+  : undefined;
+const cfgOverride = drymaskCfg ?? fieldCfg;
+
 const gfx: GraphicsEngine = await initializeGraphics(container, {
   playerSpriteUrl: boySpriteUrl,
   grassDetailUrl,
@@ -50,7 +64,7 @@ const gfx: GraphicsEngine = await initializeGraphics(container, {
   // Sample plot (see PLOT_NODES below): a 12 m square kept free of
   // scenery so game-owned natural objects stand there alone.
   decor: { clearings: [{ x: -38, z: 30, r: 9 }] },
-  ...(drymaskCfg ? { config: drymaskCfg } : {}),
+  ...(cfgOverride ? { config: cfgOverride } : {}),
   onContextLost: () => {
     status.textContent = 'WebGLコンテキストが失われました（復旧を試みます）';
   },
@@ -58,6 +72,7 @@ const gfx: GraphicsEngine = await initializeGraphics(container, {
     status.textContent = 'WebGLコンテキストが復旧しました';
   },
 });
+(window as any).__gfx = gfx;
 
 // Verification hook: lets headless screenshot scripts inspect the
 // scene graph (draw items, instancing) — demo only, not the module.

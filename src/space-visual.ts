@@ -5,6 +5,7 @@ export {spaceModelStatus} from './space-models';
 type Site={x:number;z:number;y:number;rot:number;stage:number;phase:string;elapsed:number;installed:Record<string,number>;owned:Record<string,boolean>};
 type Entry={root:THREE.Group;ship:THREE.Group;tower:THREE.Group;flame:THREE.Mesh;parts:THREE.Object3D[];suit:THREE.Group;sig:string};
 const entries=new WeakMap<object,Entry>();
+const hidden=new WeakMap<object,boolean>();
 function box(parent:THREE.Object3D,w:number,h:number,d:number,x:number,y:number,z:number,color:number){
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:0.82}));m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;
 }
@@ -37,9 +38,8 @@ export function syncSpaceVisual(gfx:any,site:Site|null,suited:any){
   }
   const formal=updateSpaceModels(gfx,site,(window as any).ASSETS?.spaceModels);if(formal)e.root.visible=false;
   e.suit.visible=false; // 正式8方向シートをUI側で切り替える。仮の立体服は使わない。
-  /* 公開APIで搭乗中の絵だけ隠す。旧描画モジュールにも互換の経路を残す。 */
+  /* 搭乗してから地上へ戻るまでは、主人公はカプセルの中。Muse ラウンド30 の公開 API setPlayerVisible（主人公の絵・影だけ。NPC は変えない）で、変わったときだけ切り替える */
   const inside=!!site&&/^(boarded|countdown|retract|ignition|ascent|space|ending)$/.test(site.phase);
-  if(typeof gfx.setPlayerVisible==='function')gfx.setPlayerVisible(!inside);
-  else {const ch=gfx&&gfx.character&&gfx.character.group;if(ch&&ch.visible===inside)ch.visible=!inside;}
+  if(typeof gfx.setPlayerVisible==='function'){if(hidden.get(gfx)!==inside){hidden.set(gfx,inside);gfx.setPlayerVisible(!inside);}}
   if(e.suit.visible){const p=suited.position;e.suit.position.set(p.x,suited.y??0,p.z);}
 }

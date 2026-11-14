@@ -1,12 +1,15 @@
 // Muse原本は不変。ゲーム状態から表示、クリップ時刻、LODだけを適用する。
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {flightPose,visibleAtStage} from './space-animation';
+import {FLIGHT,flightPose,slotVisible,type SlotNodes} from './space-animation';
 import {applySpaceMaterials} from './space-materials';
 type Snapshot={x:number;y:number;z:number;rot:number;phase:string;elapsed:number;stage:number;installed:Record<string,number>;owned:Record<string,boolean>};
 type Asset={gzip:string;lod0?:string};
 type Model={scene:THREE.Group;mixer:THREE.AnimationMixer;actions:Map<string,THREE.AnimationAction>};
-type Entry={root:THREE.Group;models:Map<string,Model>;high:Map<string,Model>;status:string;flame:THREE.Mesh;smoke:THREE.Sprite[];lod:number};
+type Entry={root:THREE.Group;models:Map<string,Model>;high:Map<string,Model>;status:string;flame:THREE.Mesh;smoke:THREE.Sprite[];lod:number;fx:{exhaustAt:number;smoke:number;launchKey:string}};
+type Placement={model:string;position:[number,number,number];rotationYDeg?:number};
+type Contract={version:number;slotNodes?:SlotNodes;equipmentPlacement?:{items:Placement[]}|Placement[]};
+const contract=():Contract|undefined=>(window as any).ASSETS?.spaceContract;
 const entries=new WeakMap<object,Entry>();
 export const spaceModelStatus=(gfx:object)=>entries.get(gfx)?.status||'not-loaded';
 export const spaceModelDiagnostics=(gfx:object)=>{const e=entries.get(gfx);return {status:e?.status,lod:e?.lod,models:e?.models.size,high:e?.high.size};};
@@ -41,7 +44,7 @@ export function updateSpaceModels(gfx:any,site:Snapshot|null,assets:Record<strin
   root.add(flame);const smoke:THREE.Sprite[]=[];
   const loader=new THREE.TextureLoader(),urls=(window as any).ASSETS?.spaceSmoke||[(window as any).ASSETS?.particle],maps=urls.map((url:string)=>loader.load(url));
   for(let n=0;n<12;n++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:maps[n%maps.length],color:0xe8dfc8,transparent:true,opacity:0,depthWrite:false}));root.add(s);smoke.push(s);}
-  e={root,models:new Map(),high:new Map(),status:'loading',flame,smoke,lod:1};entries.set(gfx,e);void load(e,assets);
+  e={root,models:new Map(),high:new Map(),status:'loading',flame,smoke,lod:1,fx:{exhaustAt:0,smoke:0,launchKey:''}};entries.set(gfx,e);void load(e,assets);
  }
  if(!e)return false;e.root.visible=!!site&&e.status==='ready'&&!['space','ending'].includes(site.phase);
  if(!site||e.status!=='ready')return false;
@@ -52,12 +55,15 @@ export function updateSpaceModels(gfx:any,site:Snapshot|null,assets:Record<strin
  e.lod=near&&e.high.size===e.models.size?0:1;
  const models=e.lod===0?e.high:e.models,hidden=e.lod===0?e.models:e.high;
  for(const m of hidden.values())m.scene.visible=false;
- const positions:Record<string,[number,number,number]>={'support-tower':[-4.6,0,0],'control-terminal':[5,0,5],'electronics-fab':[-2,0,6],'computer-bench':[1,0,6],'test-terminal':[4,0,-6],'power-distribution':[6,0,-2],'life-support':[6,0,1],'suit-stand':[-6,0,-5],'spacesuit-display':[-6,0,-5],'parts-rack':[-2,0,-5],'workbench':[1,0,-5]};
- for(const [id,m]of models){m.scene.position.set(...(positions[id]||[0,0,0]));m.scene.visible=true;for(const a of m.actions.values())a.enabled=false;}
+ /* 設備の置き場所は契約 v6（Muse ラウンド30）の equipmentPlacement。宇宙服ディスプレイは (−6,0,−3)（スタンドと重ならない）。表にない物（作業台）だけゲームの値 */
+ const C=contract(),ep=C?.equipmentPlacement,items:Placement[]=Array.isArray(ep)?ep:ep?.items||[],placeOf=new Map(items.map(q=>[q.model,q]));
+ const positions:Record<string,[number,number,number]>={'support-tower':[-4.6,0,0],'control-terminal':[5,0,5],'electronics-fab':[-2,0,6],'computer-bench':[1,0,6],'test-terminal':[4,0,-6],'power-distribution':[6,0,-2],'life-support':[6,0,1],'suit-stand':[-6,0,-5],'spacesuit-display':[-6,0,-3],'parts-rack':[-2,0,-5],'workbench':[1,0,-5]};
+ for(const [id,m]of models){const q=placeOf.get(id);m.scene.position.set(...(q?q.position:positions[id]||[0,0,0]));m.scene.rotation.y=((q?.rotationYDeg)||0)*Math.PI/180;m.scene.visible=true;for(const a of m.actions.values())a.enabled=false;}
  const flying=/^(countdown|retract|ignition|ascent|space|ending)$/.test(site.phase),p=flightPose(site.elapsed,flying);
- const rocket=models.get('rocket');
+ const rocket=models.get('rocket'),inst=site.installed||{};
  if(rocket){rocket.scene.visible=site.stage>0;rocket.scene.position.y=p.rise;
-  rocket.scene.traverse(o=>{if(o instanceof THREE.Mesh)o.visible=visibleAtStage(o.name,site.stage);});
+  /* 組込枠ごとの表示は契約 v6 の slotNodes どおり（LOD0・LOD1 とも同じ 90 個のノード名。骨組みは外装がないときだけ） */
+  rocket.scene.traverse(o=>{if(o instanceof THREE.Mesh)o.visible=slotVisible(o.name,inst,C?.slotNodes);});
   const opened=(site.phase==='ground'&&site.stage===3)||site.phase==='boarded';
   // 開閉の競合を避け一方のクリップだけに重みを与える。S3は厳密な終端。
   pose(rocket,opened?'hatch_open':'hatch_close',opened?100:p.hatch);
@@ -75,13 +81,23 @@ export function updateSpaceModels(gfx:any,site:Snapshot|null,assets:Record<strin
  for(const [model,item]of Object.entries(equipment)){const m=models.get(model);if(m)m.scene.visible=!!site.owned[item];}
  for(const id of ['parts-rack','workbench']){const m=models.get(id);if(m)m.scene.visible=id==='workbench'?site.stage===3:site.stage===2||site.stage===3;}
  e.root.updateMatrixWorld(true);
- const burning=['ignition','ascent'].includes(site.phase);
- e.flame.visible=burning;e.flame.position.copy(anchor(rocket,'Anchor_exhaust',e.root,new THREE.Vector3(0,.9+p.rise,0)));e.flame.position.y-=1.5;
- // 端末では各側2枚、PCでは各側6枚。時間で復元できる固定周期、衝突や進行に影響しない。
- const count=mobile?4:12;
+ const burning=['ignition','ascent'].includes(site.phase),fxOk=typeof gfx.playVisualEffect==='function';
+ /* 噴射と煙は Muse ラウンド30 の公開エフェクト 'exhaust'・'padSmoke' を使う（噴射：台の上 0.25 秒・上昇中 0.1 秒ごと。煙：点火から 0.8 秒ごとに 3 回、左右の接続点）。
+    時刻は FLIGHT（点火 8.4 秒）。playVisualEffect のない描画モジュールのときだけ、ゲームの円すいと GPT の煙の絵（スプライト）で代わりに出す */
+ const ex=anchor(rocket,'Anchor_exhaust',e.root,new THREE.Vector3(0,.9+p.rise,0));
+ e.flame.visible=burning&&!fxOk;e.flame.position.copy(ex);e.flame.position.y-=1.5;
+ const key=flying?String(Math.round(Date.now()/1000-site.elapsed)):'';
+ if(key!==e.fx.launchKey)e.fx={exhaustAt:0,smoke:0,launchKey:key};
+ if(fxOk&&burning&&rocket){const now=performance.now();
+  if(now-e.fx.exhaustAt>=(site.phase==='ascent'?100:250)){e.fx.exhaustAt=now;const a=rocket.scene.getObjectByName('Anchor_exhaust');if(a){const w=a.getWorldPosition(new THREE.Vector3());try{gfx.playVisualEffect('exhaust',{x:w.x,y:w.y,z:w.z});}catch(err){}}}
+  const sinceIgnite=site.elapsed-FLIGHT.ignition;
+  while(e.fx.smoke<3&&sinceIgnite>=e.fx.smoke*0.8){e.fx.smoke++;for(const nm of ['Anchor_smoke_l','Anchor_smoke_r']){const a=e.root.getObjectByName(nm);if(a){const w=a.getWorldPosition(new THREE.Vector3());try{gfx.playVisualEffect('padSmoke',{x:w.x,y:w.y,z:w.z});}catch(err){}}}}
+ }
+ // 代わりの煙：端末では各側2枚、PCでは各側6枚。時間で復元できる固定周期、衝突や進行に影響しない。
+ const count=fxOk?0:mobile?4:12;
  for(let n=0;n<e.smoke.length;n++){
   const s=e.smoke[n];s.visible=burning&&n<count;if(!s.visible)continue;
-  const side=n%2===0?-1:1,age=((site.elapsed-8.4)+Math.floor(n/2)*.29)%1.8;
+  const side=n%2===0?-1:1,age=((site.elapsed-FLIGHT.ignition)+Math.floor(n/2)*.29)%1.8;
   const base=anchor(models.get('launch-pad'),side<0?'Anchor_smoke_l':'Anchor_smoke_r',e.root,new THREE.Vector3(side*3.2,.5,0));
   s.position.copy(base).add(new THREE.Vector3(side*age*2,age*.8,Math.sin(n)*age*.3));s.scale.setScalar(.9+age*1.8);s.material.opacity=.4*(1-age/1.8);
  }
