@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "e77c4cd4d57f98eea6f9ecd4eb08f5623c2fe865",
+  "views": [
+    "retract",
+    "ignition",
+    "ascent-follow",
+    "road-before",
+    "road-after"
+  ],
+  "notes": "実ゲームの描画。点火9.1秒・上昇11.5秒を撮影用ページで固定。道路は通常ルールに材料を与えたfixtureでplan/deliver/start/finishを実行。撮影用UIは配布版に含めない。後続d6069e6は予定地移設の当たり判定修正のみ。実機FPSの証明ではない。"
+}
