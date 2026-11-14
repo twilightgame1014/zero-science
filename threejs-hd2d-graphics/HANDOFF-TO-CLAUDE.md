@@ -780,3 +780,26 @@ staged 版に ContactShadow は無い（契約の「最終工程のみ」規則�
 1. warehouse を新規建物として追加するか。追加するなら ID・分類・建設コスト・収納機能（storehouse との差別化）・出現時代はゲーム側（construction-data.js）の判断が要る。GLB と LOD1 は回収済みですぐ使える。
 2. workshop を新規建物として追加するか。同様に ID・機能（workbench 系の上位施設か、独立の生産施設か）の判断が要る。
 3. hut-staged／house-staged の GLB ファイル自体は統合ラインへ取り込まない（上記の通り）。この判定で問題あれば差し戻し可（ファイルは 37a82c9 にある）。
+
+## §40 M3-02 植物アセット（2026-11-15、Muse、ブランチ feature/graphics-plants-m302、土台 7e149fd = feature/graphics-recovery-20261115）
+
+ロードマップ M3-02「用途と姿が異なる植物アセット」の制作。街づくり・ロケットは対象外。
+
+### 変更範囲の宣言
+Muse が変更するファイルは以下だけ。ゲームコード（src/）・ゲームデータ・セーブ形式には触れていない。
+- assets/plants/（新規フォルダ一式：models/ の GLB 32点、source/ の .blend 16点、tools/、plants-contract.json、README.md、GPT-TEXTURE-REQUEST.md）
+- threejs-hd2d-graphics/HANDOFF-TO-CLAUDE.md（本 §40）
+
+### 納品内容
+- 8種×2シルエット＝16アセット（plant-broadleaf-a/b、plant-pine-a/b、plant-kouzo-a/b、plant-bamboo-a/b、plant-flax-a/b、plant-cotton-a/b、plant-rapeseed-a/b、plant-reed-a/b）、各 LOD0／LOD1
+- 契約：assets/plants/plants-contract.json（assetId、分類、寸法、原点、接地、表示状態、LOD、材質、透過方式、風揺れ、採集操作点、推奨コライダーを全アセット分）
+- 表示状態はノードグループ切替：木＝state_standing／state_stump、草本＝state_full＋parts_fruit（花・実の有無）／state_low、竹・葦＝state_full／state_cut。建物・道路上への再出現抑制はアセット全体の表示切替で対応可能
+- 材質は共有フラットパレットのみで GLB にテクスチャ同梱なし。GPT 原画は材質名経由で後付け（依頼表：assets/plants/GPT-TEXTURE-REQUEST.md の8素材）。状態区分は「モデル完了／原画待ち／統合待ち」
+- 棚卸し判定：広葉樹・松は既存 environment-set が初期世代（467／141 tris）で品質不足のため新規、他6種は既存資産なしのため新規。既存の採集ID・モデルIDは変更していない（詳細は assets/plants/README.md）
+
+### Claude への申し送り（統合時の判断）
+1. 容量：全点合計 6.68 MB（LOD0 4.82＋LOD1 1.86）。単一ファイルへ全量同梱すると 16 MB 上限に収まらない。種別・エリア別の段階導入か軽量化パイプライン前提の計画が要る。本ブランチでは未接続のため dist は不変
+2. 割り当て：どの植物を既存の採取 kind／variant（tree、grass:reed 等）へ対応付けるか、新規 kind を作るかはゲームデータ側の判断。モデル側は採集量・条件・再生時間・正式名称を決めていない
+3. コライダーは契約の推奨値（幹のみ、樹冠は視界遮蔽と分離）。竹は群生中心 r=0.5 のみで稈間は通行可の前提
+4. 風揺れは契約値（根元固定・控えめな角度）をモジュール側の既存パターンで実装する前提。モデル側にアニメーションは含めていない
+5. 確認用シーンと計測は ~/workspace/scg-plants-check/（混植160株で 621 draw calls／約48万 tris、ヘッドレス SwiftShader 計測で実機値ではない）。iPhone 17 実機 FPS は未測定
