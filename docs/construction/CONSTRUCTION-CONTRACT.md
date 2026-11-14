@@ -100,3 +100,8 @@
 - 斜面は今の 4 分割の地面追従のままでよい（テクスチャは面に貼るだけなので隙間は出ない）。
 - 法線テクスチャ（`*_n.png`）は任意。使う場合は `normalScale` 0.5 程度から。
 - ノード名の照合：three.js の GLTFLoader は読み込み時にノード名から `.` などを取り除く（例：`post.001` → `post001`）。`stageNodes` の名前は GLB 内の正式名で書いてあるので、照合する側は両方を同じ規則で正規化すること。全 24 モデルについて、正規化後の名前の衝突が無いことを確認済み。
+
+## §39 回収ラウンドの適用注記（2026-11-15、Muse）
+
+- factory のテンプレートを factory-staged（assets/town-construction/models/factory-staged.glb）へ差し替えた。壁が wallsLower／wallsUpper に分かれ、配管・換気筒が完成工程側に付く。ゲーム段階への対応は construction-assets.json の museFields.stageNodes（base=基礎、shell=下壁＋上壁＋煙突＋鋸屋根、arc=全ノード）。寸法・footprint・入口は従来と同一で、セーブ・衝突への影響はない。crate は建物から外れた（資材の山・小物側で表現する）。
+- hut-staged／house-staged は現行テンプレートと部品ノードが同一で、段階設計は既存の stageNodes に吸収済みのため GLB は取り込まない。warehouse／workshop は新規建物候補として assets/town-construction/ に回収済み（建物 ID・機能は未定義。追加はオーナー／ゲーム側の判断事項）。
