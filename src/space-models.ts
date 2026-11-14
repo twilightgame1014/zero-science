@@ -16,7 +16,7 @@ async function parse(id:string,base64:string):Promise<Model>{
  const buffer=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
  const g=await new GLTFLoader().parseAsync(buffer,''),mixer=new THREE.AnimationMixer(g.scene),actions=new Map<string,THREE.AnimationAction>();
  for(const clip of g.animations){const a=mixer.clipAction(clip);a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true;a.play();a.paused=true;a.enabled=false;actions.set(clip.name,a);}
- g.scene.name='space-model:'+id;g.scene.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=true;o.receiveShadow=id!=='rocket'&&id!=='spacesuit-display';}});
+ g.scene.name='space-model:'+id;g.scene.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=true;o.receiveShadow=true;}});
  applySpaceMaterials(g.scene,id);
  return {scene:g.scene,mixer,actions};
 }

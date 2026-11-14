@@ -3,7 +3,7 @@ const cache=new Map<string,THREE.Texture>();
 function texture(id:string){
  if(cache.has(id))return cache.get(id)!;
  const src=(window as any).ASSETS?.spaceTextures?.[id];if(!src)return null;
- const t=new THREE.TextureLoader().load(src);t.colorSpace=THREE.SRGBColorSpace;t.flipY=false;t.wrapS=THREE.RepeatWrapping;t.wrapT=THREE.RepeatWrapping;cache.set(id,t);return t;
+ const t=new THREE.TextureLoader().load(src);t.colorSpace=THREE.SRGBColorSpace;t.flipY=false;t.wrapS=THREE.RepeatWrapping;t.wrapT=/skin|insulation|circuit|screen/.test(id)?THREE.ClampToEdgeWrapping:THREE.RepeatWrapping;if(/circuit|screen/.test(id))t.wrapS=THREE.ClampToEdgeWrapping;cache.set(id,t);return t;
 }
 // GLBを編集・再保存しない。テンプレートに対応するUVは実行時の複製へ投影する。
 // ラップは P4 | P3 | P2 | P1、vは上端0。汎用面は1m四方を1枚として投影。
@@ -13,20 +13,14 @@ function project(mesh:THREE.Mesh,mode:'body'|'capsule'|'box'){
   p.fromBufferAttribute(pos,i).applyMatrix4(mesh.matrixWorld);
   if(mode==='body'||mode==='capsule'){
    uv[i*2]=((.875-Math.atan2(p.x,p.z)/(2*Math.PI))%1+1)%1;
-   uv[i*2+1]=mode==='body'?(15.8-p.y)/11:(19.2-p.y)/3.4;
+   uv[i*2+1]=THREE.MathUtils.clamp(mode==='body'?(15.8-p.y)/11:(19.2-p.y)/3.4,0,1);
   }else{
    n.fromBufferAttribute(norm,i);const ax=Math.abs(n.x),ay=Math.abs(n.y),az=Math.abs(n.z);
    uv[i*2]=ax>ay&&ax>az?p.z:p.x;uv[i*2+1]=ay>ax&&ay>az?p.z:-p.y;
   }
  }
- // Seam-crossing triangles need continuous U, never interpolation through the centre of the atlas.
- if(mode!=='box'){
-  // Install first, then expand indexed attributes consistently.
-  g.setAttribute('uv',new THREE.BufferAttribute(uv,2));
-  const expanded=g.index?g.toNonIndexed():g;const a=expanded.getAttribute('uv');
-  for(let i=0;i<a.count;i+=3){const us=[a.getX(i),a.getX(i+1),a.getX(i+2)];if(Math.max(...us)-Math.min(...us)>.5)for(let j=0;j<3;j++)if(us[j]<.5)a.setX(i+j,us[j]+1);}
-  mesh.geometry=expanded;if(expanded!==g)g.dispose();
- }else{g.setAttribute('uv',new THREE.BufferAttribute(uv,2));mesh.geometry=g;}
+ // Keep original indices, positions and normals; only add UVs to the runtime clone.
+ g.setAttribute('uv',new THREE.BufferAttribute(uv,2));mesh.geometry=g;
 }
 export function applySpaceMaterials(scene:THREE.Group,id:string){
  scene.updateMatrixWorld(true);
