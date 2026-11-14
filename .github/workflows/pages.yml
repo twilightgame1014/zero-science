@@ -1,6 +1,10 @@
-name: GitHub Pages に公開（手動）
-# 公開は手動のみ（Actions タブ →「GitHub Pages に公開（手動）」→ Run workflow）
+name: GitHub Pages に公開
+# push 連動で自動公開（オーナー決定 2026-11-15）。
+# このファイルを含むブランチへの push が、そのブランチのビルドで公開版を更新する。
+# テストが落ちた push は公開されない（build ジョブが失敗したら deploy は走らない）。
+# 手動実行（workflow_dispatch）も引き続き使える。
 on:
+  push:
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,6 +24,9 @@ jobs:
       - run: npm install
       - run: npm test
       - run: npm run build
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
