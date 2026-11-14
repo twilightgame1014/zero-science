@@ -120,6 +120,13 @@ export type EffectType =
   | 'leaves'
   | 'smoke'
   | 'levelup'
+  /** Round 30 (space): rocket exhaust plume segment (~1.1 s).
+   *  Play at the exhaust point; re-play every ~0.25 s at the
+   *  current position while the rocket climbs. */
+  | 'exhaust'
+  /** Round 30 (space): launch-pad smoke (~3.4 s), played at
+   *  the pad's Anchor_smoke_l / Anchor_smoke_r at ignition. */
+  | 'padSmoke'
   | (string & {});
 
 export type QualityTier = 'high' | 'low';
