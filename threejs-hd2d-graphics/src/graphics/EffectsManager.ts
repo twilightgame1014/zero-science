@@ -23,6 +23,8 @@ interface EffectStyle {
   dirY?: number;
   /** 0..1: flatten the upward bias (pad smoke rolls sideways). */
   flat?: number;
+  /** Initial spawn disc radius (a point spawn reads as specks). */
+  spread?: number;
 }
 
 const EFFECT_STYLE: Record<string, EffectStyle> = {
@@ -36,10 +38,10 @@ const EFFECT_STYLE: Record<string, EffectStyle> = {
   // ~1.1 s of plume; the game re-triggers at the current exhaust
   // position while ascending (every ~0.25 s) for a continuous
   // trail, and once at the pad's Anchor_exhaust at ignition.
-  exhaust: { color: 0xffc37e, count: 90, speed: 5.5, gravity: 3.0, size: 0.6, life: 1.1, dirY: -1 },
+  exhaust: { color: 0xffc37e, count: 90, speed: 5.5, gravity: 3.0, size: 0.6, life: 1.1, dirY: -1, spread: 0.5 },
   // Round 30 (space): launch-pad smoke from Anchor_smoke_l/r.
   // Long-lived, wide, mostly sideways roll-out.
-  padSmoke: { color: 0xcfc8bd, count: 60, speed: 2.8, gravity: -0.5, size: 1.6, life: 3.4, flat: 0.8 },
+  padSmoke: { color: 0xcfc8bd, count: 80, speed: 2.8, gravity: -0.5, size: 2.6, life: 3.4, flat: 0.8, spread: 1.3 },
 };
 
 /**
@@ -66,9 +68,11 @@ export class EffectsManager {
     const positions = new Float32Array(style.count * 3);
     const velocities = new Float32Array(style.count * 3);
     for (let i = 0; i < style.count; i++) {
-      positions[i * 3] = position.x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = position.z;
+      const sa = Math.random() * Math.PI * 2;
+      const sr = Math.sqrt(Math.random()) * (style.spread ?? 0);
+      positions[i * 3] = position.x + Math.cos(sa) * sr;
+      positions[i * 3 + 1] = y + (Math.random() - 0.5) * 0.3;
+      positions[i * 3 + 2] = position.z + Math.sin(sa) * sr;
       const a = Math.random() * Math.PI * 2;
       const up = (Math.random() * 0.9 + 0.35) * (1 - (style.flat ?? 0));
       const r = (Math.random() * 0.7 + 0.3) * style.speed;
@@ -101,7 +105,12 @@ export class EffectsManager {
     if (type === 'exhaust') {
       // Plume body: two nested additive cones under the nozzle,
       // apex at the exhaust point, opening downward. Sized for
-      // the 3.4 m rocket (radius ~1.2 m, plume ~6.5 m).
+      // the 3.4 m rocket (radius ~1.2 m). Length reaches toward
+      // the ground but is capped, so at ignition the plume ends
+      // at the pad deck instead of spearing through it, and in
+      // flight it keeps a fixed ~6.5 m body.
+      const groundY = this.groundHeightAt(position.x, position.z);
+      const plumeLen = Math.min(6.5, Math.max(2.2, y - groundY + 0.4));
       burst.cones = [];
       const coneSpecs = [
         { radius: 1.25, color: 0xff8f3f, opacity: 0.34 },
@@ -109,7 +118,7 @@ export class EffectsManager {
       ];
       for (const spec of coneSpecs) {
         const cone = new THREE.Mesh(
-          new THREE.ConeGeometry(spec.radius, 6.5, 14, 1, true),
+          new THREE.ConeGeometry(spec.radius, plumeLen, 14, 1, true),
           new THREE.MeshBasicMaterial({
             color: spec.color,
             transparent: true,
@@ -120,7 +129,7 @@ export class EffectsManager {
           }),
         );
         cone.rotation.z = Math.PI;
-        cone.position.set(position.x, y - 3.25, position.z);
+        cone.position.set(position.x, y - plumeLen / 2, position.z);
         cone.userData.baseOpacity = spec.opacity;
         cone.renderOrder = 7;
         this.group.add(cone);
