@@ -13,3 +13,16 @@ for(const [id,clips]of [['rocket',['hatch_open','hatch_close','bay_open','bay_cl
 }
 for(const [id,node]of [['rocket','Anchor_exhaust'],['rocket','Anchor_hatch'],['support-tower','Anchor_corridor_root']])assert(models.get(id).nodes.some(n=>n.name===node),id+':'+node);
 console.log('PASS Muse原本13モデルのSHA・GLB構造・8クリップ・接続点・可逆圧縮');
+// 契約 v6（Muse ラウンド30）：機体のメッシュは、組込枠の表示一覧（slotNodes）のどれか1つにだけ入る。設備の置き場所はモデルが実在し、宇宙服ディスプレイはスタンドと重ならない位置
+{const c=JSON.parse(fs.readFileSync(new URL('../assets/rocket/rocket-contract.json',import.meta.url)));assert.equal(c.version,6);
+ const g=models.get('rocket'),meshNodes=g.nodes.filter(n=>n.mesh!==undefined).map(n=>n.name),lists=['frame','propulsion','capsule','skin'].map(k=>c.slotNodes[k]);
+ const count=n=>lists.filter(l=>l.includes(n)).length;
+ assert.deepEqual(meshNodes.filter(n=>count(n)!==1),[],'どの枠にも入らない／2つの枠に入るメッシュ');
+ assert(lists.flat().every(n=>meshNodes.includes(n)),'一覧のノードが GLB に実在');
+ const pl=c.equipmentPlacement.items;assert(pl.every(q=>models.has(q.model)),'置き場所のモデルが実在');
+ assert.deepEqual(pl.find(q=>q.model==='spacesuit-display').position,[-6,0,-3]);
+ const smoke=['Anchor_smoke_l','Anchor_smoke_r'].map(n=>[...models].find(([,m])=>m.nodes.some(x=>x.name===n)));assert(smoke.every(Boolean),'煙の接続点が実在');
+ const src=fs.readFileSync(new URL('../src/space-models.ts',import.meta.url),'utf8'),vis=fs.readFileSync(new URL('../src/space-visual.ts',import.meta.url),'utf8');
+ assert(/slotNodes/.test(src)&&/equipmentPlacement/.test(src)&&/'exhaust'/.test(src)&&/'padSmoke'/.test(src),'ゲームが契約 v6 とエフェクトを使う');
+ assert(/setPlayerVisible/.test(vis)&&!/character\.group\.visible\s*=/.test(vis),'主人公の隠しは公開 API で');
+ console.log('PASS 契約 v6：機体のメッシュ'+meshNodes.length+'個がそれぞれ1つの組込枠に入る・設備の置き場所・煙の接続点（'+smoke.map(s=>s[0]).join('・')+'）・公開 API の使用');}

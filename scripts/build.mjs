@@ -131,6 +131,9 @@ if (fs.existsSync(path.join(root, toolAtlas)) && fs.existsSync(path.join(root, t
   ASSETS.gfxCatalog = { effects, structures };
 }
 // Muse確定版のLOD1を可逆圧縮して1ファイルHTMLへ。読込み失敗は仮表示へ戻る。
+// 宇宙計画の契約 v6（Muse ラウンド30）：組込枠ごとの表示ノード一覧と、発射サイトの設備の置き場所。ゲームはこの一覧で表示を切り替える
+{ const c = JSON.parse(fs.readFileSync(path.join(root, 'assets/rocket/rocket-contract.json'), 'utf8'));
+  ASSETS.spaceContract = { version: c.version, slotNodes: Object.fromEntries(['frame','propulsion','capsule','skin'].map(k => [k, c.slotNodes[k]])), equipmentPlacement: c.equipmentPlacement.items }; }
 ASSETS.spaceModels = {};
 for(const id of ['rocket','launch-pad','support-tower','boarding-corridor','control-terminal','electronics-fab','computer-bench','test-terminal','suit-stand','life-support','power-distribution','parts-rack','spacesuit-display']){
   const f=path.join(root,'assets/rocket/models',id+'-lod1.glb');

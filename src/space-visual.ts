@@ -5,6 +5,7 @@ export {spaceModelStatus} from './space-models';
 type Site={x:number;z:number;y:number;rot:number;stage:number;phase:string;elapsed:number;installed:Record<string,number>;owned:Record<string,boolean>};
 type Entry={root:THREE.Group;ship:THREE.Group;tower:THREE.Group;flame:THREE.Mesh;parts:THREE.Object3D[];suit:THREE.Group;sig:string};
 const entries=new WeakMap<object,Entry>();
+const hidden=new WeakMap<object,boolean>();
 function box(parent:THREE.Object3D,w:number,h:number,d:number,x:number,y:number,z:number,color:number){
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:0.82}));m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;
 }
@@ -38,8 +39,9 @@ export function syncSpaceVisual(gfx:any,site:Site|null,suited:any){
   const formal=updateSpaceModels(gfx,site,(window as any).ASSETS?.spaceModels);if(formal)e.root.visible=false;
   e.suit.visible=!!suited&&!!suited.position&&!site?.phase.match(/boarded|countdown|retract|ignition|ascent|space|ending/);
   /* 搭乗してから地上へ戻るまでは、主人公はカプセルの中（絵を出さない）。描画モジュールに公開の口がないので、
-     キャラクターの群れの visible だけを切り替える（src/graphics は変えない。Muse に setPlayerVisible を依頼中） */
+     描画モジュールの公開 API で隠す（2026-11-14 ラウンド30 で追加。以前は character.group.visible を直接切り替えていた） */
   const inside=!!site&&/^(boarded|countdown|retract|ignition|ascent|space|ending)$/.test(site.phase);
-  const ch=gfx&&gfx.character&&gfx.character.group;if(ch&&ch.visible===inside)ch.visible=!inside;
+  /* Muse ラウンド30 の公開 API setPlayerVisible（主人公の絵・影・食い込みの影だけ。NPC は変えない）。変わったときだけ呼ぶ */
+  if(typeof gfx.setPlayerVisible==='function'){if(hidden.get(gfx)!==inside){hidden.set(gfx,inside);gfx.setPlayerVisible(!inside);}}
   if(e.suit.visible){const p=suited.position;e.suit.position.set(p.x,suited.y??0,p.z);}
 }
