@@ -316,6 +316,7 @@ var ENGINE = (function(D){
     if(s>=2 && has(S,"furnace") && (d.glass||has(S,"still"))) s=3;
     if(s>=3 && has(S,"blastfurnace") && (has(S,"steamengine")||has(S,"generator"))) s=4;
     if(s>=4 && has(S,"generator") && (d.pe||d.aluminum||d.solarcell)) s=5;
+    if(S.space && S.space.firstClear && D.stages[6]) s=Math.max(s,6);   // 宇宙へ到達（表示だけ。レシピの判定には使わない）
     return s;
   }
   function missionIndex(S){ const i = D.missions.findIndex(m=>!m.done(S)); return i<0?D.missions.length-1:i; }

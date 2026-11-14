@@ -731,7 +731,7 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
   await page.addInitScript(s => { if (!sessionStorage.getItem('seed-v2')) { localStorage.clear(); localStorage.setItem('zero-kagaku-save', s); sessionStorage.setItem('seed-v2', '1'); } }, v2);
   await page.reload(); await page.waitForTimeout(900);
   const r = await page.evaluate(`({bk:localStorage.getItem('zero-kagaku-save-backup-v2'), v:${G}.S.v, twig:${G}.S.inv.twig, build:JSON.stringify(${G}.S.build), pos:${G}.W3.pos, dir:${G}.W3.dir, player:__FAKE.player&&__FAKE.player.direction})`);
-  ok('古い形式（v2）のセーブは、移行する前に元のまま別のキーへ控える。移行後も持ち物・位置は同じ', r.bk === v2 && r.v === 4 && r.twig === 4 && r.build === '{}' && Math.abs(r.pos.x + 14) < 0.05 && Math.abs(r.pos.z - 25) < 0.05, JSON.stringify(r).slice(0, 200));
+  ok('古い形式（v2）のセーブは、移行する前に元のまま別のキーへ控える。移行後も持ち物・位置は同じ', r.bk === v2 && r.v === 5 && r.twig === 4 && r.build === '{}' && Math.abs(r.pos.x + 14) < 0.05 && Math.abs(r.pos.z - 25) < 0.05, JSON.stringify(r).slice(0, 200));
   ok('保存した向き（左）で復元される', r.dir === 'left' && r.player === 'left', JSON.stringify({ dir: r.dir, player: r.player }));
   ok('ページでエラーが起きていない（v2 の移行）', errors.length === 0, errors.join('\n'));
   await ctx.close();

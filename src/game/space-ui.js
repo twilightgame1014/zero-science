@@ -35,7 +35,21 @@ function spaceProject(){
   return `<div class="sp-project"><p><strong>宇宙へ</strong> — 原料から、主人公の宇宙到達まで ${p.firstClear?'／初回クリア済み':''}</p>
     <div class="sp-tabs">${['製作','実習','発射サイト','組立','試験','打ち上げ'].map(s=>`<button class="btn small ${u.section===s?'':'sub'}" data-sp="section" data-id="${s}" aria-pressed="${u.section===s}">${s}</button>`).join('')}</div>
     <p id="sp-message" role="status">${spEscape(u.message)}</p>${p.job?`<aside class="sp-card">製作中：${nm(C.recipes.find(c=>c.id===p.job.id).out)} ×${p.job.batches}回 <span id="sp-job-time"></span>${spBtn('finish','完成品を受け取る')}${spBtn('cancel-job','取消（材料は未消費）')}</aside>`:''}
-    <label><input type="checkbox" id="sp-detail" ${u.detail?'checked':''}> 未発見の設計も詳しく表示</label>${body}</div>`;
+    <label><input type="checkbox" id="sp-detail" ${u.detail?'checked':''}> 未発見の設計も詳しく表示</label>${body}${S.verify?spaceVerifyBox():''}</div>`;
+}
+/* 検証モード（S.verify がある状態だけ）：宇宙計画の各段階へ飛ぶ。通常のセーブには書かない。判定は通常と同じ SPACE の関数を通す */
+function spaceVerifyBox(){return `<div class="vsec"><h4>検証：宇宙計画の段階へ</h4><p class="desc">検証データだけを書きかえる。設置・組込・試験は通常と同じ判定を通す（木や岩を消さない）。</p><div class="vgrid">${[['v-lessons','実習を全部済ませる'],['v-site','発射サイトを探して設置'],['v-assemble','組込と宇宙服の装着'],['v-tests','7つの試験に合格'],['v-gate','搭乗口へ移動'],['v-reset','宇宙計画を最初に戻す']].map(([a,t])=>spBtn(a,t)).join('')}</div></div>`;}
+function spaceVerifyAct(a){
+  const p=SPACE.state(S),opts={player:W3.pos,npcs:W3.npcList||[],reserved:PLACE_RESERVED()};
+  if(a==='v-lessons'){D.space.lessons.forEach(l=>p.lessons[l.id]=true);return {ok:true,msg:'実習を全部済ませた（検証）'};}
+  if(a==='v-site'){if(!WORLD)return {ok:false,msg:'3D読み込み待ち'};const pos=W3.pos||{x:0,z:0};
+    for(let radius=24;radius<=210;radius+=12)for(let k=0;k<32;k++){const q={x:Math.round(pos.x+Math.cos(k*Math.PI/16)*radius),z:Math.round(pos.z+Math.sin(k*Math.PI/16)*radius)};
+      if(WORLD.checkPlacement(S,{...D.space.siteSpec,...q,rot:0},opts).ok)return SPACE.place(S,WORLD,q.x,q.z,0,opts);}
+    return {ok:false,msg:'設置できる候補がない'};}
+  if(a==='v-assemble'){if(!SPACE.placed(S))return {ok:false,msg:'先に発射サイトを設置'};const r=[];D.space.slots.forEach(x=>{if(!p.installed[x.id])r.push(SPACE.install(S,x.id));});if(!p.suit)r.push(SPACE.equip(S));const bad=r.filter(x=>!x.ok);return bad.length?{ok:false,msg:bad.map(x=>x.msg).join('／')}:{ok:true,msg:'組込と装着を済ませた'};}
+  if(a==='v-tests'){const r=D.space.tests.map(t=>SPACE.test(S,t.id,t.answer)),bad=r.filter(x=>!x.ok);return bad.length?{ok:false,msg:bad.map(x=>x.msg).join('／')}:{ok:true,msg:'7つの試験に合格した'};}
+  if(a==='v-gate'){const b=S.build['space-site'];if(!SPACE.placed(S))return {ok:false,msg:'発射サイトがない'};const q={x:b.x+Math.sin(b.rot)*11,z:b.z+Math.cos(b.rot)*11};W3.pos={...q};S.pos={...(S.pos||{}),...q};W3.path=null;try{W3.world.afterWarp(q.x,q.z);camRebase();W3.cam.snap=true;}catch(e){}return {ok:true,msg:'搭乗口へ移動した'};}
+  if(a==='v-reset'){S.space={version:1};if(S.build)delete S.build['space-site'];return {ok:true,msg:'宇宙計画を最初に戻した'};}
 }
 function spaceRecipe(id){
   const u=spaceUI(),r=E.producers(id),it=IT[id];if(!it)return '';
@@ -49,14 +63,16 @@ function spaceLesson(){
   const u=spaceUI(),l=D.space.lessons.find(x=>x.id===u.lesson)||D.space.lessons[0],p=SPACE.state(S),n=SPACE.lessonNeeds(S,l.id);
   const field=(id,label,value)=>`<label>${label}<input id="sp-${id}" type="number" min="0" max="31" value="${value}"></label>`;
   let form='';
-  if(['switch','transistor'].includes(l.id))form='<label><input id="sp-on" type="checkbox"> 制御入力をONにする</label>';
+  if(l.id==='switch'){const M=[['copper','銅（銅線）'],['ironrod','鉄の棒'],['rubber','ゴム'],['glass','ガラス'],['cloth','かわいた布']],tried=u.tried||[];
+    form=`<label>すき間にはさむ物<select id="sp-gap">${M.map(([k,n])=>`<option value="${k}" ${u.gap===k?'selected':''}>${tried.includes(k)?(SPACE.CONDUCT[k]?'○ ':'× '):''}${n}</option>`).join('')}</select></label><label><input id="sp-on" type="checkbox"> スイッチを閉じる</label><p>○＝電気を通した（導体）、×＝通さなかった（絶縁体）。</p>`;}
+  if(l.id==='transistor')form='<label><input id="sp-on" type="checkbox"> 制御入力をONにする</label>';
   if(l.id==='gates')form='<label>ゲート<select id="sp-gate"><option>AND</option><option>OR</option><option>NOT</option></select></label>'+field('a','入力A',0)+field('b','入力B（NOTは未使用）',0)+field('answer','予想する出力',0)+'<p>AND・ORの4組ずつ、NOTの2組を正しく確かめると合格。</p>';
   if(l.id==='adder')form=field('a','数A',3)+field('b','数B',2)+field('answer','和の予想',0);
   if(l.id==='memory')form=field('value','保存する値（課題は7）',7)+field('answer','読み出す値の予想',0)+spBtn('memory-write','書き込む');
   if(l.id==='architecture')form=['compute','sequence','store','interface'].map((k,i)=>`<label>${['計算する役割','順番を決める役割','保存する役割','外との窓口'][i]}<select id="sp-${k}">${['選んでください','演算','制御','記憶','入出力'].map(v=>`<option>${v}</option>`).join('')}</select></label>`).join('');
   if(l.id==='program')form='<label>命令列<textarea id="sp-code" rows="5">LOAD 2\nADD 3\nSTORE\nOUT</textarea></label><p>LOAD 数 / ADD 数 / STORE / READ / OUT。出力と保存値が5になる命令列を試そう。</p>';
   if(l.id==='sensors')form='<p>模擬センサー：空気＝正常、CO₂＝要点検、温度＝正常、電源＝正常</p><label>改善する部位<select id="sp-answer"><option>選んでください</option><option>空気再生</option><option>外装</option><option>窓</option></select></label>';
-  return `<label>実習<select id="sp-lesson">${D.space.lessons.map(x=>`<option value="${x.id}" ${x.id===l.id?'selected':''}>${p.lessons[x.id]?'✓ ':''}${x.name}</option>`).join('')}</select></label><h3>${l.name}</h3><p>${l.help}</p><p>${n.join('／')}</p><div class="sp-fields">${form}</div>${spBtn('practice',l.id==='memory'?'読み出して確認':'実行して確認',l.id,!!n.length)}${['switch','transistor'].includes(l.id)&&u.output!==null?`<p role="status">${u.output===1?'💡 ランプ点灯（1）':'○ ランプ消灯（0）'}</p>`:''}<pre class="sp-output">${spEscape(u.output===null?'ここに実行結果を表示します':typeof u.output==='object'?JSON.stringify(u.output,null,2):u.output)}</pre>`;
+  return `<label>実習<select id="sp-lesson">${D.space.lessons.map(x=>`<option value="${x.id}" ${x.id===l.id?'selected':''}>${p.lessons[x.id]?'✓ ':''}${x.name}</option>`).join('')}</select></label><h3>${l.name}</h3><p>${l.help}</p><p>${n.join('／')}</p><div class="sp-fields">${form}</div>${spBtn('practice',l.id==='memory'?'読み出して確認':'実行して確認',l.id,!!n.length)}${l.id==='switch'&&u.tried&&u.tried.length&&!p.lessons.switch&&!u.tried.some(k=>!SPACE.CONDUCT[k])?'<p class="desc">電気を通さない物も、はさんで確かめよう。</p>':''}${['switch','transistor'].includes(l.id)&&u.output!==null?`<p role="status">${u.output===1?'💡 ランプ点灯（1）':'○ ランプ消灯（0）'}</p>`:''}<pre class="sp-output">${spEscape(u.output===null?'ここに実行結果を表示します':typeof u.output==='object'?JSON.stringify(u.output,null,2):u.output)}</pre>`;
 }
 function spaceFlight(){const p=SPACE.state(S),names={countdown:'カウントダウン',retract:'支持設備を退避',ignition:'噴射開始',ascent:'空へ上昇',space:'宇宙到達',ending:'宇宙へ到達しました'};
   return `<div class="sp-flight ${p.phase==='space'||p.phase==='ending'?'sp-stars':''}" role="status"><div class="sp-flight-rocket" aria-hidden="true">▲<br>┃<br>┃<br>╱╲</div><h2>${names[p.phase]}</h2><strong id="sp-countdown">${p.phase==='countdown'?Math.max(1,3-Math.floor((Date.now()-p.launchAt)/1000)):''}</strong><p>主人公：${S.flags.hero==='boy'?'男の子':'女の子'}・宇宙服装着／船内生命維持 正常（模擬）</p>
@@ -72,13 +88,15 @@ function spaceResult(r){spaceUI().message=r.msg||(r.ok?'完了しました':'条
 document.addEventListener('change',ev=>{const id=ev.target.id,u=spaceUI();if(id==='sp-group')u.group=ev.target.value;else if(id==='sp-lesson'){u.lesson=ev.target.value;u.output=null;}else if(id==='sp-detail')u.detail=ev.target.checked;else return;renderPanel();});
 document.addEventListener('click',ev=>{const b=ev.target.closest?.('[data-sp]');if(!b)return;ev.preventDefault();const a=b.dataset.sp,id=b.dataset.id,u=spaceUI(),p=SPACE.state(S);let r;
   if(a==='section'){u.section=id;u.message='';renderPanel();return;}
+  if(a.startsWith('v-')){if(!S.verify)return;r=spaceVerifyAct(a);if(r)spaceResult(r);return;}
   if(a==='item'||a==='select'){u.item=id;u.section='製作';if(IT[id]?.group)u.group=IT[id].group;renderPanel();$('#sp-recipe')?.scrollIntoView({block:'start'});return;}
   if(a==='book'){openItem(id);return;}
   if(a==='craft')r=SPACE.startCraft(S,id,Number($('#sp-count')?.value||1));
   if(a==='finish')r=SPACE.finishCraft(S);
   if(a==='cancel-job')r=SPACE.cancelCraft(S);
   if(a==='practice'||a==='memory-write'){
-    const val=k=>$('#sp-'+k)?.value;const arg={on:!!$('#sp-on')?.checked,gate:val('gate'),a:Number(val('a')),b:Number(val('b')),answer:val('answer'),value:Number(val('value')),action:a==='memory-write'?'write':'read',code:val('code'),compute:val('compute'),sequence:val('sequence'),store:val('store'),interface:val('interface')};
+    const val=k=>$('#sp-'+k)?.value;if(u.lesson==='switch'){u.gap=$('#sp-gap')?.value;if($('#sp-on')?.checked){u.tried=u.tried||[];if(!u.tried.includes(u.gap))u.tried.push(u.gap);}}
+    const arg={tried:u.tried||[],gap:u.gap,on:!!$('#sp-on')?.checked,gate:val('gate'),a:Number(val('a')),b:Number(val('b')),answer:val('answer'),value:Number(val('value')),action:a==='memory-write'?'write':'read',code:val('code'),compute:val('compute'),sequence:val('sequence'),store:val('store'),interface:val('interface')};
     if(u.lesson!=='sensors')arg.answer=Number(arg.answer);r=SPACE.practice(S,u.lesson,arg);u.output=r.output??r.msg;r.msg=r.ok?(r.passed?'実習合格':'結果を確認し、別の入力も試そう'):r.msg;
   }
   if(a==='install'||a==='remove')r=SPACE.install(S,id,a==='remove');if(a==='equip')r=SPACE.equip(S);

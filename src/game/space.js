@@ -4,7 +4,28 @@ var SPACE=(function(D,E){
   const phases=['countdown','retract','ignition','ascent','space','ending'];
   const object=x=>x&&typeof x==='object'&&!Array.isArray(x)?x:{};
   const fail=msg=>({ok:false,msg});
+  /* Claude 側の試作（feature/game-space-program、2026-11-13。公開版には入っていない）のセーブ形式からの移行。
+     その形式は space.know／inst／tests／wear／clear を持つ。実習は対応する実習へ、機体に付けた部品と持ち物は対応する ID へ戻す。
+     対応のない ID は消さずに残す（engine の方針どおり）。古い試験の合格は形式が違うので引き継がない（やり直し） */
+  const CLAUDE_ITEMS={computer:'sp_computer',shipcomputer:'sp_flightcomputer',radio:'sp_radio',shipradio:'sp_radio',spacesuit:'sp_suit',lifesupport:'sp_lifesupport',cabinlife:'sp_lifesupport',
+    r_frame:'sp_hull',r_skin:'sp_skin',r_engine:'sp_propulsion',r_capsule:'sp_capsule',powerunit:'sp_power',launchpad:'sp_pad',tower:'sp_tower',control:'sp_control',assembly:'sp_assembly',
+    switch:'sp_switch',transistor:'sp_transistor',gateboard:'sp_gate',adderboard:'sp_adder',memboard:'sp_memory',cpuboard:'sp_cpu',iounit:'sp_io',sensorunit:'sp_sensor',seal:'sp_seal',
+    helmet:'sp_helmet',gloves:'sp_gloves',pressurelayer:'sp_pressurelayer',outerlayer:'sp_protectlayer',innerwear:'sp_liner',ceramic:'sp_ceramic',semifab:'sp_fab',
+    airtank:'sp_air',co2scrubber:'sp_scrubber',coolingunit:'sp_cooling',propcell:'sp_charge'};
+  const CLAUDE_LESSONS={circuit:'switch',switching:'transistor',gates:'gates',adder:'adder',memory:'memory',roles:'architecture',program:'program',sensors:'sensors'};
+  const CLAUDE_SLOTS={frame:'r_frame',engine:'r_engine',power:'powerunit',computer:'shipcomputer',radio:'shipradio',capsule:'r_capsule',life:'cabinlife',skin:'r_skin'};
+  function fromClaude(S,old){
+    const lessons={},moved={},kept=[];
+    for(const k of Object.keys(object(old.know)))if(CLAUDE_LESSONS[k])lessons[CLAUDE_LESSONS[k]]=true;
+    const give=(id,q)=>{const to=CLAUDE_ITEMS[id];if(!to||!D.items[to]){kept.push(id);return;}S.inv[to]=(S.inv[to]||0)+q;if(D.items[to].unique)S.inv[to]=Math.min(S.inv[to],1);moved[id]=to;if(!S.disc[to])S.disc[to]={first:Date.now(),made:1,total:q,routes:['migrate:claude'],best:0};};
+    for(const [slot,item] of Object.entries(CLAUDE_SLOTS))if(object(old.inst)[slot])give(item,1);           // 機体に付けていた部品は持ち物へ戻す
+    for(const id of Object.keys(S.inv||{}))if(CLAUDE_ITEMS[id]){const q=S.inv[id];delete S.inv[id];give(id,q);}
+    const n={version:1,lessons,migratedFrom:{format:'claude-2026-11-13',at:Date.now(),moved,kept:[...new Set(kept)],clear:old.clear&&isFinite(old.clear.t)?old.clear.t:null}};
+    if(n.migratedFrom.clear)n.firstClear={at:n.migratedFrom.clear,runId:'claude-legacy',discoveries:Object.keys(S.disc||{}).length,crafts:0};
+    return n;
+  }
   function state(S){
+    if(S.space&&typeof S.space==='object'&&S.space.know&&typeof S.space.know==='object'&&!S.space.lessons)S.space=fromClaude(S,S.space);
     const p=S.space=object(S.space);p.version=1;p.rev=Number.isSafeInteger(p.rev)&&p.rev>=0?p.rev:0;
     p.lessons=object(p.lessons);p.installed=object(p.installed);p.tests=object(p.tests);p.practice=object(p.practice);
     for(const k of Object.keys(p.installed))if(!C.slots.some(s=>s.id===k)||!Number.isSafeInteger(p.installed[k])||p.installed[k]<=0)delete p.installed[k];
@@ -55,7 +76,9 @@ var SPACE=(function(D,E){
     return {ok:true,acc,mem,output,trace};
   }
   function practice(S,id,arg){const p=state(S),n=lessonNeeds(S,id);if(n.length)return fail(n.join('／'));arg=object(arg);let output,passed=false;
-    if(id==='switch'||id==='transistor'){output=arg.on===true?1:0;passed=output===1;}
+    if(id==='switch'){if(arg.gap!=null&&!(arg.gap in CONDUCT))return fail('はさむ物を選んでください');const tried=Array.isArray(arg.tried)?arg.tried.filter(k=>k in CONDUCT):[];
+      output=arg.on===true&&CONDUCT[arg.gap]===true?1:0;passed=output===1&&tried.some(k=>CONDUCT[k]===false);}
+    if(id==='transistor'){output=arg.on===true?1:0;passed=output===1;}
     if(id==='gates'){if(!['AND','OR','NOT'].includes(arg.gate)||![0,1].includes(arg.a)||![0,1].includes(arg.b))return fail('入力は0か1です');output=arg.gate==='AND'?(arg.a&arg.b):arg.gate==='OR'?(arg.a|arg.b):1-arg.a;
       if(arg.answer===output){p.practice.gates=object(p.practice.gates);p.practice.gates[arg.gate+arg.a+(arg.gate==='NOT'?'':arg.b)]=true;}passed=['AND00','AND01','AND10','AND11','OR00','OR01','OR10','OR11','NOT0','NOT1'].every(k=>p.practice.gates&&p.practice.gates[k]);}
     if(id==='adder'){if(!Number.isInteger(arg.a)||!Number.isInteger(arg.b)||arg.a<0||arg.a>15||arg.b<0||arg.b>15)return fail('0〜15の整数を入力');output=arg.a+arg.b;passed=arg.a===3&&arg.b===2&&arg.answer===5;}
@@ -65,6 +88,8 @@ var SPACE=(function(D,E){
     if(id==='sensors'){output={air:'正常',co2:'要点検',temperature:'正常',power:'正常',unit:'架空状態値'};passed=arg.answer==='空気再生';}
     if(passed&&!p.lessons[id]){p.lessons[id]=true;log(S,'lesson',C.lessons.find(l=>l.id===id).name);}S.seq++;return {ok:true,output,passed};
   }
+  /* 実習①ではさむ物（Claude 側の実装から移植）：true＝電気を通す（導体）、false＝通さない（絶縁体） */
+  const CONDUCT={copper:true,ironrod:true,rubber:false,glass:false,cloth:false};
   function consume(S,id){if(!E.vflag(S,'free')){S.inv[id]--;if(S.inv[id]<=0)delete S.inv[id];}}
   function install(S,id,remove){const p=state(S),slot=C.slots.find(x=>x.id===id);if(!slot||locked(S))return fail('地上で組立してください');if(!placed(S))return fail('発射台をマップに設置してください');
     if(remove){if(id==='structure'&&Object.keys(p.installed).some(k=>k!=='structure'))return fail('ほかの部品を取り外してから構造を外してください');if(!p.installed[id])return fail('未組込です');E.addItem(S,slot.item,1,'space:remove');delete p.installed[id];}
@@ -102,6 +127,6 @@ var SPACE=(function(D,E){
   // 一階層ずつ返す。UIは選んだ材料だけ展開し、共有部品の指数的な再帰を避ける。
   function dependency(id){const r=E.producers(id);return {id,name:D.items[id]?.name||id,natural:r.regions.map(x=>x.name),recipes:[...r.crafts.map(c=>({id:c.id,qty:c.qty,materials:Object.entries(c.inp).map(([id,qty])=>({id,qty})),equipment:[...(c.at?[c.at]:[]),...c.tools]})),...r.procs.map(c=>({id:c.id,qty:c.out[id],materials:Object.entries(c.inp).map(([id,qty])=>({id,qty})),equipment:c.at,tools:c.tools}))]};}
 
-  return {state,owned,needs,startCraft,finishCraft,cancelCraft,lessonNeeds,practice,program,install,equip,place,placed,stage,valid,testNeeds,test,conditions,board,begin,advance,back,dependency,locked,active};
+  return {CONDUCT,state,owned,needs,startCraft,finishCraft,cancelCraft,lessonNeeds,practice,program,install,equip,place,placed,stage,valid,testNeeds,test,conditions,board,begin,advance,back,dependency,locked,active};
 })(typeof DATA!=='undefined'?DATA:require('./data.js'),typeof ENGINE!=='undefined'?ENGINE:require('./engine.js'));
 if(typeof module!=='undefined')module.exports=SPACE;

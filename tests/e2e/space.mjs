@@ -31,13 +31,15 @@ for(const mobile of [false,true]){
  await page.waitForFunction(()=>__GAME__.W3.state==='ready',null,{timeout:60000});
  await page.locator('#hud [data-tab="settings"]').click();await page.locator(`.heropick[data-id="${mobile?'girl':'boy'}"]`).click();await page.locator('button[data-act="closepanel"]').click();
  const section=async id=>{await page.locator(`[data-sp="section"][data-id="${id}"]`).click();};
- await page.locator('[data-act="tab"][data-tab="space"]').first().click();
+ await page.locator('[data-act="tab"][data-tab="space"]:visible').first().click();
  await page.locator('[data-sp="select"][data-id="sp_plate"]').click();
  await page.locator('#sp-count').fill('2');
  await page.locator('[data-sp="craft"][data-id="c_sp_plate"]').click();
  await page.locator('[data-sp="finish"]').click();
  assert(await page.evaluate(()=>!__GAME__.S.space.job));
- await section('実習');await page.locator('#sp-on').check();await page.locator('[data-sp="practice"]').click();
+ await section('実習');await page.locator('#sp-gap').selectOption('rubber');await page.locator('#sp-on').check();await page.locator('[data-sp="practice"]').click();
+ assert(await page.evaluate(()=>!__GAME__.S.space.lessons.switch),'絶縁体だけでは合格しない');
+ await page.locator('#sp-gap').selectOption('copper');await page.locator('#sp-on').check();await page.locator('[data-sp="practice"]').click();
  assert(await page.evaluate(()=>__GAME__.S.space.lessons.switch));
  await page.evaluate(()=>{for(const l of __GAME__.D.space.lessons)__GAME__.S.space.lessons[l.id]=true;__GAME__.writeNow();});
  await section('発射サイト');await page.locator('[data-sp="find-site"]').click();
@@ -67,7 +69,9 @@ for(const mobile of [false,true]){
  assert(await page.evaluate(()=>!!__GAME__.S.space.runId));
  await page.reload();await page.waitForFunction(()=>!!window.__GAME__);
  await page.waitForFunction(()=>__GAME__.S.space.phase!=='boarded');
- if(await page.locator('[data-sp="skip"]').isVisible())await page.locator('[data-sp="skip"]').click();
+ // 演出の時刻は保存した発射時刻からの実時間。ソフトウェア描画では再読み込みの間に終わっていることがあるので、まだ飛んでいるときだけスキップを押す
+ const skipped=await page.evaluate(()=>{const b=document.querySelector('[data-sp="skip"]');if(b&&__GAME__.SPACE.active.includes(__GAME__.S.space.phase)){b.click();return true;}return false;});
+ console.log('skip clicked:',skipped,'phase:',await page.evaluate(()=>__GAME__.S.space.phase));
  await page.waitForFunction(()=>__GAME__.S.space.phase==='ending');
  await page.screenshot({path:path.join(root,`test-results/space-${mobile?'mobile':'desktop'}-ending.png`)});
  const first=await page.evaluate(()=>JSON.stringify(__GAME__.S.space.firstClear));

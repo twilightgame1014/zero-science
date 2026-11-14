@@ -2,6 +2,20 @@
 (function(D){
   if(D.space) return;
   const defs=[], recipes=[];
+  /* Claude 側の実装から移植（2026-11-14 統合）：石油から合成ゴムのもとを作り、硫黄で加硫してゴムにする。
+     シール材の材料にして、火山の硫黄を終盤まで使う。反応は元素保存の検査（engine の runTests）を通る */
+  const PM='高分子材料', ORGc='有機化合物';
+  D.items.rawrubber={id:'rawrubber',tags:[PM,ORGc],icon:'🫓',name:'合成ゴムのもと',yomi:'ごうせいごむのもと',en:'Raw synthetic rubber',el:['C','H'],store:true,color:'#5a4f45',simp:true,
+    kid:'石油から作った、べたべたしてのびる物質。このままでは夏にとけ、冬にかたくなる。',
+    more:'長い鎖の分子がからみ合っているので、引っぱるとのびます。鎖どうしがつながっていないので、まだ形が安定しません。（実際の工程を大きくまとめた表現です）',uses:'加硫してゴムにする'};
+  D.items.rubber={id:'rubber',tags:[PM,ORGc],icon:'⚫',name:'ゴム',yomi:'ごむ',en:'Vulcanised rubber',el:['C','H','S'],store:true,color:'#2c2a28',
+    kid:'硫黄を混ぜて熱したゴム。のびてももとに戻り、空気や水を通さない。',
+    more:'硫黄が鎖と鎖の間に橋をかける（加硫）と、のびても元に戻るようになります。1839年にグッドイヤーが発見しました。',uses:'シール材（パッキン）'};
+  ['heat'].forEach(o=>{ if(!D.items.reactor.ops.includes(o)) D.items.reactor.ops.push(o); });
+  D.procs.push({id:'make_rawrubber',op:'polymerize',at:['reactor'],inp:{ethylene:2,naphtha:1},out:{rawrubber:4},tools:[],air:false,temp:60,simp:true,
+    why:'石油から取り出した小さな分子を長い鎖につなげると、のびる性質をもつ物質になった。（実際の工程を大きくまとめた表現です）'});
+  D.procs.push({id:'vulcanize',op:'heat',at:['reactor'],inp:{rawrubber:2,sulfur:1},out:{rubber:3},tools:[],air:false,temp:150,
+    why:'硫黄が分子の鎖と鎖を橋のようにつなぎ、のびても元に戻る丈夫なゴムになった（加硫）。'});
   function part(id,name,group,inp,at,why,opt){
     opt=opt||{}; id='sp_'+id;
     const el=[...new Set(Object.keys(inp).flatMap(k=>(D.items[k]||{}).el||[]))];
@@ -20,7 +34,7 @@
   part('insulator','絶縁部品','材料',{pe:2,glass:1},'reactor','電気を通しにくい層で導体を分離する。',{qty:8});
   part('cable','被覆配線','電力',{wire:2,sp_insulator:1},'sp_machine','銅が電気を運び、被覆が接触を防ぐ。',{qty:6});
   part('fiber','機能繊維','材料',{naphtha:1,cloth:1},'reactor','天然布を試作の基材とし、機能高分子の加工を抽象化した丈夫な繊維。',{qty:6,tools:['sp_materials']});
-  part('seal','柔軟シール材','材料',{naphtha:1,pe:1},'reactor','つなぎ目をふさぐ柔軟な架空規格材。普通のPEと同じ性能ではない。',{qty:8,tools:['sp_materials']});
+  part('seal','柔軟シール材','材料',{rubber:2},'sp_machine','硫黄で加硫したゴムを輪の形に打ちぬく。やわらかく変形して、つなぎ目の空気や液体を止める。',{qty:8,tools:['sp_materials']});
   part('membrane','気密膜','材料',{sp_fiber:1,sp_seal:1},'reactor','布の強さとは別に空気を保持する役割を持つ。',{qty:4});
   part('thermal','積層断熱材','材料',{sp_fiber:1,sp_insulator:1,aluminum:1},'sp_machine','層を重ねて熱のやり取りを抑える。白い布一枚とは異なる。',{qty:4});
   part('ceramic','耐熱セラミック','材料',{alumina:1,quartzpowder:1},'eaf','熱にさらされる部位を保護する用途適合品。普通の土器とは区別する。',{qty:4,tools:['sp_materials']});
@@ -50,7 +64,7 @@
   part('helmet','ヘルメットとバイザー','宇宙服',{sp_window:1,sp_plate:1,sp_seal:1},'sp_suitbench','視界と保護、他の層との接続を担う。');
   part('gloves','手袋とブーツ','宇宙服',{sp_fiber:1,sp_membrane:1,sp_seal:1},'sp_suitbench','動きやすさと気密を両立する手足の装備。');
   part('air','呼吸環境供給部','生命維持',{cylinder:1,water:1,sp_seal:1},'sp_machine','電解設備で得た気体を直接装置へ移す工程と、適切な呼吸環境の調整を抽象化。酸素は既存仕様で保管不可。現実の混合比や高圧系統は扱わない。',{tools:['electrolyzer']});
-  part('scrubber','空気再生部','生命維持',{charcoal:1,naphtha:1,sp_plate:1},'reactor','専用吸着材によるCO₂処理と汚染物除去を抽象化。木炭単独の働きではない。');
+  part('scrubber','空気再生部','生命維持',{slaked:2,naoh:1,sp_plate:1},'sp_machine','消石灰や水酸化ナトリウムのようなアルカリ性の物質は、はいた息の二酸化炭素と結びついて取りのぞく（化学吸収）。吸収缶の形と交換はゲーム内で簡略化。');
   part('waterunit','水衛生部','生命維持',{water:2,plasticbox:1,sp_cable:1},'sp_machine','飲用適合・湿度回収・衛生をまとめる。布ろ過だけで安全な飲み水にはならない。',{tools:['filter','sp_materials']});
   part('cooling','温度管理部','生命維持',{copper:1,aluminum:1,water:1,sp_thermal:1},'sp_machine','熱を運んで環境を保つ。断熱だけでは熱を捨てられない。');
   part('lifesupport','生命維持ユニット','生命維持',{sp_air:1,sp_scrubber:1,sp_waterunit:1,sp_cooling:1,sp_power:1,sp_sensor:1},'sp_machine','呼吸・水・熱・電源・監視の各機能をまとめる。',{model:'life-support'});
@@ -66,7 +80,7 @@
   part('control','地上管制端末','地上設備',{sp_computer:1,sp_radio:1,sp_cable:2},'sp_computerbench','試験の結果と発射条件を表示する。',{fac:true,model:'control-terminal'});
   part('testbench','総合試験端末','地上設備',{sp_computer:1,sp_sensor:1,sp_cable:1},'sp_computerbench','装置を壊さず不足機能を確認する模擬試験装置。',{fac:true,model:'test-terminal'});
   const lessons=[
-    {id:'switch',name:'導体・絶縁体とスイッチ',need:['sp_switch','battery','bulb'],prev:[],help:'スイッチを閉じると回路がつながり、ランプが点く。'},
+    {id:'switch',name:'導体・絶縁体とスイッチ',need:['sp_switch','battery','bulb'],prev:[],help:'すき間に物をはさんでスイッチを閉じる。電気を通す物（導体）ならランプが点き、通さない物（絶縁体）なら点かない。両方を確かめてから、ランプを点けよう。'},
     {id:'transistor',name:'電流で切り替える素子',need:['sp_transistor'],prev:['switch'],help:'制御入力が1なら、出力側も1になる模擬スイッチ。'},
     {id:'gates',name:'AND・OR・NOT',need:['sp_gate'],prev:['transistor'],help:'ANDは両方1、ORはどちらか1、NOTは入力を反転する。'},
     {id:'adder',name:'二進数の足し算',need:['sp_adder'],prev:['gates'],help:'3 + 2 = 5。二進数では0011 + 0010 = 0101。'},
@@ -77,6 +91,18 @@
   ];
   const slots=[['structure','機体構造','sp_hull'],['skin','外装','sp_skin'],['propulsion','架空推進部','sp_propulsion'],['power','電源','sp_power'],['computer','船内計算機','sp_flightcomputer'],['radio','通信','sp_radio'],['capsule','搭乗区画','sp_capsule'],['life','生命維持','sp_lifesupport'],['charge','架空推進用資材','sp_charge']].map(([id,name,item])=>({id,name,item}));
   const tests=[['power','電源と配線',['power'],[],'配線'],['computer','計算機自己診断',['computer'],['power'],'記憶'],['radio','通信確認',['radio'],['power'],'通信'],['suit','宇宙服の機能',[],['power'],'気密'],['life','生命維持とカプセル',['life','capsule'],['power'],'空気再生'],['uncrewed','無人模擬飛行',slots.map(s=>s.id),['computer','radio','suit','life'],'模擬'],['final','総合点検',slots.map(s=>s.id),['uncrewed'],'全項目']].map(([id,name,slots,prior,answer])=>({id,name,slots,prior,answer}));
+  /* 目標（右上のフクロウ）にも宇宙計画の道筋を出す（Claude 側の実装から移植。条件は Codex の space 状態を読む）。最後の「図鑑のコンプリート」の前に入れる */
+  const sp=s=>s.space||{};
+  D.missions.splice(D.missions.length-1,0,
+    {t:"大きな目標：自分のロケットで宇宙へ。まず「精密加工台」を作ろう",how:"「宇宙へ」の画面で、必要な材料を原料までたどれる。精密加工台は鋼・銅線・ガラスと、作業台・水力発電機で作る。",tab:"space",done:s=>!!s.disc.sp_machine},
+    {t:"回路の実習：導体と絶縁体を確かめて、ランプを点けよう",how:"「宇宙へ」→「実習」。スイッチ回路・ボルタ電池・白熱電球を用意する。",tab:"space",done:s=>!!(sp(s).lessons||{}).switch},
+    {t:"論理回路・加算・記憶を学び、「学習用コンピューター」を作ろう",how:"切替素子→論理ゲート→加算回路・記憶回路→演算制御モジュール。実習を1つずつ済ませる。",tab:"space",done:s=>!!s.disc.sp_computer},
+    {t:"発射サイトをマップに設置しよう",how:"発射台・支持塔・管制端末・電源配電ユニット・機体組立設備をそろえ、平らで広い場所へ。木や岩は採集して片付ける。",tab:"space",done:s=>!!(sp(s).ground)},
+    {t:"機体を組み立て、宇宙服を装着しよう",how:"機体構造を最初に。外装・推進部・電源・船内計算機・通信・搭乗区画・生命維持・推進用資材を組み込む。",tab:"space",done:s=>{const i=sp(s).installed||{};return D.space.slots.every(x=>i[x.id])&&!!sp(s).suit;}},
+    {t:"7つの試験に合格して、搭乗口から乗りこもう",how:"電源・計算機・通信・宇宙服・生命維持・無人模擬飛行・総合点検。部品を交換したら試験はやり直し。",tab:"space",done:s=>!!sp(s).firstClear||sp(s).phase==='boarded'},
+    {t:"宇宙へ！",how:"保存して打ち上げる。到達のあとは、打ち上げ前の世界で探索を続けられる。",tab:"space",done:s=>!!sp(s).firstClear});
+  D.stages[5].need="宇宙計画を進めて、自分のロケットで宇宙へ";
+  D.stages.push({n:6,name:"宇宙へ届いた文明",era:"宇宙の時代",need:"宇宙へ到達した。地上の探検と研究は、これからも続く"});
   D.space={ids:defs,recipes,lessons,slots,tests,groups:['材料','電力','計算機','宇宙服','生命維持','機体','地上設備'],
     siteItems:['sp_pad','sp_tower','sp_control','sp_power','sp_assembly','generator'],
     siteSpec:{id:'space-site',type:'space-site',footprint:{shape:'rect',w:18,d:18},entrance:[0,10],operate:[0,10],maxSlope:0.18},
