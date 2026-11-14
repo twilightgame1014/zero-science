@@ -1002,7 +1002,7 @@ async function start3D(){
       const st=HD2D.natureModelStatus(); W3.natModels=st; if(Object.keys(st.failed).length) console.warn("自然物のモデルの読み込みに失敗：", st.failed); });
     /* 広い世界の外側（地形の区画・海・湖・山の川・滝）を、モジュールのシーンに足して描く（src/world/render.ts） */
     if(HD2D.attachWorld){ try{ W3.world = HD2D.attachWorld(W3.gfx, {cfg:W3.cfg, quality: MOBILE ? "low" : "high",
-      images:{particle:ASSETS.particle}}); }catch(e){ console.error("広い世界の描画を始められなかった", e); } }
+      images:{particle:ASSETS.particle}, volcanoKit:ASSETS.volcanoKit}); }catch(e){ console.error("広い世界の描画を始められなかった", e); } }
     camInit();      // 保存した視点を先に（古いセーブの画面基準の向きを、その視点でワールドの向きへ換算するため）
     W3.pos = spawnPos();
     if(W3.spawnMoved) camRebase();     // 安全な場所へ移したときは、その場の足もとを基準の高さに

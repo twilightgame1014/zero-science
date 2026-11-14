@@ -137,6 +137,9 @@ if (fs.existsSync(path.join(root, toolAtlas)) && fs.existsSync(path.join(root, t
 ASSETS.construction={contract:JSON.parse(rd('docs/construction/construction-assets.json')),models:{},textures:{}};
 for(const f of fs.readdirSync(path.join(root,'assets/build/construction')))if(f.endsWith('.glb'))ASSETS.construction.models[f.slice(0,-4)]=fs.readFileSync(path.join(root,'assets/build/construction',f)).toString('base64');
 for(const f of fs.readdirSync(path.join(root,'assets/construction/textures')))if(f.endsWith('.png')){const p='assets/construction/textures/'+f;ASSETS.construction.textures[p]=dataUrl(p,'image/png');}
+// 火山キット（Muse ラウンド27。§39 で src/world/render.ts が実ゲームの火山へ配置する。テクスチャなしの GLB なので base64 のまま）
+ASSETS.volcanoKit={};
+for(const f of fs.readdirSync(path.join(root,'assets/volcano-kit')))if(f.endsWith('.glb'))ASSETS.volcanoKit[f.slice(0,-4)]=fs.readFileSync(path.join(root,'assets/volcano-kit',f)).toString('base64');
 ASSETS.spaceModels = {};
 ASSETS.spaceContract=JSON.parse(rd('assets/rocket/rocket-contract.json'));
 ASSETS.spacePlacement={'launch-pad':[0,0],'rocket':[0,0],'support-tower':[-4.6,0],'control-terminal':[5,5],'electronics-fab':[-2,6],'computer-bench':[1,6],'test-terminal':[4,-6],'power-distribution':[6,-2],'life-support':[6,1],'suit-stand':[-6,-5],'parts-rack':[-2,-5]};
