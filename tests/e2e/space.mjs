@@ -36,8 +36,9 @@ for(const mobile of [false,true]){
  // High-quality PC visuals are reviewed separately in the manual game screenshots.
  await page.evaluate(()=>__GAME__.W3.gfx.setQuality('low'));
  await page.locator('#hud [data-tab="settings"]').click();await page.locator(`.heropick[data-id="${mobile?'girl':'boy'}"]`).click();await page.locator('button[data-act="closepanel"]').click();
- const section=async id=>{await page.locator(`[data-sp="section"][data-id="${id}"]`).click();};
+ const section=async id=>{await page.locator(`[data-sp="section"][data-id="${id}"]`).click();await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());};
  await page.locator('[data-act="tab"][data-tab="space"]:visible').first().click();
+ await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());
  await page.locator('[data-sp="select"][data-id="sp_plate"]').click();
  assert(await page.locator('.sp-card .sic').first().evaluate(e=>getComputedStyle(e).backgroundImage.startsWith('url(')),'space atlas visible, no safe-area CSS variable collision');
  await page.locator('#sp-count').fill('2');
@@ -68,14 +69,14 @@ for(const mobile of [false,true]){
  await page.locator('[data-sp="place-site"]').click();
  assert(await page.evaluate(()=>__GAME__.SPACE.placed(__GAME__.S)));
  const capture=async name=>{
-  await page.evaluate(()=>{__GAME__.U.space.overview=true;__GAME__.setTab('explore');});
+  await page.evaluate(()=>{__GAME__.W3.gfx.resumeGraphics();__GAME__.U.space.overview=true;__GAME__.setTab('explore');});
   await page.waitForFunction(()=>window.HD2D.spaceModelStatus(__GAME__.W3.gfx)==='ready');
   await page.waitForTimeout(2000);
   console.log('capture',mobile?'mobile':'pc',name);
   // Preserve a real rendered frame while avoiding saturation of CI software rasterization during readback.
   await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());
   try{await screenshot(`${mobile?'mobile':'pc'}-${name}.png`);}
-  finally{await page.evaluate(()=>__GAME__.W3.gfx.resumeGraphics());}
+  finally{await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());}
   await page.locator('[data-act="tab"][data-tab="space"]:visible').first().click();await section('組立');
  };
  await capture('S0');
@@ -88,7 +89,7 @@ for(const mobile of [false,true]){
  const tests=await page.evaluate(()=>__GAME__.D.space.tests.map(x=>({id:x.id,answer:x.answer})));
  for(const t of tests){await page.locator('#sp-test-'+t.id).selectOption(t.answer);await page.locator(`[data-sp="test"][data-id="${t.id}"]`).click();}
  assert(await page.evaluate(()=>__GAME__.SPACE.conditions(__GAME__.S).every(x=>x.ok)));
- await page.evaluate(()=>{const g=__GAME__,b=g.S.build['space-site'];g.W3.pos={x:b.x,z:b.z+11};g.S.pos={...g.W3.pos};g.setTab('explore');});
+ await page.evaluate(()=>{const g=__GAME__,b=g.S.build['space-site'];g.W3.gfx.resumeGraphics();g.W3.pos={x:b.x,z:b.z+11};g.S.pos={...g.W3.pos};g.setTab('explore');});
  await page.waitForTimeout(600);
  await page.waitForFunction(()=>window.HD2D.spaceModelStatus(__GAME__.W3.gfx)==='ready');
  const visual=await page.evaluate(()=>{const r=__GAME__.W3.gfx.getScene().getObjectByName('SpaceSiteModels');return {visible:r?.visible,rocket:r?.children.some(o=>o.name==='space-model:rocket'&&o.visible)};});
@@ -104,7 +105,7 @@ for(const mobile of [false,true]){
  await page.waitForTimeout(2000);await page.evaluate(()=>__GAME__.W3.gfx.pauseGraphics());
  await screenshot(`${mobile?'mobile':'pc'}-ignition.png`);
  await page.evaluate(()=>{window.Date=window.__RealDate;__GAME__.W3.gfx.resumeGraphics();});
- await page.reload();await page.waitForFunction(()=>!!window.__GAME__);
+ await page.reload({waitUntil:'domcontentloaded',timeout:120000});await page.waitForFunction(()=>!!window.__GAME__,null,{timeout:120000});
  await page.waitForFunction(()=>__GAME__.W3.state==='ready' && !!__GAME__.W3.gfx, null, {timeout:120000});
  await page.evaluate(()=>__GAME__.W3.gfx.setQuality('low'));
  await page.waitForFunction(()=>__GAME__.S.space.phase!=='boarded');
