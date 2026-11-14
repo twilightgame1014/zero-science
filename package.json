@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node tests/engine.test.mjs && node tests/nature.test.mjs && node tests/world.test.mjs && node tests/verify.test.mjs && node tests/assets.test.mjs && node tests/sim.mjs && node tests/space.test.mjs && node tests/space-world.test.mjs && node tests/space-assets.test.mjs && node tests/space-deps.test.mjs",
+    "test": "node tests/engine.test.mjs && node tests/nature.test.mjs && node tests/world.test.mjs && node tests/verify.test.mjs && node tests/assets.test.mjs && node tests/sim.mjs && node tests/space.test.mjs && node tests/space-world.test.mjs && node tests/space-assets.test.mjs && node tests/space-deps.test.mjs && node tests/space-animation.test.mjs && node tests/space-art.test.mjs && node tests/space-materials.test.mjs",
     "e2e": "npm run build && node tests/e2e/play.mjs",
     "test:8dir": "node threejs-hd2d-graphics/tools/test-8dir.mjs",
     "e2e:8dir": "npm run build && node tests/e2e/hero-8dir.mjs",

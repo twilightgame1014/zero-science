@@ -10,6 +10,7 @@ import type {
   GroundPick,
   NpcVisualState,
   PlayerVisualState,
+  PlayerVisibilityControl,
   QualityTier,
   ResourceVisualState,
   StructurePreviewState,
@@ -48,7 +49,7 @@ import { toScenePosition } from './utils';
  *    through the methods below. It never mutates logic state, never
  *    decides collisions, gathering, building permission or progress.
  */
-export class GraphicsEngine {
+export class GraphicsEngine implements PlayerVisibilityControl {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private container: HTMLElement;
@@ -361,6 +362,9 @@ export class GraphicsEngine {
     const tex = await this.assets.loadTexture(url);
     this.character.setSpriteTexture(tex);
   }
+
+  /** Hide only the rendered player while aboard; preserve identity and saved position. */
+  setPlayerVisible(visible: boolean): void { this.character.group.visible = visible; }
 
   /** Hand over the player's current visual state (owned by logic). */
   setPlayerVisualState(state: PlayerVisualState): void {

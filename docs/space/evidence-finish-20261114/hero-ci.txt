@@ -1,0 +1,16 @@
+run 43588805915 / commit f80e7e5a3514a0a0903f973296c9fe03d0836d99
+2026-11-14T11:11:48.5514111Z boy suit: diag8Check PASS / 1024×2048 / 8 rows / continuous facing
+2026-11-14T11:12:09.9106676Z boy: yaw 20° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T11:12:30.5662999Z boy: yaw 45° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T11:12:48.1694926Z boy: yaw 200° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T11:12:59.4063331Z boy: diagonal speed normalized PASS
+2026-11-14T11:13:04.7303058Z boy: blocked / moving=false / facing retained PASS
+2026-11-14T11:13:16.8483992Z boy: stationary camera orbit / 8 rows PASS (0,5,1,7,3,6,2,4)
+2026-11-14T11:13:37.5564632Z girl suit: diag8Check PASS / 1024×2048 / 8 rows / continuous facing
+2026-11-14T11:13:59.5342640Z girl: yaw 20° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T11:14:18.0215980Z girl: yaw 45° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T11:14:37.1904720Z girl: yaw 200° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T11:14:48.3553848Z girl: diagonal speed normalized PASS
+2026-11-14T11:14:54.6150256Z girl: blocked / moving=false / facing retained PASS
+2026-11-14T11:15:05.2639261Z girl: stationary camera orbit / 8 rows PASS (0,5,1,7,3,6,2,4)
+2026-11-14T11:15:16.3816916Z ALL SELECTED REAL WEBGL 8DIR CHECKS PASS

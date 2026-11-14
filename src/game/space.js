@@ -38,7 +38,7 @@ var SPACE=(function(D,E){
   function log(S,kind,text){const p=state(S);p.history.push({t:Date.now(),kind,text});p.history=p.history.slice(-200);}
   const locked=S=>state(S).phase!=='ground';
   const placed=S=>{const b=S.build&&S.build['space-site'];return !!b&&!b.removed&&Number.isFinite(b.x)&&Number.isFinite(b.z)&&Number.isFinite(b.rot);};
-  const stage=S=>{const i=state(S).installed;return i.capsule&&i.life&&i.computer&&C.slots.every(s=>i[s.id])?4:i.capsule||i.computer?3:i.skin?2:i.structure?1:0;};
+  const stage=S=>{const i=state(S).installed;return !i.structure?0:C.slots.every(s=>i[s.id])?4:i.skin&&i.propulsion&&i.capsule?3:i.skin&&i.propulsion?2:1;};
   function owned(S,id){const p=state(S);return E.has(S,id)||(id==='sp_suit'&&!!p.suit)||(!!p.ground&&['sp_pad','sp_tower','sp_control','sp_power'].includes(id))||C.slots.some(slot=>slot.item===id&&!!p.installed[slot.id]);}
   function cancelCraft(S){const p=state(S);if(locked(S))return fail('演出中です');if(!p.job)return fail('製作中ではありません');delete p.job;S.seq++;return {ok:true};}
   function needs(S,c,batches){
@@ -120,7 +120,7 @@ var SPACE=(function(D,E){
   function begin(S,now){const p=state(S);if(p.phase!=='boarded')return fail('主人公がまだ搭乗していません');if(conditions(S).some(x=>!x.ok))return fail('構成が変わりました。搭乗を取り消して再点検してください');
     p.runId=String(++p.rev)+':'+String(S.seq);p.launchAt=now??Date.now();p.phase='countdown';S.seq++;log(S,'launch','打ち上げ開始');return {ok:true};
   }
-  function advance(S,now,skip){const p=state(S);if(!active.includes(p.phase))return fail('再生中ではありません');const elapsed=Math.max(0,(now??Date.now())-p.launchAt);p.phase=skip?'ending':elapsed<3000?'countdown':elapsed<5000?'retract':elapsed<7000?'ignition':elapsed<11000?'ascent':elapsed<14000?'space':'ending';
+  function advance(S,now,skip){const p=state(S);if(!active.includes(p.phase))return fail('再生中ではありません');const elapsed=Math.max(0,(now??Date.now())-p.launchAt);p.phase=skip?'ending':elapsed<3000?'countdown':elapsed<8400?'retract':elapsed<10000?'ignition':elapsed<14000?'ascent':elapsed<18000?'space':'ending';
     if(p.phase==='ending'){if(!p.firstClear){p.firstClear={at:Date.now(),runId:p.runId,discoveries:Object.keys(S.disc).length,crafts:S.hist.filter(h=>h.k==='craft').length};log(S,'clear','初めて宇宙へ到達');}p.lastCompleted=p.runId;}return {ok:true,phase:p.phase};
   }
   function back(S){const p=state(S);if(p.phase!=='ending'&&p.phase!=='boarded')return fail('演出を完了またはスキップしてください');p.phase='ground';delete p.launchAt;if(p.returnPos)S.pos={...(S.pos||{}),...p.returnPos};S.seq++;return {ok:true,pos:p.returnPos};}

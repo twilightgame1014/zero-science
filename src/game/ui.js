@@ -25,10 +25,11 @@ function makeAtlas(a, v){ if(!a || !a.src) return null;
   const r=document.documentElement.style; r.setProperty("--"+v, `url("${url}")`); r.setProperty("--"+v+"-c", a.cols); r.setProperty("--"+v+"-r", a.rows);
   return {url, cols:a.cols, rows:a.rows, pos:a.pos||{}}; }
 const ITEM_ICO = makeAtlas(window.ASSETS && ASSETS.items, "iat");
+const SPACE_ICO = makeAtlas(window.ASSETS && ASSETS.spaceIcons, "sp-atlas");
 const TOOL_ICO = makeAtlas(window.ASSETS && ASSETS.tools, "tat");
 /* 道具・設備のアイコンの位置（新しい62点を優先）。なければ null */
 const toolKey = id=> IT[id] ? (IT[id].tags.includes("研究設備") ? "facilities/"+id : IT[id].tags.includes("道具") ? "tools/"+id : null) : null;
-function icoPos(id){ const k=toolKey(id); if(k && TOOL_ICO && TOOL_ICO.pos[k]) return {a:TOOL_ICO, p:TOOL_ICO.pos[k], cls:"tic"};
+function icoPos(id){ if(SPACE_ICO?.pos[id])return {a:SPACE_ICO,p:SPACE_ICO.pos[id],cls:"sic"};const k=toolKey(id); if(k && TOOL_ICO && TOOL_ICO.pos[k]) return {a:TOOL_ICO, p:TOOL_ICO.pos[k], cls:"tic"};
   const p = ITEM_ICO && ITEM_ICO.pos[id]; return p ? {a:ITEM_ICO, p, cls:"iic"} : null; }
 const icT = id=>IT[id]?IT[id].icon:"❔";   // 文字だけの場所（バナー・選択肢・SVGの代替）
 const ic = id=>{ const q = icoPos(id); return q ? `<span class="${q.cls}" style="--c:${q.p[0]};--r:${q.p[1]}" aria-hidden="true"></span>` : icT(id); };
@@ -203,7 +204,7 @@ function renderPanel(){
   if(!open){ delete $("#app").dataset.dock; return; }
   dock.dataset.size = uiMode()==="pc" ? (PC_SIZE[U.tab]||"side") : (TOUCH_SIZE[U.tab]||"sheet");
   /* 打ち上げの演出（カウントダウン〜上昇）の間は、パネルを上の細い帯にして 3D の発射台と機体を見せる（2026-11-14 統合。以前は大きなパネルが画面を覆っていた） */
-  if(U.tab==="space" && ["countdown","retract","ignition","ascent"].includes(SPACE.state(S).phase)) dock.dataset.size="flight";
+  if(U.tab==="space" && ["boarded","countdown","retract","ignition","ascent"].includes(SPACE.state(S).phase)) dock.dataset.size="flight";
   /* 大きさが変わったら 3D の一時停止をやり直す（スマホの全高パネル＝止める／演出の帯＝動かす。以前は搭乗で止まったまま演出が動かなかった） */
   if(dock.dataset.size!==U.dockSize){ U.dockSize=dock.dataset.size; setTimeout(()=>{ if(W3.state!=="ready" || S.flags.view==="2d") return; const want=fieldShown() && !document.hidden; if(want && !W3.raf) resume3D(); else if(!want && W3.raf) pause3D(); },0); }   /* 止める・動かすのは状態が変わるときだけ（描画ループの開始と停止を対にする） */
   $("#app").dataset.dock = dock.dataset.size;
@@ -793,7 +794,8 @@ const RES_VIS = {twig:"branch",cobble:"pebble",flint:"pebble",log:"tree",resin:"
   leaves:"herb",vine:"herb",grass:"herb",seaweed:"herb",grape:"flowers",clay:"clay",ochre:"clay",sand:"clay",
   rain:"water",river:"water",spring:"water",seawater:"water",crude:"oil"};
 const PLANT = ["tree","herb","flowers"];
-const heroUrl = ()=> S.flags.hero==="girl" ? ASSETS.girl : ASSETS.boy;
+const heroAssetKey = ()=> (S.flags.hero==="girl"?"girl":"boy")+(SPACE.state(S).suit?"Suit":"");
+const heroUrl = ()=> ASSETS[heroAssetKey()] || (S.flags.hero==="girl"?ASSETS.girl:ASSETS.boy);
 let NODES = null;
 /* 地域の採取地点（3D上の位置はエンジンの depositPos） */
 function buildNodes(){
@@ -903,7 +905,14 @@ function syncStructColliders(){
   if(!world()) return;
   const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:") || id.startsWith("ghost:")) return; const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[v.type]) || (ASSETS.townSpecs && ASSETS.townSpecs[v.type]);
     if(sp && sp.footprint) list.push({id, type:v.type, x:v.x, z:v.z, rot:v.rot, footprint:sp.footprint}); });
-  if(SPACE.placed(S)) list.push({id:"space-site",type:"space-site",...S.build["space-site"],footprint:D.space.siteSpec.footprint});
+  if(SPACE.placed(S)){
+    const b=S.build['space-site'];
+    for(const model of ASSETS.spaceContract.models){
+      const pos=ASSETS.spacePlacement[model.id], c=model.collision;if(!pos||!c||!['box','cylinder'].includes(c.shape))continue;
+      const x=b.x+pos[0]*Math.cos(b.rot)+pos[1]*Math.sin(b.rot), z=b.z-pos[0]*Math.sin(b.rot)+pos[1]*Math.cos(b.rot);
+      list.push({id:'space-site:'+model.id,type:'space-site',x,z,rot:b.rot,footprint:c.shape==='box'?{shape:'rect',w:c.w,d:c.d}:{shape:'circle',r:c.radius}});
+    }
+  }
   const sig=JSON.stringify(list); if(sig===W3.colSig) return; W3.colSig=sig;
   WORLD.setStructures(list);
   /* 建物の中に入ってしまったら、近くの立てる場所へ（歩行にはしない） */
@@ -1740,7 +1749,7 @@ function playerVisual(st){
 /* 3D の主人公のシート：8方向を使うなら8行のまま。使わないなら上4行（従来の下・左・右・上）だけを切り出す（その場で作って覚えておく） */
 function heroSheet3D(h){
   const heroCrop = W3.heroCrop || (W3.heroCrop = {});   // start3D から最初の描画前に呼ばれることがあるので、const を使わない
-  h = h || (S.flags.hero==="girl" ? "girl" : "boy");
+  h = h || heroAssetKey();
   if((ASSETS.heroRows||4)!==8 || heroDirs()===8) return Promise.resolve(ASSETS[h]);
   return heroCrop[h] || (heroCrop[h] = new Promise(res=>{ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement("canvas"); c.width=im.width; c.height=im.width;
       c.getContext("2d").drawImage(im, 0, 0, im.width, im.width, 0, 0, im.width, im.width); res(c.toDataURL("image/png")); }catch(e){ res(ASSETS[h]); } };
@@ -2257,7 +2266,7 @@ function verifyCatalog(){
   return {items, store:items.filter(k=>IT[k].store!==false), nostore:items.filter(k=>IT[k].store===false), tools:tag("道具"), facs:tag("研究設備"),
     resTypes:Object.keys(H.RESOURCE_VISUAL_SPECS||{}), structTypes:(ASSETS.gfxCatalog||{}).structures||[], factories: fac&&fac.keys ? [...fac.keys()] : null,
     effects:(ASSETS.gfxCatalog||{}).effects||[], icons:Object.keys(ASSETS.icons||{}), icons32:Object.keys(ASSETS.icons32||{}), labApp:Object.keys(ASSETS.labApp||{}),
-    atlas:Object.keys((ASSETS.items||{}).pos||{}), gpt:Object.keys(H.GPT_TEXTURES||{}), branch:Object.keys(H.BRANCH_TEXTURES||{}),
+    atlas:[...new Set([...Object.keys((ASSETS.items||{}).pos||{}),...Object.keys((ASSETS.spaceIcons||{}).pos||{})])], gpt:Object.keys(H.GPT_TEXTURES||{}), branch:Object.keys(H.BRANCH_TEXTURES||{}),
     hero:["boy","girl"].filter(k=>ASSETS[k]), misc:["grass","rock","particle","shadow"].filter(k=>ASSETS[k])};
 }
 /* 描画の読み込み状態（読むだけ）：枝葉カードのテクスチャが読めないと、描画モジュールは旧来の球体の樹冠に戻るので、ここで分かるようにする */

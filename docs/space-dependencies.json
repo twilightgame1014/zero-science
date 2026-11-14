@@ -1,10 +1,10 @@
 {
-  "version": 1,
+  "version": 2,
   "items": [
     {
       "id": "sp_machine",
       "name": "精密加工台",
-      "yomi": "精密加工台",
+      "yomi": "せいみつかこうだい",
       "en": "精密加工台",
       "tags": [
         "研究設備"
@@ -19,7 +19,7 @@
         "Ca"
       ],
       "kid": "材料を一定の形に加工する設備。最初は手動計器で調整する。",
-      "more": "材料を一定の形に加工する設備。最初は手動計器で調整する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "部品同士を合わせるには、形を一定に保つ加工と測定が必要です。鋼は台や工具を支え、ガラスは確認窓、導線は電気機器につながります。",
       "store": true,
       "unique": true,
       "facility": true,
@@ -28,12 +28,18 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_machine",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.usgs.gov/centers/national-minerals-information-center/iron-and-steel-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_materials",
       "name": "材料評価台",
-      "yomi": "材料評価台",
+      "yomi": "ざいりょうひょうかだい",
       "en": "材料評価台",
       "tags": [
         "研究設備"
@@ -48,7 +54,7 @@
         "Cu"
       ],
       "kid": "用途に合う強さ・絶縁・気密を模擬試験で確かめる。",
-      "more": "用途に合う強さ・絶縁・気密を模擬試験で確かめる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "同じ見た目でも、電気の通しやすさや熱への強さは異なります。測定器で用途に合うか比較し、製品に使う前に材料を評価します。",
       "store": true,
       "unique": true,
       "facility": true,
@@ -57,12 +63,18 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_materials",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://srdata.nist.gov/CeramicDataPortal/scd"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_plate",
       "name": "軽量外装板",
-      "yomi": "軽量外装板",
+      "yomi": "けいりょうがいそうばん",
       "en": "軽量外装板",
       "tags": [
         "工業製品"
@@ -74,7 +86,7 @@
         "C"
       ],
       "kid": "軽いアルミと丈夫な補強材を形にする。",
-      "more": "軽いアルミと丈夫な補強材を形にする。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "金属を板にすると広い面を少ない材料で覆えます。アルミニウムは軽さを生かせますが、板だけで全体の荷重を支えるとは限りません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -83,12 +95,18 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_plate",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.usgs.gov/centers/national-minerals-information-center/aluminum-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_frame",
       "name": "構造フレーム",
-      "yomi": "構造フレーム",
+      "yomi": "こうぞうふれーむ",
       "en": "構造フレーム",
       "tags": [
         "工業製品"
@@ -99,7 +117,7 @@
         "C"
       ],
       "kid": "荷重を支える骨格。外装とは役割が違う。",
-      "more": "荷重を支える骨格。外装とは役割が違う。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "枠は部品の重さや力を受けて支えます。外側を覆う板と、内部で力を伝える構造は別の役割です。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -108,12 +126,18 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_frame",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.usgs.gov/centers/national-minerals-information-center/iron-and-steel-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_fastener",
       "name": "締結部品",
-      "yomi": "締結部品",
+      "yomi": "ていけつぶひん",
       "en": "締結部品",
       "tags": [
         "工業製品"
@@ -124,7 +148,7 @@
         "C"
       ],
       "kid": "部品を固定し、点検時には交換できるようにする。",
-      "more": "部品を固定し、点検時には交換できるようにする。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "ねじなどの締結部品は別々の部材をつなぎます。組み立てや取り外しができても、接続の確認は必要です。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -133,12 +157,18 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_fastener",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.usgs.gov/centers/national-minerals-information-center/iron-and-steel-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_insulator",
       "name": "絶縁部品",
-      "yomi": "絶縁部品",
+      "yomi": "ぜつえんぶひん",
       "en": "絶縁部品",
       "tags": [
         "工業製品"
@@ -152,7 +182,7 @@
         "Ca"
       ],
       "kid": "電気を通しにくい層で導体を分離する。",
-      "more": "電気を通しにくい層で導体を分離する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "絶縁体は電流が望まない場所へ流れるのを抑えます。電気を通す金属の近くに、樹脂やセラミックなどの絶縁材を配置します。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -161,12 +191,19 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_insulator",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.eia.gov/energyexplained/electricity/batteries-circuits-and-transformers.php",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_cable",
       "name": "被覆配線",
-      "yomi": "被覆配線",
+      "yomi": "ひふくはいせん",
       "en": "被覆配線",
       "tags": [
         "工業製品"
@@ -181,7 +218,7 @@
         "Ca"
       ],
       "kid": "銅が電気を運び、被覆が接触を防ぐ。",
-      "more": "銅が電気を運び、被覆が接触を防ぐ。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "内側の銅線が電流を運び、外側の被覆が接触や短絡を防ぐ役割を持ちます。導体と絶縁体を組み合わせた製品です。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -190,12 +227,19 @@
       "space": true,
       "group": "電力",
       "iconAsset": "icon_sp_cable",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：配線の細かな接続と電力損失を省き、機能試験にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.eia.gov/energyexplained/electricity/batteries-circuits-and-transformers.php",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_fiber",
       "name": "機能繊維",
-      "yomi": "機能繊維",
+      "yomi": "きのうせんい",
       "en": "機能繊維",
       "tags": [
         "工業製品"
@@ -208,7 +252,7 @@
         "N"
       ],
       "kid": "天然布を試作の基材とし、機能高分子の加工を抽象化した丈夫な繊維。",
-      "more": "天然布を試作の基材とし、機能高分子の加工を抽象化した丈夫な繊維。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "細い繊維を糸や布にすると、軽さと曲げやすさを保ちながら面を作れます。材料や織り方によって、丈夫さや熱への性質が変わります。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -217,12 +261,18 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_fiber",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/humans-in-space/what-is-a-spacesuit/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_seal",
       "name": "柔軟シール材",
-      "yomi": "柔軟シール材",
+      "yomi": "じゅうなんしーるざい",
       "en": "柔軟シール材",
       "tags": [
         "工業製品"
@@ -230,10 +280,11 @@
       "icon": "🔧",
       "el": [
         "C",
-        "H"
+        "H",
+        "S"
       ],
-      "kid": "つなぎ目をふさぐ柔軟な架空規格材。普通のPEと同じ性能ではない。",
-      "more": "つなぎ目をふさぐ柔軟な架空規格材。普通のPEと同じ性能ではない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "kid": "硫黄で加硫したゴムを輪の形に打ちぬく。やわらかく変形して、つなぎ目の空気や液体を止める。",
+      "more": "ゴムのように変形して戻る材料は、部品の間のすき間をふさぐ役割を持ちます。どんな気体でも完全に通さない万能材料ではありません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -242,12 +293,18 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_seal",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://goldbook.iupac.org/terms/view/VT07153/html"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_membrane",
       "name": "気密膜",
-      "yomi": "気密膜",
+      "yomi": "きみつまく",
       "en": "気密膜",
       "tags": [
         "工業製品"
@@ -257,10 +314,11 @@
         "C",
         "H",
         "O",
-        "N"
+        "N",
+        "S"
       ],
       "kid": "布の強さとは別に空気を保持する役割を持つ。",
-      "more": "布の強さとは別に空気を保持する役割を持つ。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "布の織り目にはすき間があります。空気を保つ層には、繊維をそのまま使う場合とは別の連続した膜が必要です。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -269,12 +327,18 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_membrane",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/humans-in-space/what-is-a-spacesuit/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_thermal",
       "name": "積層断熱材",
-      "yomi": "積層断熱材",
+      "yomi": "せきそうだんねつざい",
       "en": "積層断熱材",
       "tags": [
         "工業製品"
@@ -290,7 +354,7 @@
         "Al"
       ],
       "kid": "層を重ねて熱のやり取りを抑える。白い布一枚とは異なる。",
-      "more": "層を重ねて熱のやり取りを抑える。白い布一枚とは異なる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "熱の移動を抑える層を重ねた材料です。断熱は熱が移る速さを抑えるもので、内部で生まれる熱を取り去る装置とは違います。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -299,12 +363,18 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_thermal",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/humans-in-space/what-is-a-spacesuit/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_ceramic",
       "name": "耐熱セラミック",
-      "yomi": "耐熱セラミック",
+      "yomi": "たいねつせらみっく",
       "en": "耐熱セラミック",
       "tags": [
         "工業製品"
@@ -316,7 +386,7 @@
         "Si"
       ],
       "kid": "熱にさらされる部位を保護する用途適合品。普通の土器とは区別する。",
-      "more": "熱にさらされる部位を保護する用途適合品。普通の土器とは区別する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "セラミックスには高温に耐える種類があります。一方で割れやすさや急な温度変化への強さも確認が必要で、金属の代わりに何にでも使えるわけではありません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -325,12 +395,18 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_ceramic",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://srdata.nist.gov/CeramicDataPortal/scd"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_window",
       "name": "透明保護材",
-      "yomi": "透明保護材",
+      "yomi": "とうめいほござい",
       "en": "透明保護材",
       "tags": [
         "工業製品"
@@ -344,7 +420,7 @@
         "H"
       ],
       "kid": "見通しと保護を両立させる架空の積層材。",
-      "more": "見通しと保護を両立させる架空の積層材。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "外が見えることと、保護できることの両方が必要です。透明な材料を重ねる工程や、継ぎ目と枠の確認をゲームの材料評価にまとめています。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -353,12 +429,18 @@
       "space": true,
       "group": "材料",
       "iconAsset": "icon_sp_window",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/humans-in-space/what-is-a-spacesuit/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_powerbench",
       "name": "電源組立台",
-      "yomi": "電源組立台",
+      "yomi": "でんげんくみたてだい",
       "en": "電源組立台",
       "tags": [
         "研究設備"
@@ -374,7 +456,7 @@
         "Ca"
       ],
       "kid": "蓄電・配電を組み立てる。作る前の蓄電器には依存しない。",
-      "more": "蓄電・配電を組み立てる。作る前の蓄電器には依存しない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "発電した電力を使うには、接続する装置や配線を確認します。組立台は電源と負荷をつなぎ、誤った接続を調べる場所です。",
       "store": true,
       "unique": true,
       "facility": true,
@@ -383,12 +465,19 @@
       "space": true,
       "group": "電力",
       "iconAsset": "icon_sp_powerbench",
-      "model": "power-distribution"
+      "model": "power-distribution",
+      "simplification": "ゲーム内で簡略化：配線の細かな接続と電力損失を省き、機能試験にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.eia.gov/energyexplained/electricity/batteries-circuits-and-transformers.php",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_storage",
       "name": "蓄電モジュール",
-      "yomi": "蓄電モジュール",
+      "yomi": "ちくでんもじゅーる",
       "en": "蓄電モジュール",
       "tags": [
         "工業製品"
@@ -405,7 +494,7 @@
         "O"
       ],
       "kid": "発電が途切れる間の電力を蓄える架空規格。ボルタ電池の充電ではない。",
-      "more": "発電が途切れる間の電力を蓄える架空規格。ボルタ電池の充電ではない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "充電できる電池は、電気エネルギーを化学的な状態として蓄え、必要なとき取り出します。本品は架空規格で、既存のボルタ電池をそのまま充電するものではありません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -414,12 +503,19 @@
       "space": true,
       "group": "電力",
       "iconAsset": "icon_sp_storage",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：配線の細かな接続と電力損失を省き、機能試験にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.eia.gov/energyexplained/electricity/batteries-circuits-and-transformers.php",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_power",
       "name": "電源配電ユニット",
-      "yomi": "電源配電ユニット",
+      "yomi": "でんげんはいでんゆにっと",
       "en": "電源配電ユニット",
       "tags": [
         "工業製品"
@@ -436,7 +532,7 @@
         "O"
       ],
       "kid": "電源・蓄電・負荷をつなぎ、異常時には停止する。",
-      "more": "電源・蓄電・負荷をつなぎ、異常時には停止する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "電源を各機器へ分配し、異常時に切り離せるようにします。蓄電だけでは発電の代わりにはならず、電力を供給する設備も必要です。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -445,12 +541,19 @@
       "space": true,
       "group": "電力",
       "iconAsset": "icon_sp_power",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：配線の細かな接続と電力損失を省き、機能試験にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.eia.gov/energyexplained/electricity/batteries-circuits-and-transformers.php",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_fab",
       "name": "電子部品製造設備",
-      "yomi": "電子部品製造設備",
+      "yomi": "でんしぶひんせいぞうせつび",
       "en": "電子部品製造設備",
       "tags": [
         "研究設備"
@@ -466,7 +569,7 @@
         "H"
       ],
       "kid": "清浄化と微細加工を設備能力に抽象化。砂から直接CPUは作れない。",
-      "more": "清浄化と微細加工を設備能力に抽象化。砂から直接CPUは作れない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "半導体材料は、そのままでは計算機ではありません。清浄な環境での加工、層の形成、配線、検査など多くの工程を、専用設備の能力としてまとめています。",
       "store": true,
       "unique": true,
       "facility": true,
@@ -475,12 +578,18 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_fab",
-      "model": "electronics-fab"
+      "model": "electronics-fab",
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.intel.com/content/www/us/en/support/articles/000096573/processors.html"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_switch",
       "name": "スイッチ回路",
-      "yomi": "スイッチ回路",
+      "yomi": "すいっちかいろ",
       "en": "スイッチ回路",
       "tags": [
         "工業製品"
@@ -495,7 +604,7 @@
         "Ca"
       ],
       "kid": "導体をつなぐ・離すことで電流の通り道を切り替える。",
-      "more": "導体をつなぐ・離すことで電流の通り道を切り替える。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "電流にはつながった通り道が必要です。スイッチで通り道を開いたり閉じたりし、導体と絶縁体を使い分けてランプの状態を確かめます。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -504,12 +613,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_switch",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_transistor",
       "name": "切替素子",
-      "yomi": "切替素子",
+      "yomi": "きりかえそし",
       "en": "切替素子",
       "tags": [
         "工業製品"
@@ -524,7 +640,7 @@
         "Ca"
       ],
       "kid": "小さな電気信号で状態を切り替える。素子加工の詳細は省略。",
-      "more": "小さな電気信号で状態を切り替える。素子加工の詳細は省略。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "トランジスターは電気信号で別の電流を制御する素子です。実習では0と1を切り替える役割に絞り、増幅などの働きは省略しています。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -533,12 +649,18 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_transistor",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.intel.com/content/www/us/en/support/articles/000096573/processors.html"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_pcb",
       "name": "配線基板",
-      "yomi": "配線基板",
+      "yomi": "はいせんきばん",
       "en": "配線基板",
       "tags": [
         "工業製品"
@@ -553,7 +675,7 @@
         "Ca"
       ],
       "kid": "配線を安定して保持する土台。",
-      "more": "配線を安定して保持する土台。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "絶縁性の板の上に導体の道を作り、部品を固定して接続します。基板の模様だけで計算ができるのではなく、搭載する素子と接続の役割が重要です。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -562,12 +684,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_pcb",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_passive",
       "name": "受動部品セット",
-      "yomi": "受動部品セット",
+      "yomi": "じゅどうぶひんせっと",
       "en": "受動部品セット",
       "tags": [
         "工業製品"
@@ -583,7 +712,7 @@
         "Cu"
       ],
       "kid": "抵抗やコンデンサーの役割をまとめ、信号を安定させる。",
-      "more": "抵抗やコンデンサーの役割をまとめ、信号を安定させる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "抵抗は電流を流れにくくし、コンデンサーは電荷を蓄えます。異なる役割を持つ部品を、学習用の一組としてまとめています。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -592,12 +721,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_passive",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_gate",
       "name": "論理ゲートセット",
-      "yomi": "論理ゲートセット",
+      "yomi": "ろんりげーとせっと",
       "en": "論理ゲートセット",
       "tags": [
         "工業製品"
@@ -614,7 +750,7 @@
         "Al"
       ],
       "kid": "0と1をAND・OR・NOTの規則で組み合わせる。",
-      "more": "0と1をAND・OR・NOTの規則で組み合わせる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "電気の状態を0と1として扱うと、AND・OR・NOTなどの規則を表現できます。入力の全組み合わせを調べる表を真理値表と呼びます。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -623,12 +759,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_gate",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_adder",
       "name": "加算回路",
-      "yomi": "加算回路",
+      "yomi": "かさんかいろ",
       "en": "加算回路",
       "tags": [
         "工業製品"
@@ -645,7 +788,7 @@
         "Al"
       ],
       "kid": "論理ゲートをつなぎ二進数の足し算を行う。",
-      "more": "論理ゲートをつなぎ二進数の足し算を行う。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "論理ゲートを組み合わせると、各桁の和と繰り上がりを作れます。実習では小さな二進数の足し算を確かめます。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -654,12 +797,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_adder",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_memory",
       "name": "記憶回路",
-      "yomi": "記憶回路",
+      "yomi": "きおくかいろ",
       "en": "記憶回路",
       "tags": [
         "工業製品"
@@ -676,7 +826,7 @@
         "Al"
       ],
       "kid": "入力を変えても値を保持し、必要なとき読み出せる。",
-      "more": "入力を変えても値を保持し、必要なとき読み出せる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "組み合わせ回路はその時の入力で結果が決まりますが、記憶回路は以前の状態を保持できます。保存した値を読み出す実習で違いを確認します。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -685,12 +835,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_memory",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_cpu",
       "name": "演算制御モジュール",
-      "yomi": "演算制御モジュール",
+      "yomi": "えんざんせいぎょもじゅーる",
       "en": "演算制御モジュール",
       "tags": [
         "工業製品"
@@ -707,7 +864,7 @@
         "Al"
       ],
       "kid": "演算器と制御部が順番に命令を処理する。",
-      "more": "演算器と制御部が順番に命令を処理する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "演算部は計算を行い、制御部は命令を順番に扱います。記憶や入出力と接続して初めて、プログラムの結果を利用できます。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -716,12 +873,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_cpu",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_io",
       "name": "表示入力モジュール",
-      "yomi": "表示入力モジュール",
+      "yomi": "ひょうじにゅうりょくもじゅーる",
       "en": "表示入力モジュール",
       "tags": [
         "工業製品"
@@ -736,7 +900,7 @@
         "H"
       ],
       "kid": "操作を入力し、計算結果を表示する。",
-      "more": "操作を入力し、計算結果を表示する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "入力は操作や測定値を計算機へ渡し、出力は結果を表示します。画面は計算する本体そのものではなく、情報をやり取りする窓口です。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -745,12 +909,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_io",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_computerbench",
       "name": "計算機組立台",
-      "yomi": "計算機組立台",
+      "yomi": "けいさんきくみたてだい",
       "en": "計算機組立台",
       "tags": [
         "研究設備"
@@ -766,7 +937,7 @@
         "Ca"
       ],
       "kid": "演算・記憶・入出力を接続し動作を確認する。",
-      "more": "演算・記憶・入出力を接続し動作を確認する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "演算・制御・記憶・入出力を接続して確認する設備です。部品を集めるだけでなく、命令や値が正しく伝わるか試します。",
       "store": true,
       "unique": true,
       "facility": true,
@@ -775,12 +946,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_computerbench",
-      "model": "computer-bench"
+      "model": "computer-bench",
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_computer",
       "name": "学習用コンピューター",
-      "yomi": "学習用コンピューター",
+      "yomi": "がくしゅうようこんぴゅーたー",
       "en": "学習用コンピューター",
       "tags": [
         "工業製品"
@@ -798,7 +976,7 @@
         "Zn"
       ],
       "kid": "簡単な命令列を実行できる計算機。飛行制御には使用しない。",
-      "more": "簡単な命令列を実行できる計算機。飛行制御には使用しない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "LOADやADDなどの短い命令で、値の読込み・計算・保存・表示を体験します。使える命令を限定した教材で、機器の実制御や誘導は行いません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -807,12 +985,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_computer",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_sensor",
       "name": "模擬環境センサー",
-      "yomi": "模擬環境センサー",
+      "yomi": "もぎかんきょうせんさー",
       "en": "模擬環境センサー",
       "tags": [
         "工業製品"
@@ -827,7 +1012,7 @@
         "Ca"
       ],
       "kid": "船内環境を架空の状態値へ変換する。",
-      "more": "船内環境を架空の状態値へ変換する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "センサーは環境の変化を読み取れる信号へ変えます。このゲームの値は模擬状態であり、現実の船内環境の測定値ではありません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -836,12 +1021,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_sensor",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_flightcomputer",
       "name": "船内コンピューター",
-      "yomi": "船内コンピューター",
+      "yomi": "せんないこんぴゅーたー",
       "en": "船内コンピューター",
       "tags": [
         "工業製品"
@@ -860,7 +1052,7 @@
         "Fe"
       ],
       "kid": "環境状態と試験履歴を表示する。実際の誘導アルゴリズムは持たない。",
-      "more": "環境状態と試験履歴を表示する。実際の誘導アルゴリズムは持たない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "学習用計算機に環境表示と試験記録を接続した装置です。必要条件を示す役割に限定し、現実の飛行経路や姿勢の制御は含みません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -869,12 +1061,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_flightcomputer",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_radio",
       "name": "通信ユニット",
-      "yomi": "通信ユニット",
+      "yomi": "つうしんゆにっと",
       "en": "通信ユニット",
       "tags": [
         "工業製品"
@@ -889,7 +1088,7 @@
         "Ca"
       ],
       "kid": "地上と船内の模擬信号をやり取りする。",
-      "more": "地上と船内の模擬信号をやり取りする。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "通信では情報を信号として送り、受け手が読み取ります。ゲームでは地上と船内の確認メッセージの往復として表現します。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -898,12 +1097,19 @@
       "space": true,
       "group": "計算機",
       "iconAsset": "icon_sp_radio",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：微細な加工・配線・検査を設備の操作にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/",
+        "https://www.usgs.gov/centers/national-minerals-information-center/copper-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_suitbench",
       "name": "宇宙服組立台",
-      "yomi": "宇宙服組立台",
+      "yomi": "うちゅうふくくみたてだい",
       "en": "宇宙服組立台",
       "tags": [
         "研究設備"
@@ -917,7 +1123,7 @@
         "N"
       ],
       "kid": "衣服・気密・保護の各層と装備を組み合わせる。",
-      "more": "衣服・気密・保護の各層と装備を組み合わせる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "内側の衣服、気密層、保護層は役割が異なります。各部を組み合わせたあと、機能を確認するための設備です。",
       "store": true,
       "unique": true,
       "facility": true,
@@ -926,12 +1132,18 @@
       "space": true,
       "group": "宇宙服",
       "iconAsset": "icon_sp_suitbench",
-      "model": "suit-stand"
+      "model": "suit-stand",
+      "simplification": "ゲーム内で簡略化：布の成形・層の接合・寸法調整を組立にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/humans-in-space/what-is-a-spacesuit/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_liner",
       "name": "内側の衣服",
-      "yomi": "内側の衣服",
+      "yomi": "うちがわのいふく",
       "en": "内側の衣服",
       "tags": [
         "工業製品"
@@ -944,7 +1156,7 @@
         "N"
       ],
       "kid": "肌に触れる層。気密を保持する層とは別。",
-      "more": "肌に触れる層。気密を保持する層とは別。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "肌に触れる衣服は着心地や体の動きを助けます。空気を保持する気密層とは別で、普通の衣服だけでは宇宙の環境から体を守れません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -953,12 +1165,18 @@
       "space": true,
       "group": "宇宙服",
       "iconAsset": "icon_sp_liner",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：布の成形・層の接合・寸法調整を組立にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/humans-in-space/what-is-a-spacesuit/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_pressurelayer",
       "name": "宇宙服の気密層",
-      "yomi": "宇宙服の気密層",
+      "yomi": "うちゅうふくのきみつそう",
       "en": "宇宙服の気密層",
       "tags": [
         "工業製品"
@@ -968,10 +1186,11 @@
         "C",
         "H",
         "O",
-        "N"
+        "N",
+        "S"
       ],
       "kid": "空気を保持する架空規格の層。圧力値や製法は扱わない。",
-      "more": "空気を保持する架空規格の層。圧力値や製法は扱わない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "呼吸する環境を保つための層です。材料だけでなく、関節やヘルメットとの継ぎ目を含めて確認する必要があります。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -980,12 +1199,18 @@
       "space": true,
       "group": "宇宙服",
       "iconAsset": "icon_sp_pressurelayer",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：布の成形・層の接合・寸法調整を組立にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/humans-in-space/what-is-a-spacesuit/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_protectlayer",
       "name": "宇宙服の保護層",
-      "yomi": "宇宙服の保護層",
+      "yomi": "うちゅうふくのほごそう",
       "en": "宇宙服の保護層",
       "tags": [
         "工業製品"
@@ -1001,7 +1226,7 @@
         "Al"
       ],
       "kid": "外からのこすれと熱環境への保護を担当する。",
-      "more": "外からのこすれと熱環境への保護を担当する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "外側の層は摩耗や熱の影響などから内側を保護します。ひとつの布が気密・断熱・冷却のすべてを担うわけではありません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1010,12 +1235,18 @@
       "space": true,
       "group": "宇宙服",
       "iconAsset": "icon_sp_protectlayer",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：布の成形・層の接合・寸法調整を組立にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/humans-in-space/what-is-a-spacesuit/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_helmet",
       "name": "ヘルメットとバイザー",
-      "yomi": "ヘルメットとバイザー",
+      "yomi": "へるめっととばいざー",
       "en": "ヘルメットとバイザー",
       "tags": [
         "工業製品"
@@ -1028,10 +1259,11 @@
         "C",
         "H",
         "Al",
-        "Fe"
+        "Fe",
+        "S"
       ],
       "kid": "視界と保護、他の層との接続を担う。",
-      "more": "視界と保護、他の層との接続を担う。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "ヘルメットは頭を包み、バイザーは見通しと保護を両立させます。気密層との接続や通信も含めて宇宙服の一部です。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1040,12 +1272,18 @@
       "space": true,
       "group": "宇宙服",
       "iconAsset": "icon_sp_helmet",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：布の成形・層の接合・寸法調整を組立にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/humans-in-space/what-is-a-spacesuit/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_gloves",
       "name": "手袋とブーツ",
-      "yomi": "手袋とブーツ",
+      "yomi": "てぶくろとぶーつ",
       "en": "手袋とブーツ",
       "tags": [
         "工業製品"
@@ -1055,10 +1293,11 @@
         "C",
         "H",
         "O",
-        "N"
+        "N",
+        "S"
       ],
       "kid": "動きやすさと気密を両立する手足の装備。",
-      "more": "動きやすさと気密を両立する手足の装備。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "手足は動かしながら保護する必要があります。動きやすさと各層のつながりを、装備試験でまとめて確認します。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1067,12 +1306,18 @@
       "space": true,
       "group": "宇宙服",
       "iconAsset": "icon_sp_gloves",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：布の成形・層の接合・寸法調整を組立にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/humans-in-space/what-is-a-spacesuit/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_air",
       "name": "呼吸環境供給部",
-      "yomi": "呼吸環境供給部",
+      "yomi": "こきゅうかんきょうきょうきゅうぶ",
       "en": "呼吸環境供給部",
       "tags": [
         "工業製品"
@@ -1081,10 +1326,11 @@
       "el": [
         "H",
         "O",
-        "C"
+        "C",
+        "S"
       ],
       "kid": "電解設備で得た気体を直接装置へ移す工程と、適切な呼吸環境の調整を抽象化。酸素は既存仕様で保管不可。現実の混合比や高圧系統は扱わない。",
-      "more": "電解設備で得た気体を直接装置へ移す工程と、適切な呼吸環境の調整を抽象化。酸素は既存仕様で保管不可。現実の混合比や高圧系統は扱わない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "呼吸用の気体を供給する機能です。酸素を作ることと、適切な呼吸環境を保つことは同じではありません。組成・圧力・貯蔵は架空装置へ抽象化します。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1093,27 +1339,34 @@
       "space": true,
       "group": "生命維持",
       "iconAsset": "icon_sp_air",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：機能を抽象部品で表し、気体の配合・圧力・運転性能は再現しません。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/reference/environmental-control-and-life-support-systems-eclss/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_scrubber",
       "name": "空気再生部",
-      "yomi": "空気再生部",
+      "yomi": "くうきさいせいぶ",
       "en": "空気再生部",
       "tags": [
         "工業製品"
       ],
       "icon": "🔧",
       "el": [
-        "C",
-        "K",
         "Ca",
+        "O",
         "H",
+        "Na",
         "Al",
-        "Fe"
+        "Fe",
+        "C"
       ],
-      "kid": "専用吸着材によるCO₂処理と汚染物除去を抽象化。木炭単独の働きではない。",
-      "more": "専用吸着材によるCO₂処理と汚染物除去を抽象化。木炭単独の働きではない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "kid": "消石灰や水酸化ナトリウムのようなアルカリ性の物質は、はいた息の二酸化炭素と結びついて取りのぞく（化学吸収）。吸収缶の形と交換はゲーム内で簡略化。",
+      "more": "呼吸で増えた二酸化炭素を取り除く機能です。気体の供給とは別に必要で、ゲームではアルカリ性吸収材の役割を抽象部品として表現します。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1122,12 +1375,18 @@
       "space": true,
       "group": "生命維持",
       "iconAsset": "icon_sp_scrubber",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：機能を抽象部品で表し、気体の配合・圧力・運転性能は再現しません。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/reference/environmental-control-and-life-support-systems-eclss/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_waterunit",
       "name": "水衛生部",
-      "yomi": "水衛生部",
+      "yomi": "みずえいせいぶ",
       "en": "水衛生部",
       "tags": [
         "工業製品"
@@ -1142,7 +1401,7 @@
         "Ca"
       ],
       "kid": "飲用適合・湿度回収・衛生をまとめる。布ろ過だけで安全な飲み水にはならない。",
-      "more": "飲用適合・湿度回収・衛生をまとめる。布ろ過だけで安全な飲み水にはならない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "水の回収や衛生をまとめた装置です。目に見えるごみを布で取るだけでは、飲用の安全性を確認したことにはなりません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1151,12 +1410,18 @@
       "space": true,
       "group": "生命維持",
       "iconAsset": "icon_sp_waterunit",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：機能を抽象部品で表し、気体の配合・圧力・運転性能は再現しません。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/reference/environmental-control-and-life-support-systems-eclss/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_cooling",
       "name": "温度管理部",
-      "yomi": "温度管理部",
+      "yomi": "おんどかんりぶ",
       "en": "温度管理部",
       "tags": [
         "工業製品"
@@ -1173,7 +1438,7 @@
         "Ca"
       ],
       "kid": "熱を運んで環境を保つ。断熱だけでは熱を捨てられない。",
-      "more": "熱を運んで環境を保つ。断熱だけでは熱を捨てられない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "体や電気機器が出す熱を運び、不要な熱を逃がす役割です。熱の出入りを抑える断熱と、熱を移動させる冷却を区別します。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1182,12 +1447,18 @@
       "space": true,
       "group": "生命維持",
       "iconAsset": "icon_sp_cooling",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：機能を抽象部品で表し、気体の配合・圧力・運転性能は再現しません。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/reference/environmental-control-and-life-support-systems-eclss/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_lifesupport",
       "name": "生命維持ユニット",
-      "yomi": "生命維持ユニット",
+      "yomi": "せいめいいじゆにっと",
       "en": "生命維持ユニット",
       "tags": [
         "工業製品"
@@ -1197,17 +1468,19 @@
         "H",
         "O",
         "C",
-        "K",
+        "S",
         "Ca",
+        "Na",
         "Al",
         "Fe",
         "Cu",
         "Si",
         "N",
-        "Zn"
+        "Zn",
+        "K"
       ],
       "kid": "呼吸・水・熱・電源・監視の各機能をまとめる。",
-      "more": "呼吸・水・熱・電源・監視の各機能をまとめる。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "気体の供給、二酸化炭素の除去、水、温度、電源、監視を組み合わせます。宇宙服用と船内用は別に準備し、それぞれを試験します。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1216,12 +1489,18 @@
       "space": true,
       "group": "生命維持",
       "iconAsset": "icon_sp_lifesupport",
-      "model": "life-support"
+      "model": "life-support",
+      "simplification": "ゲーム内で簡略化：機能を抽象部品で表し、気体の配合・圧力・運転性能は再現しません。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/reference/environmental-control-and-life-support-systems-eclss/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_suit",
       "name": "組立済み宇宙服",
-      "yomi": "組立済み宇宙服",
+      "yomi": "くみたてずみうちゅうふく",
       "en": "組立済み宇宙服",
       "tags": [
         "工業製品"
@@ -1232,16 +1511,18 @@
         "H",
         "O",
         "N",
+        "S",
         "Si",
         "Ca",
         "Al",
         "Fe",
         "Cu",
-        "K",
-        "Zn"
+        "Na",
+        "Zn",
+        "K"
       ],
       "kid": "部品を組み立てた搭乗用宇宙服。有人飛行には装着と機能試験も必要。",
-      "more": "部品を組み立てた搭乗用宇宙服。有人飛行には装着と機能試験も必要。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "服の各層とヘルメット、手足、通信、生命維持がそろった装備です。ゲームでは搭乗用と船外活動用の機能を統合した架空規格で、実在の宇宙服を再現していません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1250,12 +1531,18 @@
       "space": true,
       "group": "宇宙服",
       "iconAsset": "icon_sp_suit",
-      "model": "spacesuit-display"
+      "model": "spacesuit-display",
+      "simplification": "ゲーム内で簡略化：布の成形・層の接合・寸法調整を組立にまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/humans-in-space/what-is-a-spacesuit/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_assembly",
       "name": "機体組立設備",
-      "yomi": "機体組立設備",
+      "yomi": "きたいくみたてせつび",
       "en": "機体組立設備",
       "tags": [
         "研究設備"
@@ -1271,7 +1558,7 @@
         "Ca"
       ],
       "kid": "骨格・外装・機器を順番に固定する。",
-      "more": "骨格・外装・機器を順番に固定する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "大きな構造を支え、部品を固定して確認する設備です。機体の組込みは地図に設置した発射サイトで進めます。",
       "store": true,
       "unique": true,
       "facility": true,
@@ -1280,12 +1567,18 @@
       "space": true,
       "group": "機体",
       "iconAsset": "icon_sp_assembly",
-      "model": "parts-rack"
+      "model": "parts-rack",
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.usgs.gov/centers/national-minerals-information-center/iron-and-steel-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_hull",
       "name": "機体構造",
-      "yomi": "機体構造",
+      "yomi": "きたいこうぞう",
       "en": "機体構造",
       "tags": [
         "工業製品"
@@ -1296,7 +1589,7 @@
         "C"
       ],
       "kid": "全ての機器を支える構造。ゲーム用の形であり実機設計ではない。",
-      "more": "全ての機器を支える構造。ゲーム用の形であり実機設計ではない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "機体内の機器や外装を支える骨格です。構造がない段階では部品を空中に表示せず、準備済みの部品として保管します。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1305,12 +1598,18 @@
       "space": true,
       "group": "機体",
       "iconAsset": "icon_sp_hull",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.usgs.gov/centers/national-minerals-information-center/iron-and-steel-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_skin",
       "name": "機体外装",
-      "yomi": "機体外装",
+      "yomi": "きたいがいそう",
       "en": "機体外装",
       "tags": [
         "工業製品"
@@ -1327,7 +1626,7 @@
         "Ca"
       ],
       "kid": "内部を覆い保護する外装。構造とは別に製作する。",
-      "more": "内部を覆い保護する外装。構造とは別に製作する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "内部を覆う外装で、骨格とは別の製品です。ゲームでは部分的な外装から閉鎖した状態へ段階的に表示します。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1336,12 +1635,18 @@
       "space": true,
       "group": "機体",
       "iconAsset": "icon_sp_skin",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.usgs.gov/centers/national-minerals-information-center/aluminum-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_propulsion",
       "name": "架空推進モジュール",
-      "yomi": "架空推進モジュール",
+      "yomi": "かくうすいしんもじゅーる",
       "en": "架空推進モジュール",
       "tags": [
         "工業製品"
@@ -1357,7 +1662,7 @@
         "Ca"
       ],
       "kid": "完全架空の航行規格。推進の配合・寸法・製造条件は再現しない。",
-      "more": "完全架空の航行規格。推進の配合・寸法・製造条件は再現しない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "物語上の架空規格を満たす推進装置です。レシピは部品の役割をつなぐゲーム表現であり、実在エンジンの構造や製造法には対応しません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1366,12 +1671,16 @@
       "space": true,
       "group": "機体",
       "iconAsset": "icon_sp_propulsion",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "ゲーム専用の規格・判定。実機仕様の出典を付けない（実在規格としては未確認・検証対象外）。"
     },
     {
       "id": "sp_charge",
       "name": "架空推進用カートリッジ",
-      "yomi": "架空推進用カートリッジ",
+      "yomi": "かくうすいしんようかーとりっじ",
       "en": "架空推進用カートリッジ",
       "tags": [
         "工業製品"
@@ -1384,10 +1693,11 @@
         "H",
         "Si",
         "O",
-        "Ca"
+        "Ca",
+        "S"
       ],
       "kid": "物語内の認定資材。実在の推進剤や燃料レシピには対応しない。",
-      "more": "物語内の認定資材。実在の推進剤や燃料レシピには対応しない。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "架空推進装置に対応する物語上の認定資材です。現実の燃料や推進剤の配合・反応・取扱いは表現しません。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1396,12 +1706,16 @@
       "space": true,
       "group": "機体",
       "iconAsset": "icon_sp_charge",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "ゲーム専用の規格・判定。実機仕様の出典を付けない（実在規格としては未確認・検証対象外）。"
     },
     {
       "id": "sp_capsule",
       "name": "搭乗カプセル",
-      "yomi": "搭乗カプセル",
+      "yomi": "とうじょうかぷせる",
       "en": "搭乗カプセル",
       "tags": [
         "工業製品"
@@ -1414,10 +1728,11 @@
         "Si",
         "O",
         "Ca",
-        "H"
+        "H",
+        "S"
       ],
       "kid": "主人公が搭乗する区画。機器の組込みと機能試験は別途行う。",
-      "more": "主人公が搭乗する区画。機器の組込みと機能試験は別途行う。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "主人公が乗る区画です。外殻を作ることと、空気・温度・電力・通信を整えることは別なので、生命維持装置と総合点検も必要です。",
       "store": true,
       "unique": false,
       "facility": false,
@@ -1426,12 +1741,18 @@
       "space": true,
       "group": "機体",
       "iconAsset": "icon_sp_capsule",
-      "model": null
+      "model": null,
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.nasa.gov/reference/environmental-control-and-life-support-systems-eclss/"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_pad",
       "name": "発射台",
-      "yomi": "発射台",
+      "yomi": "はっしゃだい",
       "en": "発射台",
       "tags": [
         "研究設備"
@@ -1447,7 +1768,7 @@
         "C"
       ],
       "kid": "支持と整備の場所。持っているだけでは打ち上げできず、マップへの設置が必要。",
-      "more": "支持と整備の場所。持っているだけでは打ち上げできず、マップへの設置が必要。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "機体の支持、組立、整備に使う地上の場所です。所持だけで完成にはならず、傾斜や重なりを確認して設置します。",
       "store": true,
       "unique": true,
       "facility": true,
@@ -1456,12 +1777,18 @@
       "space": true,
       "group": "地上設備",
       "iconAsset": "icon_sp_pad",
-      "model": "launch-pad"
+      "model": "launch-pad",
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.usgs.gov/centers/national-minerals-information-center/iron-and-steel-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_tower",
       "name": "支持塔と搭乗通路",
-      "yomi": "支持塔と搭乗通路",
+      "yomi": "しじとうととうじょうつうろ",
       "en": "支持塔と搭乗通路",
       "tags": [
         "研究設備"
@@ -1473,7 +1800,7 @@
         "Al"
       ],
       "kid": "主人公が機体へ近づくための支持設備。",
-      "more": "主人公が機体へ近づくための支持設備。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "整備と搭乗のために機体へ接続する設備です。発射演出では通路と支持設備が順番に退避してから機体が上昇します。",
       "store": true,
       "unique": true,
       "facility": true,
@@ -1482,12 +1809,18 @@
       "space": true,
       "group": "地上設備",
       "iconAsset": "icon_sp_tower",
-      "model": "support-tower"
+      "model": "support-tower",
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [
+        "https://www.usgs.gov/centers/national-minerals-information-center/iron-and-steel-statistics-and-information"
+      ],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     },
     {
       "id": "sp_control",
       "name": "地上管制端末",
-      "yomi": "地上管制端末",
+      "yomi": "ちじょうかんせいたんまつ",
       "en": "地上管制端末",
       "tags": [
         "研究設備"
@@ -1505,7 +1838,7 @@
         "Zn"
       ],
       "kid": "試験の結果と発射条件を表示する。",
-      "more": "試験の結果と発射条件を表示する。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "試験の結果や不足する条件をまとめて表示します。打ち上げ判定は保存されたゲーム状態で行い、現実の飛行誘導は実行しません。",
       "store": true,
       "unique": true,
       "facility": true,
@@ -1514,12 +1847,16 @@
       "space": true,
       "group": "地上設備",
       "iconAsset": "icon_sp_control",
-      "model": "control-terminal"
+      "model": "control-terminal",
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "ゲーム専用の規格・判定。実機仕様の出典を付けない（実在規格としては未確認・検証対象外）。"
     },
     {
       "id": "sp_testbench",
       "name": "総合試験端末",
-      "yomi": "総合試験端末",
+      "yomi": "そうごうしけんたんまつ",
       "en": "総合試験端末",
       "tags": [
         "研究設備"
@@ -1537,7 +1874,7 @@
         "Zn"
       ],
       "kid": "装置を壊さず不足機能を確認する模擬試験装置。",
-      "more": "装置を壊さず不足機能を確認する模擬試験装置。 工程と数量はゲーム内で簡略化。現実の製造手順や性能を示すものではありません。",
+      "more": "部品があるかだけでなく、接続と機能の準備が整っているか確かめます。部品の交換や移設で関係する試験をやり直し、無意味な確率失敗や全損は起こしません。",
       "store": true,
       "unique": true,
       "facility": true,
@@ -1546,7 +1883,65 @@
       "space": true,
       "group": "地上設備",
       "iconAsset": "icon_sp_testbench",
-      "model": "test-terminal"
+      "model": "test-terminal",
+      "simplification": "ゲーム内で簡略化：成形・測定・組付けの細かな作業をまとめます。 材料数と加工時間は学習用の規格です。",
+      "scienceSources": [],
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "ゲーム専用の規格・判定。実機仕様の出典を付けない（実在規格としては未確認・検証対象外）。"
+    },
+    {
+      "id": "rawrubber",
+      "tags": [
+        "高分子材料",
+        "有機化合物"
+      ],
+      "icon": "🫓",
+      "name": "合成ゴムのもと",
+      "yomi": "ごうせいごむのもと",
+      "en": "Raw synthetic rubber",
+      "el": [
+        "C",
+        "H"
+      ],
+      "store": true,
+      "color": "#5a4f45",
+      "simp": true,
+      "kid": "合成ゴムに加工する前の高分子材料。用途に合わせた性質の調整が必要です。",
+      "more": "長い鎖の分子がからみ合っているので、引っぱるとのびます。鎖どうしがつながっていないので、まだ形が安定しません。（実際の工程を大きくまとめた表現です）",
+      "uses": "加硫してゴムにする",
+      "scienceSources": [
+        "https://goldbook.iupac.org/terms/view/VT07153/html"
+      ],
+      "simplification": "ゲーム内で簡略化：反応欄の材料・加熱表示は抽象的な加工段階であり、製造条件ではありません。",
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
+    },
+    {
+      "id": "rubber",
+      "tags": [
+        "高分子材料",
+        "有機化合物"
+      ],
+      "icon": "⚫",
+      "name": "ゴム",
+      "yomi": "ごむ",
+      "en": "Vulcanised rubber",
+      "el": [
+        "C",
+        "H",
+        "S"
+      ],
+      "store": true,
+      "color": "#2c2a28",
+      "kid": "分子の鎖どうしをつなぎ、変形しても戻りやすくしたゴム。すき間をふさぐ材料に使います。",
+      "more": "加硫は高分子の鎖の間に結びつきを作る加工です。硫黄による架橋は代表例で、材料や架橋の程度によって性質が変わります。空気や水を完全に通さない万能材料ではありません。",
+      "uses": "シール材（パッキン）",
+      "scienceSources": [
+        "https://goldbook.iupac.org/terms/view/VT07153/html"
+      ],
+      "simplification": "ゲーム内で簡略化：反応欄の材料・加熱表示は抽象的な加工段階であり、製造条件ではありません。",
+      "scienceCheckedOn": "2026-11-14",
+      "scienceNotes": "出典は材料の役割・一般原理の確認用。ゲーム内レシピの数量や性能を裏付けるものではありません。"
     }
   ],
   "recipes": [
@@ -1682,15 +2077,14 @@
       "id": "c_sp_seal",
       "out": "sp_seal",
       "inp": {
-        "naphtha": 1,
-        "pe": 1
+        "rubber": 2
       },
       "qty": 8,
-      "at": "reactor",
+      "at": "sp_machine",
       "tools": [
         "sp_materials"
       ],
-      "how": "つなぎ目をふさぐ柔軟な架空規格材。普通のPEと同じ性能ではない。（ゲーム内で簡略化）",
+      "how": "硫黄で加硫したゴムを輪の形に打ちぬく。やわらかく変形して、つなぎ目の空気や液体を止める。（ゲーム内で簡略化）",
       "seconds": 2,
       "lesson": null,
       "space": true
@@ -2173,14 +2567,14 @@
       "id": "c_sp_scrubber",
       "out": "sp_scrubber",
       "inp": {
-        "charcoal": 1,
-        "naphtha": 1,
+        "slaked": 2,
+        "naoh": 1,
         "sp_plate": 1
       },
       "qty": 1,
-      "at": "reactor",
+      "at": "sp_machine",
       "tools": [],
-      "how": "専用吸着材によるCO₂処理と汚染物除去を抽象化。木炭単独の働きではない。（ゲーム内で簡略化）",
+      "how": "消石灰や水酸化ナトリウムのようなアルカリ性の物質は、はいた息の二酸化炭素と結びついて取りのぞく（化学吸収）。吸収缶の形と交換はゲーム内で簡略化。（ゲーム内で簡略化）",
       "seconds": 2,
       "lesson": null,
       "space": true
@@ -2432,18 +2826,18 @@
         "bulb"
       ],
       "prev": [],
-      "help": "スイッチを閉じると回路がつながり、ランプが点く。"
+      "help": "すき間に物をはさんでスイッチを閉じる。電気を通す物（導体）ならランプが点き、通さない物（絶縁体）なら点かない。両方を確かめてから、ランプを点けよう。"
     },
     {
       "id": "transistor",
-      "name": "電流で切り替える素子",
+      "name": "電気信号で切り替える素子",
       "need": [
         "sp_transistor"
       ],
       "prev": [
         "switch"
       ],
-      "help": "制御入力が1なら、出力側も1になる模擬スイッチ。"
+      "help": "小さな制御信号で、別の回路の状態を切り替える。ここでは入力1で出力1になる模擬スイッチを試します。"
     },
     {
       "id": "gates",
@@ -2454,7 +2848,7 @@
       "prev": [
         "transistor"
       ],
-      "help": "ANDは両方1、ORはどちらか1、NOTは入力を反転する。"
+      "help": "ANDは両方1なら1、ORは少なくとも片方が1なら1、NOTは0と1を反転する。"
     },
     {
       "id": "adder",
@@ -4982,6 +5376,43 @@
         "tools": [],
         "air": false,
         "temp": 1420
+      },
+      {
+        "id": "make_rawrubber",
+        "op": "polymerize",
+        "at": [
+          "reactor"
+        ],
+        "inp": {
+          "ethylene": 2,
+          "naphtha": 1
+        },
+        "out": {
+          "rawrubber": 4
+        },
+        "tools": [],
+        "air": false,
+        "temp": 60,
+        "simp": true,
+        "why": "石油から取り出した小さな分子を長い鎖につなげると、のびる性質をもつ物質になった。（実際の工程を大きくまとめた表現です）"
+      },
+      {
+        "id": "vulcanize",
+        "op": "heat",
+        "at": [
+          "reactor"
+        ],
+        "inp": {
+          "rawrubber": 2,
+          "sulfur": 1
+        },
+        "out": {
+          "rubber": 3
+        },
+        "tools": [],
+        "air": false,
+        "temp": 150,
+        "why": "硫黄が分子の鎖と鎖を橋のようにつなぎ、のびても元に戻る丈夫なゴムになった（加硫）。"
       }
     ]
   },

@@ -1,0 +1,20 @@
+{
+  "codeCommit": "34a1e8cdbf61e828f8bd2eb432cdaccd9d18fb08",
+  "manualCapture": "2026-11-14",
+  "viewport": "1280x800",
+  "environment": "実ゲーム verify.html / PCブラウザ。検証在庫を使用。通常モードの数量到達性は別のボットテスト。",
+  "screenshots": "S0〜S4、低角度、搭乗、噴射、宇宙到達、装着主人公、製作アイコン",
+  "limits": "画像取得時点と最終コードの違いは科学出典の補足のみ。iPhone17実機ではない。",
+  "build": [
+    {
+      "file": "index.html",
+      "bytes": 14068874,
+      "sha256": "812b6000ef581ee9c416e5bb839f71606055d33ceb108f4e6e644478d2a554c2"
+    },
+    {
+      "file": "verify.html",
+      "bytes": 14068918,
+      "sha256": "4589833b4da0a1f556d1942398db4d51eb5062f49fb7e788c6b420238b8d1a6a"
+    }
+  ]
+}

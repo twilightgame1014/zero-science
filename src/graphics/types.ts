@@ -433,3 +433,6 @@ export interface GraphicsConfig {
     glintStrength: number;
   };
 }
+
+/** Public visibility control for boarding and cutscenes; does not change saved player state. */
+export interface PlayerVisibilityControl { setPlayerVisible(visible: boolean): void; }

@@ -31,6 +31,8 @@ const ASSETS = {
   boy: dataUrl('assets/build/hero/boy-8dir.webp', 'image/webp'),
   girl: dataUrl('assets/build/hero/girl-8dir.webp', 'image/webp'),
   heroRows: 8,
+  boySuit: dataUrl('assets/build/hero/boy-suit-8dir.webp','image/webp'),
+  girlSuit: dataUrl('assets/build/hero/girl-suit-8dir.webp','image/webp'),
   grass: dataUrl('assets/textures/grass-detail.png', 'image/png'),
   rock: dataUrl('assets/textures/rock-detail.png', 'image/png'),
   particle: dataUrl('assets/textures/particle-dot.png', 'image/png'),
@@ -132,18 +134,39 @@ if (fs.existsSync(path.join(root, toolAtlas)) && fs.existsSync(path.join(root, t
 }
 // Muse確定版のLOD1を可逆圧縮して1ファイルHTMLへ。読込み失敗は仮表示へ戻る。
 ASSETS.spaceModels = {};
+ASSETS.spaceContract=JSON.parse(rd('assets/rocket/rocket-contract.json'));
+ASSETS.spacePlacement={'launch-pad':[0,0],'rocket':[0,0],'support-tower':[-4.6,0],'control-terminal':[5,5],'electronics-fab':[-2,6],'computer-bench':[1,6],'test-terminal':[4,-6],'power-distribution':[6,-2],'life-support':[6,1],'suit-stand':[-6,-5],'parts-rack':[-2,-5]};
 for(const id of ['rocket','launch-pad','support-tower','boarding-corridor','control-terminal','electronics-fab','computer-bench','test-terminal','suit-stand','life-support','power-distribution','parts-rack','spacesuit-display']){
   const f=path.join(root,'assets/rocket/models',id+'-lod1.glb');
-  if(fs.existsSync(f)) ASSETS.spaceModels[id]={gzip:gzipSync(fs.readFileSync(f),{level:9}).toString('base64')};
+  if(fs.existsSync(f)){
+    ASSETS.spaceModels[id]={gzip:gzipSync(fs.readFileSync(f),{level:9}).toString('base64')};
+    const high=path.join(root,'assets/rocket/models',id+'.glb');
+    if(fs.existsSync(high))ASSETS.spaceModels[id].lod0=gzipSync(fs.readFileSync(high),{level:9}).toString('base64');
+  }
+}
+const bench=path.join(root,'assets/build/buildings/workbench.glb');
+if(fs.existsSync(bench)){const gzip=gzipSync(fs.readFileSync(bench),{level:9}).toString('base64');ASSETS.spaceModels.workbench={gzip,lod0:gzip};}
+const rocketArt=path.join(root,'assets/build/rocket');
+ASSETS.spaceTextures={};ASSETS.spaceSmoke=[];
+if(fs.existsSync(rocketArt)){
+ for(const f of fs.readdirSync(rocketArt)){
+  if(f.startsWith('tex-')&&f.endsWith('.webp'))ASSETS.spaceTextures[f.slice(0,-5)]=dataUrl('assets/build/rocket/'+f,'image/webp');
+  if(/^fx-exhaust-\d.webp$/.test(f))ASSETS.spaceSmoke.push(dataUrl('assets/build/rocket/'+f,'image/webp'));
+ }
+ const iconMap=path.join(rocketArt,'icons.json');if(fs.existsSync(iconMap)){const m=JSON.parse(fs.readFileSync(iconMap,'utf8'));ASSETS.spaceIcons={src:dataUrl('assets/build/rocket/icons.webp','image/webp'),cols:m.cols,rows:m.rows,pos:m.items};}
 }
 const parts = {
-  '/*GFX*/': gfxCode,
-  '/*ASSETS*/': 'var ASSETS=' + JSON.stringify(ASSETS) + ';',
-  '/*DATA*/': rd('src/game/data.js')+'\n'+rd('src/game/space-data.js'),
+  '/*GFX*/': `const packed='${gzipSync(Buffer.from(gfxCode),{level:9}).toString('base64')}';
+const bytes=Uint8Array.from(atob(packed),c=>c.charCodeAt(0));
+const source=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
+try{await import(url);}catch(error){console.warn('3Dの読込みに失敗しました。2D表示へ切り替えます。',error);}finally{URL.revokeObjectURL(url);}`,
+  '/*ASSETS*/': `var ASSETS={};var ASSETS_READY=(async()=>{const b=Uint8Array.from(atob('${gzipSync(Buffer.from(JSON.stringify(ASSETS)),{level:9}).toString('base64')}'),c=>c.charCodeAt(0));Object.assign(ASSETS,JSON.parse(await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).text()));})();`,
+  '/*DATA*/': rd('src/game/data.js')+'\n'+rd('src/game/space-data.js')+'\n'+rd('src/game/space-science.js'),
   '/*ENGINE*/': rd('src/game/engine.js')+'\n'+rd('src/game/space.js'),
   '/*TERRAIN*/': terrainCode,
   '/*NATURE*/': rd('src/game/nature.js'),
-  '/*UI*/': rd('src/game/ui.js').replace('/*SPACE_UI*/',()=>rd('src/game/space-ui.js')),
+  '/*UI*/': 'ASSETS_READY.then(()=>{'+rd('src/game/ui.js').replace('/*SPACE_UI*/',()=>rd('src/game/space-ui.js'))+'}).catch(error=>{console.error(error);document.getElementById("app").textContent="ゲームデータの読込みに失敗しました。再読み込みしてください。";});',
 };
 let html = rd('src/template.html');
 for (const [key, code] of Object.entries(parts)) {

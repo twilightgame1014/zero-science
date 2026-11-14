@@ -1,3 +1,4 @@
+import {spaceModelDiagnostics} from './space-models';
 import { syncSpaceVisual, spaceModelStatus } from './space-visual';
 // ゲーム側から描画モジュールを使うための入口（src/graphics 本体は改変しない）
 import * as THREE from 'three';
@@ -116,6 +117,6 @@ function diag8Check(): { ok: boolean; available: boolean; stuck: number[] } {
   }
   return { ok: stuck.length === 0, available: true, stuck };
 }
-(window as any).HD2D = { syncSpaceVisual, spaceModelStatus, attachWorld, diag8Check, initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, THREE, RESOURCE_VISUAL_SPECS, GPT_TEXTURES, BRANCH_TEXTURES,
+(window as any).HD2D = { spaceModelDiagnostics, syncSpaceVisual, spaceModelStatus, attachWorld, diag8Check, initializeGraphics, terrainHeight, DEFAULT_CONFIG, resolveConfig, THREE, RESOURCE_VISUAL_SPECS, GPT_TEXTURES, BRANCH_TEXTURES,
   ensureBuildingModel, tickBuildingParts, buildingModelStatus, setSharedTextures, installNatureModels, tickNatureModels, natureModelStatus, npcSet, npcRemove, npcTick, npcStatus };
 window.dispatchEvent(new Event('hd2d-ready'));
