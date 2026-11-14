@@ -364,17 +364,19 @@ for (const vp of [{ width: 360, height: 800 }, { width: 844, height: 390 }]) {
   // 位置は、旧「石積みの壁」の跡に新しく置いた岩の中心（ロード時に近くの空いた所へ補正されるはず）
   const prep = await page.evaluate(`(()=>{ const G=${G}, S=G.S, E=G.E; const rock=G.WORLD.objects.find(o=>o.kind==='rock' && Math.hypot(o.x-10.2,o.z-15.1)<4);
     ['bench','campfire','kiln','furnace','pot','glass','twig'].forEach((id,i)=>{ S.inv[id]=(id==='twig'?7:id==='glass'?3:1); if(!S.disc[id]) S.disc[id]={first:Date.now(),made:1,total:1,routes:[],best:0}; });
-    S.pos={x:rock.x, z:rock.z}; localStorage.setItem('zero-kagaku-save', E.serialize(S)); return {rock:{id:rock.id,x:rock.x,z:rock.z,r:rock.r}, st:E.stageOf(S)}; })()`);
+    S.pos={x:rock.x, z:rock.z}; const o=JSON.parse(E.serialize(S)); o.v=5; delete o.cons; localStorage.setItem('zero-kagaku-save', JSON.stringify(o)); Storage.prototype.setItem=function(){};  /* 再読み込み前の自動保存で v6 に上書きされないように（このページだけ） */ return {rock:{id:rock.id,x:rock.x,z:rock.z,r:rock.r}, st:E.stageOf(S)}; })()`);
   await page.reload(); await page.waitForTimeout(900);
-  const after = await page.evaluate(`(()=>{ const G=${G}, S=G.S, p=G.W3.pos; return {structs:Object.keys(__FAKE.structures).filter(k=>!/^v[hp]:/.test(k)).sort(), left:(__FAKE.opts.decor.stonework===false?[]:['Stonework']), st:G.E.stageOf(S),
+  const after = await page.evaluate(`(()=>{ const G=${G}, S=G.S, p=G.W3.pos; return {structs:Object.keys(__FAKE.structures).filter(k=>!/^v[hp]:/.test(k)).map(k=>/^cs:/.test(k)?__FAKE.structures[k].type:k).sort(), legacy:S.cons.legacy, v:S.v, left:(__FAKE.opts.decor.stonework===false?[]:['Stonework']), st:G.E.stageOf(S),
     inv:{twig:S.inv.twig, glass:S.inv.glass, bench:S.inv.bench}, d:Math.hypot(p.x-(${prep.rock.x}), p.z-(${prep.rock.z}))}; })()`);
-  ok('既存セーブ：段階だけで自動に出ていた小屋・研究所・石の家は出ず、作った設備（作業台・たき火・かまど・簡易炉）は残る',
-    prep.st === 3 && after.structs.join() === 'st-bench,st-fire,st-kiln,st-smelter', JSON.stringify({ prep, after }));
+  // 2026-11-14〜 v5 のセーブは移行で「完成した建物」（以前の場所・資材なし）になる（tests/e2e/construction.mjs も参照）
+  ok('既存セーブ：段階だけで自動に出ていた小屋・研究所・石の家は出ず、作った設備（作業台・たき火・かまど・簡易炉）は完成した建物として残る',
+    prep.st === 3 && after.v === 6 && after.legacy === 'done' && after.structs.join() === 'campfire,kiln,smelter,workbench', JSON.stringify({ prep, after }));
   ok('既存セーブ：再読込しても石の階段・石積みの壁は出ない', after.left.length === 0, JSON.stringify(after.left));
-  ok('既存セーブ：所持品・段階は初期化されない', after.st === 3 && after.inv.twig === 7 && after.inv.glass === 3 && after.inv.bench === 1, JSON.stringify(after.inv));
+  ok('既存セーブ：所持品・段階は初期化されない（置いてあった作業台は建物へ移ったので持ち物からは消える＝二重に持たない）', after.st === 3 && after.inv.twig === 7 && after.inv.glass === 3 && !after.inv.bench, JSON.stringify(after.inv));
   ok('既存セーブ：新しく置いた岩の上にいたプレイヤーは、岩の外へ補正される', after.d >= prep.rock.r + 0.3, JSON.stringify({ d: after.d, r: prep.rock.r }));
   await page.evaluate(`(()=>{ const S=${G}.S; S.inv.storehouse=1; S.disc.storehouse=S.disc.storehouse||{first:Date.now(),made:1,total:1,routes:[],best:0}; ${G}.render(); })()`); await page.waitForTimeout(300);
-  ok('倉庫を作ると、拠点に小屋が建つ（作った設備に1対1で対応）', await page.evaluate(`!!__FAKE.structures['st-hut1'] && __FAKE.structures['st-hut1'].type==='hut'`));
+  // 2026-11-14〜 決まった場所に自動では建たない（場所を選んで建設する。持ち物の設備は建築の画面から置く）
+  ok('倉庫を持っていても、拠点の決まった場所に小屋は自動で建たない', await page.evaluate(`!__FAKE.structures['st-hut1'] && !Object.entries(__FAKE.structures).some(([k,v])=>!/^v[hp]:/.test(k) && (v.type==='storehouse'||v.type==='hut'))`));
   ok('ページでエラーが起きていない（既存セーブ）', errors.length === 0, errors.join('\n'));
   await ctx.close();
 }
@@ -731,7 +733,7 @@ const screenOf = (page, q) => page.evaluate(([q]) => { const G = window.__GAME__
   await page.addInitScript(s => { if (!sessionStorage.getItem('seed-v2')) { localStorage.clear(); localStorage.setItem('zero-kagaku-save', s); sessionStorage.setItem('seed-v2', '1'); } }, v2);
   await page.reload(); await page.waitForTimeout(900);
   const r = await page.evaluate(`({bk:localStorage.getItem('zero-kagaku-save-backup-v2'), v:${G}.S.v, twig:${G}.S.inv.twig, build:JSON.stringify(${G}.S.build), pos:${G}.W3.pos, dir:${G}.W3.dir, player:__FAKE.player&&__FAKE.player.direction})`);
-  ok('古い形式（v2）のセーブは、移行する前に元のまま別のキーへ控える。移行後も持ち物・位置は同じ', r.bk === v2 && r.v === 5 && r.twig === 4 && r.build === '{}' && Math.abs(r.pos.x + 14) < 0.05 && Math.abs(r.pos.z - 25) < 0.05, JSON.stringify(r).slice(0, 200));
+  ok('古い形式（v2）のセーブは、移行する前に元のまま別のキーへ控える。移行後も持ち物・位置は同じ', r.bk === v2 && r.v === 6 && r.twig === 4 && r.build === '{}' && Math.abs(r.pos.x + 14) < 0.05 && Math.abs(r.pos.z - 25) < 0.05, JSON.stringify(r).slice(0, 200));
   ok('保存した向き（左）で復元される', r.dir === 'left' && r.player === 'left', JSON.stringify({ dir: r.dir, player: r.player }));
   ok('ページでエラーが起きていない（v2 の移行）', errors.length === 0, errors.join('\n'));
   await ctx.close();

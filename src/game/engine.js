@@ -1,6 +1,6 @@
 /* ===================== ゲームエンジン（UIから独立） ===================== */
 var ENGINE = (function(D){
-  const SCHEMA = 5;
+  const SCHEMA = 6;
   /* 地形の版（広い世界の形。src/world/shape.ts の WORLD_VERSION と同じ値。テストで検査）。セーブの worldVer がこれより古ければ、UI が位置を確かめて直す */
   const WORLD_VER = 4;
   const IT = D.items;
@@ -9,7 +9,10 @@ var ENGINE = (function(D){
 
   /* nature：変化した自然物・採取地点の状態だけを保存する（{id:{u:使った回数, t:取り尽くした時刻}}） */
   /* build：建物の置き場所 {建物ID:{x,z,rot}}（撤去したものは {removed:true}。記録がなければ決まった場所）。camera：カメラのユーザー設定（v3〜） */
-  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, build:{}, camera:{}, space:{version:1}, worldVer:WORLD_VER, created:Date.now()}; }
+  function newState(){ return {v:SCHEMA, inv:{}, disc:{}, hist:[], gathered:{}, explore:{}, auto:[], seq:0, flags:{}, nature:{}, build:{}, camera:{}, space:{version:1}, cons:newCons(), worldVer:WORLD_VER, created:Date.now()}; }
+  /* cons：街づくり・現地建設（v6〜。construction.js が正本）。rule："build"＝設備の建物は現地で建てる（UI の新しいゲームと移行したセーブ）／
+     未設定＝以前の工作で設備を作る（エンジン単体のテストのボットが使う）。inst：建設予定地と建物（安定した ID）、roads：完成した道のマス */
+  function newCons(){ return {v:1, seq:0, inst:{}, roads:{}}; }
   const cnt = (S,id)=> S.inv[id]||0;
   const has = (S,id)=> cnt(S,id)>0;
   /* 検証モード（S.verify。通常のセーブには存在しない）の条件バイパス。
@@ -17,7 +20,14 @@ var ENGINE = (function(D){
      locks：鍵のかかった地域に入れる（未実装の地域 r.future は開かない）／instant：待ち時間を短くする（UI が読む）／
      stage：時代の表示を切り替える（null は通常どおり） */
   const vflag = (S,k)=> !!(S && S.verify && S.verify[k]);
-  const hasTool = (S,id)=> has(S,id) || vflag(S,"tools");
+  /* 設備が使えるか：持ち物にある（以前の方式）か、完成した建物がある（construction.js が setFacilityHook で教える） */
+  let builtHook = null;
+  function setFacilityHook(f){ builtHook = typeof f==="function" ? f : null; }
+  const hasFacility = (S,id)=> has(S,id) || !!(builtHook && builtHook(S,id));
+  const hasTool = (S,id)=> hasFacility(S,id) || vflag(S,"tools");
+  /* 建てて作る設備か（rule が "build" のとき、工作では作れない） */
+  const buildRule = S=> !!(S && S.cons && S.cons.rule==="build");
+  const builtByConstruction = id=> !!(D.construction && D.construction.defs.some(d=>d.facility===id));
   const keyOf = obj => Object.keys(obj).filter(k=>obj[k]>0).sort().join("+");
 
   function discover(S,id){
@@ -235,6 +245,7 @@ var ENGINE = (function(D){
   function planCraft(S, c){
     const out = IT[c.out];
     if(c.lesson && !(S.space && S.space.lessons && S.space.lessons[c.lesson])) return {ok:false,kind:"lesson",msg:"宇宙へ：前提の実習を完了してください"};
+    if(buildRule(S) && builtByConstruction(c.out)) return {ok:false, kind:"build", msg:"この設備は現地に建てて作る（建築の画面で予定地を決める）"};
     if(out.unique && has(S,c.out)) return {ok:false, kind:"own", msg:"もう持っているよ"};
     if(c.at && !hasTool(S,c.at)) return {ok:false, kind:"at", msg:"「"+IT[c.at].name+"」で作るよ"};
     const t = c.tools.find(x=>!hasTool(S,x)); if(t) return {ok:false, kind:"tool", msg:"「"+IT[t].name+"」が必要"};
@@ -311,11 +322,11 @@ var ENGINE = (function(D){
   function stageOf(S){
     if(S.verify && Number.isInteger(S.verify.stage) && D.stages[S.verify.stage]) return S.verify.stage;
     const d=S.disc; let s=0;
-    if(has(S,"campfire")) s=1;
-    if(s>=1 && d.pot && has(S,"kiln")) s=2;
-    if(s>=2 && has(S,"furnace") && (d.glass||has(S,"still"))) s=3;
-    if(s>=3 && has(S,"blastfurnace") && (has(S,"steamengine")||has(S,"generator"))) s=4;
-    if(s>=4 && has(S,"generator") && (d.pe||d.aluminum||d.solarcell)) s=5;
+    if(hasFacility(S,"campfire")) s=1;
+    if(s>=1 && d.pot && hasFacility(S,"kiln")) s=2;
+    if(s>=2 && hasFacility(S,"furnace") && (d.glass||hasFacility(S,"still"))) s=3;
+    if(s>=3 && hasFacility(S,"blastfurnace") && (hasFacility(S,"steamengine")||hasFacility(S,"generator"))) s=4;
+    if(s>=4 && hasFacility(S,"generator") && (d.pe||d.aluminum||d.solarcell)) s=5;
     if(S.space && S.space.firstClear && D.stages[6]) s=Math.max(s,6);   // 宇宙へ到達（表示だけ。レシピの判定には使わない）
     return s;
   }
@@ -338,6 +349,7 @@ var ENGINE = (function(D){
     1: s => { s.nature = {}; return s; },  // v1→v2：自然物・採取地点の状態（最初は何も変化していない）
     2: s => { s.build = {}; s.camera = {}; return s; },  // v2→v3：建物の自由設置・カメラの設定（これまでの建物は決まった場所のまま）
     3: s => { s.worldVer = 1; return s; },
+    5: s => { s.cons = Object.assign(newCons(), {rule:"build", legacy:"pending"}); return s; },   // v5→v6：街づくり。以前の固定の建物は construction.js が読み込み時に完成した建物へ移す（素材は求めない）
     4: s => { s.space = {version:1}; return s; }  // v3→v4：地形の版を記録（これまでのセーブは旧世界＝版1。位置の確認は読み込み後に UI が地形関数で行う）
   };
   const ALIASES = {}; // 名称変更したIDの対応表（例：{"oldId":"newId"}）
@@ -354,6 +366,9 @@ var ENGINE = (function(D){
     for(const k of Object.keys(n.build)){ const b=n.build[k]; if(!b || typeof b!=="object" || !(b.removed===true || (isFinite(b.x) && isFinite(b.z) && isFinite(b.rot)))) delete n.build[k]; }
     if(!n.camera || typeof n.camera!=="object" || Array.isArray(n.camera)) n.camera={};
     if(!(typeof n.worldVer==="number" && isFinite(n.worldVer))) n.worldVer = 1;
+    { const c = (n.cons && typeof n.cons==="object" && !Array.isArray(n.cons)) ? n.cons : {};
+      const d = Object.assign(newCons(), c); if(!d.inst || typeof d.inst!=="object" || Array.isArray(d.inst)) d.inst = {}; if(!d.roads || typeof d.roads!=="object" || Array.isArray(d.roads)) d.roads = {};
+      if(!(Number.isSafeInteger(d.seq) && d.seq>=0)) d.seq = 0; n.cons = d; }
     for(const k of Object.keys(n.nature)){ const x=n.nature[k]; if(!x || typeof x!=="object" || !(x.u>0) || !isFinite(x.u)) delete n.nature[k]; else { x.u=Math.floor(x.u); if(x.t!==undefined && !isFinite(x.t)) delete x.t; } }
     return n;
   }
@@ -480,7 +495,7 @@ var ENGINE = (function(D){
     return R;
   }
 
-  return {WORLD_VER, addItem, hasTool, vflag, makeVerifyState, fillStorable, VERIFY_DEFAULTS, SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, collect, stockOf, useStock, harvestDeposit, depositInfo, depositRule, depositId, depositPos, resKey, REACH, regionOpen, processNeeds, processBlock, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
+  return {WORLD_VER, newCons, setFacilityHook, hasFacility, buildRule, builtByConstruction, addItem, hasTool, vflag, makeVerifyState, fillStorable, VERIFY_DEFAULTS, SCHEMA, exploreLv, nextLv, LV, newState, cnt, has, gather, gatherInfo, collect, stockOf, useStock, harvestDeposit, depositInfo, depositRule, depositId, depositPos, resKey, REACH, regionOpen, processNeeds, processBlock, autoSlots, autoTick, facilityOps, planExperiment, runExperiment,
           planCraft, runCraft, producers, usesOf, status, hint, suggest, stageOf, missionIndex, tagProgress, serialize, deserialize, runTests};
 })(typeof DATA!=="undefined"?DATA:require("./data.js"));
 if (typeof module!=="undefined") module.exports = ENGINE;

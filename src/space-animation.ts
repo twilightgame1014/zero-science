@@ -8,9 +8,11 @@ export function flightPose(elapsed:number,active:boolean){
  mount:Math.min(.6,Math.max(0,t-FLIGHT.mount)),
  rise:active?Math.min(70,Math.max(0,t-FLIGHT.ascent)*12):0};
 }
-export function visibleAtStage(name:string,stage:number){
- if(stage===0)return false;
- if(stage===1)return /^Frame_/.test(name);
- if(stage===2)return /^(Propulsion|PropSkirt|Nozzle|NozzleInner|BodyLowerInsul|Skin_Lower_P[123]|Skin_Upper_P2|SeamRing_70|Frame_BodyLower|Frame_BodyUpper|Frame_TankUpper)(?:$|[_.])/.test(name);
- return !/^Frame_/.test(name);
+// v6のノード一覧はMuse契約を正本とし、取得した組込枠を直接反映する。
+export function visibleForSlots(name:string,installed:Record<string,number>,slots:Record<string,string[]>|undefined){
+ if(!installed.structure||!slots)return false;
+ if(slots.frame.includes(name))return !installed.skin;
+ if(slots.propulsion.includes(name))return !!installed.propulsion;
+ if(slots.capsule.includes(name))return !!installed.capsule;
+ return slots.skin.includes(name)&&!!installed.skin;
 }
