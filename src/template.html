@@ -303,6 +303,7 @@ img.ico{width:32px;height:32px;object-fit:contain;image-rendering:pixelated}
 @media (min-width:700px){ .modal{align-items:center} .sheet{border-radius:22px} }
 .sheet .hd{display:flex;gap:12px;align-items:center}
 .sheet .bigi{font-size:3rem;line-height:1}
+.bk-detail .hd{display:flex;gap:12px;align-items:center}.bk-detail .bigi{font-size:2.6rem;line-height:1}.bk-detail .hd h2{margin:0}
 .sheet h2{margin:0;font-size:1.3rem;font-weight:900;line-height:1.3}
 .sheet .yomi{font-size:.8rem;color:var(--muted)}
 .kidbox{background:var(--soft);border-radius:14px;padding:10px 12px;margin:12px 0;font-size:1rem}
@@ -700,6 +701,40 @@ img.ico.line{image-rendering:auto}
 .space-overview #w3act,.space-overview #joy,.space-overview #camctl{display:none!important}.sp-project{line-height:1.65}.sp-tabs,.sp-fields{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.sp-fields label{display:flex;flex-direction:column;gap:4px}.sp-project button,.sp-project select,.sp-project input:not([type=checkbox]),.sp-flight button{min-height:44px}.sp-project input[type=number]{width:90px}.sp-project select{max-width:100%}.sp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.sp-card{border:1px solid var(--line2);border-radius:10px;padding:14px;margin:12px 0;background:var(--card)}.sp-card h4{margin:0}.sp-card button{margin:3px}.sp-output{white-space:pre-wrap;overflow-wrap:anywhere;background:#22364f;color:#e8dfc8;padding:12px;border-radius:8px}.sp-flight{min-height:60vh;background:linear-gradient(#1d5364,#a4d5d1);color:#fff;padding:24px;text-align:center;border-radius:14px}.sp-stars{background:radial-gradient(circle at 30% 20%,#e8dfc8 1px,transparent 2px),radial-gradient(circle at 70% 40%,#e8dfc8 1px,transparent 2px),#101e33;background-size:83px 79px,137px 131px,auto}.sp-flight-rocket{font-size:32px;line-height:.8;margin:30px}.sp-flight details{text-align:left}.sp-flight h2{color:#fff}#sp-message{min-height:1.5em;color:var(--teal)}.sp-project textarea{width:100%;min-width:220px}.sp-project pre{max-width:100%}@media(max-width:600px){.sp-grid{grid-template-columns:1fr}.sp-project{padding-bottom:20px}}
 .sic{display:inline-block;width:32px;height:32px;vertical-align:middle;background-image:var(--sp-atlas);background-size:calc(var(--sp-atlas-c)*32px) calc(var(--sp-atlas-r)*32px);background-position:calc(var(--c)*-32px) calc(var(--r)*-32px);image-rendering:pixelated}.sp-card .sic{width:48px;height:48px;background-size:calc(var(--sp-atlas-c)*48px) calc(var(--sp-atlas-r)*48px);background-position:calc(var(--c)*-48px) calc(var(--r)*-48px)}
 .sp-needs{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:6px 0}.sp-need{font-size:.92em;color:var(--ink,#1d2433)}.sp-needs .btn.small{min-height:36px}html[data-ui="touch"] .sp-needs .btn.small{min-height:44px}
+/* 図鑑（2026-11-14）：検索・分類・一覧と詳細。PC は左右に並べ、スマホは詳細へ切り替える（横スクロールなし） */
+.bk{display:flex;flex-direction:column;gap:10px;min-width:0}
+.bk-head{display:flex;flex-direction:column;gap:8px}
+.bk-search{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:4px 10px;background:var(--card,#fff)}
+.bk-search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;padding:8px 0;outline:none}
+.bk-cats{display:flex;flex-wrap:wrap;gap:6px}
+.bk-meta{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:.86rem;color:var(--muted)}
+.bk-all{display:flex;gap:6px;align-items:flex-start}
+.bk-split{display:grid;grid-template-columns:minmax(220px,34%) 1fr;gap:12px;min-width:0}
+.bk-list{max-height:calc(100dvh - 300px);overflow:auto;min-width:0}
+.bk-detail{max-height:calc(100dvh - 300px);overflow:auto;min-width:0;overflow-wrap:anywhere}
+.bk-items{display:flex;flex-direction:column;gap:4px}
+.bk-it{display:flex;gap:8px;align-items:center;text-align:left;border:1px solid var(--line);border-radius:10px;background:var(--card,#fff);padding:6px 8px;min-height:44px;cursor:pointer;font:inherit;color:inherit}
+.bk-it .n{display:flex;flex-direction:column;min-width:0}.bk-it .n small{color:var(--muted);font-size:.78rem}
+.bk-it.hint{border-style:dashed}.bk-it.on{border-color:var(--teal);box-shadow:inset 3px 0 0 var(--teal)}
+.bk-back{display:none}
+.bk-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.bk-rv,.bk-badge{font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.bk-rv.unchecked{border-style:dashed}.bk-rv.fix{border-color:#a3262f}
+.bk-gl{font-weight:400;color:var(--muted);font-size:.78em}
+.bk-wait{border:1px dashed var(--line);border-radius:6px;padding:0 6px;color:var(--muted)}
+.bk-p{margin:0;font-size:.9rem}.bk-ul{margin:4px 0;padding-left:18px}
+.bk-rec{margin:6px 0;font-size:.88rem;display:flex;flex-direction:column;gap:3px}.bk-rec .ok,.bk-meta2 .ok{color:#2d6a3e}.bk-rec .ng,.bk-meta2 .ng{color:#a3262f}
+.lnk{border:0;background:none;padding:2px 2px;font:inherit;color:inherit;text-decoration:underline dotted;cursor:pointer;min-height:32px}
+.bk-ctl{gap:12px;flex-wrap:wrap}.bk-ctl input[type=number]{width:5em}
+.bk-tree{font-size:.86rem;overflow-x:hidden}.bk-tree ul{list-style:none;margin:0;padding-left:14px;border-left:1px dotted var(--line)}.bk-tree>ul{padding-left:0;border:0}
+.bk-tree li{margin:4px 0}.bk-tree summary{cursor:pointer}.bk-nd b{font-weight:700}
+.bk-note{color:var(--muted);font-size:.8rem}.bk-meta2{font-size:.78rem;color:var(--muted)}.bk-route{max-width:100%;font-size:.8rem}
+html[data-ui="touch"] .bk-split{display:block}
+html[data-ui="touch"] .bk-list,html[data-ui="touch"] .bk-detail{max-height:none;overflow:visible}
+html[data-ui="touch"] .bk[data-sel="1"] .bk-list,html[data-ui="touch"] .bk[data-sel="1"] .bk-head{display:none}
+html[data-ui="touch"] .bk[data-sel="0"] .bk-detail{display:none}
+html[data-ui="touch"] .bk[data-sel="1"] .bk-back{display:inline-flex;min-height:44px;margin-bottom:8px}
+html[data-ui="touch"] .bk-cats .btn.small,html[data-ui="touch"] .lnk,html[data-ui="touch"] .bk-route{min-height:44px}
+@media (max-width:760px){ .bk-split{display:block} .bk-list,.bk-detail{max-height:none;overflow:visible} .bk[data-sel="1"] .bk-list,.bk[data-sel="1"] .bk-head{display:none} .bk[data-sel="0"] .bk-detail{display:none} .bk[data-sel="1"] .bk-back{display:inline-flex} }
 
 /* ===== 街づくり・現地建設（2026-11-14） ===== */
 .cstabs{margin:6px 0 10px}

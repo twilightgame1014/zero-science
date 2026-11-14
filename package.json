@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node tests/engine.test.mjs && node tests/nature.test.mjs && node tests/world.test.mjs && node tests/verify.test.mjs && node tests/assets.test.mjs && node tests/sim.mjs && node tests/space.test.mjs && node tests/space-world.test.mjs && node tests/space-assets.test.mjs && node tests/space-deps.test.mjs && node tests/space-animation.test.mjs && node tests/space-art.test.mjs && node tests/space-materials.test.mjs && node tests/construction.test.mjs && node tests/construction-grass.test.mjs && node tests/construction-space.test.mjs && node tests/space-exhaust.test.mjs && node tests/construction-colliders.test.mjs && node tests/space-reserve.test.mjs && node tests/construction-visual.test.mjs",
+    "test": "node tests/engine.test.mjs && node tests/nature.test.mjs && node tests/world.test.mjs && node tests/verify.test.mjs && node tests/assets.test.mjs && node tests/sim.mjs && node tests/space.test.mjs && node tests/space-world.test.mjs && node tests/space-assets.test.mjs && node tests/space-deps.test.mjs && node tests/space-animation.test.mjs && node tests/space-art.test.mjs && node tests/space-materials.test.mjs && node tests/construction.test.mjs && node tests/construction-grass.test.mjs && node tests/construction-space.test.mjs && node tests/space-exhaust.test.mjs && node tests/construction-colliders.test.mjs && node tests/space-reserve.test.mjs && node tests/book.test.mjs && node tests/construction-visual.test.mjs",
     "e2e": "npm run build && node tests/e2e/play.mjs",
     "test:8dir": "node threejs-hd2d-graphics/tools/test-8dir.mjs",
     "e2e:8dir": "npm run build && node tests/e2e/hero-8dir.mjs",
@@ -18,6 +18,8 @@
     "test:construction": "node tests/construction.test.mjs",
     "e2e:construction": "node scripts/build.mjs && node tests/e2e/construction.mjs",
     "e2e:playthrough": "node scripts/build.mjs && node tests/e2e/playthrough.mjs",
+    "e2e:book": "node scripts/build.mjs && node tests/e2e/book.mjs",
+    "book:ledger": "node scripts/export-book-ledger.mjs",
     "e2e:space": "node scripts/build.mjs && node tests/e2e/space.mjs"
   },
   "dependencies": {

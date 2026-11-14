@@ -39,6 +39,7 @@
 - 配置は `#app` と `<html>` の `data-ui`（`pc` / `touch`）で切り替える。画面幅と入力方法（`pointer:coarse`）から `detectUi()` で決める。
   - PC：左上に現在地と目標、右上に地図・拠点・設定、下部中央に研究室／工作／図鑑／技術／記録。研究室などは右側パネル、図鑑・技術は大きなオーバーレイ。スティックは出さない（指で触れたら出す）。
   - スマホ：左下スティック、右下に大きな行動ボタン（調べる／〜を採る／使えない理由）、最下部に研究室／工作／メニュー。図鑑・技術・記録・設定は「メニュー」の中。
+  - 案内の枠（モーダル）を開いている間は `html.modal-on`：枠の上に 64px の帯をあけ、通知はその帯に 1 行・最新の 1 件だけ（見出しに重ねない）。
 - 画面（`U.tab`）は `explore`（パネルなし）・`lab`・`craft`・`book`・`map`（技術）・`log`・`world`（地図・地域）・`menu`・`settings`。パネルは同時に1つだけ。
 - 3Dフィールドの DOM と WebGL は一度だけ作り、パネル開閉で作り直さない。描画領域の寸法は `resizeGraphics` へ渡す。一時停止は `pauseGraphics` / `resumeGraphics` があれば使う。
 - パネル・案内（モーダル）の表示中は `fieldInputActive()` が偽になり、マップへの入力をすべて無視する。開くとき・タッチのキャンセル・フォーカス喪失・画面回転では `haltField()` で移動を止める。スティックと行動ボタンは pointerId で区別する。
@@ -119,6 +120,14 @@
 - 正式の工程表示・予定地キット・足場・資材の山・道（Muse f62e075）は `src/construction-visual.ts` の 1 本（Codex の統合 34dd168）。一覧 k＝工程 k の完了直後、施工中は k−1。GLTFLoader と同じ正規化。現場の部品は材質ごとに 1 つのメッシュへまとめる（`mergeKitParts`。元の部品は名前を残して描かない）。資材の山の形は `construction-ui.js` の `PILE_OF`（ID の表）。
   配信用の軽量版は `scripts/make-construction-glb.py` の 1 本（画像を共有テクスチャ `assets/build/nature-tex` へ。道は WebP の色・法線 512）。原本 `assets/construction` を変えたら再実行。
 - 案内（2026-11-14）：宇宙計画の製作の足りない物はボタン（建物の設備は状態と「現場を開く／建設する」、実習は「実習へ」、材料は作り方へ）。完成した設備の画面に「次に使う所」。画面の操作だけの通し確認は `tests/e2e/playthrough.mjs`（`npm run e2e:playthrough`、かまどまで）。記録は `docs/construction/PLAYTHROUGH-2026-11-14.md`。
+
+## レシピ図鑑（2026-11-14〜。ロードマップ M2-01・M2-03）
+- 正本はデータのまま（`data.js` の items・procs・crafts・regions、`space-data.js`、`construction-data.js`）。図鑑は `src/game/book.js`（`BOOK`、エンジンの隣）がその場で組み立てる。図鑑だけの情報（監修の台帳 `review`・用語の説明・分類）は `src/game/book-data.js`。画面は `src/game/book-ui.js`（ビルドで `ui.js` の `/*BOOK_UI*/` へ）。スキーマは `docs/book/BOOK-SCHEMA.md`。
+- 発見のきまり（`E.status`）を守る：未発見は ？？？、名前で探せない。学習用の「全部を見る」（`S.flags.bookAll`）は閲覧の設定だけ。
+- 監修は台帳に書いた物だけ「確認済み／要修正」。書いていなければ「未確認」。出典は品目の `scienceSources` だけ。作らない。
+- 逆引き（`BOOK.expand`）：製法の選択・回数は出来上がりの数で切り上げ・副産物・道具と設備は数えない・在庫を引く・循環で止める。
+- 設備：建設の決まりでは、建物の設備は完成した建物があるときだけ使える（`engine.js` の `hasFacility`。持ち物にあるだけでは使えない）。
+- 点検の台帳：`node scripts/export-book-ledger.mjs` → `docs/book/RESOURCE-LEDGER.md`・`MANUSCRIPT-GAPS.md`・`book-ledger.json`。テスト `tests/book.test.mjs`・`tests/e2e/book.mjs`（`npm run e2e:book`）。
 
 ## 建物の3Dモデルと道具・設備・操作のアイコン（Muse・2026-11-07〜）
 - 建物：Muse の `assets/buildings-3d`（原本の GLB 13種・`structures.json`）。`scripts/make-building-glb.py` でテクスチャだけを再圧縮した軽量版 `assets/build/buildings/*.glb` を作り（原本を変えたら再実行。既定は長辺512px＝第14ラウンドの色テクスチャの解像度のまま、不透明な画像は JPEG）、base64 で埋め込む。モデル内の接地影 `ContactShadow` はそのまま使う（地形と干渉したらこのノードだけ外す）。

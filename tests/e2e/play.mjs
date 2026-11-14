@@ -163,13 +163,13 @@ const ptr = (page, sel, type, id, dx = 0, dy = 0) => page.evaluate(([s, type, id
   ok('メニューのシートを開いている間も、後ろのマップは描画を続ける（入力は止まる）', await page.evaluate(`__FAKE.loop === true && document.getElementById('view').inert`));
   await page.click('#dockBody .bigitem[data-tab="book"]'); await page.waitForTimeout(150);
   ok('メニューから図鑑に切り替わる（重ねずに1つだけ）', await page.evaluate(`${G}.U.tab==='book' && document.querySelectorAll('.dock:not([hidden])').length===1 && document.querySelector('nav [data-tab="menu"]').getAttribute('aria-current')==='page'`));
-  // 図鑑の詳細モーダルはパネルの前面。Escape はモーダル → パネルの順
-  await page.click('.dx[data-id="twig"]'); await page.waitForTimeout(100);
-  const m1 = await page.evaluate(`({open:document.getElementById('modal').classList.contains('open'), inert:document.getElementById('app').inert})`);
+  // 図鑑の詳細（2026-11-14〜 スマホはパネルの中で詳細に切り替える）。Escape は詳細 → 一覧（開いていた項目に焦点）→ パネルの順
+  await page.click('.bk-it[data-id="twig"]'); await page.waitForTimeout(150);
+  const m1 = await page.evaluate(`({sel:${G}.U.book.sel, back:!!document.querySelector('.bk-back'), open:document.getElementById('modal').classList.contains('open')})`);
+  await page.keyboard.press('Escape'); await page.waitForTimeout(150);
+  const m2 = await page.evaluate(`({sel:${G}.U.book.sel, tab:${G}.U.tab, focus:document.activeElement.dataset.id})`);
   await page.keyboard.press('Escape'); await page.waitForTimeout(100);
-  const m2 = await page.evaluate(`({open:document.getElementById('modal').classList.contains('open'), tab:${G}.U.tab, focus:document.activeElement.dataset.id})`);
-  await page.keyboard.press('Escape'); await page.waitForTimeout(100);
-  ok('図鑑の詳細はいちばん前に出て、Escapeはモーダル→パネルの順に閉じる', m1.open && m1.inert && !m2.open && m2.tab === 'book' && m2.focus === 'twig' && (await page.evaluate(`${G}.U.tab`)) === 'explore', JSON.stringify({ m1, m2 }));
+  ok('図鑑の詳細はパネルの中で切り替わり、Escapeは詳細→一覧（開いていた項目に焦点）→パネルの順に閉じる', m1.sel === 'twig' && m1.back && !m1.open && m2.sel === null && m2.tab === 'book' && m2.focus === 'twig' && (await page.evaluate(`${G}.U.tab`)) === 'explore', JSON.stringify({ m1, m2 }));
   ok('閉じると、開いたボタン（メニュー）にフォーカスが戻る', await page.evaluate(`document.activeElement.dataset.tab==='menu'`));
 
   // 移動予約の解除

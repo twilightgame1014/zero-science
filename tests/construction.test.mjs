@@ -21,7 +21,12 @@ function findSpot(s, def, from, skip, rot) {
     if (C.checkBuilding(s, W, def, x, z, rot || 0, opts).ok) return { x, z }; }
   return null; }
 const stand = (s, id) => { const v = s.cons.inst[id]; if (v.kind === 'road') { const q = v.cells[0]; return C.cellCenter(q.i, q.j); } const d = C.DEF[v.def]; const f = d.footprint, r = f.shape === 'rect' ? Math.max(f.w, f.d) / 2 : f.r; return { x: v.x, z: v.z + r + 0.8 }; };
-const give = (s, items) => { for (const k in items) { s.inv[k] = (s.inv[k] || 0) + items[k]; s.disc[k] = s.disc[k] || { first: 1, made: 1, total: 1, routes: [], best: 0 }; } };
+/* 建設の決まりでは、建物の設備（作業台・たき火・発電機など）は持ち物にあっても使えない（2026-11-14）。工程の道具として渡すときは、遠くに完成した建物を 1 つ置く */
+let gid = 0;
+const give = (s, items) => { for (const k in items) { s.disc[k] = s.disc[k] || { first: 1, made: 1, total: 1, routes: [], best: 0 };
+  const bd = s.cons && s.cons.rule === 'build' && D.construction.defs.find(d => d.facility === k);
+  if (bd) { const id = 'cs-given' + (++gid); s.cons.inst[id] = { id, def: bd.id, x: 900 + gid * 20, z: 900, rot: 0, phase: 'completed', stage: bd.stages.length, delivered: {}, consumed: {}, work: null, done: 1 }; continue; }
+  s.inv[k] = (s.inv[k] || 0) + items[k]; } };
 /* 予定地を最後まで建てる（運ぶ → 各工程を施工） */
 function buildAll(s, id, t0) { let t = t0 || 1e6;
   const pos = stand(s, id); let r = C.deliverAll(s, W, id, pos, s.seq); if (!r.ok && !/運べる資材がない/.test(r.msg)) return r;
@@ -167,10 +172,13 @@ const O = E.deserialize(JSON.stringify(old)); C.state(O);
 const ib = Object.values(O.cons.inst);
 ok('旧セーブ：置いてあった設備は、同じ場所の完成した建物になる（素材は求めない）', ib.some(v => v.def === 'workbench' && v.x === -15 && v.z === 24 && v.rot === 0.5 && v.phase === 'completed') && ib.every(v => v.phase === 'completed' && v.legacy));
 ok('旧セーブ：移した設備は持ち物から消える（二重に持たない）。設備は変わらず使える', !O.inv.bench && !O.inv.campfire && E.hasTool(O, 'bench') && E.hasTool(O, 'campfire') && E.hasTool(O, 'kiln'));
-ok('旧セーブ：撤去していた設備（倉庫）と、同じ建物だった高炉は持ち物のまま使える', O.inv.storehouse === 1 && O.inv.blastfurnace === 1 && E.hasTool(O, 'blastfurnace'), JSON.stringify(O.cons.legacyReport));
+ok('旧セーブ：撤去していた設備（倉庫）と、同じ建物だった高炉は持ち物に残る。建物が無いあいだは使えない（持ち物にあるだけでは設備として使わない）', O.inv.storehouse === 1 && O.inv.blastfurnace === 1 && !E.hasTool(O, 'blastfurnace'), JSON.stringify(O.cons.legacyReport));
 ok('旧セーブ：主人公・素材・採取状態・宇宙計画の状態はそのまま', O.flags.hero === 'girl' && O.inv.steel === 3 && O.nature['tree:1,2'].u === 1 && O.space.lessons.switch === true && O.space.installed.structure === 3 && O.cons.rule === 'build');
 const O2 = E.deserialize(E.serialize(O)); C.state(O2);
 ok('旧セーブ：2回目の読み込みで二重に移さない', Object.keys(O2.cons.inst).length === ib.length && !O2.inv.bench);
+{ const W0 = W; W0.setStructures(C.colliders(O)); if (W0) { let at = null; for (let x = -60; x < 60 && !at; x += 4) for (let z = -60; z < 60; z += 4) if (C.checkBuilding(O, W0, 'blastfurnace', x, z, 0, {}).ok) { at = { x, z }; break; }
+  const pl = at && C.placeLegacy(O, W0, 'blastfurnace', at.x, at.z, 0, {}, O.seq);
+  ok('旧セーブ：持ち物の高炉を建築の画面から置くと、資材なしの完成した建物になって使える（持ち物から消える）', !!(pl && pl.ok) && E.hasTool(O, 'blastfurnace') && !O.inv.blastfurnace, JSON.stringify(pl)); } }
 
 /* ---- 11 到達可能性（建てるルール）：設備は建物から。資材・工程の道具・設備がすべて天然資源からそろう ---- */
 const reach = new Set(); D.regions.filter(r => !r.future).forEach(r => { r.res.forEach(x => { if (!x.need) reach.add(x.id); }); (r.rare || []).forEach(x => reach.add(x.id)); });
