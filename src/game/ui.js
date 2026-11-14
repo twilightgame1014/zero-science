@@ -2153,7 +2153,7 @@ const STRUCT_FAC = {"st-bench":["bench"],"st-fire":["campfire"],"st-kiln":["kiln
 function placeLabel(p){ const sp=(ASSETS.buildingSpecs||{})[p.type]||{};
   return {name: sp.name || p.type, from: (STRUCT_FAC[p.id]||[]).filter(id=>IT[id]).map(nm).join("・")}; }
 function viewBuild(){
-  if(E.buildRule(S)) return consView();
+  if(E.buildRule(S) && !S.verify) return consView();   // 検証モードは従来の自由配置（S.verify.placed）のまま
   const list = STRUCT_PLAN.filter(planOwned);
   const rows = list.map(p=>{ const L=placeLabel(p), b=buildRec(p.id), st = b && b.removed ? "撤去中（設備は持ち物に残っている）" : b ? "好きな場所に置いた" : "決まった場所に建っている";
     return `<div class="bit"><span class="i">${ic((STRUCT_FAC[p.id]||[])[0]||"")}</span><span class="n">${L.name}<small>${st}${L.from?"（"+L.from+"）":""}</small></span>

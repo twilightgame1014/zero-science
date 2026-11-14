@@ -184,5 +184,24 @@ while (grew) { grew = false;
 const base174 = Object.keys(IT).filter(k => !k.startsWith('sp_') && !['rawrubber', 'rubber'].includes(k) && !reach.has(k));
 ok('建てるルールでも、以前の全物質・道具・設備に天然資源から届く（設備は建物から）', base174.length === 0, base174.join(','));
 
+/* ---- 11b 通常プレイ：新しいゲーム（建てるルール）で、採取した資材だけで作業台・たき火・かまどを現地に建てる ---- */
+{ const P = fresh(); let now = 1e7, ops = 0;
+  const gather = id => { const src = D.regions.flatMap(r => r.res.filter(x => x.id === id && (!x.need || x.need.some(t => E.hasTool(P, t)))).map(res => ({ r, res })))[0];
+    if (!src) throw Error('採れない：' + id); now += 200000; ops++; const g = E.harvestDeposit(P, src.r.id, E.resKey(src.res), { token: P.seq, now, rng: () => 0.99 }); if (!g.ok) throw Error(id + ':' + g.reason); };
+  const need = (id, q) => { while (E.cnt(P, id) < q) gather(id); };
+  const craft = cid => { const c = D.crafts.find(x => x.id === cid); for (const k in c.inp) need(k, c.inp[k]); const r = E.runCraft(P, cid, P.seq); if (!r.ok) throw Error(cid + ':' + r.msg); ops++; };
+  const raise = (def, from) => { const sp = findSpot(P, def, from); const r = C.plan(P, W, def, sp.x, sp.z, 0, opts, P.seq); W.setStructures(C.colliders(P)); const tot = C.totalMat(C.DEF[def]);
+    for (const k in tot) if (!['thread'].includes(k)) need(k, tot[k]); const b = buildAll(P, r.id, now); ops += 3; return b.ok && P.cons.inst[r.id].phase === 'completed'; };
+  let okRun = false, msg = '';
+  try { need('flint', 1); need('cobble', 1); craft('c_knife'); need('vine', 6); craft('c_thread'); craft('c_thread');
+    const b1 = raise('workbench', base); craft('c_firedrill'); const b2 = raise('campfire', base); const b3 = raise('kiln', base);
+    okRun = b1 && b2 && b3 && E.hasTool(P, 'bench') && E.hasTool(P, 'campfire') && E.hasTool(P, 'kiln') && !P.inv.bench && !P.inv.campfire && !P.inv.kiln; msg = ops + ' 操作';
+  } catch (e) { msg = String(e); }
+  ok('通常プレイ（建てるルール）：採取した資材だけで、作業台・たき火・かまどを現地に建てて使えるようになる（' + msg + '）', okRun, msg);
+  ok('通常プレイ：完成した設備で文明の段階が進む（たき火で段階1）', E.stageOf(P) >= 1); }
+
+/* ---- 12 Muse との契約：書き出した一覧がデータと合っている（古いままになっていない） ---- */
+{ const fs = await import('node:fs'); const j = JSON.parse(fs.readFileSync(new URL('../docs/construction/construction-assets.json', import.meta.url), 'utf8'));
+  ok('docs/construction/construction-assets.json がデータと合っている（scripts/export-construction-contract.mjs で書き出し直す）', j.buildings.length === X.defs.length && X.defs.every(d => { const b = j.buildings.find(x => x.id === d.id); return b && b.modelId === d.model && JSON.stringify(b.stages.map(s => s.materials)) === JSON.stringify(d.stages.map(s => s.mat)) && b.modelSource; })); }
 console.log(`\n${n - fail}/${n} 合格`);
 process.exit(fail ? 1 : 0);

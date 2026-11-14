@@ -7,7 +7,7 @@
 ## コマンド
 - `npm install` … 依存を入れる
 - `npm run build` … `dist/index.html` を作る（描画モジュールのバンドル＋画像の埋め込み）
-- `npm test` … エンジンの自動テスト（`runTests`）・自然物・検証モード・アセットのつなぎ込みのテストとボットの全物質到達テスト。**変更後は必ず通すこと**
+- `npm test` … エンジンの自動テスト（`runTests`）・自然物・検証モード・アセットのつなぎ込み・街づくり（`tests/construction.test.mjs`）のテストとボットの全物質到達テスト。**変更後は必ず通すこと**
 - `npm run build` は `dist/index.html`（通常）と `dist/verify.html`（検証モードが最初から有効）を作る
 - `npm run e2e` … 偽の描画モジュールを使ったブラウザ結合テスト（`npx playwright install chromium` が必要）
 - `npm run typecheck` … `src/graphics` の型チェック
@@ -107,6 +107,16 @@
 - セーブ v5（`space`）。v4 からの移行あり。Claude 試作の形式（`space.know` など）は `SPACE.state` が読み込み時に移す。
 - 未完成の素材（男女の宇宙服 8 方向シート・追加品目のアイコン・テクスチャ原画）は `docs/space/MISSING-ASSETS.md`。今は仮表示。統合の記録は `docs/space/SPACE-INTEGRATION-2026-11-14.md`。
 
+## 街づくり・現地建設（2026-11-14〜。ロードマップ M4）
+- 正本：データ `src/game/construction-data.js`（`D.construction`：建物 24 種・道 3 種・工程・返却表・旧設備の対応）、判定 `src/game/construction.js`（`CONS`）、画面 `src/game/construction-ui.js`（ビルドで `ui.js` の `/*CONS_UI*/` へ）、仮表示 `src/construction-visual.ts`。契約は `docs/construction/CONSTRUCTION-CONTRACT.md`・`construction-assets.json`（`node scripts/export-construction-contract.mjs`）。引き継ぎは `docs/construction/HANDOFF-2026-11-14.md`。
+- 流れ：設計図を選ぶ → 場所と向き（15度・グリッド吸着）→ 予定地 → 資材を現地へ（2.6 マス以内・必要数まで・後の工程の分も先に可）→ 工程ごとに施工（操作＋ゲーム内の時間）→ 完成。決まった場所・持ち物からの完成品の設置はない。
+- 状態は `S.cons.inst`（`cs-N`。planned／supplying／constructing／completed、delivered・consumed・stage・work）。操作はすべて `S.seq` のトークンで一度だけ。画面の連打は 600ms の保険。
+- 設備が使えるのは**完成した建物**があるときだけ（`E.setFacilityHook(CONS.built)`・`E.hasFacility`）。複数建てても生産量は増えない。建設の決まり（`S.cons.rule==="build"`）は画面から始めた新しいゲームと v5 から移行したセーブ。エンジンだけの `newState` は従来の工作（既存のボット・宇宙のテストのため）。
+- セーブ v6（`cons`）。v5 の配置済み設備は以前の場所に資材なしの完成済み建物へ移し、持ち物から 1 つ減らす（二重に持たない）。撤去中・重なりは持ち物に残し、建築の画面から置ける。検証モードは従来の自由配置（`S.verify.placed`）のまま。
+- 道：2×2 の格子（`"i,j"`）、10 マスの区間、重なりは請求しない、種類の変更は差の工程だけ。歩ける・壁にならない。水・川・急な斜面・木や岩の上は不可。橋・トンネル・地形の変更はしない。
+- 取消・解体：使っていない資材は全部、施工済みの工程は返却表の分だけ戻す（表がなければ戻らない。勝手な割合を作らない）。木や岩を自動で消して置けるようにしない。
+- 発射サイトは宇宙計画のまま（この仕組みへ移さない）。工程別の見た目は Muse 待ちで仮表示。
+
 ## 建物の3Dモデルと道具・設備・操作のアイコン（Muse・2026-11-07〜）
 - 建物：Muse の `assets/buildings-3d`（原本の GLB 13種・`structures.json`）。`scripts/make-building-glb.py` でテクスチャだけを再圧縮した軽量版 `assets/build/buildings/*.glb` を作り（原本を変えたら再実行。既定は長辺512px＝第14ラウンドの色テクスチャの解像度のまま、不透明な画像は JPEG）、base64 で埋め込む。モデル内の接地影 `ContactShadow` はそのまま使う（地形と干渉したらこのノードだけ外す）。
 - 読み込みは `src/graphics-entry.ts` の `HD2D.ensureBuildingModel`：GLB を解析して雛形を持ち、`StructureRenderer.registerFactory` に「雛形の複製（ジオメトリ・材質も建物ごと）」を返すファクトリを登録する。読み終えるまでは従来の手続きモデル。読み終えたら UI がその種類の建物を置き直す。使う種類だけをその時に読む。可動部は Flame・Wheel が描画モジュールの既存アニメ、Piston・DrillPipe・Winch・Bellows は `HD2D.tickBuildingParts`（ゲームの描画ループから呼ぶ）。
@@ -115,7 +125,7 @@
 - アイコン：Muse の `assets/buildings-icons`（原本・62点。キーは「tools/ID」「facilities/ID」「ops/ID」。設備 filter と操作 filter は別物）。`scripts/make-tool-atlas.py` で 64px のアトラス `assets/build/tool-icons-64.*` を作って埋め込む。`ic(id)` は道具・設備なら新しいアイコンを優先、物質は物質アイコン。操作は `opIc(op)`。
 
 ## 建築モード・カメラ・セーブ v3（2026-11-07〜）
-- 建築モード（`ui.js` の建築セクション）：建築一覧 → 選ぶ → 候補（地面の枠 SVG：緑／赤と理由）→ 移動（マウス・タップ）・回転（15度・90度、R / Shift+R）・グリッド吸着（0.5マス）→「ここに置く」（Enter）／「やめる」（Esc）。
+- 建築モード（`ui.js` の建築セクション。2026-11-14 からは検証モードだけ。通常は上の「街づくり・現地建設」）：建築一覧 → 選ぶ → 候補（地面の枠 SVG：緑／赤と理由）→ 移動（マウス・タップ）・回転（15度・90度、R / Shift+R）・グリッド吸着（0.5マス）→「ここに置く」（Enter）／「やめる」（Esc）。
   判定と確定は `nature.js` の `checkPlacement`・`commitPlacement`（S.seq のトークンで一度だけ）・`removePlacement`。置く・動かす・撤去で素材は使わない・戻らない（設備は工作で作ったときに素材を使っている。撤去しても持ち物に残る）。
   建物の位置は `S.build[建物ID]`（`{x,z,rot}` か `{removed:true}`）を優先し、なければ `STRUCT_PLAN` の決まった場所。水車は `rule:"waterside"`（川の水ぎわだけ）。候補の 3D は `ghost:place`（当たり判定なし）。
 - カメラ（2026-11-08〜 ドラッグ操作。`ui.js` の「探索カメラ」セクション）：マップの何もない所の1本指／左ボタンのドラッグで回転（左右＝360°連続、上下＝見下ろし角）、2本指のピンチ・ホイールで距離。短いタップ／クリックは今までどおり移動・採取（`tapAt`）。HUD は小さな「視点を戻す」だけ。感度は設定画面。
