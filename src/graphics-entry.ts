@@ -1,6 +1,6 @@
 import {spaceModelDiagnostics} from './space-models';
 import { syncSpaceVisual, spaceModelStatus } from './space-visual';
-import { syncConstructionVisual, constructionVisualStatus } from './construction-visual';
+import { syncConstructionVisual as syncConstructionDisplay, constructionVisualStatus } from './construction-visual';
 // ゲーム側から描画モジュールを使うための入口（src/graphics 本体は改変しない）
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -62,6 +62,10 @@ function ensureBuildingModel(gfx: any, type: string, b64: string | undefined): P
   });
   loading.set(type, pr);
   return pr;
+}
+function syncConstructionVisual(gfx:any,data:any,height:any,assets:any,buildingAssets:any):void {
+  for(const site of data.sites)void ensureBuildingModel(gfx,site.model,buildingAssets?.[site.model]);
+  syncConstructionDisplay(gfx,data,height,assets,(model)=>templates.get(model));
 }
 /** 描画モジュールが動かさない可動部（ピストン・掘削軸・巻き上げドラム・ふいご）を動かす。車輪・炎はモジュールの既存のアニメーション */
 function tickBuildingParts(time: number): void {

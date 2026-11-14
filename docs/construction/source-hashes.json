@@ -1,0 +1,20 @@
+{
+  "source": "f62e075750044df2c25061de94d314b67765d3a0",
+  "gitBlobs": {
+    "assets/construction/README.md": "c7f18f4ec5812312ae124f771f9a43fb9e02ad1e",
+    "assets/construction/models/construction-site.glb": "4b73dafe59f47599eb6771338547956f8c0f7287",
+    "assets/construction/models/pile-crated.glb": "38c9f96ceaf8e8d2e1a052b7b23f6c01beb9c562",
+    "assets/construction/models/pile-lumber.glb": "0915fe996aff2f020870f8d7610347d2e7fdcc3b",
+    "assets/construction/models/pile-metal.glb": "c50a68969b538f0b1c81ffd146b5d82d7d60063a",
+    "assets/construction/models/pile-sacks.glb": "0a4484e672b98f8886757c477ac076289fdc3ae6",
+    "assets/construction/models/pile-stone.glb": "f52e0620efa146500c07a3471c13b2a90716c617",
+    "assets/construction/models/scaffold-kit.glb": "fcbc188489ff86e47124867ed646eba24a59f0e6",
+    "assets/construction/textures/road-dirt.png": "91769e002b33b4f28c2c8901eea427da8b281639",
+    "assets/construction/textures/road-dirt_n.png": "7e10b62e09532439ab9f88bdf9eacb6fde0483b9",
+    "assets/construction/textures/road-gravel.png": "4fc76beab13426b491ad118b3a8ab943aa44f589",
+    "assets/construction/textures/road-gravel_n.png": "037e2789aa8fcd8d26a2d3152eb6260e593b068b",
+    "assets/construction/textures/road-stone.png": "6743f6460ce0fc2ae44e32b5811b705aee991baa",
+    "assets/construction/textures/road-stone_n.png": "67068debb9a0ff6ec856c16dbb123ee98c69e8f8",
+    "assets/construction/tools/build_scaffold.py": "7e62de222e0c8dad6533c8b88dc2d378a3aad115"
+  }
+}

@@ -1,78 +1,103 @@
-/* 街づくり・現地建設の仮表示（2026-11-14）。完成した建物は既存の正式モデル（StructureRenderer）で出し、
-   ここでは「建設中の現場」と「道」だけを描く。Muse の工程別の正式な見た目（docs/construction/CONSTRUCTION-CONTRACT.md）が届いたら差し替える。
-   ・予定地：四隅の杭と縄、入口の小旗。搬入中：資材の山（運んだ割合で増える）。施工中：足場と、工程の進みに合わせて高くなる仮の壁。
-   ・道：2 マスの格子のマスを、地面の高さに合わせて少し浮かせた板（種類ごとに1つのメッシュにまとめる）。予定のマスは縁の線だけ。
-   描画モジュール（src/graphics）は変えない。シーンへ自分の群れを足すだけ。 */
+/* Muse city contract: completed stage lists, canonical shared kits, terrain-following roads.
+   Owns display only. No resource, collision, progress or save mutations. */
 import * as THREE from 'three';
-
-type Site = { id: string; x: number; z: number; rot: number; shape: 'rect' | 'circle'; w: number; d: number; r: number; phase: string; progress: number; supplied: number; tall: number; entrance?: [number, number] | null };
-type Cell = { i: number; j: number; kind: string };
-type Data = { sites: Site[]; roads: Cell[]; pending: (Cell & { phase: string })[]; cell: number; colors: Record<string, string> };
-type Entry = { root: THREE.Group; sites: Map<string, { g: THREE.Group; sig: string }>; roadSig: string; roads: THREE.Group };
-const entries = new WeakMap<object, Entry>();
-const mats: Record<string, THREE.Material> = {};
-const mat = (key: string, color: number | string, o: Partial<THREE.MeshStandardMaterialParameters> = {}) => mats[key] || (mats[key] = new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...o }));
-const BOX = new THREE.BoxGeometry(1, 1, 1);
-function box(parent: THREE.Object3D, m: THREE.Material, x: number, y: number, z: number, sx: number, sy: number, sz: number, ry = 0) {
-  const b = new THREE.Mesh(BOX, m); b.position.set(x, y + sy / 2, z); b.scale.set(sx, sy, sz); b.rotation.y = ry; b.castShadow = true; b.receiveShadow = true; parent.add(b); return b; }
-
-/* 形の外周の点（ローカル座標） */
-function outline(s: Site): [number, number][] {
-  if (s.shape === 'rect') { const hw = s.w / 2, hd = s.d / 2; return [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]]; }
-  return Array.from({ length: 8 }, (_, k) => [Math.cos(k / 8 * Math.PI * 2) * s.r, Math.sin(k / 8 * Math.PI * 2) * s.r] as [number, number]); }
-function buildSite(s: Site, h: (x: number, z: number) => number): THREE.Group {
-  const g = new THREE.Group(); g.name = 'ConstructionSite:' + s.id;
-  const co = Math.cos(s.rot), si = Math.sin(s.rot), w = (lx: number, lz: number) => ({ x: s.x + co * lx + si * lz, z: s.z - si * lx + co * lz });
-  const stake = mat('stake', 0x8a6a45), rope = mat('rope', 0xd8c27a), flag = mat('flag', 0xc38a2e), wood = mat('scaffold', 0xb08a5a), wall = mat('wall', 0xe8dfc8, { transparent: true, opacity: 0.75 });
-  const pts = outline(s);
-  pts.forEach(([lx, lz], k) => { const p = w(lx, lz), q = w(...pts[(k + 1) % pts.length]), y0 = h(p.x, p.z), y1 = h(q.x, q.z);
-    box(g, stake, p.x, y0 - 0.05, p.z, 0.12, 0.75, 0.12);
-    const len = Math.hypot(q.x - p.x, q.z - p.z), ang = Math.atan2(q.x - p.x, q.z - p.z);
-    const r = box(g, rope, (p.x + q.x) / 2, (y0 + y1) / 2 + 0.5, (p.z + q.z) / 2, 0.04, 0.04, len, ang); r.castShadow = false; });
-  if (s.entrance) { const e = w(s.entrance[0], s.entrance[1]), y = h(e.x, e.z); box(g, stake, e.x, y, e.z, 0.06, 1.1, 0.06); box(g, flag, e.x + 0.18, y + 0.8, e.z, 0.32, 0.2, 0.03); }
-  /* 資材の山（運んだ割合で 1〜6 個） */
-  const piles = s.phase === 'completed' ? 0 : Math.round(Math.min(1, s.supplied) * 6);
-  for (let k = 0; k < piles; k++) { const lx = (s.shape === 'rect' ? s.w / 2 : s.r) + 0.6, lz = -0.9 + k * 0.38, p = w(lx, lz); box(g, mat('pile' + (k % 3), [0x7a5636, 0x9aa1a8, 0xb24a32][k % 3]), p.x, h(p.x, p.z), p.z, 0.45, 0.28 + (k % 2) * 0.12, 0.32); }
-  /* 施工中：足場の柱と、進みに合わせて高くなる仮の壁 */
-  if (s.phase === 'constructing') {
-    const H = Math.max(0.25, s.progress * s.tall), y = h(s.x, s.z);
-    pts.forEach(([lx, lz]) => { const p = w(lx * 1.04, lz * 1.04); box(g, wood, p.x, h(p.x, p.z), p.z, 0.1, H + 0.6, 0.1); });
-    const body = new THREE.Group(); body.position.set(s.x, y, s.z); body.rotation.y = s.rot; g.add(body);
-    if (s.shape === 'rect') box(body, wall, 0, 0, 0, s.w * 0.92, H, s.d * 0.92); else { const c = new THREE.Mesh(new THREE.CylinderGeometry(s.r * 0.9, s.r * 0.9, H, 12), wall); c.position.y = H / 2; c.castShadow = true; body.add(c); }
-  }
-  return g; }
-
-/* 道：種類ごとに、マスを地面に沿わせた板を1つのメッシュへまとめる。予定のマスは縁の線 */
-function buildRoads(d: Data, h: (x: number, z: number) => number): THREE.Group {
-  const g = new THREE.Group(); g.name = 'ConstructionRoads';
-  const byKind: Record<string, Cell[]> = {}; d.roads.forEach(c => (byKind[c.kind] = byKind[c.kind] || []).push(c));
-  const N = 4, half = d.cell / 2;
-  for (const [kind, cells] of Object.entries(byKind)) {
-    const pos: number[] = [], idx: number[] = [];
-    cells.forEach(c => { const cx = c.i * d.cell, cz = c.j * d.cell, base = pos.length / 3;
-      for (let a = 0; a <= N; a++) for (let b = 0; b <= N; b++) { const x = cx - half + d.cell * a / N, z = cz - half + d.cell * b / N; pos.push(x, h(x, z) + 0.05, z); }
-      for (let a = 0; a < N; a++) for (let b = 0; b < N; b++) { const p = base + a * (N + 1) + b; idx.push(p, p + 1, p + N + 1, p + 1, p + N + 2, p + N + 1); } });
-    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
-    const m = new THREE.MeshStandardMaterial({ color: d.colors[kind] || '#8a6a45', roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-    const mesh = new THREE.Mesh(geo, m); mesh.receiveShadow = true; mesh.name = 'Road:' + kind; g.add(mesh); }
-  const line = mat('roadplan', 0xc38a2e);
-  d.pending.forEach(c => { const cx = c.i * d.cell, cz = c.j * d.cell;
-    for (const [dx, dz, rot] of [[0, -half, Math.PI / 2], [0, half, Math.PI / 2], [-half, 0, 0], [half, 0, 0]] as [number, number, number][]) { const x = cx + dx, z = cz + dz; const b = box(g, line, x, h(x, z) + 0.04, z, 0.06, 0.04, d.cell * 0.8, rot); b.castShadow = false; } });
-  return g; }
-
-export function syncConstructionVisual(gfx: any, d: Data, heightAt: (x: number, z: number) => number): void {
-  const scene: THREE.Scene | undefined = gfx && typeof gfx.getScene === 'function' ? gfx.getScene() : undefined; if (!scene) return;
-  let e = entries.get(gfx);
-  if (!e) { const root = new THREE.Group(); root.name = 'ConstructionVisual'; scene.add(root); e = { root, sites: new Map(), roadSig: '', roads: new THREE.Group() }; root.add(e.roads); entries.set(gfx, e); }
-  const seen = new Set<string>();
-  for (const s of d.sites) { seen.add(s.id); const sig = [s.x, s.z, s.rot, s.phase, Math.round(s.progress * 20), Math.round(Math.min(1, s.supplied) * 6)].join('|');
-    const cur = e.sites.get(s.id); if (cur && cur.sig === sig) continue;
-    if (cur) { e.root.remove(cur.g); dispose(cur.g); }
-    const g = buildSite(s, heightAt); e.root.add(g); e.sites.set(s.id, { g, sig }); }
-  for (const [id, cur] of e.sites) if (!seen.has(id)) { e.root.remove(cur.g); dispose(cur.g); e.sites.delete(id); }
-  const rsig = d.roads.map(c => c.i + ',' + c.j + c.kind).join(';') + '|' + d.pending.map(c => c.i + ',' + c.j).join(';');
-  if (rsig !== e.roadSig) { e.roadSig = rsig; e.root.remove(e.roads); dispose(e.roads, true); e.roads = buildRoads(d, heightAt); e.root.add(e.roads); }
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+export type Site = { id: string; def: string; model: string; stage: number; stages: number; x:number;z:number;rot:number;shape:string;w:number;d:number;r:number;phase:string;progress:number;supplied:number;tall:number;entrance?:[number,number]|null;pileKinds?:string[] };
+type Cell = {i:number;j:number;kind:string};
+type Data = {sites:Site[];roads:Cell[];pending:Cell[];cell:number;colors:Record<string,string>};
+type Assets = {contract:any;models:Record<string,string>;textures:Record<string,string>};
+type Entry = {root:THREE.Group;sites:Map<string,{g:THREE.Group;sig:string}>;roads:THREE.Group;roadSig:string};
+const entries = new WeakMap<object,Entry>(), kits = new Map<string,THREE.Object3D>(), failed = new Map<string,string>();
+let assets:Assets|undefined, loading:Promise<void>|undefined, revision=0;
+const textures = new Map<string,THREE.Texture>();
+export const normalizedNodeName=(n:string)=>THREE.PropertyBinding.sanitizeNodeName(n);
+export function applyConstructionStage(root:THREE.Object3D,names:string[]):void {
+ const allowed=new Set(names.map(normalizedNodeName));
+ // Keep transform ancestors of allowed nodes, but do not reveal their unwanted mesh children.
+ const needed=new Set<THREE.Object3D>();root.traverse(o=>{if(allowed.has(normalizedNodeName(o.name)))for(let p:THREE.Object3D|null=o;p;p=p.parent)needed.add(p);});
+ root.traverse(o=>{o.visible=needed.has(o)&&!o.name.startsWith('Scaffold_');});root.visible=true;
 }
-/* 共有の箱と材質は捨てない。道の形と材質（毎回作る）だけ捨てる */
-function dispose(g: THREE.Object3D, _own = false) { const shared = new Set(Object.values(mats)); g.traverse(o => { const m = o as THREE.Mesh; if (!m.isMesh) return; if (m.geometry !== BOX) m.geometry.dispose(); const mm = m.material as THREE.Material; if (!shared.has(mm)) mm.dispose(); }); }
-export const constructionVisualStatus = () => ({ placeholder: true });
+export function loadConstructionAssets(a:Assets):Promise<void>{
+ if(loading)return loading;assets=a;
+ loading=Promise.all(Object.entries(a.models).map(async([id,b64])=>{
+  try {const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));const gltf=await new GLTFLoader().parseAsync(bytes.buffer,'');gltf.scene.traverse(o=>{const m=o as THREE.Mesh;if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});kits.set(id,gltf.scene);}
+  catch(err){failed.set(id,String(err));console.warn('Construction asset failed',id,err);}
+ })).then(()=>{revision++;});return loading;
+}
+function roadTexture(path:string,normal=false):THREE.Texture|undefined {
+ if(!assets?.textures[path])return undefined;
+ if(!textures.has(path)){const t=new THREE.TextureLoader().load(assets.textures[path],()=>revision++,undefined,e=>{failed.set(path,String(e));});t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=normal?THREE.NoColorSpace:THREE.SRGBColorSpace;t.anisotropy=4;textures.set(path,t);}return textures.get(path);
+}
+function part(id:string,name?:string):THREE.Group|null {
+ const root=kits.get(id),src=name?root?.getObjectByName(normalizedNodeName(name)):root;if(!src)return null;
+ const g=new THREE.Group(),copy=src.clone(true);g.add(copy);return g;
+}
+function outline(s:Site,margin:number):[number,number][]{
+ if(s.shape==='rect'){const x=s.w/2+margin,z=s.d/2+margin;return [[-x,-z],[x,-z],[x,z],[-x,z]];}
+ return Array.from({length:8},(_,i)=>[Math.cos(i*Math.PI/4)*(s.r+margin),Math.sin(i*Math.PI/4)*(s.r+margin)]);
+}
+function buildSite(s:Site,h:(x:number,z:number)=>number,template:THREE.Object3D|undefined):THREE.Group {
+ const g=new THREE.Group();g.name='ConstructionSite:'+s.id;g.position.set(s.x,h(s.x,s.z),s.z);g.rotation.y=s.rot;
+ const y=(x:number,z:number)=>h(s.x+Math.cos(s.rot)*x+Math.sin(s.rot)*z,s.z-Math.sin(s.rot)*x+Math.cos(s.rot)*z)-g.position.y;
+ const add=(id:string,name:string|undefined,x:number,yy:number,z:number)=>{const p=part(id,name);if(p){p.position.set(x,yy,z);g.add(p);}return p;};
+ const pts=outline(s,0.5);
+ pts.forEach(([x,z],i)=>{const next=pts[(i+1)%pts.length],len=Math.hypot(next[0]-x,next[1]-z),angle=-Math.atan2(next[1]-z,next[0]-x);
+  const stake=add('construction-site','stakePP',x,y(x,z),z);if(stake){const n=stake.children[0];n.position.x=0;n.position.z=0;}
+  for(const name of ['ropeX_P','outlineX_P']){const p=add('construction-site',name,(x+next[0])/2,(y(x,z)+y(...next))/2,(z+next[1])/2);if(p){p.children[0].position.x=0;p.children[0].position.z=0;p.scale.x=len;p.rotation.y=angle;}}
+ });
+ const def=assets?.contract.buildings.find((b:any)=>b.id===s.def);
+ if(template&&s.stage>0){const body=template.clone(true);applyConstructionStage(body,def?.museFields.stageNodes[String(s.stage-1)]||[]);body.name='CompletedConstructionStages';g.add(body);}
+ const count=Math.round(Math.min(1,s.supplied)*6),pk=s.pileKinds?.length?s.pileKinds:['crated'];
+ for(let k=0;k<count;k++){const x=(s.shape==='rect'?s.w/2:s.r)+0.6,z=-0.9+k*0.38;add('pile-'+pk[k%pk.length],undefined,x,y(x,z),z);}
+ if(s.phase==='constructing'){
+  const H=(s.stage+1)/s.stages*(s.tall+0.6),perimeter=outline(s,0.45),posts:[number,number][]=[];
+  perimeter.forEach((p,i)=>{const q=perimeter[(i+1)%perimeter.length],n=Math.ceil(Math.hypot(q[0]-p[0],q[1]-p[1])/2.2);for(let k=0;k<n;k++)posts.push([p[0]+(q[0]-p[0])*k/n,p[1]+(q[1]-p[1])*k/n]);});
+  const beam=(name:string,a:THREE.Vector3,b:THREE.Vector3)=>{const p=part('scaffold-kit',name);if(!p)return;const d=b.clone().sub(a);p.position.copy(a).add(b).multiplyScalar(.5);p.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),d.clone().normalize());p.scale.x=d.length();g.add(p);};
+  posts.forEach(([x,z],i)=>{const p=add('scaffold-kit','Scaffold_Post',x,y(x,z),z);if(p)p.scale.y=H/3;
+   const q=posts[(i+1)%posts.length],yb=y(...q);let levels:number[]=[];for(let yy=2.2;yy<H;yy+=2.2)levels.push(yy);levels.push(H);
+   levels.forEach(yy=>beam('Scaffold_Beam',new THREE.Vector3(x,y(x,z)+yy,z),new THREE.Vector3(q[0],yb+yy,q[1])));
+   if(i%2===0)beam('Scaffold_Brace',new THREE.Vector3(x,y(x,z)+.1,z),new THREE.Vector3(q[0],yb+H,q[1]));
+   // Entrance-facing edge (+Z) and right edge get boards; circular sites use these same hemispheres.
+   if((z>0&&q[1]>0)||(x>0&&q[0]>0))beam('Scaffold_Plank',new THREE.Vector3(x,y(x,z)+H,z),new THREE.Vector3(q[0],yb+H,q[1]));
+  });
+  const corner=posts.reduce((a,b)=>b[1]>a[1]?b:a,posts[0]);const ladder=add('scaffold-kit','Scaffold_Ladder',corner[0],y(...corner),corner[1]+.2);if(ladder)ladder.scale.y=H/3;
+ }
+ return g;
+}
+export function buildRoads(d:Data,h:(x:number,z:number)=>number,groundColor?:(x:number,z:number)=>THREE.Color):THREE.Group {
+ const g=new THREE.Group();g.name='ConstructionRoads';const byKind:Record<string,Cell[]>={},occupied=new Set(d.roads.map(c=>c.i+','+c.j));d.roads.forEach(c=>(byKind[c.kind]??=[]).push(c));
+ const half=d.cell/2;
+ // Preserve 4 terrain subdivisions, adding the contract's 0.18m outer blending band.
+ const steps=[0,.18/d.cell,.25,.5,.75,1-.18/d.cell,1];
+ for(const[kind,cells]of Object.entries(byKind)){
+  const pos:number[]=[],uv:number[]=[],colors:number[]=[],idx:number[]=[];
+  cells.forEach(c=>{const base=pos.length/3,cx=c.i*d.cell,cz=c.j*d.cell;
+   steps.forEach(u=>steps.forEach(v=>{const x=cx-half+d.cell*u,z=cz-half+d.cell*v;pos.push(x,h(x,z)+.05,z);uv.push(u,v);
+    const exposed=(u===0&&!occupied.has((c.i-1)+','+c.j))||(u===1&&!occupied.has((c.i+1)+','+c.j))||(v===0&&!occupied.has(c.i+','+(c.j-1)))||(v===1&&!occupied.has(c.i+','+(c.j+1)));
+    const tint=exposed?(groundColor?.(x,z)||new THREE.Color('#7c6a42')).multiplyScalar(.88):new THREE.Color(1,1,1);colors.push(tint.r,tint.g,tint.b);
+   }));
+   for(let a=0;a<steps.length-1;a++)for(let b=0;b<steps.length-1;b++){const p=base+a*steps.length+b;idx.push(p,p+1,p+steps.length,p+1,p+steps.length+1,p+steps.length);}
+  });
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.setIndex(idx);geo.computeVertexNormals();
+  const def=assets?.contract.roads.find((r:any)=>r.id===kind),path=def?.museFields.tileTexture;
+  const map=typeof path==='string'?roadTexture(path):undefined;
+  const normal=typeof path==='string'?roadTexture(path.replace('.png','_n.png'),true):undefined;
+  const m=new THREE.MeshStandardMaterial({map:map||null,normalMap:normal||null,normalScale:new THREE.Vector2(.5,.5),color:map?0xffffff:d.colors[kind]||'#8a6a45',roughness:1,vertexColors:true,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+  const mesh=new THREE.Mesh(geo,m);mesh.name='Road:'+kind;mesh.receiveShadow=true;g.add(mesh);
+ }
+ // Planning outline remains a UI guide, not a substitute for a delivered model.
+ if(d.pending.length){const p:number[]=[];d.pending.forEach(c=>{const x=c.i*d.cell,z=c.j*d.cell;const v=[[-half,-half],[half,-half],[half,half],[-half,half]];v.forEach((a,i)=>{for(const b of[a,v[(i+1)%4]])p.push(x+b[0],h(x+b[0],z+b[1])+.065,z+b[1]);});});const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.add(new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0xc38a2e})));}
+ return g;
+}
+export function syncConstructionVisual(gfx:any,d:Data,h:(x:number,z:number)=>number,a?:Assets,getTemplate?:(model:string)=>THREE.Object3D|undefined):void {
+ const scene:THREE.Scene|undefined=gfx?.getScene?.();if(!scene)return;if(a)void loadConstructionAssets(a);
+ let e=entries.get(gfx);if(!e){const root=new THREE.Group();root.name='ConstructionVisual';scene.add(root);e={root,sites:new Map(),roads:new THREE.Group(),roadSig:''};root.add(e.roads);entries.set(gfx,e);}
+ const seen=new Set<string>();for(const s of d.sites){seen.add(s.id);const template=getTemplate?.(s.model);const sig=JSON.stringify([s.id,s.def,s.x,s.z,s.rot,s.phase,s.stage,Math.round(s.supplied*6),s.pileKinds,revision,!!template]);const cur=e.sites.get(s.id);if(cur?.sig===sig)continue;if(cur){e.root.remove(cur.g);}const g=buildSite(s,h,template);e.root.add(g);e.sites.set(s.id,{g,sig});}
+ for(const[id,cur]of e.sites)if(!seen.has(id)){e.root.remove(cur.g);e.sites.delete(id);}
+ const sig=JSON.stringify([d.roads,d.pending,revision]);if(sig!==e.roadSig){e.roadSig=sig;e.root.remove(e.roads);e.roads.traverse(o=>{const m=o as THREE.Mesh;if(m.geometry)m.geometry.dispose();if(m.material)(Array.isArray(m.material)?m.material:[m.material]).forEach(x=>x.dispose());});const terrain:THREE.Object3D[]=[];scene.traverse(o=>{if(o.name.startsWith('TerrainChunk ')||o.name==='OuterGround')terrain.push(o);});
+ const ray=new THREE.Raycaster(),cache=new Map<string,THREE.Color>();
+ const groundColor=(x:number,z:number)=>{const key=x+','+z;if(cache.has(key))return cache.get(key)!.clone();ray.set(new THREE.Vector3(x,h(x,z)+100,z),new THREE.Vector3(0,-1,0));const hit=ray.intersectObjects(terrain,false)[0];let color=new THREE.Color('#7c6a42');
+ if(hit?.face){const mesh=hit.object as THREE.Mesh,pa=mesh.geometry.getAttribute('position'),ca=mesh.geometry.getAttribute('color');if(ca){const f=hit.face,a=new THREE.Vector3().fromBufferAttribute(pa,f.a),b=new THREE.Vector3().fromBufferAttribute(pa,f.b),c=new THREE.Vector3().fromBufferAttribute(pa,f.c),weight=new THREE.Vector3();new THREE.Triangle(a,b,c).getBarycoord(mesh.worldToLocal(hit.point.clone()),weight);color.setRGB(ca.getX(f.a)*weight.x+ca.getX(f.b)*weight.y+ca.getX(f.c)*weight.z,ca.getY(f.a)*weight.x+ca.getY(f.b)*weight.y+ca.getY(f.c)*weight.z,ca.getZ(f.a)*weight.x+ca.getZ(f.b)*weight.y+ca.getZ(f.c)*weight.z);}}cache.set(key,color.clone());return color;};
+ e.roads=buildRoads(d,h,groundColor);e.root.add(e.roads);}
+}
+export const constructionVisualStatus=()=>({placeholder:!assets||kits.size!==Object.keys(assets.models).length,loaded:[...kits.keys()],failed:Object.fromEntries(failed)});

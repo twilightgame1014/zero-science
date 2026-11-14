@@ -1,6 +1,6 @@
 /* ===================== 街づくり・現地建設の画面（ui.js のクロージャの中へビルドで差しこむ。判定は construction.js＝CONS） =====================
    建築の画面（設計図・道・現場・建物・街）、置き場所を決めるモード（建物は既存の W3.place を使い、道は始点と終点）、
-   現場の画面（搬入・施工・取消・解体・移す）、近くの現場への近道、3D（完成＝正式モデル、建設中と道＝仮表示）。 */
+   現場の画面（搬入・施工・取消・解体・移す）、近くの現場への近道、3D（完成・工程・道＝Muse正式素材）。 */
 var CX = D.construction;
 U.cons = {cat:"workshop", open:null};
 const CAT_NAME = {workshop:"工房", storage:"倉庫", housing:"住宅", public:"公共", factory:"工場・大型", deco:"飾り", road:"道"};
@@ -131,7 +131,7 @@ function consRenderSheet(){
   sh.scrollTop = keep;
 }
 
-/* ---------- 3D：完成した建物は正式モデル、建設中と道は仮表示。当たり判定 ---------- */
+/* ---------- 3D：完成した建物は正式モデル、建設中と道もMuse正式素材。当たり判定 ---------- */
 function consSync(){
   if(!W3.gfx || !W3.structs) return;
   const want = new Map(); CONS.list(S).forEach(v=>{ if(v.kind!=="road" && v.phase==="completed") want.set("cs:"+v.id, v); });
@@ -146,10 +146,12 @@ function consVisual(){
   CONS.list(S).forEach(v=>{ if(v.kind==="road"){ v.cells.forEach(q=>pending.push({i:q.i, j:q.j, kind:v.road, phase:v.phase})); return; } if(v.phase==="completed") return;
     const d = CONS.DEF[v.def], f = d.footprint, st = d.stages, need = CONS.totalMat(d), tot = Object.values(need).reduce((a,b)=>a+b,0)||1, got = Object.keys(need).reduce((a,k)=>a+Math.min(need[k], v.delivered[k]||0),0);
     const part = v.work ? Math.min(1, Math.max(0, 1-(v.work.until-now)/Math.max(1, v.work.until-(v.work.started||now)))) : 0;
-    sites.push({id:v.id, x:v.x, z:v.z, rot:v.rot, shape:f.shape==="rect"?"rect":"circle", w:f.w||0, d:f.d||0, r:f.r||0, phase:v.phase, progress:(v.stage+part)/st.length, supplied:got/tot,
-      tall: d.cat==="factory"||d.cat==="housing"||d.cat==="storage" ? 3 : 1.2, entrance:d.entrance||d.operate||null}); });
+    const assetDef = ASSETS.construction && ASSETS.construction.contract.buildings.find(b=>b.id===d.id);
+    const pileKinds=Object.keys(need).filter(k=>(v.delivered[k]||0)<need[k]).map(k=>/wood|twig|plank|timber/.test(k)?"lumber":/stone|cobble|brick|granite/.test(k)?"stone":/iron|steel|copper|metal|wire/.test(k)?"metal":/sand|clay|lime|cement|coal/.test(k)?"sacks":"crated");
+    sites.push({id:v.id, def:d.id, model:d.model, stage:v.stage, stages:st.length, pileKinds:[...new Set(pileKinds)], x:v.x, z:v.z, rot:v.rot, shape:f.shape==="rect"?"rect":"circle", w:f.w||0, d:f.d||0, r:f.r||0, phase:v.phase, progress:(v.stage+part)/st.length, supplied:got/tot,
+      tall: assetDef?.size?.h || (d.cat==="factory"||d.cat==="housing"||d.cat==="storage" ? 3 : 1.2), entrance:d.entrance||d.operate||null}); });
   const roads = Object.entries(c.roads).map(([k,kind])=>{ const [i,j] = k.split(",").map(Number); return {i, j, kind}; });
-  H.syncConstructionVisual(W3.gfx, {sites, roads, pending, cell:CX.CELL, colors:Object.fromEntries(Object.values(CX.roads).map(r=>[r.id, r.color]))}, (x,z)=>groundY(x,z));
+  H.syncConstructionVisual(W3.gfx, {sites, roads, pending, cell:CX.CELL, colors:Object.fromEntries(Object.values(CX.roads).map(r=>[r.id, r.color]))}, (x,z)=>groundY(x,z), ASSETS.construction, Object.assign({},ASSETS.buildings,ASSETS.town));
 }
 /* 施工の時間：終わったら、そばにいれば仕上げる。現場が近いときは右上に近道 */
 let consTickN = 0;
