@@ -120,6 +120,13 @@ export type EffectType =
   | 'leaves'
   | 'smoke'
   | 'levelup'
+  /** Round 30 (space): rocket exhaust plume segment (~1.1 s).
+   *  Play at the exhaust point; re-play every ~0.25 s at the
+   *  current position while the rocket climbs. */
+  | 'exhaust'
+  /** Round 30 (space): launch-pad smoke (~3.4 s), played at
+   *  the pad's Anchor_smoke_l / Anchor_smoke_r at ignition. */
+  | 'padSmoke'
   | (string & {});
 
 export type QualityTier = 'high' | 'low';
@@ -365,6 +372,18 @@ export interface GraphicsConfig {
       points: ReadonlyArray<readonly number[] | { x: number; z: number }>;
       width: number;
     }>;
+    /**
+     * Host-declared terrain field in chunk indices (Claude §24.2,
+     * round 29). The terrain streamer builds chunks only inside
+     * [min, max] on both axes; chunk size is 60, so the default
+     * { min: -3, max: 2 } is the historical ±180 field. The
+     * open-water plane and the backdrop ring size themselves from
+     * the declared field at engine build, so a wider host world
+     * needs no private module calls; the streaming bounds can
+     * also be changed at runtime via setTerrainField (the water
+     * plane and backdrop keep their build-time size).
+     */
+    chunkRange?: { min: number; max: number };
   };
   coordinates: {
     /** scene = (logic - origin) * scale. Adjust at integration time so

@@ -529,6 +529,17 @@ export class CharacterRenderer {
     this.player.setSpriteTexture(source);
   }
 
+  /**
+   * Show or hide ONLY the player (sprite, shadow and occlusion
+   * ghost). NPCs are unaffected. Round 30 (space integration):
+   * while the player is inside the capsule from boarding until
+   * return, the game hides the player through this API instead
+   * of reaching into the renderer's groups.
+   */
+  setPlayerVisible(visible: boolean): void {
+    this.player.group.visible = visible;
+  }
+
   setState(state: PlayerVisualState): void {
     this.player.setState(state);
   }

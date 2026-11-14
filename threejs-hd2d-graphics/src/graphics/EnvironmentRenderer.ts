@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
 import { AssetManager } from './AssetManager';
+import { terrainFieldSpan } from './TerrainRenderer';
 import { createWaterfallKit, type WaterfallKit } from './WaterfallKit';
 import {
   distanceToPath,
@@ -873,10 +874,14 @@ export class EnvironmentRenderer {
         const y = this.groundY(s.x, s.z) - 0.02;
         this.setInstance(mesh, i, s.x, y, s.z, ry, sc, sy, sc);
         this.coverSpots.push({ mesh, index: i, x: s.x, y, z: s.z, ry, sx: sc, sy, sz: sc });
-        // Slightly luminous yellow-green so tufts separate from the
-        // (already grassy) GPT ground tile instead of dissolving in.
-        const b = 0.88 + this.rng() * 0.22;
-        mesh.setColorAt(i, tmp.setRGB(b * 0.88, b * 1.06, b * 0.8));
+        // Deep, slightly cool green (round 29, CLAUDE.md
+        // unresolved 8): scenery tufts must NOT read as the game's
+        // gatherable grass clumps, which are taller and brighter
+        // yellow-green. The tufts still separate from the GPT
+        // ground tile by value, but the hue/brightness gap to the
+        // harvestable clumps is now the primary distinction.
+        const b = 0.8 + this.rng() * 0.2;
+        mesh.setColorAt(i, tmp.setRGB(b * 0.66, b * 0.94, b * 0.55));
       });
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       mesh.receiveShadow = true;
@@ -1369,13 +1374,20 @@ export class EnvironmentRenderer {
     // moved out and the guarantee is now dist − rad ≥ 262, again
     // structural — placement rng draws differ between hosts, so no
     // layout luck is involved on either side.
+    // Round 29 (Claude §24.2): the clearance derives from the
+    // declared terrain field (config.world.chunkRange), with the
+    // historical 262 m as the floor, and the ring is centred on
+    // the field centre — a wider declared field pushes the ring
+    // out instead of letting it intrude.
+    const span = terrainFieldSpan(this.cfg.world.chunkRange);
+    const clearance = Math.max(262, span.halfSpan * Math.SQRT2 + 8);
     for (let i = 0; i < 13; i++) {
       const ang = (i / 13) * Math.PI * 2 + this.rng() * 0.25;
-      const dist = 300 + this.rng() * 40;
+      const dist = clearance + 38 + this.rng() * 40;
       const hgt = 90 + this.rng() * 50;
-      const rad = Math.min(36 + this.rng() * 24, dist - 262);
-      const x = Math.cos(ang) * dist;
-      const z = Math.sin(ang) * dist;
+      const rad = Math.min(36 + this.rng() * 24, dist - clearance);
+      const x = span.centre + Math.cos(ang) * dist;
+      const z = span.centre + Math.sin(ang) * dist;
       const col = rockA.clone().lerp(rockB, this.rng());
       const peak = new THREE.Mesh(
         new THREE.ConeGeometry(rad, hgt, 6),
