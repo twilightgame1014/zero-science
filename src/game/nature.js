@@ -297,7 +297,7 @@ var NATURE = (function(){
        建てた建物の占有形状（Muse の structures.json の footprint。円 {r} か矩形 {w,d}。屋根・煙突・炎は含まない）を
        UI から setStructures で受け取る。矩形は建物の向き rot（three.js の rotation.y）で回す。
        建物の下に入った自然物は、建物がある間は「覆われた」扱い（見えない・壁にならない・採れない）。 */
-    let structs = [], structSig = "";
+    let structs = [], solidStructs = [], structSig = "";
     /* 形の外側までの距離（中なら負） */
     function sdist(o, x, z){
       if(o.shape==="rect"){ const dx=x-o.x, dz=z-o.z, c=Math.cos(o.rot||0), s_=Math.sin(o.rot||0);
@@ -319,9 +319,11 @@ var NATURE = (function(){
     let npcCols = [];
     function setNpcs(list){ npcCols = (list||[]).map(n=>({id:"npc:"+n.id, kind:"npc", x:n.x, z:n.z, r:n.r||PLAYER_R, shape:"circle", block:true, static:true, npc:true})); }
     function setStructures(list){
-      structs = (list||[]).filter(t=>t && t.footprint).map(t=>{ const f=t.footprint;
+      structs = (list||[]).filter(t=>t && t.footprint).map(t=>{ const f=t.footprint;   // t.walk：歩ける（予定地・広場）
         return {id:"struct:"+t.id, kind:"structure", type:t.type, x:t.x, z:t.z, rot:t.rot||0, shape:f.shape==="rect"?"rect":"circle",
-                w:f.w, d:f.d, r: f.shape==="rect" ? Math.hypot(f.w,f.d)/2 : f.r, block:true, static:true, struct:true}; });
+                w:f.w, d:f.d, r: f.shape==="rect" ? Math.hypot(f.w,f.d)/2 : f.r, block:!t.walk, walk:!!t.walk, static:true, struct:true}; });
+      /* walk：建設予定地・広場など、ほかの建物を置けないが歩いて通れる場所（2026-11-14 街づくり）。歩行・押し出し・経路・自然物を隠す処理には入れない */
+      solidStructs = structs.filter(o=>!o.walk);
       structSig = structs.map(o=>o.id+"@"+o.x.toFixed(2)+","+o.z.toFixed(2)+","+o.rot.toFixed(2)).join("|");
       gridCache = null;
     }
@@ -331,16 +333,19 @@ var NATURE = (function(){
     const toWorld = (o, lx, lz)=>{ const c=Math.cos(o.rot||0), s_=Math.sin(o.rot||0); return {x:o.x + c*lx + s_*lz, z:o.z - s_*lx + c*lz}; };
     function shapeOf(p){ const f=p.footprint||{shape:"circle", r:1};
       return {x:p.x, z:p.z, rot:p.rot||0, shape:f.shape==="rect"?"rect":"circle", w:f.w, d:f.d, r: f.shape==="rect" ? Math.hypot(f.w,f.d)/2 : f.r}; }
-    function samples(o){ if(o.shape==="rect"){ const hw=o.w/2, hd=o.d/2, pts=[];
+    /* dense：占有範囲の中を 1 マスより細かく調べる（街づくりの建物。大きな建物は四隅だけでなく中の高低差も見る） */
+    function samples(o, dense){ if(o.shape==="rect"){ const hw=o.w/2, hd=o.d/2, pts=[];
+        if(dense){ const nx=Math.max(4,Math.ceil(o.w/0.9)), nz=Math.max(4,Math.ceil(o.d/0.9)); for(let i=0;i<=nx;i++) for(let j=0;j<=nz;j++) pts.push(toWorld(o, -hw+o.w*i/nx, -hd+o.d*j/nz)); return pts; }
         for(const i of [-1,-0.5,0,0.5,1]) for(const j of [-1,-0.5,0,0.5,1]) pts.push(toWorld(o, i*hw, j*hd)); return pts; }
       const pts=[{x:o.x, z:o.z}]; for(let k=0;k<12;k++){ const a=k/12*Math.PI*2; pts.push({x:o.x+Math.cos(a)*o.r, z:o.z+Math.sin(a)*o.r}); pts.push({x:o.x+Math.cos(a)*o.r*0.5, z:o.z+Math.sin(a)*o.r*0.5}); } return pts; }
     function checkPlacement(S, p, opts, now){
       opts=opts||{}; now=now||Date.now();
-      const t = shapeOf(p), pts = samples(t), why = new Set(), ignore = "struct:"+p.id;
+      const t = shapeOf(p), pts = samples(t, !!p.dense), why = new Set(), ignore = "struct:"+p.id;
       if(pts.some(q=>!inWorld(q.x,q.z,1.2))) why.add("世界の端に近すぎる");
       const hs = pts.map(q=>H(q.x,q.z)), hmin=Math.min(...hs), hmax=Math.max(...hs);
       const diag = t.shape==="rect" ? Math.hypot(t.w,t.d) : t.r*2;          // 大きい建物ほど端と端の高さの差は大きくてよい（なだらかなら置ける）
       if(hmax-hmin > Math.max(0.8, 0.3*diag) || pts.some(q=>slope(q.x,q.z) > (Number.isFinite(p.maxSlope)?p.maxSlope:0.6))) why.add("地面が傾きすぎている（平らな所へ）");
+      else if(Number.isFinite(p.maxRise) && hmax-hmin > p.maxRise) why.add("占有範囲の中の高低差が大きい（"+(hmax-hmin).toFixed(1)+"。"+p.maxRise+" まで。土地はならさないので、平らな所へ）");
       const dr = pts.map(q=>T.distanceToRiver(q.x,q.z));
       if(WIDE){ const ws = pts.map(q=>T.waterAt(q.x,q.z,H(q.x,q.z)).kind);
         if(ws.includes("lava")) why.add("溶岩の上・すぐそばには置けない");
@@ -382,7 +387,7 @@ var NATURE = (function(){
       S.build = S.build || {}; S.build[id] = {removed:true}; S.seq++; return {ok:true};
     }
     /* 建物の下（占有形状＋自然物の半径＋少しの余白）にある自然物 */
-    const covered = o=> !o.static && structs.some(t=> Math.abs(t.x-o.x) < t.r+o.r+1 && Math.abs(t.z-o.z) < t.r+o.r+1 && sdist(t,o.x,o.z) < o.r + 0.25);
+    const covered = o=> !o.static && solidStructs.some(t=> Math.abs(t.x-o.x) < t.r+o.r+1 && Math.abs(t.z-o.z) < t.r+o.r+1 && sdist(t,o.x,o.z) < o.r + 0.25);
 
     /* ---------- 状態 ---------- */
     const kindOf = o=>KINDS[o.kind];
@@ -601,7 +606,7 @@ var NATURE = (function(){
       ensure(x, z, 6);
       const out=[]; const cx=Math.floor(x/CELL), cz=Math.floor(z/CELL);
       for(let i=-1;i<=1;i++) for(let j=-1;j<=1;j++){ const a=cells.get(ck(cx+i,cz+j)); if(a) a.forEach(o=>{ if(solid(S,o,now)) out.push(o); }); }
-      for(const t of structs) if(Math.abs(t.x-x) < t.r+CELL && Math.abs(t.z-z) < t.r+CELL) out.push(t);
+      for(const t of solidStructs) if(Math.abs(t.x-x) < t.r+CELL && Math.abs(t.z-z) < t.r+CELL) out.push(t);
       for(const n of npcCols) if(n.id!==moveIgnore && Math.abs(n.x-x) < CELL && Math.abs(n.z-z) < CELL) out.push(n);
       return out;
     }
@@ -688,7 +693,7 @@ var NATURE = (function(){
       const inWin = o=> o.x > ox-3 && o.x < ox+nx*GRID+3 && o.z > oz-3 && o.z < oz+nz*GRID+3;
       objs.forEach(o=>{ if(inWin(o) && solid(S,o,now)) mark(o.x,o.z,o.r+PLAYER_R+0.08); });
       statics.forEach(o=>{ if(inWin(o)) mark(o.x,o.z,o.r+PLAYER_R+0.08); });
-      structs.forEach(t=>{ if(!inWin(t)) return; const R=t.r+PLAYER_R+0.1, a=gi(t.x-R), b=gi(t.x+R), c=gj(t.z-R), d=gj(t.z+R);
+      solidStructs.forEach(t=>{ if(!inWin(t)) return; const R=t.r+PLAYER_R+0.1, a=gi(t.x-R), b=gi(t.x+R), c=gj(t.z-R), d=gj(t.z+R);
         for(let i=Math.max(0,a);i<=Math.min(nx-1,b);i++) for(let j=Math.max(0,c);j<=Math.min(nz-1,d);j++){ if(sdist(t,gx(i),gz(j)) < PLAYER_R+0.08) g[i*nz+j]=1; } });
       gridCache={g, win, gi, gj, gx, gz}; gridSig=sig; return gridCache;
     }
@@ -785,7 +790,7 @@ var NATURE = (function(){
     return {objects:objs, statics, byId, KINDS, VARIANTS, PLAYER_R, WORLD_R, REGION_R, nameOf, iconOf, yieldsOf, stock, present, solid, info, visual, harvest, reachGap,
             free, move, depenetrate, findPath, nearestFree, approachPoint, safeSpawn, around, nearbySolids, layer2:L2N,
             setStructures, structures:()=>structs.slice(), sdist, covered, checkPlacement, commitPlacement, removePlacement, toWorld, decos, setNpcs,
-            terrainBlocked, pathToDeposit, ensure, ensureAll, wide:WIDE, bounds:WB, walkR:WR, inWorld:(x,z,m)=>inWorld(x,z,m), layer3:()=>gen3, lastPath:()=>lastPath};
+            terrainBlocked, slope, height:H, waterKind:(x,z)=>{ if(!WIDE) return null; const k=T.waterAt(x,z,H(x,z)).kind; return k && k!=="lava" ? k : (k==="lava" ? "lava" : null); }, riverDist:(x,z)=>T.distanceToRiver(x,z), pathToDeposit, ensure, ensureAll, wide:WIDE, bounds:WB, walkR:WR, inWorld:(x,z,m)=>inWorld(x,z,m), layer3:()=>gen3, lastPath:()=>lastPath};
   }
   return {create, KINDS, VARIANTS, PLAYER_R, SEED, DEPOSIT_SHAPE, depShape, SITES, FORMER_STONEWORK, GEN_REGIONS};
 })();
