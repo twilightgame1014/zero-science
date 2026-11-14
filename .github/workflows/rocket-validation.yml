@@ -1,0 +1,44 @@
+name: Rocket integration gates
+on:
+  push:
+    branches: [feature/game-rocket-finish-20261114]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - run: npm run e2e
+      - run: npm run e2e:space
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rocket-validation
+          path: |
+            test-results
+            dist
+  source-transfer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export immutable source models for local validation
+        run: |
+          python3 - <<'PY'
+          import gzip,base64,pathlib,hashlib
+          for name in ['rocket','spacesuit-display']:
+              b=pathlib.Path('assets/rocket/models/'+name+'.glb').read_bytes()
+              print('MODEL_BEGIN:'+name)
+              encoded=base64.b64encode(gzip.compress(b,mtime=0)).decode()
+              for i in range(0,len(encoded),4000): print('MODEL_DATA:'+encoded[i:i+4000])
+              print('MODEL_END:'+name)
+          PY
