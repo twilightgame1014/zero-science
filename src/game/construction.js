@@ -309,10 +309,11 @@ var CONS = (function(D, E){
     const cnt = n.filter(Boolean).length;
     return {links:n, kind: cnt===4 ? "cross" : cnt===3 ? "tee" : cnt===2 ? ((n[0]&&n[2])||(n[1]&&n[3]) ? "straight" : "bend") : cnt===1 ? "end" : "single"}; }
   /* 建物の入口・作業点に道がつながっているか（入口の前 1.6 マス以内に道のマス） */
-  function connected(S, id){ const c = state(S), v = c.inst[id]; if(!v || v.kind==="road") return false; const d = DEF[v.def], lp = d.entrance || d.operate; if(!lp) return null;
-    const co = Math.cos(v.rot), si = Math.sin(v.rot), L = Math.hypot(lp[0],lp[1])||1, ex = lp[0]+lp[0]/L*0.8, ez = lp[1]+lp[1]/L*0.8;
-    const w = {x: v.x + co*ex + si*ez, z: v.z - si*ex + co*ez};
-    return Object.keys(c.roads).some(k=>{ const [i,j] = k.split(",").map(Number), p = cellCenter(i,j); return Math.abs(p.x-w.x) <= C.CELL*0.5+0.8 && Math.abs(p.z-w.z) <= C.CELL*0.5+0.8; }); }
+  function connected(S, id){ const c=state(S),v=c.inst[id];if(!v||v.kind==="road")return false;const d=DEF[v.def],lp=d.entrance||d.operate;
+    const L=lp?(Math.hypot(lp[0],lp[1])||1):1, points=C.roadConnectors?.[d.id] || (lp?[[lp[0]+lp[0]/L*0.8,lp[1]+lp[1]/L*0.8]]:[]);
+    if(!points.length)return null;const co=Math.cos(v.rot),si=Math.sin(v.rot);
+    return points.some(([ex,ez])=>{const w={x:v.x+co*ex+si*ez,z:v.z-si*ex+co*ez};return Object.keys(c.roads).some(k=>{const[i,j]=k.split(",").map(Number),p=cellCenter(i,j);return Math.abs(p.x-w.x)<=C.CELL*.5+.8&&Math.abs(p.z-w.z)<=C.CELL*.5+.8;});}); }
+
 
   /* ---------- 街の発展（実際に建てた物を近さでまとめて数える。人口のシミュレーションはしない） ---------- */
   function towns(S){

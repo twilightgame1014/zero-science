@@ -1,21 +1,17 @@
-# 担当者向けの次の依頼（外部送信はしていない）
+# 次の引き継ぎ（外部へ送信していない）
 
 ## Claudeへ
 
-GPT/Codexで街づくりと追随噴射を統合しました。今後は feature/game-city-exhaust-integration-20261114（PR #5）と docs/integration/CITY-EXHAUST-2026-11-14.md を確認してから作業してください。元ブランチのコードを丸ごと上書きしないでください。
+街づくり正式素材をfeature/game-city-formal-assets-20261114（PR #6）へ統合しました。PR #5 / 305b714 とMuse f62e075を継承しています。docs/integration/CITY-FORMAL-ASSETS-2026-11-14.mdを確認し、あなたの通常プレイ改善をこの成果と差分比較してください。
 
-道の草はオーナー決定により「最初の施工完了時に自動で刈り、通常の採取量を受け取る」を実装済みです。予定・取消では取得せず、道路上の再生を抑制し、撤去後は既存の再生規則に戻します。セーブv6を維持し、収量と採取状態は通常のharvestを使っています。追加の仕様判断は不要です。
+construction-visual.ts、graphics-entry.ts、construction-ui.js、construction.jsのconnected、scripts/build.mjs、package.jsonと検証workflowが接点です。元ファイルで丸ごと上書きしないでください。24建物のstageNodes、7共有キット、道路3種の色と法線、roadConnectorsを接続済みです。未完成設備の利用条件、道路の自動草刈り、セーブv6、ロケットv6は維持しています。
 
-予定地のIDへ描画用のcs:を付けて当たり判定へ渡していたため、移設時に自分自身と衝突する不具合を修正しました。描画ID・保存IDは変えていません。construction-colliders.testと建築E2Eへ回帰確認を追加しています。
-
-次は人が通常ゲームを通して遊び、搬入・施工時間・建築から宇宙製作への案内で迷う箇所を記録してください。実測なしにプレイ時間や快適性を断定しないでください。実装の重複・追加のセーブ版上げ・main直接pushは不要です。
+残りは通常UIの案内・搬入と施工の操作負担・人による通しプレイの確認です。正式素材を再実装せず、必要な改善と回帰検証を進めてください。実機iPhone17の性能は未確認です。
 
 ## Museへ
 
-setExhaustEmitterを統合し、点火・上昇中は現在表示LODのAnchor_exhaustのワールド位置を毎フレーム渡し、到達・中止・射点消失でnullを一度渡すようにしました。再発火ループはありません。GPTの煙画像を使う側方煙は維持し、padSmokeとの二重表示を避けています。v6のslotNodesとequipmentPlacement、公開setPlayerVisibleを採用。GLB原本は不変です。
+f62e075の正式素材をfeature/game-city-formal-assets-20261114（PR #6）へ導入しました。原本GLB/PNGは全点SHA一致です。配信用コピーだけ埋込み画像をWebPにし、ノード・変換・ジオメトリは不変です。stageNodesは工程完了後として適用し、名前はGLTFLoaderと同じ規則で正規化しています。
 
-次の制作対象は街づくりの正式な工程別表示と道路です。docs/construction/CONSTRUCTION-CONTRACT.md と construction-assets.json の museFields を正本にしてください。既存の完成建物GLBを再制作せず、stageNodes、Scaffold_*、roadConnectors、LOD、materialSlots、道3種の材質・縁・必要な接続部品を埋めてください。
+足場・予定地・資材・道路3種と法線を使用済みです。道路原画の任意依頼は、現行の正式素材で足りるため新規生成を見送りました。ロケットはv6を維持し、炎の長さは今回変更していません。
 
-道路は2×2マス・地面追従・歩行可能のまま。草の自動採取と保存はゲーム側で対応済みなので、描画側で資源を消したり報酬を付与したりしないでください。材質原画が必要なら、既存素材との重複を確認して、ID・用途・寸法・透過・タイル・実寸・材質スロットをGPTへ依頼してください。
-
-作業前に統合ブランチの最新状態を確認し、自分のfeatureブランチへ必要な変更だけを保存してください。寸法・占有形状・契約の変更が必要なら先にオーナーへ提案してください。実機iPhone 17のFPSは未測定です。
+今後の見た目の確認はPR #6の実ゲームとdocs/integration/evidence-city-formal-20261114を基準にしてください。寸法・ノード・原本を変更せず、問題があれば対象工程・カメラ・再現手順を添えて報告してください。この納品について追加制作を待つ項目はありません。

@@ -1,0 +1,11 @@
+2026-11-14T15:01:34.0566590Z dist/index.html を作成しました（15.04 MB）
+2026-11-14T15:01:44.5665175Z boy suit: diag8Check PASS / 1024×2048 / 8 rows / continuous facing
+2026-11-14T15:02:07.2937432Z boy: yaw 20° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T15:02:31.9560823Z boy: yaw 45° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T15:02:56.1390963Z boy: yaw 200° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T15:03:34.7671740Z boy: stationary camera orbit / 8 rows PASS (0,5,1,7,3,6,2,4)
+2026-11-14T15:04:01.8320870Z girl suit: diag8Check PASS / 1024×2048 / 8 rows / continuous facing
+2026-11-14T15:04:22.3584451Z girl: yaw 20° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T15:04:44.8616146Z girl: yaw 45° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T15:05:14.1281385Z girl: yaw 200° / 8 directions + stop PASS (0,4,2,6,3,7,1,5)
+2026-11-14T15:05:51.1034240Z girl: stationary camera orbit / 8 rows PASS (0,5,1,7,3,6,2,4)
