@@ -740,3 +740,43 @@ gpt-forest の上に積んだブランチ。詳細は INTEGRATION.md §16。
 - 足場は共有キット `assets/construction/models/scaffold-kit.glb`（Scaffold_Post/Beam/Plank/Brace/Ladder、単位部品＋配置式）。予定地は `construction-site.glb`、資材は pile 5 種。
 - 道 3 種：テクスチャ納品（セルごとに UV 0..1 の割り当てが接続側の作業）、縁は境界フェード仕様、joinPieces 不要。roadConnectors は全実建物に確定（入口／作業点から占有端＋0.8）。
 - 検証：素材ハーネスで工程別表示・足場組立・道の接続/斜面を撮影確認。実ゲームへの接続は未実施（仮表示のまま）＝「素材制作完了／ゲーム導入は接続待ち」。
+
+## §39 回収ラウンド（2026-11-15、Muse、ブランチ feature/graphics-recovery-20261115、土台 34dd168 = feature/game-city-formal-assets-20261114）
+
+制作済みなのに実ゲームへ届いていない素材・描画処理の回収。新規素材の追加制作ではない。
+
+### 変更範囲の宣言（着手前に明記）
+Muse が変更するファイルは以下だけ。ゲーム UI・建築判定・資材管理・セーブ形式には触れない。
+- threejs-hd2d-graphics/HANDOFF-TO-CLAUDE.md（本 §39）
+- docs/construction/construction-assets.json（factory の museFields のみ：stageNodes／materialSlots／lod 注記）
+- docs/construction/CONSTRUCTION-CONTRACT.md（§39 の適用注記を追記）
+- assets/town-construction/（factory-staged／warehouse／workshop の GLB＋LOD1、town-construction.json、README を 37a82c9 から回収）
+- assets/build/buildings/factory.glb／assets/build/buildings-lite/factory.glb（factory-staged の軽量派生に差し替え。生成スクリプト assets/town-construction/tools/convert-staged-lite.py）
+- src/world/render.ts（火山キット配置と滝・水際の接続。広い世界の描画層のみ）
+- scripts/build.mjs（ASSETS.volcanoKit の埋め込み追加のみ）
+- src/game/ui.js（attachWorld へ volcanoKit を渡す 1 行のみ。decor.waterfall は false のまま変更しない）
+ロケット GLB・契約（assets/rocket/）は変更しない。道路テクスチャの再生成はしない。
+
+### 項目1：街の段階別モデル5種の対応表（37a82c9 の town-construction に対する判定）
+
+判定は GLB のノード名・寸法の実測比較に基づく（ノード名は現行テンプレートと照合済み）。
+
+| モデル | 判定 | 根拠 | 実施した接続 |
+|---|---|---|---|
+| hut-staged | 現行品に置換済みで廃止 | buildings-3d hut の工程グループ化版で、部品ノード名は現行 hut テンプレートと完全一致（差は ContactShadow 除去と stage グループ親のみ）。現行 storehouse の stageNodes は同じ部品を base=stage1、frame=stage1+2、wall=全グループに対応付け済みで、表示上の差分がない。GLB 差し替えは軽量パイプライン（共有テクスチャ化）を壊すだけで無意味 | なし（ファイルは 37a82c9 に保持） |
+| house-staged | 現行品に置換済みで廃止 | gpt-dq3 hut-town の工程グループ化版で、部品ノード名は現行 town/hut-town テンプレートと一致。現行 house の stageNodes は同対応付け済み（ridge は支持関係のため frame でなく wall 側に置く現行判断を維持）。差分なし | なし（同上） |
+| factory-staged | 採用して差し替え | 現行 factory テンプレートは walls が単一ノードで「壁の下半→上半」の工程表現ができず、stage1（shell）が完成形とほぼ同じだった。staged 版は wallsLower／wallsUpper に分割し、配管・換気筒（pipeRun／ventStack／ventCap）を追加、crate は建物から分離（資材小物側が正）。寸法・footprint・入口は現行 factory と同一（5.2×4.25、fp 5.2×4.2）でセーブ・衝突に影響なし | テンプレート差し替え＋ stageNodes 再写像（下記） |
+| warehouse | 別用途で採用（新規建物候補） | 対応する建物 ID が現行契約に無い。新規造形（5.9×4.47、fp 5.4×4.2）。storehouse（fp 3.3×2.7、model=hut）への割当ては寸法・入口が合わず、既存セーブの衝突範囲を変えるため不可 | ファイル回収のみ。接続は ID・機能のオーナー／Claude 判断待ち（提案参照） |
+| workshop | 別用途で採用（新規建物候補） | 対応する建物 ID が無い（workbench は家具 2.2×1.05 で建物ではない）。新規造形（5.3×3.89、fp 4.8×3.6） | ファイル回収のみ。同上 |
+
+factory の stageNodes 再写像（ゲーム段階 base／shell／arc へ、累積式）：
+- "0" base = factory ＋ stage1_foundation（dock, footing, steps）
+- "1" shell = base ＋ wallsLower ＋ stage3_shell（wallsUpper, chimney, chimneyCap, roofTooth×3）
+- "2" arc = 全ノード（stage4_complete を追加：canopy, doorL/R, pipeRun, pipeRunElbow, roofGlass×3, ventCap×2, ventStack×2, win×3, winBar×3, winFrame×3）
+staged 版に ContactShadow は無い（契約の「最終工程のみ」規則は、無い場合はそのまま）。
+材質名は staged 版の実名に更新。LOD は従来どおり buildings-lite 派生を全距離で使う（stageNodes はそのまま適用可）。
+
+### オーナー相談事項（契約変更の提案、未実施）
+1. warehouse を新規建物として追加するか。追加するなら ID・分類・建設コスト・収納機能（storehouse との差別化）・出現時代はゲーム側（construction-data.js）の判断が要る。GLB と LOD1 は回収済みですぐ使える。
+2. workshop を新規建物として追加するか。同様に ID・機能（workbench 系の上位施設か、独立の生産施設か）の判断が要る。
+3. hut-staged／house-staged の GLB ファイル自体は統合ラインへ取り込まない（上記の通り）。この判定で問題あれば差し戻し可（ファイルは 37a82c9 にある）。
