@@ -12,6 +12,12 @@ var CONS = (function(D, E){
   const isObj = x=> x && typeof x==="object" && !Array.isArray(x);
   const add = (a, b, k)=>{ for(const id in b) a[id] = (a[id]||0) + b[id]*(k||1); return a; };
   const tokenOk = (S, token)=> token===undefined || token===S.seq;
+  /* 外観違い（looks）：機能・工程・資材は元の設計図のまま、描画の種類・占有形状・入口・道の接続点だけを差し替えた「見た目の設計図」を返す。
+     look がない（以前のセーブ・標準の外観）ときは元の設計図そのもの（従来のモデル・形・当たり判定のまま） */
+  const lookOf = (d, look)=> (look && d && (d.looks||[]).find(l=>l.id===look)) || null;
+  function view(defId, look){ const d = DEF[defId]; if(!d) return null; const L = lookOf(d, look); if(!L) return d;
+    return Object.assign({}, d, {model:L.model, footprint:L.footprint, entrance:L.entrance||null, operate:L.operate||null, look:L.id, lookName:L.name, roadLink:L.roadLink||null, tall:L.tall}); }
+  const defOf = inst=> view(inst.def, inst.look);
 
   /* ---------- 状態 ---------- */
   function state(S){
@@ -22,6 +28,7 @@ var CONS = (function(D, E){
     for(const [k, v] of Object.entries(c.inst)){
       if(!isObj(v) || !(isFinite(v.x) && isFinite(v.z))) { delete c.inst[k]; continue; }
       if(v.kind!=="road" && !DEF[v.def]) { delete c.inst[k]; continue; }
+      if(v.look!==undefined && (v.kind==="road" || !lookOf(DEF[v.def], v.look))) delete v.look;   // 知らない外観は標準へ（形の決まりがないまま使わない）
       if(!isObj(v.delivered)) v.delivered = {}; if(!isObj(v.consumed)) v.consumed = {};
       if(!["planned","supplying","constructing","completed"].includes(v.phase)) v.phase = "planned";
       if(!(Number.isSafeInteger(v.stage) && v.stage>=0)) v.stage = 0;
@@ -84,7 +91,7 @@ var CONS = (function(D, E){
   const cellCenter = (i, j)=> ({x:i*C.CELL, z:j*C.CELL});
   /* 予定地・建物の当たりの形（UI が WORLD.setStructures へ渡す）。完成と施工中は壁、予定地と広場は歩ける（ほかの建物は置けない） */
   function colliders(S){ const out = [];
-    for(const v of Object.values(state(S).inst)){ if(v.kind==="road") continue; const d = DEF[v.def];
+    for(const v of Object.values(state(S).inst)){ if(v.kind==="road") continue; const d = defOf(v);
       out.push({id:v.id, type:d.model, x:v.x, z:v.z, rot:v.rot, footprint:d.footprint, walk: d.walkable || v.phase==="planned" || v.phase==="supplying"}); }
     return out; }
   /* 道のマス（完成・予定）と建物の形が重なるか */
@@ -93,8 +100,9 @@ var CONS = (function(D, E){
     for(const k of keys){ const [i,j] = k.split(",").map(Number), p = cellCenter(i,j); if(world.sdist(shape, p.x, p.z) < C.CELL*0.5) hit.push(k); }
     return hit; }
   /* 建物を置けるか（nature.js の判定＋道の上かどうか）。opts は checkPlacement と同じ（player・npcs・reserved） */
-  function checkBuilding(S, world, defId, x, z, rot, opts, ignoreId){
-    const d = DEF[defId]; if(!d) return {ok:false, reasons:["設計図がない"]};
+  function checkBuilding(S, world, defId, x, z, rot, opts, ignoreId, look){
+    const d = view(defId, look); if(!d) return {ok:false, reasons:["設計図がない"]};
+    if(look && !d.look) return {ok:false, reasons:["この設計図にない外観"]};
     const p = spec(d, x, z, rot, ignoreId);
     const r = world.checkPlacement(S, p, opts);
     const reasons = r.reasons.slice();
@@ -102,12 +110,14 @@ var CONS = (function(D, E){
     return {ok:!reasons.length, reasons, shape:r.shape}; }
 
   /* ---------- 予定地を決める・動かす・取消 ---------- */
-  function plan(S, world, defId, x, z, rot, opts, token){
+  function plan(S, world, defId, x, z, rot, opts, token, look){
     if(!tokenOk(S, token)) return fail("二重の操作は取り消した", {kind:"dup"});
     const d = DEF[defId]; if(!d) return fail("設計図がない");
-    const chk = checkBuilding(S, world, defId, x, z, rot, opts); if(!chk.ok) return fail("ここには建てられない："+chk.reasons.join("／"), {reasons:chk.reasons});
+    if(look && !lookOf(d, look)) return fail("この設計図にない外観");
+    const chk = checkBuilding(S, world, defId, x, z, rot, opts, undefined, look); if(!chk.ok) return fail("ここには建てられない："+chk.reasons.join("／"), {reasons:chk.reasons});
     const c = state(S), id = newId(c);
     c.inst[id] = {id, def:defId, x:+x.toFixed(2), z:+z.toFixed(2), rot:+norm(rot).toFixed(4), phase:"planned", stage:0, delivered:{}, consumed:{}, work:null, created:Date.now()};
+    if(look) c.inst[id].look = look;
     S.seq++; return {ok:true, id, inst:c.inst[id]};
   }
   const norm = a=> ((a % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
@@ -119,14 +129,14 @@ var CONS = (function(D, E){
     if(inst.phase==="completed") return fail("完成した建物は動かせない（解体して建て直す）");
     if(inst.stage>0 || inst.work) return fail("施工が始まった建物は動かせない（取消すると施工済みの分は返却表のとおり）");
     if(anyDelivered(inst)) return fail("資材を運んだ予定地は、資材を返してから決め直す（「資材を返して移す」）", {kind:"supplied"});
-    const chk = checkBuilding(S, world, inst.def, x, z, rot, opts, id); if(!chk.ok) return fail("ここには建てられない："+chk.reasons.join("／"), {reasons:chk.reasons});
+    const chk = checkBuilding(S, world, inst.def, x, z, rot, opts, id, inst.look); if(!chk.ok) return fail("ここには建てられない："+chk.reasons.join("／"), {reasons:chk.reasons});
     inst.x = +x.toFixed(2); inst.z = +z.toFixed(2); inst.rot = +norm(rot).toFixed(4); S.seq++; return {ok:true};
   }
   function relocate(S, world, id, x, z, rot, opts, token){
     if(!tokenOk(S, token)) return fail("二重の操作は取り消した", {kind:"dup"});
     const inst = state(S).inst[id]; if(!inst || inst.kind==="road") return fail("予定地がない");
     if(inst.stage>0 || inst.work || inst.phase==="completed") return fail("施工が始まった建物は動かせない");
-    const chk = checkBuilding(S, world, inst.def, x, z, rot, opts, id); if(!chk.ok) return fail("ここには建てられない："+chk.reasons.join("／"), {reasons:chk.reasons});
+    const chk = checkBuilding(S, world, inst.def, x, z, rot, opts, id, inst.look); if(!chk.ok) return fail("ここには建てられない："+chk.reasons.join("／"), {reasons:chk.reasons});
     const back = giveBack(S, inst.delivered); inst.delivered = {}; inst.consumed = {}; inst.phase = "planned";
     inst.x = +x.toFixed(2); inst.z = +z.toFixed(2); inst.rot = +norm(rot).toFixed(4); S.seq++; return {ok:true, returned:back};
   }
@@ -175,7 +185,7 @@ var CONS = (function(D, E){
   function distTo(world, inst, pos){
     if(inst.kind==="road") return Math.min(...inst.cells.map(q=>{ const p = cellCenter(q.i,q.j); return Math.hypot(p.x-pos.x, p.z-pos.z) - C.CELL*0.5; }));
     return world.sdist(shapeOfInst(inst), pos.x, pos.z); }
-  function shapeOfInst(inst){ const f = DEF[inst.def].footprint; return {x:inst.x, z:inst.z, rot:inst.rot, shape:f.shape==="rect"?"rect":"circle", w:f.w, d:f.d, r: f.shape==="rect" ? Math.hypot(f.w,f.d)/2 : f.r}; }
+  function shapeOfInst(inst){ const f = defOf(inst).footprint; return {x:inst.x, z:inst.z, rot:inst.rot, shape:f.shape==="rect"?"rect":"circle", w:f.w, d:f.d, r: f.shape==="rect" ? Math.hypot(f.w,f.d)/2 : f.r}; }
   function near(world, inst, pos){ return !!pos && distTo(world, inst, pos) <= C.REACH; }
   function deliver(S, world, id, item, n, pos, token){
     if(!tokenOk(S, token)) return fail("二重の操作は取り消した", {kind:"dup"});
@@ -309,8 +319,8 @@ var CONS = (function(D, E){
     const cnt = n.filter(Boolean).length;
     return {links:n, kind: cnt===4 ? "cross" : cnt===3 ? "tee" : cnt===2 ? ((n[0]&&n[2])||(n[1]&&n[3]) ? "straight" : "bend") : cnt===1 ? "end" : "single"}; }
   /* 建物の入口・作業点に道がつながっているか（入口の前 1.6 マス以内に道のマス） */
-  function connected(S, id){ const c=state(S),v=c.inst[id];if(!v||v.kind==="road")return false;const d=DEF[v.def],lp=d.entrance||d.operate;
-    const L=lp?(Math.hypot(lp[0],lp[1])||1):1, points=C.roadConnectors?.[d.id] || (lp?[[lp[0]+lp[0]/L*0.8,lp[1]+lp[1]/L*0.8]]:[]);
+  function connected(S, id){ const c=state(S),v=c.inst[id];if(!v||v.kind==="road")return false;const d=defOf(v),lp=d.entrance||d.operate;
+    const L=lp?(Math.hypot(lp[0],lp[1])||1):1, points=(d.look ? (d.roadLink?[d.roadLink]:null) : C.roadConnectors?.[d.id]) || (lp?[[lp[0]+lp[0]/L*0.8,lp[1]+lp[1]/L*0.8]]:[]);
     if(!points.length)return null;const co=Math.cos(v.rot),si=Math.sin(v.rot);
     return points.some(([ex,ez])=>{const w={x:v.x+co*ex+si*ez,z:v.z-si*ex+co*ez};return Object.keys(c.roads).some(k=>{const[i,j]=k.split(",").map(Number),p=cellCenter(i,j);return Math.abs(p.x-w.x)<=C.CELL*.5+.8&&Math.abs(p.z-w.z)<=C.CELL*.5+.8;});}); }
 
@@ -339,7 +349,7 @@ var CONS = (function(D, E){
   function known(S, defId){ const d = DEF[defId]; if(!d) return false;
     return Object.keys(totalMat(d)).some(k=>S.disc[k]) || (d.facility && S.disc[d.facility]) || d.stages.every(s=>!Object.keys(s.mat).length); }
 
-  return {DEF, state, rule, built, list, plan, move, relocate, remove, removalPreview, deliver, deliverAll, supplyTable, remainingNeed, stageReady, startWork, finishWork,
+  return {DEF, view, defOf, lookOf, state, rule, built, list, plan, move, relocate, remove, removalPreview, deliver, deliverAll, supplyTable, remainingNeed, stageReady, startWork, finishWork,
     checkBuilding, colliders, roadPlan, planRoad, removeRoadCells, roadShape, roadStagesOf, cellKey, cellOf, cellCenter, lineCells, connected, towns, totalMat, stagesOf,
     near, distTo, shapeOfInst, placeLegacy, legacyItems, facilityBuilding, known, migrateLegacy, spec};
 })(typeof DATA!=="undefined"?DATA:(require("./construction-data.js"), require("./data.js")), typeof ENGINE!=="undefined"?ENGINE:require("./engine.js"));

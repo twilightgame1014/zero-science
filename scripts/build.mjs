@@ -140,6 +140,12 @@ for(const f of fs.readdirSync(path.join(root,'assets/build/construction')))if(f.
    予定地・足場・資材の山の GLB の画像は共有テクスチャ（tex:<hash>。拠点の建物と同じ画像は 1 枚）なので、その画像を ASSETS.sharedTex へ足す */
 for(const f of fs.readdirSync(path.join(root,'assets/construction/textures')))if(f.endsWith('.png')){const p='assets/construction/textures/'+f,w='assets/build/construction/'+f.replace(/\.png$/,'.webp');ASSETS.construction.textures[p]=fs.existsSync(path.join(root,w))?dataUrl(w,'image/webp'):dataUrl(p,'image/png');}
 {const cm=path.join(root,'assets/build/construction/manifest.json');if(fs.existsSync(cm)){ASSETS.sharedTex=ASSETS.sharedTex||{};for(const h of Object.keys(JSON.parse(fs.readFileSync(cm,'utf8')).textures))ASSETS.sharedTex[h]=ASSETS.sharedTex[h]||dataUrl('assets/build/nature-tex/'+h+'.webp','image/webp');}}
+// 外観違いの建物（倉庫・工房。Muse の assets/town-construction が原本。軽量版は scripts/make-construction-glb.py の looks/。画像は上の共有テクスチャ）
+// 種類は "look-<id>"。占有形状・入口・寸法・工程グループのノード名は town-construction.json の正式値（ゲームの判定は construction-data.js の looks。テストで同じ値か検査）
+ASSETS.looks={};ASSETS.lookSpecs={};
+{const tc=JSON.parse(rd('assets/town-construction/town-construction.json'));for(const b of tc.buildings){const f=path.join(root,'assets/build/construction/looks',b.assetId+'.glb');if(!['warehouse','workshop'].includes(b.assetId))continue;
+ if(!fs.existsSync(f)){console.warn('外観違いのモデルがない（scripts/make-construction-glb.py を実行）：'+b.assetId);continue;}
+ ASSETS.looks['look-'+b.assetId]=fs.readFileSync(f).toString('base64');ASSETS.lookSpecs['look-'+b.assetId]={name:b.name,footprint:b.footprint,entrance:b.entrance,operate:b.operate,size:b.size,stageNodes:b.stageNodes};}}
 // 火山キット（Muse ラウンド27。§39 で src/world/render.ts が実ゲームの火山へ配置する。テクスチャなしの GLB なので base64 のまま）
 ASSETS.volcanoKit={};
 for(const f of fs.readdirSync(path.join(root,'assets/volcano-kit')))if(f.endsWith('.glb'))ASSETS.volcanoKit[f.slice(0,-4)]=fs.readFileSync(path.join(root,'assets/volcano-kit',f)).toString('base64');
@@ -195,3 +201,13 @@ const vhtml = html.replace('<head>', '<head><script>window.VERIFY_DEFAULT=true;<
 if (vhtml === html) throw new Error('テンプレートに <head> がありません');
 fs.writeFileSync(path.join(root, 'dist/verify.html'), vhtml);
 console.log('dist/verify.html（検証モードが最初から有効）を作成しました');
+// どの版が配信されているかを公開後に確かめるための目印（ゲームの画面には出さない）。GitHub Actions では GITHUB_SHA、手元では git の HEAD（未コミットの変更があれば dirty）
+{
+  let sha = process.env.BUILD_SHA || process.env.GITHUB_SHA || '', dirty = false;
+  try { const { execSync } = await import('node:child_process');
+    if (!sha) sha = execSync('git rev-parse HEAD', { cwd: root }).toString().trim();
+    if (!process.env.GITHUB_SHA) dirty = execSync('git status --porcelain --untracked-files=no', { cwd: root }).toString().trim() !== ''; } catch { /* git がない環境 */ }
+  const ver = { sha: sha || 'unknown', dirty, bytes: Buffer.byteLength(html), ref: process.env.GITHUB_REF || null, run: process.env.GITHUB_RUN_ID || null };
+  fs.writeFileSync(path.join(root, 'dist/version.json'), JSON.stringify(ver, null, 1) + '\n');
+  console.log(`dist/version.json：${ver.sha.slice(0, 12)}${dirty ? '（未コミットの変更あり）' : ''}`);
+}

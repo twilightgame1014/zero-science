@@ -892,7 +892,7 @@ function structAdd(id, type, at, rot){
   W3.gfx.addStructureVisual(id, type, at, rot||0); W3.structs.add(id);
   /* Muse の GLB（assets/buildings-3d）。読み終えたら、その種類の建物を置き直して GLB の見た目にする（それまでは従来の手続きモデル） */
   const H=window.HD2D;
-  const glb = (ASSETS.buildings && ASSETS.buildings[type]) || (ASSETS.props && ASSETS.props[type]) || (ASSETS.town && ASSETS.town[type]);
+  const glb = (ASSETS.buildings && ASSETS.buildings[type]) || (ASSETS.props && ASSETS.props[type]) || (ASSETS.town && ASSETS.town[type]) || (ASSETS.looks && ASSETS.looks[type]);
   if(H && H.ensureBuildingModel && glb){
     H.ensureBuildingModel(W3.gfx, type, glb).then(ok=>{ const done=(W3.modelReady||(W3.modelReady=new Set()));
       if(!ok || done.has(type)) return; done.add(type);
@@ -903,7 +903,7 @@ function structRemove(id){ W3.gfx.removeStructureVisual(id); W3.structs.delete(i
 /* 当たり判定：建物の占有形状（structures.json の footprint）を自然物の世界へ渡す。プレビュー（vps:）は判定なし */
 function syncStructColliders(){
   if(!world()) return;
-  const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:") || id.startsWith("ghost:") || id.startsWith("cs:")) return; const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[v.type]) || (ASSETS.townSpecs && ASSETS.townSpecs[v.type]);
+  const list=[]; (W3.structInfo||new Map()).forEach((v,id)=>{ if(id.startsWith("vps:") || id.startsWith("ghost:") || id.startsWith("cs:")) return; const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[v.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[v.type]) || (ASSETS.townSpecs && ASSETS.townSpecs[v.type]) || (ASSETS.lookSpecs && ASSETS.lookSpecs[v.type]);
     if(sp && sp.footprint) list.push({id, type:v.type, x:v.x, z:v.z, rot:v.rot, footprint:sp.footprint}); });
   if(SPACE.placed(S)){
     const b=S.build['space-site'];
@@ -1839,7 +1839,7 @@ function camReset(){
 }
 /* 地形＋建物の高さ（建物の占有範囲の上は、地面＋建物の高さ structures.json の size.h） */
 function camBuildings(cx, cz, r){
-  return (world() && WORLD.structures ? WORLD.structures() : []).map(o=>{ const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[o.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[o.type]) || (ASSETS.townSpecs && ASSETS.townSpecs[o.type]);
+  return (world() && WORLD.structures ? WORLD.structures() : []).map(o=>{ const sp=(ASSETS.buildingSpecs && ASSETS.buildingSpecs[o.type]) || (ASSETS.propSpecs && ASSETS.propSpecs[o.type]) || (ASSETS.townSpecs && ASSETS.townSpecs[o.type]) || (ASSETS.lookSpecs && ASSETS.lookSpecs[o.type]);
       return {o, h: sp && sp.size && finite(sp.size.h) ? sp.size.h : 0, g: groundY(o.x, o.z)}; })
     .filter(b=>b.h>0.4 && Math.hypot(b.o.x-cx, b.o.z-cz) < r);
 }

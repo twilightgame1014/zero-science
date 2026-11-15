@@ -231,6 +231,79 @@
   "c59b2d9e9f": true,
   "5dc817c28b": true,
   "8b23880bca": true,
-  "a80616efd7": true
+  "a80616efd7": true,
+  "3e4e5b802a": true,
+  "41bdffca52": true,
+  "5d2d4a4ba2": true,
+  "4086faeb89": true,
+  "6e97c0da1e": true,
+  "b040bb979e": true
+ },
+ "looks": {
+  "warehouse": {
+   "bytesIn": 2550468,
+   "bytesOut": 283936,
+   "textures": [
+    "19b899b732",
+    "23495cd09a",
+    "3349ba1316",
+    "34aa494ca1",
+    "3e4e5b802a",
+    "41bdffca52",
+    "5256f0ec84",
+    "5d2d4a4ba2",
+    "5dc817c28b",
+    "6154ef6b6c",
+    "76ce0cb231",
+    "8b23880bca",
+    "a4d4b0d7e8",
+    "a80616efd7",
+    "c59b2d9e9f"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -2.95,
+    0.0,
+    -2.233
+   ],
+   "max": [
+    2.95,
+    3.683,
+    2.235
+   ],
+   "tris": 3664,
+   "meshes": 40
+  },
+  "workshop": {
+   "bytesIn": 2071840,
+   "bytesOut": 219584,
+   "textures": [
+    "19b899b732",
+    "3349ba1316",
+    "34aa494ca1",
+    "4086faeb89",
+    "5256f0ec84",
+    "5dc817c28b",
+    "6154ef6b6c",
+    "6e97c0da1e",
+    "76ce0cb231",
+    "8b23880bca",
+    "a80616efd7",
+    "b040bb979e"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -2.65,
+    0.0,
+    -1.944
+   ],
+   "max": [
+    2.65,
+    3.565,
+    1.944
+   ],
+   "tris": 2844,
+   "meshes": 31
+  }
  }
 }

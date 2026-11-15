@@ -1,6 +1,8 @@
 name: テスト
+# main への push は「GitHub Pages に公開（main のみ）」が同じ検証（test・typecheck・build・e2e）をしてから公開するので、ここでは重ねて実行しない
 on:
   push:
+    branches-ignore: [main]
   pull_request:
   workflow_dispatch:
 permissions:

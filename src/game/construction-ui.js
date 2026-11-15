@@ -29,7 +29,8 @@ function consView(){
     return `<div class="card cscard ${kn?"":"locked"}"><h3><span class="i">${d.facility?ic(d.facility):"🏠"}</span>${kn?d.name:"？？？"}${n?` <span class="tag">完成 ${n}</span>`:""}</h3>
       <div class="kid">${kn?d.kid:"材料のどれかを見つけると、設計図がわかる。"}</div>
       ${kn?`<div class="need">${have}${tl}</div><div class="how">工程 ${d.stages.length}：${d.stages.map(s=>s.name).join(" → ")}${d.facility?`。完成すると「${nm(d.facility)}」が使える`:""}</div>
-      <div class="row mt"><button class="btn small act" data-act="cs-place" data-id="${d.id}">場所を決める</button><span class="desc" style="margin:0">資材は、予定地を決めてから現地へ運ぶ</span></div>`:""}</div>`; };
+      <div class="row mt"><button class="btn small act" data-act="cs-place" data-id="${d.id}">場所を決める${(d.looks||[]).length?"（標準の形）":""}</button>${(d.looks||[]).map(L=>`<button class="btn small sub" data-act="cs-place" data-id="${d.id}" data-look="${L.id}">場所を決める（${L.name}）</button>`).join("")}<span class="desc" style="margin:0">資材は、予定地を決めてから現地へ運ぶ</span></div>
+      ${(d.looks||[]).map(L=>`<p class="desc cslook">外観「${L.name}」：${L.kid} 広さ ${L.footprint.w}×${L.footprint.d}マス（標準 ${d.footprint.shape==="rect"?d.footprint.w+"×"+d.footprint.d:"半径"+d.footprint.r}マス）。工程・資材・働きは同じ。</p>`).join("")}`:""}</div>`; };
   const cats = [...new Set(CX.defs.map(d=>d.cat))].concat(["road"]);
   const body = cat==="road" ? Object.values(CX.roads).map(r=>{ const per = r.stages.reduce((a,s)=>{ for(const k in CX.roadStages[s].mat) a[k]=(a[k]||0)+CX.roadStages[s].mat[k]; return a; }, {});
       return `<div class="card cscard"><h3><span class="i" style="color:${r.color}">■</span>${r.name}</h3><div class="kid">${r.kid}</div><div class="how">1マス（2×2）あたり：${matList(per)}。工程：${r.stages.map(s=>CX.roadStages[s].name).join(" → ")}</div>
@@ -40,8 +41,8 @@ function consView(){
   <div class="grid2">${body}</div>
   ${sites.length?`<div class="sec">建設中の現場 <small>${sites.length}か所</small></div><div class="blist">${sites.map(v=>{ const name = v.kind==="road" ? CX.roads[v.road].name+"（"+v.cells.length+"マス）" : CONS.DEF[v.def].name, st = CONS.stagesOf(v);
       return `<div class="bit"><span class="i">🏗️</span><span class="n">${name}<small>${PHASE_NAME[v.phase]}・工程 ${v.stage}/${st.length}${v.work?"（作業中）":""}</small></span><button class="btn small" data-act="cs-open" data-id="${v.id}">開く</button><button class="btn small sub" data-act="cs-go" data-id="${v.id}">現場へ行く</button></div>`; }).join("")}</div>`:""}
-  ${done.length?`<div class="sec">建物 <small>${done.length}</small></div><div class="blist">${done.map(v=>{ const d = CONS.DEF[v.def], con = CONS.connected(S, v.id);
-      return `<div class="bit"><span class="i">${d.facility?ic(d.facility):"🏠"}</span><span class="n">${d.name}<small>${d.facility?"設備："+nm(d.facility):"設備の働きなし"}${con===true?"・道につながっている":con===false?"・道はまだ":""}${v.legacy?"・以前の版から移した":""}</small></span><button class="btn small sub" data-act="cs-open" data-id="${v.id}">開く</button></div>`; }).join("")}</div>`:""}
+  ${done.length?`<div class="sec">建物 <small>${done.length}</small></div><div class="blist">${done.map(v=>{ const d = CONS.defOf(v), con = CONS.connected(S, v.id);
+      return `<div class="bit"><span class="i">${d.facility?ic(d.facility):"🏠"}</span><span class="n">${d.name}${d.lookName?"（"+d.lookName+"）":""}<small>${d.facility?"設備："+nm(d.facility):"設備の働きなし"}${con===true?"・道につながっている":con===false?"・道はまだ":""}${v.legacy?"・以前の版から移した":""}</small></span><button class="btn small sub" data-act="cs-open" data-id="${v.id}">開く</button></div>`; }).join("")}</div>`:""}
   ${legacy.length?`<div class="sec">持ち物にある設備（以前の版） <small>置くと、資材なしで完成した建物になる（持ち物からは消える）</small></div><div class="blist">${legacy.map(f=>`<div class="bit"><span class="i">${ic(f)}</span><span class="n">${nm(f)}</span><button class="btn small" data-act="cs-legacy" data-id="${f}">置く</button></div>`).join("")}</div>`:""}
   <div class="sec">街 <small>実際に建てた住宅・工房・公共の建物と道から決まる（近い建物どうしで1つの街）</small></div>
   ${towns.length?towns.map((t,i)=>`<div class="card"><h3>${t.level.name} <small class="desc" style="margin:0">（${Math.round(t.x)}, ${Math.round(t.z)}）</small></h3>
@@ -53,11 +54,11 @@ function consView(){
 function consStartPlace(o){
   if(!W3.pos || W3.state!=="ready"){ banner("3Dの画面で場所を決める"); return; }
   if(W3.place) endPlace();
-  const B = camBasis(), d = o.def ? CONS.DEF[o.def] : o.legacy ? CONS.facilityBuilding(o.legacy) : null;
+  const B = camBasis(), look = o.move ? (CONS.state(S).inst[o.move]||{}).look : o.look, d = o.def ? CONS.view(o.def, look) : o.legacy ? CONS.facilityBuilding(o.legacy) : null;
   if(o.road){ W3.place = {road:{kind:o.road, a:null}, cons:{road:o.road}, grid:true, x:placeSnapCell(W3.pos.x + B.f.x*4), z:placeSnapCell(W3.pos.z + B.f.z*4), rot:0, token:S.seq, ghostSig:""}; }
-  else { const glb = (ASSETS.buildings && ASSETS.buildings[d.model]) || (ASSETS.town && ASSETS.town[d.model]); if(glb && window.HD2D && HD2D.ensureBuildingModel) HD2D.ensureBuildingModel(W3.gfx, d.model, glb);
+  else { const glb = (ASSETS.buildings && ASSETS.buildings[d.model]) || (ASSETS.town && ASSETS.town[d.model]) || (ASSETS.looks && ASSETS.looks[d.model]); if(glb && window.HD2D && HD2D.ensureBuildingModel) HD2D.ensureBuildingModel(W3.gfx, d.model, glb);
     const cur = o.move ? CONS.state(S).inst[o.move] : null;
-    W3.place = {id:"cs-ghost", type:d.model, cons:{def:d.id, move:o.move||null, relocate:!!o.relocate, legacy:o.legacy||null, label:d.name}, spec:CONS.spec(d, 0, 0, 0), grid: W3.lastGrid!==false, x:0, z:0, rot:0, token:S.seq, ghostSig:""};
+    W3.place = {id:"cs-ghost", type:d.model, cons:{def:d.id, look:d.look||null, move:o.move||null, relocate:!!o.relocate, legacy:o.legacy||null, label:d.name+(d.lookName?"（"+d.lookName+"）":"")}, spec:CONS.spec(d, 0, 0, 0), grid: W3.lastGrid!==false, x:0, z:0, rot:0, token:S.seq, ghostSig:""};
     if(cur){ W3.place.x=cur.x; W3.place.z=cur.z; W3.place.rot=cur.rot; }
     else { const r = d.footprint.shape==="rect" ? Math.max(d.footprint.w, d.footprint.d)/2 : d.footprint.r; W3.place.x = placeSnap(W3.pos.x + B.f.x*(r+3)); W3.place.z = placeSnap(W3.pos.z + B.f.z*(r+3)); W3.place.rot = Math.round(Math.atan2(-B.f.x, -B.f.z)/(Math.PI/12))*(Math.PI/12); } }
   $("#app").classList.add("placing"); setTab("explore"); placeUpdate(true);
@@ -70,7 +71,7 @@ function consCheck(P){
   if(P.road){ const a = P.road.a || {x:P.x, z:P.z}, b = {x:P.x, z:P.z}; const r = CONS.roadPlan(S, WORLD, P.road.kind, a, b, Date.now()); P.roadPlan = r;
     return {ok: P.road.a ? r.ok : !r.bad.length || r.cells.length>0, reasons:r.reasons, shape:null}; }
   const C2 = P.cons, opts = consOpts();
-  return CONS.checkBuilding(S, WORLD, C2.def, P.x, P.z, P.rot, opts, C2.move ? C2.move : undefined); }
+  return CONS.checkBuilding(S, WORLD, C2.def, P.x, P.z, P.rot, opts, C2.move ? C2.move : undefined, C2.look || undefined); }
 function consTitle(P){
   if(P.road){ const r = P.roadPlan || {cells:[], cost:{}, sections:[]}, R = CX.roads[P.road.kind];
     return P.road.a ? `🛤️ ${R.name}：${r.cells.length}マス・${r.sections.length}区間・${matList(r.cost)}${r.skip&&r.skip.length?`（${r.skip.length}マスはもうある・予定あり＝請求しない）`:""}` : `🛤️ ${R.name}：始点を選ぶ`; }
@@ -85,7 +86,7 @@ function consPlaceConfirm(P){
   if(C2.legacy) r = CONS.placeLegacy(S, WORLD, C2.legacy, P.x, P.z, P.rot, opts, P.token);
   else if(C2.move && C2.relocate) r = CONS.relocate(S, WORLD, C2.move, P.x, P.z, P.rot, opts, P.token);
   else if(C2.move) r = CONS.move(S, WORLD, C2.move, P.x, P.z, P.rot, opts, P.token);
-  else r = CONS.plan(S, WORLD, C2.def, P.x, P.z, P.rot, opts, P.token);
+  else r = CONS.plan(S, WORLD, C2.def, P.x, P.z, P.rot, opts, P.token, C2.look || undefined);
   if(!r.ok){ banner("❌ "+r.msg); P.busy=false; placeUpdate(true); return; }
   save(); endPlace(); consSync();
   banner(C2.legacy ? "🏗️ "+C2.label+"を置いた（以前の設備から）" : C2.move ? "🏗️ 予定地を移した"+(r.returned&&Object.keys(r.returned).length?"（資材は持ち物へ戻した）":"") : "🏗️ "+C2.label+"の予定地を決めた。資材を現地へ運ぼう");
@@ -103,13 +104,13 @@ function consRoadOverlay(sv, P){
 
 /* ---------- 現場の画面（搬入・施工・取消・解体・移す） ---------- */
 const consStand = v=>{ if(v.kind==="road"){ let best=null; v.cells.forEach(q=>{ const c=CONS.cellCenter(q.i,q.j), d=W3.pos?Math.hypot(c.x-W3.pos.x,c.z-W3.pos.z):0; if(!best||d<best.d) best={x:c.x,z:c.z,d}; }); return best; }
-  const d = CONS.DEF[v.def], lp = d.entrance || d.operate || [0, (d.footprint.shape==="rect"?d.footprint.d/2:d.footprint.r)+0.8];
+  const d = CONS.defOf(v), lp = d.entrance || d.operate || [0, (d.footprint.shape==="rect"?d.footprint.d/2:d.footprint.r)+0.8];
   const co=Math.cos(v.rot), si=Math.sin(v.rot), L=Math.hypot(lp[0],lp[1])||1, ex=lp[0]+lp[0]/L*0.9, ez=lp[1]+lp[1]/L*0.9; return {x:v.x+co*ex+si*ez, z:v.z-si*ex+co*ez}; };
 function consOpen(id){ U.cons.open=id; consRenderSheet(); openModal(); }
 function consRenderSheet(){
   const id = U.cons.open, v = CONS.state(S).inst[id], sh = $("#sheet"); if(!v){ closeModal(); return; }
   const road = v.kind==="road", d = road ? null : CONS.DEF[v.def], st = CONS.stagesOf(v), near = CONS.near(WORLD, v, W3.pos), rows = CONS.supplyTable(S, v), now = Date.now();
-  const name = road ? CX.roads[v.road].name+"（"+v.cells.length+"マス）" : d.name, ready = v.phase!=="completed" ? CONS.stageReady(S, v) : null, pv = CONS.removalPreview(S, id);
+  const name = road ? CX.roads[v.road].name+"（"+v.cells.length+"マス）" : d.name+(v.look?"（"+CONS.defOf(v).lookName+"）":""), ready = v.phase!=="completed" ? CONS.stageReady(S, v) : null, pv = CONS.removalPreview(S, id);
   const work = v.work ? Math.max(0, v.work.until-now) : 0, keep = sh.scrollTop;
   sh.innerHTML = `<button class="close" data-act="close">閉じる</button><div class="hd"><span class="bigi">${road?"🛤️":d.facility?ic(d.facility):"🏠"}</span><div><h2>${name}</h2><div class="yomi">${PHASE_NAME[v.phase]}・工程 ${Math.min(v.stage,st.length)}/${st.length}</div></div></div>
     ${!road?`<div class="kidbox">${d.kid}</div>`:""}
@@ -137,7 +138,7 @@ function consSync(){
   const want = new Map(); CONS.list(S).forEach(v=>{ if(v.kind!=="road" && v.phase==="completed") want.set("cs:"+v.id, v); });
   [...W3.structs].forEach(k=>{ if(k.startsWith("cs:")){ const v = want.get(k), info = W3.structInfo && W3.structInfo.get(k);
     if(!v || !info || Math.abs(info.x-v.x)>1e-3 || Math.abs(info.z-v.z)>1e-3 || Math.abs(info.rot-v.rot)>1e-4) structRemove(k); } });
-  want.forEach((v,k)=>{ if(!W3.structs.has(k)){ structAdd(k, CONS.DEF[v.def].model, {x:v.x, z:v.z}, v.rot); if(W3.state==="ready" && !(W3.consSeen||(W3.consSeen=new Set())).has(k)){ W3.consSeen.add(k); if(v.done && Date.now()-v.done<3000) W3.gfx.playVisualEffect("levelup", {x:v.x, z:v.z}); } } });
+  want.forEach((v,k)=>{ if(!W3.structs.has(k)){ structAdd(k, CONS.defOf(v).model, {x:v.x, z:v.z}, v.rot); if(W3.state==="ready" && !(W3.consSeen||(W3.consSeen=new Set())).has(k)){ W3.consSeen.add(k); if(v.done && Date.now()-v.done<3000) W3.gfx.playVisualEffect("levelup", {x:v.x, z:v.z}); } } });
   consVisual(); syncStructColliders();
 }
 /* 資材の山の形（Muse の契約：木材→lumber・石材→stone・袋物→sacks・金属→metal・その他→crated）。名前の一部の一致ではなく ID の表で決める
@@ -149,14 +150,16 @@ function consVisual(){
   const H = window.HD2D; if(!H || !H.syncConstructionVisual || !W3.gfx) return;
   const c = CONS.state(S), now = Date.now(), sites = [], pending = [];
   CONS.list(S).forEach(v=>{ if(v.kind==="road"){ v.cells.forEach(q=>pending.push({i:q.i, j:q.j, kind:v.road, phase:v.phase})); return; } if(v.phase==="completed") return;
-    const d = CONS.DEF[v.def], f = d.footprint, st = d.stages, need = CONS.totalMat(d), tot = Object.values(need).reduce((a,b)=>a+b,0)||1, got = Object.keys(need).reduce((a,k)=>a+Math.min(need[k], v.delivered[k]||0),0);
+    const d = CONS.defOf(v), f = d.footprint, st = d.stages, need = CONS.totalMat(d), tot = Object.values(need).reduce((a,b)=>a+b,0)||1, got = Object.keys(need).reduce((a,k)=>a+Math.min(need[k], v.delivered[k]||0),0);
     const part = v.work ? Math.min(1, Math.max(0, 1-(v.work.until-now)/Math.max(1, v.work.until-(v.work.started||now)))) : 0;
     const assetDef = ASSETS.construction && ASSETS.construction.contract.buildings.find(b=>b.id===d.id);
     const pileKinds=Object.keys(need).filter(k=>(v.delivered[k]||0)<need[k]).map(k=>PILE_OF[k]||"crated");
-    sites.push({id:v.id, def:d.id, model:d.model, stage:v.stage, stages:st.length, pileKinds:[...new Set(pileKinds)], x:v.x, z:v.z, rot:v.rot, shape:f.shape==="rect"?"rect":"circle", w:f.w||0, d:f.d||0, r:f.r||0, phase:v.phase, progress:(v.stage+part)/st.length, supplied:got/tot,
-      tall: assetDef?.size?.h || (d.cat==="factory"||d.cat==="housing"||d.cat==="storage" ? 3 : 1.2), entrance:d.entrance||d.operate||null}); });
+    /* 外観違いの工程の見た目：Muse の town-construction.json の工程グループ（ASSETS.lookSpecs）を、設計図の工程番号へ写す（stageGroups）。グループのない工程は建物を出さない */
+    const LS = d.look && ASSETS.lookSpecs && ASSETS.lookSpecs[d.model], lookStage = LS ? Object.fromEntries(Object.entries(CONS.lookOf(CONS.DEF[v.def], v.look).stageGroups||{}).map(([k,gs])=>[k, gs.flatMap(g=>LS.stageNodes[g]||[])])) : null;
+    sites.push({id:v.id, def:d.id, model:d.model, stageNodes:lookStage, stage:v.stage, stages:st.length, pileKinds:[...new Set(pileKinds)], x:v.x, z:v.z, rot:v.rot, shape:f.shape==="rect"?"rect":"circle", w:f.w||0, d:f.d||0, r:f.r||0, phase:v.phase, progress:(v.stage+part)/st.length, supplied:got/tot,
+      tall: d.tall || assetDef?.size?.h || (d.cat==="factory"||d.cat==="housing"||d.cat==="storage" ? 3 : 1.2), entrance:d.entrance||d.operate||null}); });
   const roads = Object.entries(c.roads).map(([k,kind])=>{ const [i,j] = k.split(",").map(Number); return {i, j, kind}; });
-  H.syncConstructionVisual(W3.gfx, {sites, roads, pending, cell:CX.CELL, colors:Object.fromEntries(Object.values(CX.roads).map(r=>[r.id, r.color]))}, (x,z)=>groundY(x,z), ASSETS.construction, Object.assign({},ASSETS.buildings,ASSETS.town));
+  H.syncConstructionVisual(W3.gfx, {sites, roads, pending, cell:CX.CELL, colors:Object.fromEntries(Object.values(CX.roads).map(r=>[r.id, r.color]))}, (x,z)=>groundY(x,z), ASSETS.construction, Object.assign({},ASSETS.buildings,ASSETS.town,ASSETS.looks));
 }
 /* 施工の時間：終わったら、そばにいれば仕上げる。現場が近いときは右上に近道 */
 let consTickN = 0;
@@ -182,7 +185,7 @@ document.addEventListener("click", ev=>{ const b = ev.target.closest && ev.targe
   if((a==="cs-work" || a==="cs-remove") && now - (U.cons.lastAct||0) < 600) return;
   U.cons.lastAct = now;
   if(a==="cs-cat"){ U.cons.cat = id; renderPanel(); return; }
-  if(a==="cs-place"){ consStartPlace({def:id}); return; }
+  if(a==="cs-place"){ consStartPlace({def:id, look:b.dataset.look||undefined}); return; }
   if(a==="cs-road"){ consStartPlace({road:id}); return; }
   if(a==="cs-legacy"){ consStartPlace({legacy:id}); return; }
   if(a==="cs-open"){ consOpen(id); return; }

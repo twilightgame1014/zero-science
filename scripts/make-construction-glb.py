@@ -5,7 +5,7 @@
     やり方は scripts/make-nature-glb.py とまったく同じ（その関数をそのまま使う）。足場・資材は拠点の建物と同じ材質の画像を使うので、
     多くは既にある共有テクスチャと同じ鍵になる（重複して埋め込まない）。頂点・面・ノード名・寸法は変えない。
   ・道 3 種のテクスチャ（色・法線、512×512 の PNG）：WebP にする（色・法線とも長辺 512）。
-出力：assets/build/construction/<id>.glb・road-<kind>.webp・road-<kind>_n.webp・manifest.json
+出力：assets/build/construction/<id>.glb・looks/<id>.glb（倉庫・工房の外観違い）・road-<kind>.webp・road-<kind>_n.webp・manifest.json
 使い方：python3 scripts/make-construction-glb.py   （Pillow が必要）"""
 import io, json, os, glob
 from PIL import Image
@@ -21,6 +21,14 @@ man = {"note": "scripts/make-construction-glb.py が作る。GLB の画像は as
 for f in sorted(glob.glob(os.path.join(SRC, "models", "*.glb"))):
     n, info = g["convert"](f, OUT, drop_shadow=False); man["models"][n] = info
     for h in info["textures"]: man["textures"][h] = True
+# 外観違いの建物（Muse、assets/town-construction。原本は変えない）：倉庫・工房の LOD0 だけを同じ処理で軽量化する（2026-11-15 Claude）。
+# LOD1 は同じ処理のあと 1 ファイルの HTML に入れると LOD0 より大きくなった（実測：LOD0 +168KB、LOD1 +214KB）ので配信に入れない（原本は残す）。
+man["looks"] = {}
+os.makedirs(os.path.join(OUT, "looks"), exist_ok=True)
+for lid in ("warehouse", "workshop"):
+    n, info = g["convert"](os.path.join(ROOT, "assets/town-construction/models", lid + ".glb"), os.path.join(OUT, "looks"), drop_shadow=False)
+    man["looks"][lid] = info
+    for h in info["textures"]: man["textures"][h] = True
 for kind in ("dirt", "gravel", "stone"):
     e = {}
     for suf, mx in (("", 512), ("_n", 512)):   # 法線も 512（e2e が色・法線とも 512 を確かめる）
@@ -32,7 +40,7 @@ for kind in ("dirt", "gravel", "stone"):
         e["normal" if suf else "color"] = {"file": os.path.relpath(o, ROOT), "bytesIn": os.path.getsize(p), "bytesOut": os.path.getsize(o), "size": im.size}
     man["roads"][kind] = e
 json.dump(man, open(os.path.join(OUT, "manifest.json"), "w"), ensure_ascii=False, indent=1)
-tin = sum(v["bytesIn"] for v in man["models"].values()) + sum(x["bytesIn"] for r in man["roads"].values() for x in r.values())
-tout = sum(v["bytesOut"] for v in man["models"].values()) + sum(x["bytesOut"] for r in man["roads"].values() for x in r.values())
+tin = sum(v["bytesIn"] for v in list(man["models"].values()) + list(man["looks"].values())) + sum(x["bytesIn"] for r in man["roads"].values() for x in r.values())
+tout = sum(v["bytesOut"] for v in list(man["models"].values()) + list(man["looks"].values())) + sum(x["bytesOut"] for r in man["roads"].values() for x in r.values())
 print(f"原本 {tin/1e6:.2f}MB → 軽量版 {tout/1e6:.2f}MB（共有テクスチャ {len(man['textures'])} 枚は nature-tex）")
-for n, v in man["models"].items(): print(f"  {n}: {v['bytesIn']//1024}KB → {v['bytesOut']//1024}KB tris={v['tris']} tex={len(v['textures'])}")
+for n, v in list(man["models"].items()) + list(man["looks"].items()): print(f"  {n}: {v['bytesIn']//1024}KB → {v['bytesOut']//1024}KB tris={v['tris']} tex={len(v['textures'])}")

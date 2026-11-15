@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { prepareShared } from './world/natureModels';
-export type Site = { id: string; def: string; model: string; stage: number; stages: number; x:number;z:number;rot:number;shape:string;w:number;d:number;r:number;phase:string;progress:number;supplied:number;tall:number;entrance?:[number,number]|null;pileKinds?:string[] };
+export type Site = { id: string; def: string; model: string; stageNodes?: Record<string,string[]>|null; stage: number; stages: number; x:number;z:number;rot:number;shape:string;w:number;d:number;r:number;phase:string;progress:number;supplied:number;tall:number;entrance?:[number,number]|null;pileKinds?:string[] };
 type Cell = {i:number;j:number;kind:string};
 type Data = {sites:Site[];roads:Cell[];pending:Cell[];cell:number;colors:Record<string,string>};
 type Assets = {contract:any;models:Record<string,string>;textures:Record<string,string>};
@@ -48,7 +48,9 @@ function buildSite(s:Site,h:(x:number,z:number)=>number,template:THREE.Object3D|
   for(const name of ['ropeX_P','outlineX_P']){const p=add('construction-site',name,(x+next[0])/2,(y(x,z)+y(...next))/2,(z+next[1])/2);if(p){p.children[0].position.x=0;p.children[0].position.z=0;p.scale.x=len;p.rotation.y=angle;}}
  });
  const def=assets?.contract.buildings.find((b:any)=>b.id===s.def);
- if(template&&s.stage>0){const body=template.clone(true);applyConstructionStage(body,def?.museFields.stageNodes[String(s.stage-1)]||[]);body.name='CompletedConstructionStages';g.add(body);}
+ // 外観違い（looks）は、その外観の工程ノード（s.stageNodes）を使う。標準の外観は契約の stageNodes。対応する工程がなければ建物は出さない（キットだけ）
+ const stageNames=s.stageNodes?s.stageNodes[String(s.stage-1)]:def?.museFields.stageNodes[String(s.stage-1)];
+ if(template&&s.stage>0&&stageNames?.length){const body=template.clone(true);applyConstructionStage(body,stageNames);body.name='CompletedConstructionStages';g.add(body);}
  const count=Math.round(Math.min(1,s.supplied)*6),pk=s.pileKinds?.length?s.pileKinds:['crated'];
  for(let k=0;k<count;k++){const x=(s.shape==='rect'?s.w/2:s.r)+0.6,z=-0.9+k*0.38;add('pile-'+pk[k%pk.length],undefined,x,y(x,z),z);}
  if(s.phase==='constructing'){

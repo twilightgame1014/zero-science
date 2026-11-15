@@ -5,6 +5,7 @@
    ・facility：完成するとその設備が使える（研究室・工作の条件）。null は設備の働きのない建物（住宅・広場・飾り）。
    ・salvage：解体・取消のとき、施工済みの工程から戻る資材（工程 id → {素材:個数}）。null は「返却表が未定＝戻らない」。
    ・model：描画の種類（Muse の structures.json と街の specs.json）。footprint・entrance・operate はそこから写した値。
+   ・looks：外観違い（新しく建てるときだけ選べる。inst.look に保存。機能・工程・資材は元の設計図のまま。形・入口は Muse の town-construction.json の正式値の写し）。
    ・正式な工程別の見た目は Muse の納品待ち。それまでは src/construction-visual.ts の仮表示（杭・資材の山・足場）。 */
 (function(D){
   if(D.construction) return;
@@ -13,7 +14,11 @@
     /* ---- 工房（小さな設備） ---- */
     {id:"workbench", name:"作業台", cat:"workshop", facility:"bench", model:"workbench", footprint:{shape:"rect", w:2.2, d:1.05}, operate:[0,1.05],
       stages:[S("assemble","枝と石を組む",{twig:4, thread:2, cobble:2},3,["knife"])], salvage:{assemble:{twig:2, cobble:2}},
-      kid:"枝を組んで作る台。たたく・混ぜる・形を作る作業の場所になる。"},
+      kid:"枝を組んで作る台。たたく・混ぜる・形を作る作業の場所になる。",
+      /* 外観違い（2026-11-15 オーナー方針：既存設備の外観違い。設備の働き・工程・資材・返却は作業台と同じ。上位設備・必須設備にはしない） */
+      looks:[{id:"workshop", name:"工房の建物", model:"look-workshop", footprint:{shape:"rect", w:4.8, d:3.6}, entrance:[0,2.0], operate:null, roadLink:[0,2.2], tall:3.57,
+        stageGroups:{"0":["stage1_foundation","stage2_frame","stage3_shell","stage4_complete"]},
+        kid:"作業台を屋根と壁で囲んだ建物の形。使える作業は作業台と同じ（数をふやしても作れる量は変わらない）。"}]},
     {id:"campfire", name:"たき火", cat:"workshop", facility:"campfire", model:"campfire", footprint:{shape:"circle", r:0.82}, operate:[0,1.25],
       stages:[S("ring","石で囲む",{cobble:3},2), S("light","火を起こす",{twig:3, leaves:1},2,["firedrill"])], salvage:{ring:{cobble:3}},
       kid:"石で囲んだ火。燃やす・煮る・焼く実験ができる。"},
@@ -29,7 +34,10 @@
     /* ---- 倉庫・住宅・公共 ---- */
     {id:"storehouse", name:"倉庫", cat:"storage", facility:"storehouse", model:"hut", footprint:{shape:"rect", w:3.3, d:2.7}, entrance:[0.45,1.35], operate:[0.45,1.95],
       stages:[S("base","丸太の土台",{log:2},3,["axe"]), S("frame","骨組み",{log:2, thread:2},4,["bench"]), S("wall","しっくいの壁",{plaster:2},4)], salvage:{base:{log:1}, frame:{log:1}},
-      kid:"しっくいで固めた倉庫。自動採取の係を増やせる。"},
+      kid:"しっくいで固めた倉庫。自動採取の係を増やせる。",
+      looks:[{id:"warehouse", name:"大きな倉庫", model:"look-warehouse", footprint:{shape:"rect", w:5.4, d:4.2}, entrance:[0,2.3], operate:[0,2.9], roadLink:[0,2.5], tall:3.68,
+        stageGroups:{"0":["stage1_foundation"], "1":["stage1_foundation","stage2_frame"], "2":["stage1_foundation","stage2_frame","stage3_shell","stage4_complete"]},
+        kid:"引き戸のついた大きな倉庫の形。働きはふつうの倉庫と同じ（しまえる量がふえるなどの働きはない）。"}]},
     {id:"house", name:"住宅", cat:"housing", facility:null, model:"town-hut-town", footprint:{shape:"rect", w:3.44, d:3.4}, entrance:[0,2.0],
       stages:[S("base","石の基礎",{cobble:6},4), S("frame","丸太の骨組み",{log:6},5,["axe"]), S("wall","壁と屋根",{plaster:4, brick:6},6)], salvage:null,
       kid:"人が暮らす家。街の大きさの目安になる（今は住民の数は増えない）。"},
