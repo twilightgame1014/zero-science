@@ -803,3 +803,10 @@ Muse が変更するファイルは以下だけ。ゲームコード（src/）�
 3. コライダーは契約の推奨値（幹のみ、樹冠は視界遮蔽と分離）。竹は群生中心 r=0.5 のみで稈間は通行可の前提
 4. 風揺れは契約値（根元固定・控えめな角度）をモジュール側の既存パターンで実装する前提。モデル側にアニメーションは含めていない
 5. 確認用シーンと計測は ~/workspace/scg-plants-check/（混植160株で 621 draw calls／約48万 tris、ヘッドレス SwiftShader 計測で実機値ではない）。iPhone 17 実機 FPS は未測定
+
+## §41 植物UV仕上げ＋GPT原画の正式材質適用／道路テクスチャの継ぎ目・法線仕上げ（2026-11-15、Muse、ブランチ feature/graphics-plants-uv-roads、土台 75709fb = feature/game-town-variants-pages-20261115）
+
+### 変更範囲宣言（作業開始時）
+- 基準の確定：指定の GPT 回収統合版 131dfc8（PR #7）より新しい完成済み統合版として、図鑑統合（d700d73）と外観違い＋自動公開（75709fb）を含む feature/game-town-variants-pages-20261115 が 131dfc8 を包含することを確認し、これを土台にした。新規植物・設備・ゲーム機能の追加はしない。
+- 触るもの：assets/plants/（tools/build_plants.py の葉UV生成、models/*.glb と source/*.blend の再生成、textures/ への加工済み共有テクスチャ追加、plant-materials.json と接続コードの追加、plants-contract.json・README・GPT-TEXTURE-REQUEST.md の状態更新）、assets/construction/textures/（道路3種の正式ベースカラーと法線の差し替え）、assets/construction/tools/（道路加工スクリプト追加）、assets/build/construction/（make-construction-glb.py による配布用 WebP 再生成）、本 HANDOFF。
+- 触らないもの：ゲームロジック、採集 ID・収量、レシピ、セーブ形式、ロケット GLB・契約 v6、src/ 配下すべて。共有生成スクリプト（scripts/make-construction-glb.py、scripts/build.mjs）は変更不要の見込み（道路は既存経路のまま再生成する）。変更が必要になった場合は本節へ先に追記してから行う。
