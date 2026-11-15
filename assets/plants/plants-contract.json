@@ -1,11 +1,12 @@
 {
- "contract": "M3-02 plants v1 (Muse, 2026-11-15)",
+ "contract": "M3-02 plants v2 (Muse, 2026-11-15) — UV completed for all textured slots; GPT textures applied via plant-materials.json",
  "scope": "models / UV / materials / LOD / display states only. Spawning, gathering yields and conditions, regrowth and saves are game-side (Claude). Alien in-game names and recipes are NOT decided here; names below are production classifications based on Earth plants.",
+ "materialsManifest": "plant-materials.json",
  "totals": {
   "assets": 16,
-  "lod0Bytes": 4823584,
-  "lod1Bytes": 1860144,
-  "allBytes": 6683728
+  "lod0Bytes": 5621868,
+  "lod1Bytes": 2007236,
+  "allBytes": 7629104
  },
  "plants": [
   {
@@ -30,12 +31,12 @@
     "lod0": {
      "file": "models/plant-bamboo-a.glb",
      "tris": 7304,
-     "bytes": 493404
+     "bytes": 540736
     },
     "lod1": {
      "file": "models/plant-bamboo-a_lod1.glb",
      "tris": 6036,
-     "bytes": 397572
+     "bytes": 419848
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -45,9 +46,9 @@
     "bambooLeaf",
     "bambooNode"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 1.8,
     "frequencyHz": 0.7,
@@ -91,12 +92,12 @@
     "lod0": {
      "file": "models/plant-bamboo-b.glb",
      "tris": 3968,
-     "bytes": 272256
+     "bytes": 302312
     },
     "lod1": {
      "file": "models/plant-bamboo-b_lod1.glb",
      "tris": 3228,
-     "bytes": 215488
+     "bytes": 229700
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -105,9 +106,9 @@
     "bambooLeaf",
     "bambooNode"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 1.8,
     "frequencyHz": 0.7,
@@ -151,12 +152,12 @@
     "lod0": {
      "file": "models/plant-broadleaf-a.glb",
      "tris": 9728,
-     "bytes": 722452
+     "bytes": 892244
     },
     "lod1": {
      "file": "models/plant-broadleaf-a_lod1.glb",
      "tris": 1584,
-     "bytes": 120040
+     "bytes": 140640
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -167,9 +168,9 @@
     "leafDark",
     "stumpTop"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 1.2,
     "frequencyHz": 0.5,
@@ -212,12 +213,12 @@
     "lod0": {
      "file": "models/plant-broadleaf-b.glb",
      "tris": 9776,
-     "bytes": 724544
+     "bytes": 894188
     },
     "lod1": {
      "file": "models/plant-broadleaf-b_lod1.glb",
      "tris": 1584,
-     "bytes": 119156
+     "bytes": 139612
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -227,9 +228,9 @@
     "leafB",
     "stumpTop"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 1.2,
     "frequencyHz": 0.5,
@@ -273,12 +274,12 @@
     "lod0": {
      "file": "models/plant-cotton-a.glb",
      "tris": 680,
-     "bytes": 57436
+     "bytes": 61276
     },
     "lod1": {
      "file": "models/plant-cotton-a_lod1.glb",
      "tris": 572,
-     "bytes": 49584
+     "bytes": 51984
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -289,9 +290,9 @@
     "stemDry",
     "stemGreen"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 2.2,
     "frequencyHz": 1.0,
@@ -333,12 +334,12 @@
     "lod0": {
      "file": "models/plant-cotton-b.glb",
      "tris": 788,
-     "bytes": 65660
+     "bytes": 69984
     },
     "lod1": {
      "file": "models/plant-cotton-b_lod1.glb",
      "tris": 672,
-     "bytes": 57188
+     "bytes": 59876
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -349,9 +350,9 @@
     "stemDry",
     "stemGreen"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 2.2,
     "frequencyHz": 1.0,
@@ -393,12 +394,12 @@
     "lod0": {
      "file": "models/plant-flax-a.glb",
      "tris": 1064,
-     "bytes": 98436
+     "bytes": 102756
     },
     "lod1": {
      "file": "models/plant-flax-a_lod1.glb",
      "tris": 948,
-     "bytes": 89952
+     "bytes": 92640
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -409,9 +410,9 @@
     "stemDry",
     "stemGreen"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 2.5,
     "frequencyHz": 1.1,
@@ -453,12 +454,12 @@
     "lod0": {
      "file": "models/plant-flax-b.glb",
      "tris": 932,
-     "bytes": 86592
+     "bytes": 90436
     },
     "lod1": {
      "file": "models/plant-flax-b_lod1.glb",
      "tris": 824,
-     "bytes": 78736
+     "bytes": 81140
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -469,9 +470,9 @@
     "stemDry",
     "stemGreen"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 2.5,
     "frequencyHz": 1.1,
@@ -512,12 +513,12 @@
     "lod0": {
      "file": "models/plant-kouzo-a.glb",
      "tris": 10040,
-     "bytes": 742520
+     "bytes": 912160
     },
     "lod1": {
      "file": "models/plant-kouzo-a_lod1.glb",
      "tris": 1488,
-     "bytes": 112104
+     "bytes": 128528
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -528,9 +529,9 @@
     "leafA",
     "stumpTop"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 1.4,
     "frequencyHz": 0.55,
@@ -573,12 +574,12 @@
     "lod0": {
      "file": "models/plant-kouzo-b.glb",
      "tris": 8312,
-     "bytes": 614636
+     "bytes": 753176
     },
     "lod1": {
      "file": "models/plant-kouzo-b_lod1.glb",
      "tris": 1600,
-     "bytes": 120840
+     "bytes": 139952
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -589,9 +590,9 @@
     "leafB",
     "stumpTop"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 1.4,
     "frequencyHz": 0.55,
@@ -634,12 +635,12 @@
     "lod0": {
      "file": "models/plant-pine-a.glb",
      "tris": 3288,
-     "bytes": 294896
+     "bytes": 318084
     },
     "lod1": {
      "file": "models/plant-pine-a_lod1.glb",
      "tris": 1508,
-     "bytes": 134832
+     "bytes": 142276
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -650,9 +651,9 @@
     "stumpTop",
     "trunkPine"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 1.0,
     "frequencyHz": 0.45,
@@ -695,12 +696,12 @@
     "lod0": {
      "file": "models/plant-pine-b.glb",
      "tris": 2256,
-     "bytes": 201820
+     "bytes": 216848
     },
     "lod1": {
      "file": "models/plant-pine-b_lod1.glb",
      "tris": 1116,
-     "bytes": 98664
+     "bytes": 103996
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -711,9 +712,9 @@
     "stumpTop",
     "trunkPine"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 1.0,
     "frequencyHz": 0.45,
@@ -757,12 +758,12 @@
     "lod0": {
      "file": "models/plant-rapeseed-a.glb",
      "tris": 1460,
-     "bytes": 130128
+     "bytes": 133972
     },
     "lod1": {
      "file": "models/plant-rapeseed-a_lod1.glb",
      "tris": 896,
-     "bytes": 79200
+     "bytes": 81604
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -773,9 +774,9 @@
     "stemDry",
     "stemGreen"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 2.5,
     "frequencyHz": 1.1,
@@ -817,12 +818,12 @@
     "lod0": {
      "file": "models/plant-rapeseed-b.glb",
      "tris": 1680,
-     "bytes": 149208
+     "bytes": 153532
     },
     "lod1": {
      "file": "models/plant-rapeseed-b_lod1.glb",
      "tris": 1032,
-     "bytes": 90484
+     "bytes": 93176
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -833,9 +834,9 @@
     "stemDry",
     "stemGreen"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 2.5,
     "frequencyHz": 1.1,
@@ -876,12 +877,12 @@
     "lod0": {
      "file": "models/plant-reed-a.glb",
      "tris": 1180,
-     "bytes": 84796
+     "bytes": 90080
     },
     "lod1": {
      "file": "models/plant-reed-a_lod1.glb",
      "tris": 640,
-     "bytes": 48148
+     "bytes": 51128
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -890,9 +891,9 @@
     "reedLeaf",
     "stemGreen"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 3.5,
     "frequencyHz": 0.9,
@@ -935,12 +936,12 @@
     "lod0": {
      "file": "models/plant-reed-b.glb",
      "tris": 1180,
-     "bytes": 84800
+     "bytes": 90084
     },
     "lod1": {
      "file": "models/plant-reed-b_lod1.glb",
      "tris": 640,
-     "bytes": 48156
+     "bytes": 51136
     },
     "recommendedSwitchDistance_m": 27
    },
@@ -949,9 +950,9 @@
     "reedLeaf",
     "stemGreen"
    ],
-   "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+   "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
    "texturesEmbedded": [],
-   "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+   "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
    "windSway": {
     "maxDeg": 3.5,
     "frequencyHz": 0.9,

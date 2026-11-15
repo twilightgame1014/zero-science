@@ -111,9 +111,9 @@ def entry(asset):
             "recommendedSwitchDistance_m": 27,
         },
         "materials": mats,
-        "materialNote": "flat shared palette materials; no texture embedded in any GLB. GPT textures attach by material name (see GPT-TEXTURE-REQUEST.md)",
+        "materialNote": "no texture embedded in any GLB. Shared processed textures attach by material name via plant-materials.json (+ plant-materials.mjs); slots not listed there stay on the flat shared palette",
         "texturesEmbedded": [],
-        "alphaMethod": "none-opaque (all geometry opaque; no alpha cards, no transparent faces)",
+        "alphaMethod": "geometry is opaque; single-leaf textures are cut by alphaTest against the geometry silhouette (intersection), no transparent blending and no sorting issues. needleA is composited opaque so the pine core mass never gets holes. See plant-materials.json alphaPolicy",
         "windSway": meta["windSway"],
         "gatherPoint": meta["gatherPoint"],
         "recommendedCollider": meta["collider"],
@@ -128,8 +128,9 @@ def main():
     total0 = sum(a["lod"]["lod0"]["bytes"] for a in assets)
     total1 = sum(a["lod"]["lod1"]["bytes"] for a in assets)
     doc = {
-        "contract": "M3-02 plants v1 (Muse, 2026-11-15)",
+        "contract": "M3-02 plants v2 (Muse, 2026-11-15) — UV completed for all textured slots; GPT textures applied via plant-materials.json",
         "scope": "models / UV / materials / LOD / display states only. Spawning, gathering yields and conditions, regrowth and saves are game-side (Claude). Alien in-game names and recipes are NOT decided here; names below are production classifications based on Earth plants.",
+        "materialsManifest": "plant-materials.json",
         "totals": {"assets": len(assets), "lod0Bytes": total0, "lod1Bytes": total1,
                    "allBytes": total0 + total1},
         "plants": assets,

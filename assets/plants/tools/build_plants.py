@@ -76,7 +76,12 @@ def ball(p, r, mat, detail=1, squash=1.0):
     return o
 
 def leaf_mesh(w=0.055, L=0.30, fold=0.035):
-    """One bent leaf: 4 triangles, grows along +Y from origin."""
+    """One bent leaf: 4 triangles, grows along +Y from origin.
+    UVs follow the leaf's own parametrisation (added 2026-11-15, §41):
+    u = across the blade (0 at the left edge, 0.5 on the midrib, 1 at the
+    right edge), v = along the blade (0 at the petiole, 1 at the tip), so a
+    single-leaf texture whose petiole sits at the image bottom maps onto
+    every leaf instance unchanged through baking and joining."""
     me = bpy.data.meshes.new("leafGeo")
     hw = w
     verts = [(0, 0, 0), (-hw, L * 0.45, -fold * 0.5), (0, L * 0.52, fold),
@@ -84,6 +89,10 @@ def leaf_mesh(w=0.055, L=0.30, fold=0.035):
     faces = [(0, 1, 2), (0, 2, 3), (1, 4, 2), (2, 4, 3)]
     me.from_pydata(verts, [], faces)
     me.update()
+    vuv = [(0.5, 0.0), (0.0, 0.45), (0.5, 0.52), (1.0, 0.45), (0.5, 1.0)]
+    layer = me.uv_layers.new(name="UVMap")
+    for loop in me.loops:
+        layer.data[loop.index].uv = vuv[loop.vertex_index]
     return me
 
 LEAF = {}

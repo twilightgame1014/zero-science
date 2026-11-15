@@ -1,0 +1,161 @@
+{
+ "alphaPolicy": "葉の輪郭はジオメトリが担い、単葉テクスチャは alphaTest で『ジオメトリ輪郭 ∩ 原画輪郭』を最終輪郭にする（広い半透明面を作らないのでソート乱れは起きない）。針葉の中核球は穴を開けないため needleA のみ不透明合成。",
+ "manifest": "M3-02 plant materials v2 (Muse, 2026-11-15, §41)",
+ "note": "材質スロット（GLB の material 名）→ 共有テクスチャの対応表。画像は assets/plants/textures/ の加工済み共有画像で、各 GLB への重複同梱はしない。適用は plant-materials.mjs の loadPlantMaterials / applyPlantMaterials を使う。色空間はベースカラー全て sRGB。法線・粗さマップは今回なし（粗さは材質定数）。",
+ "slots": {
+  "bambooCulm": {
+   "alphaMode": "opaque",
+   "colorSpace": "srgb",
+   "image": "textures/bamboo-culm.png",
+   "roughness": 0.7,
+   "side": "FrontSide",
+   "source": "gpt-art/tex-bamboo-culm.png",
+   "wrap": "RepeatWrapping"
+  },
+  "bambooDry": {
+   "alphaMode": "opaque",
+   "colorSpace": "srgb",
+   "image": "textures/bamboo-culm.png",
+   "roughness": 0.85,
+   "side": "FrontSide",
+   "source": "gpt-art/tex-bamboo-culm.png（枯れ色 tint 併用）",
+   "tint": [
+    1.18,
+    1.08,
+    0.6
+   ],
+   "wrap": "RepeatWrapping"
+  },
+  "bambooNode": {
+   "alphaMode": "opaque",
+   "colorSpace": "srgb",
+   "image": "textures/bamboo-culm.png",
+   "roughness": 0.75,
+   "side": "FrontSide",
+   "source": "gpt-art/tex-bamboo-culm.png（稈と同一画像。節はジオメトリ側で画像へは描かない）",
+   "wrap": "RepeatWrapping"
+  },
+  "bark": {
+   "alphaMode": "opaque",
+   "colorSpace": "srgb",
+   "image": "textures/bark-broadleaf.png",
+   "roughness": 0.95,
+   "side": "FrontSide",
+   "source": "gpt-art/tex-bark-broadleaf.png",
+   "wrap": "RepeatWrapping"
+  },
+  "barkDark": {
+   "alphaMode": "opaque",
+   "colorSpace": "srgb",
+   "image": "textures/bark-broadleaf-dark.png",
+   "roughness": 0.95,
+   "side": "FrontSide",
+   "source": "gpt-art/tex-bark-broadleaf.png（色調展開 ×0.66）",
+   "wrap": "RepeatWrapping"
+  },
+  "barkLight": {
+   "alphaMode": "opaque",
+   "colorSpace": "srgb",
+   "image": "textures/bark-kouzo.png",
+   "roughness": 0.9,
+   "side": "FrontSide",
+   "source": "gpt-art/tex-bark-kouzo.png",
+   "wrap": "RepeatWrapping"
+  },
+  "kouzoLeaf": {
+   "alphaMode": "alphaTest",
+   "alphaTest": 0.45,
+   "colorSpace": "srgb",
+   "image": "textures/leaf-kouzo.png",
+   "roughness": 0.85,
+   "side": "DoubleSide",
+   "source": "gpt-art/tex-leaf-kouzo.png",
+   "wrap": "ClampToEdgeWrapping"
+  },
+  "leafA": {
+   "alphaMode": "alphaTest",
+   "alphaTest": 0.45,
+   "colorSpace": "srgb",
+   "image": "textures/leaf-broadleaf-a.png",
+   "roughness": 0.85,
+   "side": "DoubleSide",
+   "source": "gpt-art/tex-leaf-broadleaf.png 左上象限",
+   "wrap": "ClampToEdgeWrapping"
+  },
+  "leafB": {
+   "alphaMode": "alphaTest",
+   "alphaTest": 0.45,
+   "colorSpace": "srgb",
+   "image": "textures/leaf-broadleaf-b.png",
+   "roughness": 0.85,
+   "side": "DoubleSide",
+   "source": "gpt-art/tex-leaf-broadleaf.png 右上象限",
+   "wrap": "ClampToEdgeWrapping"
+  },
+  "leafDark": {
+   "alphaMode": "alphaTest",
+   "alphaTest": 0.45,
+   "colorSpace": "srgb",
+   "image": "textures/leaf-broadleaf-dark.png",
+   "roughness": 0.85,
+   "side": "DoubleSide",
+   "source": "gpt-art/tex-leaf-broadleaf.png 左下象限",
+   "wrap": "ClampToEdgeWrapping"
+  },
+  "needleA": {
+   "alphaMode": "opaque",
+   "colorSpace": "srgb",
+   "image": "textures/needle-pine-a.png",
+   "roughness": 0.9,
+   "side": "FrontSide",
+   "source": "gpt-art/tex-needle-pine.png（深緑へα合成し不透明化）",
+   "wrap": "ClampToEdgeWrapping"
+  },
+  "needleB": {
+   "alphaMode": "alphaTest",
+   "alphaTest": 0.45,
+   "colorSpace": "srgb",
+   "image": "textures/needle-pine-b.png",
+   "roughness": 0.9,
+   "side": "DoubleSide",
+   "source": "gpt-art/tex-needle-pine.png 上部中央の縦帯切り出し",
+   "wrap": "ClampToEdgeWrapping"
+  },
+  "reedLeaf": {
+   "alphaMode": "alphaTest",
+   "alphaTest": 0.45,
+   "colorSpace": "srgb",
+   "image": "textures/reed-leaf.png",
+   "roughness": 0.85,
+   "side": "DoubleSide",
+   "source": "gpt-art/tex-reed-leaf.png",
+   "wrap": "ClampToEdgeWrapping"
+  },
+  "trunkPine": {
+   "alphaMode": "opaque",
+   "colorSpace": "srgb",
+   "image": "textures/bark-pine.png",
+   "repeat": [
+    2,
+    2
+   ],
+   "roughness": 0.95,
+   "side": "FrontSide",
+   "source": "gpt-art/tex-bark-pine.png（彩度×0.70・明度×0.88に補正、repeat 2x2で鱗を詰める）",
+   "wrap": "RepeatWrapping"
+  }
+ },
+ "untexturedSlots": {
+  "bambooLeaf": "竹の葉の原画は今回の GPT 8素材に含まれないためフラット色のまま。UV は leaf_mesh 共通で付与済みなので、原画が来ればスロット追加だけで適用できる",
+  "cottonBract": "綿の苞。同上",
+  "cottonWhite": "綿の白い実は被写体として保護し今回の適用対象外（ジオメトリ＋フラット色）",
+  "flaxFlower": "亜麻の青花は今回の原画適用対象外（ジオメトリ＋フラット色）",
+  "podBrown": "亜麻のさや。同上",
+  "rapeFlower": "菜種の黄花は今回の原画適用対象外（ジオメトリ＋フラット色）",
+  "rapePod": "菜種のさや。同上",
+  "reedHead": "葦の穂。フラット色で判別可能（今回の適用対象外）",
+  "stemDry": "細茎（刈り後）。同上",
+  "stemGreen": "細茎。フラット色で判別に足りるため原画なし",
+  "stumpTop": "切り株の断面（年輪）原画なし。フラット色で運用"
+ }
+}

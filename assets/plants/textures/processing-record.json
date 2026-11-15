@@ -1,0 +1,189 @@
+{
+ "note": "process_textures.py の加工記録。座標は元画像ピクセル（PIL: 左上原点）",
+ "items": {
+  "leaf-broadleaf-a.png": {
+   "source": "tex-leaf-broadleaf.png",
+   "slot": "leafA",
+   "quadrant": [
+    0,
+    0,
+    256,
+    256
+   ],
+   "leafBBoxInQuadrant": [
+    65,
+    10,
+    204,
+    244
+   ],
+   "ops": "象限切り出し→外接矩形を全面正規化→α膨張2px→RGB bleed",
+   "bytes": 175378,
+   "size": [
+    512,
+    512
+   ]
+  },
+  "leaf-broadleaf-b.png": {
+   "source": "tex-leaf-broadleaf.png",
+   "slot": "leafB",
+   "quadrant": [
+    256,
+    0,
+    512,
+    256
+   ],
+   "leafBBoxInQuadrant": [
+    45,
+    11,
+    191,
+    245
+   ],
+   "ops": "象限切り出し→外接矩形を全面正規化→α膨張2px→RGB bleed",
+   "bytes": 190235,
+   "size": [
+    512,
+    512
+   ]
+  },
+  "leaf-broadleaf-dark.png": {
+   "source": "tex-leaf-broadleaf.png",
+   "slot": "leafDark",
+   "quadrant": [
+    0,
+    256,
+    256,
+    512
+   ],
+   "leafBBoxInQuadrant": [
+    63,
+    8,
+    213,
+    245
+   ],
+   "ops": "象限切り出し→外接矩形を全面正規化→α膨張2px→RGB bleed",
+   "bytes": 181225,
+   "size": [
+    512,
+    512
+   ]
+  },
+  "tex-leaf-broadleaf.png:BR": {
+   "slot": null,
+   "ops": "右下・黄の葉はパレット（leafA/B/Dark）の色調から外れるため不使用"
+  },
+  "leaf-kouzo.png": {
+   "source": "tex-leaf-kouzo.png",
+   "slot": "kouzoLeaf",
+   "leafBBox": [
+    22,
+    22,
+    487,
+    495
+   ],
+   "ops": "外接矩形を全面正規化→α膨張2px→RGB bleed",
+   "bytes": 233601,
+   "size": [
+    512,
+    512
+   ]
+  },
+  "reed-leaf.png": {
+   "source": "tex-reed-leaf.png",
+   "slot": "reedLeaf",
+   "leafBBox": [
+    222,
+    14,
+    287,
+    498
+   ],
+   "ops": "外接矩形を全面正規化→α膨張2px→RGB bleed",
+   "bytes": 69542,
+   "size": [
+    512,
+    512
+   ]
+  },
+  "needle-pine-a.png": {
+   "source": "tex-needle-pine.png",
+   "slot": "needleA",
+   "ops": "束原画を深緑へα合成して不透明化（中核球に穴を開けないため α は使わない）",
+   "bytes": 173589,
+   "size": [
+    512,
+    512
+   ]
+  },
+  "needle-pine-b.png": {
+   "source": "tex-needle-pine.png",
+   "slot": "needleB",
+   "stripCrop": [
+    205,
+    10,
+    307,
+    300
+   ],
+   "leafBBoxInStrip": [
+    0,
+    25,
+    102,
+    290
+   ],
+   "ops": "縦帯切り出し→正規化→α膨張2px→RGB bleed。alphaTest で針の隙間を残す",
+   "bytes": 112553,
+   "size": [
+    256,
+    512
+   ]
+  },
+  "bark-broadleaf.png": {
+   "source": "tex-bark-broadleaf.png",
+   "slot": "bark",
+   "ops": "u方向48px・v方向32pxの鏡像バンドで継ぎ目処理",
+   "bytes": 263896,
+   "size": [
+    512,
+    512
+   ]
+  },
+  "bark-pine.png": {
+   "source": "tex-bark-pine.png",
+   "slot": "trunkPine",
+   "ops": "u方向48px・v方向32pxの鏡像バンドで継ぎ目処理＋彩度×0.70・明度×0.88の色調補正（原画の赤み抑制）",
+   "bytes": 298043,
+   "size": [
+    512,
+    512
+   ]
+  },
+  "bark-kouzo.png": {
+   "source": "tex-bark-kouzo.png",
+   "slot": "barkLight",
+   "ops": "u方向48px・v方向32pxの鏡像バンドで継ぎ目処理",
+   "bytes": 325570,
+   "size": [
+    512,
+    512
+   ]
+  },
+  "bark-broadleaf-dark.png": {
+   "source": "bark-broadleaf.png（加工済み）",
+   "slot": "barkDark",
+   "ops": "広葉樹樹皮の色調展開（×0.66）。依頼表の『色違いは色調展開で可』に準拠",
+   "bytes": 228015,
+   "size": [
+    512,
+    512
+   ]
+  },
+  "bamboo-culm.png": {
+   "source": "tex-bamboo-culm.png",
+   "slot": "bambooCulm / bambooNode",
+   "ops": "鏡像バンド32px。節はジオメトリ側（画像へ描き足していない）",
+   "bytes": 106577,
+   "size": [
+    256,
+    512
+   ]
+  }
+ }
+}
