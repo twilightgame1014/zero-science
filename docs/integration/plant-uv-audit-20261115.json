@@ -1,0 +1,312 @@
+[
+  {
+    "model": "assets/plants/models/plant-cotton-b_lod1.glb",
+    "mesh": "leafGeo.001",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-cotton-b_lod1.glb",
+    "mesh": "leafGeo.022",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-reed-a_lod1.glb",
+    "mesh": "leafGeo.015",
+    "material": "reedLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-reed-a_lod1.glb",
+    "mesh": "leafGeo.001",
+    "material": "reedLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-flax-b_lod1.glb",
+    "mesh": "leafGeo.002",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-flax-b_lod1.glb",
+    "mesh": "leafGeo.050",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-rapeseed-a_lod1.glb",
+    "mesh": "leafGeo.001",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-rapeseed-a_lod1.glb",
+    "mesh": "leafGeo.019",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-kouzo-a.glb",
+    "mesh": "leafGeo.004",
+    "material": "kouzoLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-kouzo-a.glb",
+    "mesh": "leafGeo.002",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-broadleaf-b_lod1.glb",
+    "mesh": "leafGeo.003",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-broadleaf-b_lod1.glb",
+    "mesh": "leafGeo.002",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-kouzo-b.glb",
+    "mesh": "leafGeo.002",
+    "material": "kouzoLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-kouzo-b.glb",
+    "mesh": "leafGeo.003",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-bamboo-a_lod1.glb",
+    "mesh": "leafGeo.225",
+    "material": "bambooLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-bamboo-a_lod1.glb",
+    "mesh": "leafGeo.001",
+    "material": "bambooLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-broadleaf-a.glb",
+    "mesh": "leafGeo.007",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-broadleaf-a.glb",
+    "mesh": "leafGeo.003",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-broadleaf-a.glb",
+    "mesh": "leafGeo.005",
+    "material": "leafDark"
+  },
+  {
+    "model": "assets/plants/models/plant-cotton-a.glb",
+    "mesh": "leafGeo.001",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-cotton-a.glb",
+    "mesh": "leafGeo.031",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-flax-b.glb",
+    "mesh": "leafGeo.002",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-flax-b.glb",
+    "mesh": "leafGeo.062",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-pine-b_lod1.glb",
+    "mesh": "leafGeo.004",
+    "material": "needleB"
+  },
+  {
+    "model": "assets/plants/models/plant-broadleaf-b.glb",
+    "mesh": "leafGeo.002",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-broadleaf-b.glb",
+    "mesh": "leafGeo.007",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-cotton-b.glb",
+    "mesh": "leafGeo.001",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-cotton-b.glb",
+    "mesh": "leafGeo.036",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-flax-a.glb",
+    "mesh": "leafGeo.002",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-flax-a.glb",
+    "mesh": "leafGeo.072",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-reed-b.glb",
+    "mesh": "leafGeo.027",
+    "material": "reedLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-reed-b.glb",
+    "mesh": "leafGeo.001",
+    "material": "reedLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-bamboo-a.glb",
+    "mesh": "leafGeo.481",
+    "material": "bambooLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-bamboo-a.glb",
+    "mesh": "leafGeo.001",
+    "material": "bambooLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-kouzo-b_lod1.glb",
+    "mesh": "leafGeo.004",
+    "material": "kouzoLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-kouzo-b_lod1.glb",
+    "mesh": "leafGeo.002",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-reed-a.glb",
+    "mesh": "leafGeo.027",
+    "material": "reedLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-reed-a.glb",
+    "mesh": "leafGeo.001",
+    "material": "reedLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-bamboo-b.glb",
+    "mesh": "leafGeo.301",
+    "material": "bambooLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-bamboo-b.glb",
+    "mesh": "leafGeo.001",
+    "material": "bambooLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-broadleaf-a_lod1.glb",
+    "mesh": "leafGeo.004",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-broadleaf-a_lod1.glb",
+    "mesh": "leafGeo.003",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-broadleaf-a_lod1.glb",
+    "mesh": "leafGeo.008",
+    "material": "leafDark"
+  },
+  {
+    "model": "assets/plants/models/plant-flax-a_lod1.glb",
+    "mesh": "leafGeo.002",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-flax-a_lod1.glb",
+    "mesh": "leafGeo.058",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-rapeseed-b_lod1.glb",
+    "mesh": "leafGeo.001",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-rapeseed-b_lod1.glb",
+    "mesh": "leafGeo.022",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-pine-b.glb",
+    "mesh": "leafGeo.003",
+    "material": "needleB"
+  },
+  {
+    "model": "assets/plants/models/plant-reed-b_lod1.glb",
+    "mesh": "leafGeo.015",
+    "material": "reedLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-reed-b_lod1.glb",
+    "mesh": "leafGeo.001",
+    "material": "reedLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-pine-a.glb",
+    "mesh": "leafGeo.003",
+    "material": "needleB"
+  },
+  {
+    "model": "assets/plants/models/plant-cotton-a_lod1.glb",
+    "mesh": "leafGeo.001",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-cotton-a_lod1.glb",
+    "mesh": "leafGeo.019",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-kouzo-a_lod1.glb",
+    "mesh": "leafGeo.002",
+    "material": "kouzoLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-kouzo-a_lod1.glb",
+    "mesh": "leafGeo.003",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-rapeseed-a.glb",
+    "mesh": "leafGeo.001",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-rapeseed-a.glb",
+    "mesh": "leafGeo.031",
+    "material": "leafB"
+  },
+  {
+    "model": "assets/plants/models/plant-rapeseed-b.glb",
+    "mesh": "leafGeo.001",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-rapeseed-b.glb",
+    "mesh": "leafGeo.036",
+    "material": "leafA"
+  },
+  {
+    "model": "assets/plants/models/plant-pine-a_lod1.glb",
+    "mesh": "leafGeo.002",
+    "material": "needleB"
+  },
+  {
+    "model": "assets/plants/models/plant-bamboo-b_lod1.glb",
+    "mesh": "leafGeo.141",
+    "material": "bambooLeaf"
+  },
+  {
+    "model": "assets/plants/models/plant-bamboo-b_lod1.glb",
+    "mesh": "leafGeo.001",
+    "material": "bambooLeaf"
+  }
+]

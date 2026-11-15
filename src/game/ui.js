@@ -228,7 +228,7 @@ function stageSummary(){
     <p class="desc" style="margin-top:0">次の文明の進化：${D.stages[st].need}</p>`;
 }
 function viewMenu(){
-  return stageSummary()+`<div class="bigmenu">${[["book","book","図鑑","見つけたものの説明"],["map","tech","技術","技術と物質のつながり"],["log","log","記録","実験の記録・セーブ"],["build","home","建築","作った家や設備を好きな場所に置く"],...(VERIFY?[["verify","settings","検証モード","全解放・素材・移動・アセット"]]:[]),["settings","settings","設定","主人公・表示・遊び方"]]
+  return stageSummary()+`<div class="bigmenu">${[["book","book","図鑑","見つけたものの説明"],["map","tech","技術","技術と物質のつながり"],["log","log","記録","実験の記録・セーブ"],["build","home","建築",E.buildRule(S)&&!S.verify?"設計図を選び、現地に建てる（予定地→資材を運ぶ→施工）":"作った家や設備を好きな場所に置く"],...(VERIFY?[["verify","settings","検証モード","全解放・素材・移動・アセット"]]:[]),["settings","settings","設定","主人公・表示・遊び方"]]
     .map(([t,i,n,d])=>`<button class="bigitem" data-tab="${t}">${iconHTML(i)}<span>${n}<small>${d}</small></span></button>`).join("")}</div>`;
 }
 function viewSettings(){
@@ -907,6 +907,9 @@ function syncStructColliders(){
     if(sp && sp.footprint) list.push({id, type:v.type, x:v.x, z:v.z, rot:v.rot, footprint:sp.footprint}); });
   if(SPACE.placed(S)){
     const b=S.build['space-site'];
+    /* 発射サイト全体（18×18）は「歩けるが建てられない」予約範囲（walk）。個別の設備の形（下）だけだと、その隙間に建物や道を置けてしまっていた
+       （docs/space/REVIEW-PR4-2026-11-14.md の指摘 7）。歩く・押し出し・経路には使わないので、搭乗口への道筋は個別の形のまま */
+    list.push({id:'space-site:area',type:'space-site',x:b.x,z:b.z,rot:b.rot,footprint:D.space.siteSpec.footprint,walk:true});
     for(const model of ASSETS.spaceContract.models){
       const pos=ASSETS.spacePlacement[model.id], c=model.collision;if(!pos||!c||!['box','cylinder'].includes(c.shape))continue;
       const x=b.x+pos[0]*Math.cos(b.rot)+pos[1]*Math.sin(b.rot), z=b.z-pos[0]*Math.sin(b.rot)+pos[1]*Math.cos(b.rot);
@@ -1002,7 +1005,7 @@ async function start3D(){
       const st=HD2D.natureModelStatus(); W3.natModels=st; if(Object.keys(st.failed).length) console.warn("自然物のモデルの読み込みに失敗：", st.failed); });
     /* 広い世界の外側（地形の区画・海・湖・山の川・滝）を、モジュールのシーンに足して描く（src/world/render.ts） */
     if(HD2D.attachWorld){ try{ W3.world = HD2D.attachWorld(W3.gfx, {cfg:W3.cfg, quality: MOBILE ? "low" : "high",
-      images:{particle:ASSETS.particle}}); }catch(e){ console.error("広い世界の描画を始められなかった", e); } }
+      images:{particle:ASSETS.particle}, volcanoKit:ASSETS.volcanoKit}); }catch(e){ console.error("広い世界の描画を始められなかった", e); } }
     camInit();      // 保存した視点を先に（古いセーブの画面基準の向きを、その視点でワールドの向きへ換算するため）
     W3.pos = spawnPos();
     if(W3.spawnMoved) camRebase();     // 安全な場所へ移したときは、その場の足もとを基準の高さに
@@ -1674,13 +1677,13 @@ let modalOpener = null;
 function openModal(focusEl){
   if(!modalOpen()) modalOpener = document.activeElement;
   haltField();
-  $("#modal").classList.add("open"); $("#app").inert = true;
+  $("#modal").classList.add("open"); $("#app").inert = true; document.documentElement.classList.add("modal-on");
   const f = focusEl || $("#sheet").querySelector("button"); if(f) f.focus({preventScroll:true});
 }
 function closeModal(){
   if(!modalOpen()) return;
   endTalk();
-  $("#modal").classList.remove("open"); $("#app").inert = false;
+  $("#modal").classList.remove("open"); $("#app").inert = false; document.documentElement.classList.remove("modal-on");
   const o = modalOpener; modalOpener = null;
   if(o && o.isConnected && !o.closest("[inert],[hidden]")) o.focus({preventScroll:true});
   else if(U.tab!=="explore"){ const h=$("#dockTitle"); if(h) h.focus({preventScroll:true}); }

@@ -10,7 +10,6 @@ import type {
   GroundPick,
   NpcVisualState,
   PlayerVisualState,
-  PlayerVisibilityControl,
   QualityTier,
   ResourceVisualState,
   StructurePreviewState,
@@ -49,7 +48,7 @@ import { toScenePosition } from './utils';
  *    through the methods below. It never mutates logic state, never
  *    decides collisions, gathering, building permission or progress.
  */
-export class GraphicsEngine implements PlayerVisibilityControl {
+export class GraphicsEngine {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private container: HTMLElement;

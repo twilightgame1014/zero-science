@@ -1,7 +1,7 @@
 name: Rocket integration gates
 on:
   push:
-    branches: [feature/game-rocket-finish-20261114, feature/game-city-exhaust-integration-20261114, feature/game-city-formal-assets-20261114]
+    branches: [feature/game-rocket-finish-20261114, feature/game-city-exhaust-integration-20261114, feature/game-city-formal-assets-20261114, feature/game-recovery-integration-20261115]
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [core, space, hero, construction]
+        suite: [core, space, hero, construction, recovery]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,10 +33,13 @@ jobs:
         run: node tests/e2e/hero-8dir.mjs --suit
       - if: matrix.suite == 'construction'
         run: npm run e2e:construction && node tests/e2e/construction-visual.mjs
+      - if: matrix.suite == 'recovery'
+        run: npm run e2e:playthrough && npm run e2e:recovery
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: rocket-validation-${{ matrix.suite }}
           path: |
             test-results
+            docs/integration/evidence-recovery-20261115
             dist

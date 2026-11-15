@@ -1,0 +1,646 @@
+{
+ "version": 1,
+ "status": "provisional — Muse graphics side, pending Claude's construction contract (M4-02). Same conventions as assets/buildings-3d/structures.json.",
+ "conventions": {
+  "units": "meters",
+  "origin": "ground contact centre of the footprint",
+  "front": "+Z (three.js). Blender -Y maps to three +Z.",
+  "footprint": "walk-blocking shape only (rect w×d, centred). Roof overhang, eaves, chimneys and decoration are excluded — same rule as structures.json.",
+  "points": "[x, z] in building-local three.js space, before the building's own rotation is applied.",
+  "stageDisplay": "Cumulative node display: ONE GLB per building. Nodes are grouped under stage1_foundation / stage2_frame / stage3_shell / stage4_complete. Stage 0 = site kit only, building hidden. Stage N (1..4) = groups 1..N visible. All stage geometry shares one coordinate space (no shifting, no doubled walls). Claude controls display by stage number alone; stageNodes lists are provided for name-based control.",
+  "contactShadow": "Staged buildings carry NO baked contact-shadow plate (the module draws real shadows; a plate would float on slopes and appear mid-construction).",
+  "lod": "LOD1 merges each stage group into one mesh (4 meshes per building) and decimates; stage switching works identically. Suggested switch: beyond ~40 m or per the module's existing structure LOD rule."
+ },
+ "buildings": [
+  {
+   "assetId": "hut",
+   "name": "原始的な小屋",
+   "source": "改修 (buildings-3d hut を工程グループ化)",
+   "model": "models/hut-staged.glb",
+   "modelLod1": "models/hut-staged_lod1.glb",
+   "size": {
+    "w": 3.8,
+    "d": 3.4,
+    "h": 3.16
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 3.3,
+    "d": 2.7
+   },
+   "entrance": [
+    0.45,
+    1.35
+   ],
+   "operate": [
+    0.45,
+    1.95
+   ],
+   "delivery": [
+    -1.7,
+    2.1
+   ],
+   "work": [
+    2.0,
+    1.6
+   ],
+   "roadLink": [
+    0.45,
+    1.9
+   ],
+   "era": "primitive",
+   "tris": 1996,
+   "trisLod1": 1420,
+   "stageNodes": {
+    "stage1_foundation": [
+     "footing",
+     "step"
+    ],
+    "stage2_frame": [
+     "beamB",
+     "beamF",
+     "post",
+     "post.001",
+     "post.002",
+     "post.003"
+    ],
+    "stage3_shell": [
+     "lintel",
+     "ridge",
+     "ridgeTie",
+     "ridgeTie.001",
+     "ridgeTie.002",
+     "roof",
+     "walls",
+     "winFrame"
+    ],
+    "stage4_complete": [
+     "door",
+     "eave",
+     "eave.001",
+     "eave.002",
+     "eave.003",
+     "eave.004",
+     "eave.005",
+     "eave.006",
+     "eave.007",
+     "eave.008",
+     "eave.009",
+     "eave.010",
+     "eave.011",
+     "eave.012",
+     "eave.013",
+     "eave.014",
+     "eave.015",
+     "eave.016",
+     "eave.017",
+     "eave.018",
+     "eave.019",
+     "eave.020",
+     "eave.021",
+     "eave.022",
+     "eave.023",
+     "eave.024",
+     "eave.025",
+     "eave.026",
+     "eave.027",
+     "eave.028",
+     "eave.029",
+     "roof.001",
+     "winBar",
+     "winBar.001",
+     "winDark"
+    ]
+   },
+   "notes": "Ridge + ties sit on the raised earth walls, so they arrive in stage3_shell with the roof, not in the frame stage."
+  },
+  {
+   "assetId": "house",
+   "name": "発展後の住宅",
+   "source": "改修 (gpt-dq3 hut-town を工程グループ化)",
+   "model": "models/house-staged.glb",
+   "modelLod1": "models/house-staged_lod1.glb",
+   "size": {
+    "w": 4.2,
+    "d": 4.15,
+    "h": 3.52
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 3.4,
+    "d": 3.4
+   },
+   "entrance": [
+    0,
+    2.3
+   ],
+   "operate": [
+    0,
+    2.9
+   ],
+   "delivery": [
+    -2.4,
+    2.6
+   ],
+   "work": [
+    2.5,
+    2.4
+   ],
+   "roadLink": [
+    0,
+    2.5
+   ],
+   "era": "developed",
+   "tris": 3332,
+   "trisLod1": 1998,
+   "stageNodes": {
+    "stage1_foundation": [
+     "found",
+     "step"
+    ],
+    "stage2_frame": [
+     "post",
+     "post.001",
+     "post.002",
+     "post.003",
+     "rail",
+     "rail.001",
+     "ridge",
+     "stud",
+     "stud.001"
+    ],
+    "stage3_shell": [
+     "gable",
+     "gable.001",
+     "gable.002",
+     "gable.003",
+     "plate",
+     "plate.001",
+     "plateS",
+     "plateS.001",
+     "roof",
+     "walls"
+    ],
+    "stage4_complete": [
+     "door",
+     "eavetile",
+     "eavetile.001",
+     "eavetile.002",
+     "eavetile.003",
+     "eavetile.004",
+     "eavetile.005",
+     "eavetile.006",
+     "eavetile.007",
+     "eavetile.008",
+     "eavetile.009",
+     "eavetile.010",
+     "eavetile.011",
+     "eavetile.012",
+     "eavetile.013",
+     "eavetile.014",
+     "eavetile.015",
+     "eavetile.016",
+     "eavetile.017",
+     "eavetile.018",
+     "eavetile.019",
+     "eavetile.020",
+     "eavetile.021",
+     "eavetile.022",
+     "eavetile.023",
+     "eavetile.024",
+     "eavetile.025",
+     "knob",
+     "lintel",
+     "mullH",
+     "mullV",
+     "roof.001",
+     "winframe",
+     "winglass"
+    ]
+   },
+   "notes": "Door is on the gable-end face. Unlock in the normal game (発展した街 stage) is Claude/owner's decision (REPORT-2026-11-12 §6)."
+  },
+  {
+   "assetId": "warehouse",
+   "name": "倉庫",
+   "source": "新規",
+   "model": "models/warehouse.glb",
+   "modelLod1": "models/warehouse_lod1.glb",
+   "size": {
+    "w": 5.9,
+    "d": 4.47,
+    "h": 3.68
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 5.4,
+    "d": 4.2
+   },
+   "entrance": [
+    0,
+    2.3
+   ],
+   "operate": [
+    0,
+    2.9
+   ],
+   "delivery": [
+    -2.2,
+    2.9
+   ],
+   "work": [
+    2.8,
+    2.6
+   ],
+   "roadLink": [
+    0,
+    2.5
+   ],
+   "era": "developed",
+   "tris": 3664,
+   "trisLod1": 2284,
+   "stageNodes": {
+    "stage1_foundation": [
+     "floor",
+     "footing"
+    ],
+    "stage2_frame": [
+     "beam",
+     "beam.001",
+     "post",
+     "post.001",
+     "post.002",
+     "post.003",
+     "post.004",
+     "post.005",
+     "rafter",
+     "rafter.001",
+     "rafter.002",
+     "rafter.003",
+     "rafter.004",
+     "rafter.005",
+     "rafter.006",
+     "rafter.007",
+     "ridge"
+    ],
+    "stage3_shell": [
+     "gable",
+     "gable.001",
+     "roof",
+     "roof.001",
+     "wallB",
+     "wallF",
+     "wallF.001",
+     "wallFtop",
+     "wallS",
+     "wallS.001"
+    ],
+    "stage4_complete": [
+     "bracket.001",
+     "bracket.002",
+     "bracket",
+     "bracket.003",
+     "doorL",
+     "doorR",
+     "doorRail",
+     "winDark",
+     "winDark.001",
+     "winFrame",
+     "winFrame.001"
+    ]
+   },
+   "notes": "Sliding double doors on the front face under an iron rail. Metal-sheet roof: a thatch/tile primitive-era variant is future work, not in this round."
+  },
+  {
+   "assetId": "workshop",
+   "name": "工房",
+   "source": "新規",
+   "model": "models/workshop.glb",
+   "modelLod1": "models/workshop_lod1.glb",
+   "size": {
+    "w": 5.3,
+    "d": 3.89,
+    "h": 3.57
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 4.8,
+    "d": 3.6
+   },
+   "entrance": [
+    0,
+    2.0
+   ],
+   "operate": [
+    0,
+    -0.4
+   ],
+   "delivery": [
+    2.9,
+    1.4
+   ],
+   "work": [
+    -2.3,
+    2.0
+   ],
+   "roadLink": [
+    0,
+    2.2
+   ],
+   "era": "all",
+   "tris": 2844,
+   "trisLod1": 1790,
+   "stageNodes": {
+    "stage1_foundation": [
+     "floor",
+     "footing"
+    ],
+    "stage2_frame": [
+     "beam",
+     "beam.001",
+     "post",
+     "post.001",
+     "post.002",
+     "post.003",
+     "rafter",
+     "rafter.001",
+     "rafter.002",
+     "rafter.003",
+     "rafter.004",
+     "rafter.005",
+     "ridge"
+    ],
+    "stage3_shell": [
+     "gable",
+     "gable.001",
+     "roof",
+     "roof.001",
+     "wallB",
+     "wallS",
+     "wallS.001"
+    ],
+    "stage4_complete": [
+     "benchLeg.001",
+     "benchTop",
+     "benchLeg",
+     "crateS",
+     "crateS.001",
+     "shelf",
+     "sign",
+     "winDark",
+     "winFrame"
+    ]
+   },
+   "notes": "Front face is open (no wall): the player walks in; operate point is inside, in front of the workbench on the back wall. Workbench, shelf and crates arrive in stage4_complete."
+  },
+  {
+   "assetId": "factory",
+   "name": "大型工場",
+   "source": "改修 (buildings-3d factory を工程グループ化＋壁分割＋換気筒/配管追加)",
+   "model": "models/factory-staged.glb",
+   "modelLod1": "models/factory-staged_lod1.glb",
+   "size": {
+    "w": 5.2,
+    "d": 4.4,
+    "h": 5.04
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 5.2,
+    "d": 4.2
+   },
+   "entrance": [
+    0.35,
+    2.5
+   ],
+   "operate": [
+    0.35,
+    2.9
+   ],
+   "delivery": [
+    0.35,
+    3.2
+   ],
+   "work": [
+    -2.3,
+    3.0
+   ],
+   "roadLink": [
+    0.35,
+    2.7
+   ],
+   "era": "industrial",
+   "tris": 3080,
+   "trisLod1": 2012,
+   "stageNodes": {
+    "stage1_foundation": [
+     "dock",
+     "footing",
+     "steps"
+    ],
+    "stage2_frame": [
+     "wallsLower"
+    ],
+    "stage3_shell": [
+     "chimney",
+     "chimneyCap",
+     "roofTooth",
+     "roofTooth.001",
+     "roofTooth.002",
+     "wallsUpper"
+    ],
+    "stage4_complete": [
+     "canopy",
+     "doorL",
+     "doorR",
+     "pipeRun",
+     "pipeRunElbow",
+     "roofGlass",
+     "roofGlass.001",
+     "roofGlass.002",
+     "ventCap",
+     "ventCap.001",
+     "ventStack",
+     "ventStack.001",
+     "win",
+     "win.001",
+     "win.002",
+     "winBar",
+     "winBar.001",
+     "winBar.002",
+     "winFrame",
+     "winFrame.001",
+     "winFrame.002"
+    ]
+   },
+   "notes": "Stage2 frame = the brick wall course (wallsLower, 0→1.0 m of the 2.5 m wall, band-subdivided so the rising edge is stepped). The loading dock is part of stage1_foundation; delivery point is in front of it. The two wooden crates from the original model were removed — crates are delivery props (pile-crated), not building geometry."
+  }
+ ],
+ "siteKit": {
+  "assetId": "construction-site",
+  "model": "models/construction-site.glb",
+  "tris": 960,
+  "usage": "Shown at stage 0 only. Unit design (1×1 m); every part's geometry is centred on its node origin, so the game positions/scales nodes directly. w, d = the building footprint.",
+  "transforms": {
+   "stakePP/stakePM/stakeMP/stakeMM": "position (±(w/2+0.5), 0, ±(d/2+0.5)); suffixes are three.js-space signs (x, z)",
+   "ropeX_P/ropeX_M": "position (0, 0, ±(d/2+0.5)), scale.x = w+1",
+   "ropeY_P/ropeY_M": "position (±(w/2+0.5), 0, 0), scale.z = d+1",
+   "outlineX_P/outlineX_M": "position (0, 0, ±(d/2+0.5)), scale.x = w+1",
+   "outlineY_P/outlineY_M": "position (±(w/2+0.5), 0, 0), scale.z = d+1"
+  }
+ },
+ "materialPiles": [
+  {
+   "assetId": "pile-lumber",
+   "name": "木材の束",
+   "model": "models/pile-lumber.glb",
+   "tris": 1296,
+   "size": {
+    "w": 1.7,
+    "d": 1.14,
+    "h": 0.41
+   },
+   "era": "all"
+  },
+  {
+   "assetId": "pile-stone",
+   "name": "石材の山",
+   "model": "models/pile-stone.glb",
+   "tris": 540,
+   "size": {
+    "w": 1.32,
+    "d": 0.7,
+    "h": 0.81
+   },
+   "era": "all"
+  },
+  {
+   "assetId": "pile-sacks",
+   "name": "袋入りの材料",
+   "model": "models/pile-sacks.glb",
+   "tris": 1896,
+   "size": {
+    "w": 1.28,
+    "d": 1.12,
+    "h": 0.7
+   },
+   "era": "all"
+  },
+  {
+   "assetId": "pile-metal",
+   "name": "金属部材の束",
+   "model": "models/pile-metal.glb",
+   "tris": 1188,
+   "size": {
+    "w": 1.8,
+    "d": 0.53,
+    "h": 0.36
+   },
+   "era": "industrial"
+  },
+  {
+   "assetId": "pile-crated",
+   "name": "梱包された設備部品",
+   "model": "models/pile-crated.glb",
+   "tris": 756,
+   "size": {
+    "w": 1.14,
+    "d": 1.14,
+    "h": 1.15
+   },
+   "era": "industrial"
+  }
+ ],
+ "materialPileRule": "Piles are independent props placed by the game near the building's delivery point while materials are being gathered (typically stages 0–3). They are never baked into a building model. Era flags keep metal/crated props out of the primitive era.",
+ "roads": {
+  "method": "Terrain painting, unified: roads are entries in config.world.paths (the round-28 host-path inlet). One distance field paints every kind, so straight / curve / T / cross / dead end / building-entrance apron all come from polylines — no connector pieces, no slabs, no collision, full terrain following.",
+  "kinds": {
+   "dirt": "土道. Packed soil + light gravel speckle. Identical to the historical trail look; also the default when kind is omitted (the volcano trail is unchanged).",
+   "gravel": "砂利道. Greyer body, denser fine speckle (higher-frequency fbm).",
+   "stone": "石敷き道. Flat slab grey with darker joints on a 1.2 m world grid + per-cell tone jitter, at vertex-colour resolution. The joint pattern resolves where chunk vertex spacing allows and degrades to flat paving grey where it does not."
+  },
+  "width": "width is the flat half-width in world units (same semantics as round 28); the painted feather extends ~1.6 beyond it. Suggested: 1.2–1.6 for lanes, 1.8–2.2 for a main street.",
+  "entranceApron": "Draw a short path from the road to the building's roadLink point (same kind as the road); the distance field blends the junction automatically.",
+  "textures": {
+   "dirt": "textures/road-dirt.png + road-dirt_n.png (512, tileable)",
+   "gravel": "textures/road-gravel.png + road-gravel_n.png (512, tileable)",
+   "stone": "textures/road-stone.png + road-stone_n.png (512, tileable)",
+   "status": "Muse-authored procedural placeholders until GPT originals arrive (see GPT-TEXTURE-REQUEST.md). They are for a future detail-texture pass over the path splat channel; the current painter works at vertex-colour resolution and does not sample them yet."
+  }
+ },
+ "reserved": [
+  {
+   "assetId": "laboratory",
+   "name": "研究施設（実験棟）",
+   "model": "assets/buildings-3d/models/laboratory.glb",
+   "size": {
+    "w": 4.6,
+    "d": 3.22,
+    "h": 3.8
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 4.3,
+    "d": 3.1
+   },
+   "entrance": [
+    0,
+    2.1
+   ],
+   "operate": [
+    -0.5,
+    1.6
+   ],
+   "stageSplit": "pending — same cumulative-node treatment next round"
+  },
+  {
+   "assetId": "power-plant",
+   "name": "発電所",
+   "model": "assets/buildings-3d/models/power-plant.glb",
+   "size": {
+    "w": 5.53,
+    "d": 3.46,
+    "h": 5.32
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 5.6,
+    "d": 3.4
+   },
+   "entrance": [
+    -2.2,
+    2.0
+   ],
+   "operate": [
+    1.7,
+    2.2
+   ],
+   "stageSplit": "pending"
+  },
+  {
+   "assetId": "research-institute",
+   "name": "研究所",
+   "model": "assets/buildings-3d/models/research-institute.glb",
+   "size": {
+    "w": 5.65,
+    "d": 4.2,
+    "h": 4.68
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 5.4,
+    "d": 3.6
+   },
+   "entrance": [
+    1.85,
+    2.0
+   ],
+   "operate": [
+    1.85,
+    2.5
+   ],
+   "stageSplit": "pending"
+  }
+ ],
+ "sizeAccounting": "Each staged GLB is ~2.0–2.8 MB because it embeds the shared buildings-3d textures. On the game side these dedupe through the existing shared-texture pipeline (tex:<hash>, REPORT-2026-11-12); the real distribution increment is the geometry + the 3 road textures (~0.65 MB). dist is at 15.54 MB of the 16 MB cap, so adoption must go through that lightweight pipeline — do not embed these GLBs raw."
+}

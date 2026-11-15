@@ -115,7 +115,10 @@
 - セーブ v6（`cons`）。v5 の配置済み設備は以前の場所に資材なしの完成済み建物へ移し、持ち物から 1 つ減らす（二重に持たない）。撤去中・重なりは持ち物に残し、建築の画面から置ける。検証モードは従来の自由配置（`S.verify.placed`）のまま。
 - 道：2×2 の格子（`"i,j"`）、10 マスの区間、重なりは請求しない、種類の変更は差の工程だけ。歩ける・壁にならない。水・川・急な斜面・木や岩の上は不可。橋・トンネル・地形の変更はしない。
 - 取消・解体：使っていない資材は全部、施工済みの工程は返却表の分だけ戻す（表がなければ戻らない。勝手な割合を作らない）。木や岩を自動で消して置けるようにしない。
-- 発射サイトは宇宙計画のまま（この仕組みへ移さない）。工程別の見た目は Muse 待ちで仮表示。
+- 発射サイトは宇宙計画のまま（この仕組みへ移さない）。サイト全体（18×18、向きつき）は `syncStructColliders` が「歩けるが建てられない」予約範囲（`space-site:area`、`walk:true`）として渡す。建物・道は置けず、歩行・経路・搭乗口への道筋は設備ごとの形のまま。発射サイトの置き直しは自分の予約と設備の形（`struct:space-site:*`）を数えない（`nature.js` の ignore は前方一致）。`tests/space-reserve.test.mjs`。
+- 正式の工程表示・予定地キット・足場・資材の山・道（Muse f62e075）は `src/construction-visual.ts` の 1 本（Codex の統合 34dd168）。一覧 k＝工程 k の完了直後、施工中は k−1。GLTFLoader と同じ正規化。現場の部品は材質ごとに 1 つのメッシュへまとめる（`mergeKitParts`。元の部品は名前を残して描かない）。資材の山の形は `construction-ui.js` の `PILE_OF`（ID の表）。
+  配信用の軽量版は `scripts/make-construction-glb.py` の 1 本（画像を共有テクスチャ `assets/build/nature-tex` へ。道は WebP の色・法線 512）。原本 `assets/construction` を変えたら再実行。
+- 案内（2026-11-14）：宇宙計画の製作の足りない物はボタン（建物の設備は状態と「現場を開く／建設する」、実習は「実習へ」、材料は作り方へ）。完成した設備の画面に「次に使う所」。画面の操作だけの通し確認は `tests/e2e/playthrough.mjs`（`npm run e2e:playthrough`、かまどまで）。記録は `docs/construction/PLAYTHROUGH-2026-11-14.md`。
 
 ## 建物の3Dモデルと道具・設備・操作のアイコン（Muse・2026-11-07〜）
 - 建物：Muse の `assets/buildings-3d`（原本の GLB 13種・`structures.json`）。`scripts/make-building-glb.py` でテクスチャだけを再圧縮した軽量版 `assets/build/buildings/*.glb` を作り（原本を変えたら再実行。既定は長辺512px＝第14ラウンドの色テクスチャの解像度のまま、不透明な画像は JPEG）、base64 で埋め込む。モデル内の接地影 `ContactShadow` はそのまま使う（地形と干渉したらこのノードだけ外す）。

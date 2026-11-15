@@ -2,6 +2,8 @@
    Owns display only. No resource, collision, progress or save mutations. */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { prepareShared } from './world/natureModels';
 export type Site = { id: string; def: string; model: string; stage: number; stages: number; x:number;z:number;rot:number;shape:string;w:number;d:number;r:number;phase:string;progress:number;supplied:number;tall:number;entrance?:[number,number]|null;pileKinds?:string[] };
 type Cell = {i:number;j:number;kind:string};
 type Data = {sites:Site[];roads:Cell[];pending:Cell[];cell:number;colors:Record<string,string>};
@@ -20,7 +22,7 @@ export function applyConstructionStage(root:THREE.Object3D,names:string[]):void 
 export function loadConstructionAssets(a:Assets):Promise<void>{
  if(loading)return loading;assets=a;
  loading=Promise.all(Object.entries(a.models).map(async([id,b64])=>{
-  try {const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));const gltf=await new GLTFLoader().parseAsync(bytes.buffer,'');gltf.scene.traverse(o=>{const m=o as THREE.Mesh;if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});kits.set(id,gltf.scene);}
+  try {const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));const gltf=await new GLTFLoader().parseAsync(bytes.buffer,'');prepareShared(gltf.scene);gltf.scene.traverse(o=>{const m=o as THREE.Mesh;if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});kits.set(id,gltf.scene);}
   catch(err){failed.set(id,String(err));console.warn('Construction asset failed',id,err);}
  })).then(()=>{revision++;});return loading;
 }
@@ -64,6 +66,23 @@ function buildSite(s:Site,h:(x:number,z:number)=>number,template:THREE.Object3D|
  }
  return g;
 }
+/* 現場の部品（杭・縄・輪郭・資材の山・足場）は 1 つの現場で 100 前後のメッシュになる。動かないので、材質ごとに 1 つのメッシュへまとめて描画の回数を減らす
+   （スマホの負荷。足場の現場 1 つで約 108 → 11。2026-11-14 Claude、a81e63d の mergeStatic から回収）。
+   元の部品は名前を残したまま描かない（visible=false：形と材質はキットと共有なので重さは増えない）。工程の建物（CompletedConstructionStages）はまとめない（工程の表示の判定を変えない） */
+function mergeKitParts(g:THREE.Group):THREE.Group {
+ g.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(g.matrixWorld).invert(),groups=new Map<string,{mat:THREE.Material;geos:THREE.BufferGeometry[];meshes:THREE.Mesh[]}>();
+ const walk=(o:THREE.Object3D)=>{if(o.name==='CompletedConstructionStages'||o.name==='MergedKitParts')return;const m=o as THREE.Mesh;
+  if(m.isMesh&&m.visible&&!Array.isArray(m.material)){const geo=m.geometry.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv,m.matrixWorld));
+   const key=(m.material as THREE.Material).uuid+'|'+Object.keys(geo.attributes).sort().join(',')+'|'+(geo.index?'i':'n');
+   const e=groups.get(key)||{mat:m.material as THREE.Material,geos:[],meshes:[]};e.geos.push(geo);e.meshes.push(m);groups.set(key,e);}
+  o.children.forEach(walk);};
+ g.children.forEach(walk);
+ const out=new THREE.Group();out.name='MergedKitParts';
+ for(const e of groups.values()){if(e.geos.length<2){e.geos.forEach(x=>x.dispose());continue;}const merged=mergeGeometries(e.geos,false);e.geos.forEach(x=>x.dispose());if(!merged)continue;
+  const mesh=new THREE.Mesh(merged,e.mat);mesh.castShadow=true;mesh.receiveShadow=true;out.add(mesh);e.meshes.forEach(m=>{m.visible=false;});}
+ g.add(out);return g;
+}
+function disposeMerged(g:THREE.Object3D){const m=g.getObjectByName('MergedKitParts');m?.traverse(o=>{const x=o as THREE.Mesh;if(x.isMesh)x.geometry.dispose();});}
 export function buildRoads(d:Data,h:(x:number,z:number)=>number,groundColor?:(x:number,z:number)=>THREE.Color):THREE.Group {
  const g=new THREE.Group();g.name='ConstructionRoads';const byKind:Record<string,Cell[]>={},occupied=new Set(d.roads.map(c=>c.i+','+c.j));d.roads.forEach(c=>(byKind[c.kind]??=[]).push(c));
  const half=d.cell/2;
@@ -92,8 +111,8 @@ export function buildRoads(d:Data,h:(x:number,z:number)=>number,groundColor?:(x:
 export function syncConstructionVisual(gfx:any,d:Data,h:(x:number,z:number)=>number,a?:Assets,getTemplate?:(model:string)=>THREE.Object3D|undefined):void {
  const scene:THREE.Scene|undefined=gfx?.getScene?.();if(!scene)return;if(a)void loadConstructionAssets(a);
  let e=entries.get(gfx);if(!e){const root=new THREE.Group();root.name='ConstructionVisual';scene.add(root);e={root,sites:new Map(),roads:new THREE.Group(),roadSig:''};root.add(e.roads);entries.set(gfx,e);}
- const seen=new Set<string>();for(const s of d.sites){seen.add(s.id);const template=getTemplate?.(s.model);const sig=JSON.stringify([s.id,s.def,s.x,s.z,s.rot,s.phase,s.stage,Math.round(s.supplied*6),s.pileKinds,revision,!!template]);const cur=e.sites.get(s.id);if(cur?.sig===sig)continue;if(cur){e.root.remove(cur.g);}const g=buildSite(s,h,template);e.root.add(g);e.sites.set(s.id,{g,sig});}
- for(const[id,cur]of e.sites)if(!seen.has(id)){e.root.remove(cur.g);e.sites.delete(id);}
+ const seen=new Set<string>();for(const s of d.sites){seen.add(s.id);const template=getTemplate?.(s.model);const sig=JSON.stringify([s.id,s.def,s.x,s.z,s.rot,s.phase,s.stage,Math.round(s.supplied*6),s.pileKinds,revision,!!template]);const cur=e.sites.get(s.id);if(cur?.sig===sig)continue;if(cur){e.root.remove(cur.g);disposeMerged(cur.g);}const g=mergeKitParts(buildSite(s,h,template));e.root.add(g);e.sites.set(s.id,{g,sig});}
+ for(const[id,cur]of e.sites)if(!seen.has(id)){e.root.remove(cur.g);disposeMerged(cur.g);e.sites.delete(id);}
  const sig=JSON.stringify([d.roads,d.pending,revision]);if(sig!==e.roadSig){e.roadSig=sig;e.root.remove(e.roads);e.roads.traverse(o=>{const m=o as THREE.Mesh;if(m.geometry)m.geometry.dispose();if(m.material)(Array.isArray(m.material)?m.material:[m.material]).forEach(x=>x.dispose());});const terrain:THREE.Object3D[]=[];scene.traverse(o=>{if(o.name.startsWith('TerrainChunk ')||o.name==='OuterGround')terrain.push(o);});
  const ray=new THREE.Raycaster(),cache=new Map<string,THREE.Color>();
  const groundColor=(x:number,z:number)=>{const key=x+','+z;if(cache.has(key))return cache.get(key)!.clone();ray.set(new THREE.Vector3(x,h(x,z)+100,z),new THREE.Vector3(0,-1,0));const hit=ray.intersectObjects(terrain,false)[0];let color=new THREE.Color('#7c6a42');

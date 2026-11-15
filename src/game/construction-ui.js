@@ -123,7 +123,7 @@ function consRenderSheet(){
           :`<button class="btn small act" data-act="cs-work" data-id="${id}" ${ready&&ready.ok&&near?"":"disabled"}>施工する：${st[v.stage]?st[v.stage].name:""}</button>`}
         ${near?"":`<button class="btn small sub" data-act="cs-go" data-id="${id}">現場へ行く</button>`}</div>
       ${ready&&!ready.ok&&!v.work?`<p class="desc">施工できない理由：${ready.why.join("／")}</p>`:""}`:""}
-    ${!road&&v.phase==="completed"?`<p class="desc">${d.facility?"設備「"+nm(d.facility)+"」が使える。":"設備の働きはない。"}${CONS.connected(S,id)===true?"入口は道につながっている。":CONS.connected(S,id)===false?"入口の前に道を敷くと、街の道につながる。":""}</p>`:""}
+    ${!road&&v.phase==="completed"?`<p class="desc">${d.facility?"設備「"+nm(d.facility)+"」が使える。":"設備の働きはない。"}${CONS.connected(S,id)===true?"入口は道につながっている。":CONS.connected(S,id)===false?"入口の前に道を敷くと、街の道につながる。":""}</p>${d.facility?consNextHtml(d.facility):""}`:""}
     <div class="sec">変更・取消・解体</div>
     <div class="row">${!road&&v.phase!=="completed"&&v.stage===0&&!v.work?(Object.values(v.delivered).some(n=>n>0)?`<button class="btn small sub" data-act="cs-move" data-id="${id}" data-relocate="1">資材を返して移す</button>`:`<button class="btn small sub" data-act="cs-move" data-id="${id}">移す・回す</button>`):""}
       <button class="btn small sub" data-act="cs-remove" data-id="${id}">${v.phase==="completed"?"解体する":"取消す"}</button></div>
@@ -140,6 +140,11 @@ function consSync(){
   want.forEach((v,k)=>{ if(!W3.structs.has(k)){ structAdd(k, CONS.DEF[v.def].model, {x:v.x, z:v.z}, v.rot); if(W3.state==="ready" && !(W3.consSeen||(W3.consSeen=new Set())).has(k)){ W3.consSeen.add(k); if(v.done && Date.now()-v.done<3000) W3.gfx.playVisualEffect("levelup", {x:v.x, z:v.z}); } } });
   consVisual(); syncStructColliders();
 }
+/* 資材の山の形（Muse の契約：木材→lumber・石材→stone・袋物→sacks・金属→metal・その他→crated）。名前の一部の一致ではなく ID の表で決める
+   （以前の正規表現では丸太 log・糸・落ち葉が「箱詰め」になっていた。2026-11-14 Claude、a81e63d の pileKind から回収） */
+const PILE_OF = Object.fromEntries([["lumber","twig log plank charcoal bark"],["stone","cobble granite brick flint limestone marble basalt firebrick"],
+  ["sacks","sand clay thread cloth redpigment plaster cement lime quicklime ash leaves grass salt soda coke gravel"],
+  ["metal","iron steel copper copperplate wire tin bronze aluminum electromagnet ironrod pipe bellows generator"]].flatMap(([k,ids])=>ids.split(" ").map(id=>[id,k])));
 function consVisual(){
   const H = window.HD2D; if(!H || !H.syncConstructionVisual || !W3.gfx) return;
   const c = CONS.state(S), now = Date.now(), sites = [], pending = [];
@@ -147,7 +152,7 @@ function consVisual(){
     const d = CONS.DEF[v.def], f = d.footprint, st = d.stages, need = CONS.totalMat(d), tot = Object.values(need).reduce((a,b)=>a+b,0)||1, got = Object.keys(need).reduce((a,k)=>a+Math.min(need[k], v.delivered[k]||0),0);
     const part = v.work ? Math.min(1, Math.max(0, 1-(v.work.until-now)/Math.max(1, v.work.until-(v.work.started||now)))) : 0;
     const assetDef = ASSETS.construction && ASSETS.construction.contract.buildings.find(b=>b.id===d.id);
-    const pileKinds=Object.keys(need).filter(k=>(v.delivered[k]||0)<need[k]).map(k=>/wood|twig|plank|timber/.test(k)?"lumber":/stone|cobble|brick|granite/.test(k)?"stone":/iron|steel|copper|metal|wire/.test(k)?"metal":/sand|clay|lime|cement|coal/.test(k)?"sacks":"crated");
+    const pileKinds=Object.keys(need).filter(k=>(v.delivered[k]||0)<need[k]).map(k=>PILE_OF[k]||"crated");
     sites.push({id:v.id, def:d.id, model:d.model, stage:v.stage, stages:st.length, pileKinds:[...new Set(pileKinds)], x:v.x, z:v.z, rot:v.rot, shape:f.shape==="rect"?"rect":"circle", w:f.w||0, d:f.d||0, r:f.r||0, phase:v.phase, progress:(v.stage+part)/st.length, supplied:got/tot,
       tall: assetDef?.size?.h || (d.cat==="factory"||d.cat==="housing"||d.cat==="storage" ? 3 : 1.2), entrance:d.entrance||d.operate||null}); });
   const roads = Object.entries(c.roads).map(([k,kind])=>{ const [i,j] = k.split(",").map(Number); return {i, j, kind}; });
@@ -181,6 +186,7 @@ document.addEventListener("click", ev=>{ const b = ev.target.closest && ev.targe
   if(a==="cs-road"){ consStartPlace({road:id}); return; }
   if(a==="cs-legacy"){ consStartPlace({legacy:id}); return; }
   if(a==="cs-open"){ consOpen(id); return; }
+  if(a==="cs-next"){ closeModal(); if(id==="space" && typeof spaceUI==="function") spaceUI().section="製作"; setTab(id); return; }
   if(a==="cs-go"){ const v = CONS.state(S).inst[id]; if(!v) return; closeModal(); setTab("explore"); const p = consStand(v); if(p && W3.state==="ready"){ goTo3D(p.x, p.z, null); banner("🧭 現場へ向かう"); } return; }
   if(a==="cs-move"){ closeModal(); consStartPlace({def:CONS.state(S).inst[id].def, move:id, relocate:!!b.dataset.relocate}); return; }
   if(a==="cs-remove"){ const v = CONS.state(S).inst[id], pv = CONS.removalPreview(S, id); if(!v) return;
@@ -196,7 +202,14 @@ document.addEventListener("click", ev=>{ const b = ev.target.closest && ev.targe
 /* ---------- 工作の画面からの導線（設備は建てて作る／必要な設備がまだ完成していない） ---------- */
 function consSiteOf(fac){ const d = CONS.facilityBuilding(fac); return d ? CONS.list(S).find(v=>v.def===d.id && v.phase!=="completed") : null; }
 function consCraftLink(fac){ const d = CONS.facilityBuilding(fac), site = consSiteOf(fac);
-  return `<div class="row mt"><span class="desc" style="margin:0">この設備は現地に建てる（予定地 → 資材を運ぶ → 施工）</span>${site?`<button class="btn small" data-act="cs-open" data-id="${site.id}">建設予定地を見る</button>`:""}<button class="btn small sub" data-act="cs-place" data-id="${d.id}">${site?"もう1つ建てる":"建設する"}</button></div>`; }
+  return `<div class="row mt"><span class="desc" style="margin:0">この設備は現地に建てる（予定地 → 資材を運ぶ → 施工）</span>${site?`<button class="btn small" data-act="cs-open" data-id="${site.id}">現場を開く（${consSiteLabel(site)}）</button>`:""}<button class="btn small sub" data-act="cs-place" data-id="${d.id}">${site?"もう1つ建てる":"建設する"}</button></div>`; }
+/* 完成した設備の「次にどこで使うか」（研究室の装置・工作・宇宙計画の製作）。表示と画面の移動だけ（2026-11-14 Claude、2ad10e2 から回収） */
+function consNextHtml(fac){
+  const lab = !!(IT[fac] && IT[fac].ops && IT[fac].ops.length), craft = D.crafts.some(c=>!c.space && (c.at===fac || c.tools.includes(fac)));
+  const space = D.space && D.space.recipes.some(c=>c.at===fac || (c.tools||[]).includes(fac));
+  if(!lab && !craft && !space) return "";
+  return `<div class="row mt"><span class="desc" style="margin:0">次に使う所：</span>${lab?`<button class="btn small" data-act="cs-next" data-id="lab">研究室で使う</button>`:""}${craft?`<button class="btn small" data-act="cs-next" data-id="craft">工作で使う</button>`:""}${space?`<button class="btn small" data-act="cs-next" data-id="space">宇宙計画の製作で使う</button>`:""}</div>`; }
+const consSiteLabel = site=>{ const st = CONS.stagesOf(site); return PHASE_NAME[site.phase]+"・工程 "+Math.min(site.stage,st.length)+"/"+st.length; };
 function consNeedLink(c){ const miss = c.tools.concat(c.at?[c.at]:[]).filter(t=>!E.hasTool(S,t) && CONS.facilityBuilding(t));
   return miss.map(t=>{ const site = consSiteOf(t), d = CONS.facilityBuilding(t);
-    return site ? `<button class="btn small sub" data-act="cs-open" data-id="${site.id}">「${nm(t)}」の建設予定地を見る</button>` : `<button class="btn small sub" data-act="cs-place" data-id="${d.id}">「${nm(t)}」を建設する</button>`; }).join(""); }
+    return site ? `<button class="btn small sub" data-act="cs-open" data-id="${site.id}">「${nm(t)}」の現場を開く（${consSiteLabel(site)}）</button>` : `<button class="btn small sub" data-act="cs-place" data-id="${d.id}">「${nm(t)}」を建設する</button>`; }).join(""); }
