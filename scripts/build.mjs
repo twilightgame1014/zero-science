@@ -173,11 +173,11 @@ const source=await new Response(new Blob([bytes]).stream().pipeThrough(new Decom
 const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
 try{await import(url);}catch(error){console.warn('3Dの読込みに失敗しました。2D表示へ切り替えます。',error);}finally{URL.revokeObjectURL(url);}`,
   '/*ASSETS*/': `var ASSETS={};var ASSETS_READY=(async()=>{const b=Uint8Array.from(atob('${gzipSync(Buffer.from(JSON.stringify(ASSETS)),{level:9}).toString('base64')}'),c=>c.charCodeAt(0));Object.assign(ASSETS,JSON.parse(await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).text()));})();`,
-  '/*DATA*/': rd('src/game/data.js')+'\n'+rd('src/game/space-data.js')+'\n'+rd('src/game/space-science.js')+'\n'+rd('src/game/construction-data.js')+'\nDATA.construction.roadConnectors='+JSON.stringify(Object.fromEntries(ASSETS.construction.contract.buildings.map(b=>[b.id,b.museFields.roadConnectors])))+';',
-  '/*ENGINE*/': rd('src/game/engine.js')+'\n'+rd('src/game/space.js')+'\n'+rd('src/game/construction.js'),
+  '/*DATA*/': rd('src/game/data.js')+'\n'+rd('src/game/space-data.js')+'\n'+rd('src/game/space-science.js')+'\n'+rd('src/game/construction-data.js')+'\n'+rd('src/game/book-data.js')+'\nDATA.construction.roadConnectors='+JSON.stringify(Object.fromEntries(ASSETS.construction.contract.buildings.map(b=>[b.id,b.museFields.roadConnectors])))+';',
+  '/*ENGINE*/': rd('src/game/engine.js')+'\n'+rd('src/game/space.js')+'\n'+rd('src/game/construction.js')+'\n'+rd('src/game/book.js'),
   '/*TERRAIN*/': terrainCode,
   '/*NATURE*/': rd('src/game/nature.js'),
-  '/*UI*/': 'ASSETS_READY.then(()=>{'+rd('src/game/ui.js').replace('/*SPACE_UI*/',()=>rd('src/game/space-ui.js')).replace('/*CONS_UI*/',()=>rd('src/game/construction-ui.js'))+'}).catch(error=>{console.error(error);document.getElementById("app").textContent="ゲームデータの読込みに失敗しました。再読み込みしてください。";});',
+  '/*UI*/': 'ASSETS_READY.then(()=>{'+rd('src/game/ui.js').replace('/*SPACE_UI*/',()=>rd('src/game/space-ui.js')).replace('/*CONS_UI*/',()=>rd('src/game/construction-ui.js')).replace('/*BOOK_UI*/',()=>rd('src/game/book-ui.js'))+'}).catch(error=>{console.error(error);document.getElementById("app").textContent="ゲームデータの読込みに失敗しました。再読み込みしてください。";});',
 };
 let html = rd('src/template.html');
 for (const [key, code] of Object.entries(parts)) {

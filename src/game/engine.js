@@ -23,11 +23,13 @@ var ENGINE = (function(D){
   /* 設備が使えるか：持ち物にある（以前の方式）か、完成した建物がある（construction.js が setFacilityHook で教える） */
   let builtHook = null;
   function setFacilityHook(f){ builtHook = typeof f==="function" ? f : null; }
-  const hasFacility = (S,id)=> has(S,id) || !!(builtHook && builtHook(S,id));
-  const hasTool = (S,id)=> hasFacility(S,id) || vflag(S,"tools");
   /* 建てて作る設備か（rule が "build" のとき、工作では作れない） */
   const buildRule = S=> !!(S && S.cons && S.cons.rule==="build");
   const builtByConstruction = id=> !!(D.construction && D.construction.defs.some(d=>d.facility===id));
+  /* 建設の決まりでは、建物の設備は「完成した建物」があるときだけ使える。持ち物にあるだけ（以前の版の残り）では使えない（2026-11-14。
+     持ち物の設備は建築の画面の「置く」で資材なしの完成した建物になる）。それ以外（道具・以前の工作の決まり）は持ち物にあれば使える */
+  const hasFacility = (S,id)=> (buildRule(S) && builtByConstruction(id) && !S.verify) ? !!(builtHook && builtHook(S,id)) : (has(S,id) || !!(builtHook && builtHook(S,id)));
+  const hasTool = (S,id)=> hasFacility(S,id) || vflag(S,"tools");
   const keyOf = obj => Object.keys(obj).filter(k=>obj[k]>0).sort().join("+");
 
   function discover(S,id){

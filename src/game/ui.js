@@ -1504,56 +1504,8 @@ function viewCraft(){
 }
 
 /* ===================== 図鑑 ===================== */
-function viewBook(){
-  const prog = E.tagProgress(S), all = Object.keys(IT), total = all.length, got = all.filter(k=>S.disc[k]).length;
-  const list = U.filter==="すべて"? all : all.filter(k=>IT[k].tags.includes(U.filter));
-  return `<div class="sec">物質・製品図鑑 <small>発見${got}／収録${total}</small></div>
-  <div class="bars"><button class="bar" data-act="filter" data-id="すべて" aria-pressed="${U.filter==="すべて"}">すべて ${got}/${total}<div class="m"><i style="width:${got/total*100}%"></i></div></button>
-    ${prog.map(p=>`<button class="bar" data-act="filter" data-id="${p.tag}" aria-pressed="${U.filter===p.tag}">${p.tag} ${p.got}/${p.total}<div class="m"><i style="width:${p.got/p.total*100}%"></i></div></button>`).join("")}</div>
-  <p class="desc">点線の❔はヒントが見られるよ。分類は重なることがある（例：銅は「元素」と「金属・合金」の両方）。</p>
-  <div class="dex">${list.map(k=>{ const st=E.status(S,k); return `<button class="dx ${st}" data-act="item" data-id="${k}"><span class="i">${st==="known"?ic(k):"❔"}</span><span class="n">${st==="known"?IT[k].name:"？？？"}</span></button>`; }).join("")}</div>
-  <div class="sec">実験操作の図鑑 <small>どんな操作があるのか</small></div>
-  <div class="oplist">${Object.keys(OPS).map(o=>{ const fs=Object.keys(IT).filter(f=>IT[f].facility&&IT[f].ops.includes(o)); const can=fs.some(owned);
-    return `<div class="opc"><b>${opIc(o)} ${OPS[o].name}</b>（${OPS[o].yomi}）${can?"":' <span class="tag" style="background:var(--line);color:var(--muted)">未解放</span>'}<br>${OPS[o].kid}<br><small style="color:var(--muted)">使える装置：${fs.map(f=>S.disc[f]?nm(f):"？？？").join("・")}</small></div>`; }).join("")}</div>`;
-}
-function openItem(id){
-  const it = IT[id], st = E.status(S,id), r = S.disc[id], sh = $("#sheet");
-  if(st!=="known"){
-    sh.innerHTML = `<button class="close" data-act="close">閉じる</button><div class="hd"><span class="bigi" style="filter:grayscale(1);opacity:.5">❔</span><div><h2>？？？</h2><div class="yomi">分類：${it.tags.join("・")}</div></div></div>
-      <div class="kidbox">🦉 ${st==="hinted"?"ヒント：":""}${E.hint(S,id)}</div>`;
-  } else {
-    const pr = E.producers(id), us = E.usesOf(id);
-    const fmtP = p => `${opIc(p.op)}${OPS[p.op].name}（${p.at.map(f=>S.disc[f]?nm(f):"？？？").join("／")}）：${Object.keys(p.inp).map(k=>S.disc[k]?nm(k):"？？？").join("＋")}`;
-    const knownRoutes = r.routes.map(rt=>{ const p=D.procs.find(x=>x.id===rt), c=D.crafts.find(x=>x.id===rt);
-      if(p) return fmtP(p); if(c) return "🔨工作："+Object.keys(c.inp).map(nm).join("＋");
-      if(rt.startsWith("gather:")) return "🗺️ "+(D.regions.find(x=>x.id===rt.slice(7))||{}).name+"で採取";
-      if(rt.startsWith("rare:")) return "✨ "+(D.regions.find(x=>x.id===rt.slice(5))||{}).name+"で珍しい発見"; return rt; });
-    const otherRoutes = pr.procs.filter(p=>!r.routes.includes(p.id)).length + pr.crafts.filter(c=>!r.routes.includes(c.id)).length;
-    const usesL = us.procs.map(p=>Object.keys(p.out)).flat().concat(us.crafts.map(c=>c.out)).filter((v,i,a)=>a.indexOf(v)===i);
-    const showP = owned("balance"), why = pr.procs.find(p=>r.routes.includes(p.id));
-    sh.innerHTML = `<button class="close" data-act="close">閉じる</button>
-    <div class="hd"><span class="bigi">${ic(id)}</span><div><h2>${it.name}</h2><div class="yomi">${it.yomi}・${it.en}</div></div></div>
-    <div class="kidbox">${it.kid}</div>
-    <h5>📘 くわしく</h5><p style="margin:0;font-size:.9rem">${it.more}</p>
-    ${why?`<h5>🔬 何が起きてできたの？</h5><p style="margin:0;font-size:.9rem">${why.why}</p>`:""}
-    <dl class="kv">${it.f?`<dt>化学式</dt><dd>${it.f}</dd>`:""}<dt>分類</dt><dd>${it.tags.join("・")}</dd>
-      ${it.el&&it.el.length?`<dt>含む元素</dt><dd>${it.el.join(" ")}</dd>`:""}
-      ${it.mp?`<dt>融点（溶ける温度）</dt><dd>${it.mp}</dd>`:""}${it.bp?`<dt>沸点（沸騰する温度）</dt><dd>${it.bp}</dd>`:""}
-      ${it.nature?`<dt>自然の中では</dt><dd>${it.nature}</dd>`:""}${it.uses?`<dt>主な使い道</dt><dd>${it.uses}</dd>`:""}
-      ${it.facility?`<dt>できる操作</dt><dd>${it.ops.map(o=>OPS[o].name).join("・")||"（特別な効果がある設備）"}</dd>`:""}
-      <dt>情報の出典</dt><dd>一般的な化学・地学・歴史の知識にもとづくゲーム用の解説</dd></dl>
-    <h5>📓 あなたの研究記録</h5>
-    <dl class="kv"><dt>初発見</dt><dd>${new Date(r.first).toLocaleString("ja-JP")}</dd><dt>作った・拾った回数</dt><dd>${r.made}回（合計${r.total}個）</dd>
-      ${it.purity?`<dt>最高純度</dt><dd>${showP?"約"+(r.best>=0.999?"99.99":Math.round(r.best*100))+"%":"？（てんびんでわかる）"}</dd>`:""}
-      ${it.store===false?`<dt>保管</dt><dd>気体なので集められない（記録のみ）</dd>`:`<dt>今持っている</dt><dd>${E.cnt(S,id)}個</dd>`}</dl>
-    <h5>🧭 見つけた作り方</h5><ul>${knownRoutes.map(x=>`<li>${x}</li>`).join("")}</ul>
-    ${otherRoutes?`<p class="desc">ほかにも${otherRoutes}通りの作り方があるみたい…</p>`:""}
-    <h5>🔗 これを使うとできるもの</h5><ul>${usesL.length?usesL.map(k=>`<li>${S.disc[k]?ic(k)+" "+nm(k):"❔ ？？？"}</li>`).join(""):"<li>今のところなし</li>"}</ul>
-    ${procNeedsHTML(id)}
-    <div class="row mt"><button class="btn small sub" data-act="target" data-id="${id}">🕸️ 技術マップで見る</button></div>`;
-  }
-  sh.scrollTop=0; openModal(sh.querySelector(".close"));
-}
+function viewBook(){ return bookView(); }   /* 図鑑の画面は book-ui.js（2026-11-14） */
+function openItem(id){ bookOpenModal(id); }
 
 /* ===================== 技術マップ ===================== */
 function techStatus(id){
@@ -2415,5 +2367,6 @@ document.addEventListener("input", ev=>{ if(ev.target && ev.target.id==="vq"){ v
 
 /*SPACE_UI*/
 /*CONS_UI*/
+/*BOOK_UI*/
 window.__GAME__ = {SPACE, setTab, writeNow,get S(){return S;}, save:()=>save(), walk:{speed:WALK_SPEED, maxDt:MAX_DT, stride:1.4}, cam:{user:()=>camUser(), faceSector:()=>faceSector(), lim:()=>camPitchLim(), rebase:()=>camRebase(), debug:()=>W3.camDbg, solve:(y,p,z,x,zz)=>camSolve(y,p,z,x,zz), axes:(y,p)=>camAxes(y,p), CAM}, hero:{dirs:()=>heroDirs(), sheet:h=>heroSheet3D(h), facing:()=>worldFacing()}, get VERIFY(){return VERIFY;}, verifyCatalog:()=>verifyCatalog(), gfxStatus:()=>gfxStatus(), E, D, U, W3, onScreenish:(x,z,h,m)=>onScreenish(x,z,h,m), get NODES(){return NODES;}, get WORLD(){return world();}, goTo3D:(x,z,t)=>goTo3D(x,z,t), pressAction:()=>pressAction(), selectAndGo:t=>selectAndGo(t), screenToGround:(x,y)=>screenToGround(x,y), toScreen:(x,y,z)=>toScreen(x,y,z), render:()=>{ fieldSig=""; sceneSig=""; lastStage=stage(); lastMission=E.missionIndex(S); renderChrome(); render(); }};
 })(DATA, ENGINE);
