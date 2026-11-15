@@ -161,8 +161,8 @@
   "dirt": {
    "color": {
     "file": "assets/build/construction/road-dirt.webp",
-    "bytesIn": 129126,
-    "bytesOut": 12770,
+    "bytesIn": 262831,
+    "bytesOut": 9078,
     "size": [
      512,
      512
@@ -170,8 +170,8 @@
    },
    "normal": {
     "file": "assets/build/construction/road-dirt_n.webp",
-    "bytesIn": 277022,
-    "bytesOut": 49120,
+    "bytesIn": 210712,
+    "bytesOut": 21560,
     "size": [
      512,
      512
@@ -181,8 +181,8 @@
   "gravel": {
    "color": {
     "file": "assets/build/construction/road-gravel.webp",
-    "bytesIn": 112806,
-    "bytesOut": 56918,
+    "bytesIn": 406124,
+    "bytesOut": 39104,
     "size": [
      512,
      512
@@ -190,8 +190,8 @@
    },
    "normal": {
     "file": "assets/build/construction/road-gravel_n.webp",
-    "bytesIn": 47330,
-    "bytesOut": 96850,
+    "bytesIn": 345787,
+    "bytesOut": 60494,
     "size": [
      512,
      512
@@ -201,8 +201,8 @@
   "stone": {
    "color": {
     "file": "assets/build/construction/road-stone.webp",
-    "bytesIn": 66165,
-    "bytesOut": 10468,
+    "bytesIn": 336526,
+    "bytesOut": 20010,
     "size": [
      512,
      512
@@ -210,8 +210,8 @@
    },
    "normal": {
     "file": "assets/build/construction/road-stone_n.webp",
-    "bytesIn": 7006,
-    "bytesOut": 11116,
+    "bytesIn": 99129,
+    "bytesOut": 13166,
     "size": [
      512,
      512

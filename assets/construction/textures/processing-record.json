@@ -1,0 +1,75 @@
+{
+ "note": "process_roads.py の加工記録",
+ "flipY": true,
+ "items": {
+  "dirt": {
+   "seam": {
+    "method": "roll+cross-dissolve band"
+   },
+   "edgeBefore": {
+    "edgeX": 2.27,
+    "edgeY": 2.6,
+    "innerStep": 0.93
+   },
+   "edgeAfter": {
+    "edgeX": 0.77,
+    "edgeY": 1.23,
+    "innerStep": 0.91
+   },
+   "normalStrength": 1.1,
+   "bytes": 262831,
+   "normalBytes": 210712
+  },
+  "gravel": {
+   "seam": {
+    "method": "roll+cross-dissolve band + edge equalize Y"
+   },
+   "edgeBefore": {
+    "edgeX": 10.07,
+    "edgeY": 10.44,
+    "innerStep": 3.68
+   },
+   "edgeAfter": {
+    "edgeX": 2.81,
+    "edgeY": 0.0,
+    "innerStep": 3.52
+   },
+   "normalStrength": 2.0,
+   "bytes": 406124,
+   "normalBytes": 345787
+  },
+  "stone": {
+   "seam": {
+    "jointCenters": [
+     0.0,
+     69.0,
+     134.0,
+     197.0,
+     255.0,
+     325.0,
+     386.0,
+     443.0,
+     511.0
+    ],
+    "chosenSpan": [
+     0.0,
+     511.0
+    ],
+    "note": "上下端は目地同士が接する。左右は make_tileable で処理"
+   },
+   "edgeBefore": {
+    "edgeX": 4.32,
+    "edgeY": 4.45,
+    "innerStep": 2.54
+   },
+   "edgeAfter": {
+    "edgeX": 1.65,
+    "edgeY": 0.0,
+    "innerStep": 2.48
+   },
+   "normalStrength": 2.4,
+   "bytes": 336526,
+   "normalBytes": 99129
+  }
+ }
+}
