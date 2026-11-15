@@ -116,10 +116,18 @@
 - セーブ v6（`cons`）。v5 の配置済み設備は以前の場所に資材なしの完成済み建物へ移し、持ち物から 1 つ減らす（二重に持たない）。撤去中・重なりは持ち物に残し、建築の画面から置ける。検証モードは従来の自由配置（`S.verify.placed`）のまま。
 - 道：2×2 の格子（`"i,j"`）、10 マスの区間、重なりは請求しない、種類の変更は差の工程だけ。歩ける・壁にならない。水・川・急な斜面・木や岩の上は不可。橋・トンネル・地形の変更はしない。
 - 取消・解体：使っていない資材は全部、施工済みの工程は返却表の分だけ戻す（表がなければ戻らない。勝手な割合を作らない）。木や岩を自動で消して置けるようにしない。
+- 外観違い（2026-11-15 オーナー方針）：既存の設計図の `looks`（倉庫→大きな倉庫 `look-warehouse`、作業台→工房の建物 `look-workshop`。Muse の `assets/town-construction` が原本）。
+  働き・工程・資材・返却・設備の条件は元の設計図のまま（上位設備・必須設備にしない。複数建てても生産量は増えない）。新しく建てるときだけ選べ、`inst.look` に保存（セーブ v6 のまま。以前の建物は look なし＝従来のモデル・形）。
+  判定・当たり・道の接続は Muse の正式の占有範囲（`CONS.view`／`defOf`）。工程の見た目は town-construction.json の工程グループを `stageGroups` で設計図の工程番号へ写す。配信は LOD0 の軽量版だけ（`make-construction-glb.py` の looks/。LOD1 は圧縮後に大きいので入れない）。既存の建物の外観の変更はない。`tests/construction-looks.test.mjs`・`tests/e2e/looks.mjs`。
 - 発射サイトは宇宙計画のまま（この仕組みへ移さない）。サイト全体（18×18、向きつき）は `syncStructColliders` が「歩けるが建てられない」予約範囲（`space-site:area`、`walk:true`）として渡す。建物・道は置けず、歩行・経路・搭乗口への道筋は設備ごとの形のまま。発射サイトの置き直しは自分の予約と設備の形（`struct:space-site:*`）を数えない（`nature.js` の ignore は前方一致）。`tests/space-reserve.test.mjs`。
 - 正式の工程表示・予定地キット・足場・資材の山・道（Muse f62e075）は `src/construction-visual.ts` の 1 本（Codex の統合 34dd168）。一覧 k＝工程 k の完了直後、施工中は k−1。GLTFLoader と同じ正規化。現場の部品は材質ごとに 1 つのメッシュへまとめる（`mergeKitParts`。元の部品は名前を残して描かない）。資材の山の形は `construction-ui.js` の `PILE_OF`（ID の表）。
   配信用の軽量版は `scripts/make-construction-glb.py` の 1 本（画像を共有テクスチャ `assets/build/nature-tex` へ。道は WebP の色・法線 512）。原本 `assets/construction` を変えたら再実行。
 - 案内（2026-11-14）：宇宙計画の製作の足りない物はボタン（建物の設備は状態と「現場を開く／建設する」、実習は「実習へ」、材料は作り方へ）。完成した設備の画面に「次に使う所」。画面の操作だけの通し確認は `tests/e2e/playthrough.mjs`（`npm run e2e:playthrough`、かまどまで）。記録は `docs/construction/PLAYTHROUGH-2026-11-14.md`。
+
+## 公開（GitHub Pages。2026-11-15 オーナー承認）
+- `.github/workflows/pages.yml`：main への push（と main での手動実行）だけで公開。feature・PR からは公開しない（全ジョブに `github.ref == 'refs/heads/main'`）。
+- 1 回のビルドの dist を、npm test・typecheck のあと e2e（偽の描画と実WebGL）で確かめ、全部が通ったときだけ同じ dist を公開。公開の直前に main の先端の SHA と同じか確かめる。`dist/version.json` に SHA。
+- main へは PR で入れる（直接 push しない）。`tests/pages-workflow.test.mjs` がワークフローの条件を検査。
 
 ## レシピ図鑑（2026-11-14〜。ロードマップ M2-01・M2-03）
 - 正本はデータのまま（`data.js` の items・procs・crafts・regions、`space-data.js`、`construction-data.js`）。図鑑は `src/game/book.js`（`BOOK`、エンジンの隣）がその場で組み立てる。図鑑だけの情報（監修の台帳 `review`・用語の説明・分類）は `src/game/book-data.js`。画面は `src/game/book-ui.js`（ビルドで `ui.js` の `/*BOOK_UI*/` へ）。スキーマは `docs/book/BOOK-SCHEMA.md`。
