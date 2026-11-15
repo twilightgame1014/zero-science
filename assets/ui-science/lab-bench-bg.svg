@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 225">
+  <!-- 研究室の実験台 背景（Muse ラウンド28 / Claude §25.4c）
+       配色: 生成り #F3EEE2 / 濃紺 #17212C・#202D3B / 青緑 #1D7F7B / 琥珀 #C38A2E
+       座標の約束: 棚板の上面 y=96、実験台の天板 y=186（ui.js drawScene の既存アンカーと一致）。
+       装置・器具スプライトはこの上に重ねる。 -->
+  <rect width="400" height="225" fill="#F3EEE2"/>
+  <!-- wall panel seams (field-notebook paper) -->
+  <path d="M0 62 H400 M0 124 H400" stroke="#D5CDBB" stroke-width="1"/>
+  <!-- window: navy frame, pale teal sky -->
+  <g>
+    <rect x="158" y="18" width="84" height="62" rx="4" fill="#DCECEA" stroke="#17212C" stroke-width="5"/>
+    <path d="M200 18 V80 M158 49 H242" stroke="#17212C" stroke-width="3"/>
+    <circle cx="222" cy="32" r="6" fill="#C38A2E" opacity="0.75"/>
+    <path d="M158 66 Q180 56 200 64 T242 62 V80 H158 Z" fill="#1D7F7B" opacity="0.28"/>
+  </g>
+  <!-- hanging lamp (amber accent, restrained) -->
+  <path d="M52 0 V20" stroke="#17212C" stroke-width="2"/>
+  <path d="M40 30 L52 18 L64 30 Z" fill="#17212C"/>
+  <circle cx="52" cy="33" r="3.4" fill="#C38A2E"/>
+  <!-- shelf board (top surface y=96) with vessel silhouettes -->
+  <rect x="0" y="96" width="400" height="5" fill="#17212C"/>
+  <g fill="none" stroke="#17212C" stroke-width="2.4">
+    <!-- jars and bottles resting on the shelf (bottoms at y=96) -->
+    <path d="M24 96 v-14 a5 5 0 0 1 5-5 h4 a5 5 0 0 1 5 5 v14"/>
+    <path d="M58 96 v-10 l4-8 v-4 h6 v4 l4 8 v10"/>
+    <path d="M322 96 v-16 h12 v16"/>
+    <path d="M352 96 v-9 l3.5-6 v-3 h5 v3 l3.5 6 v9"/>
+  </g>
+  <path d="M24 82 h14 M322 88 h12" stroke="#1D7F7B" stroke-width="2.4"/>
+  <!-- lower wall: navy wainscot -->
+  <rect y="101" width="400" height="85" fill="#202D3B"/>
+  <path d="M0 101 H400" stroke="#17212C" stroke-width="2"/>
+  <path d="M66 101 V186 M200 101 V186 M334 101 V186" stroke="#17212C" stroke-width="1.4" opacity="0.6"/>
+  <!-- framed chart on the wainscot (teal rule line, notebook motif) -->
+  <g>
+    <rect x="282" y="118" width="76" height="48" rx="3" fill="#F3EEE2"/>
+    <path d="M290 132 h60 M290 142 h44 M290 152 h52" stroke="#BFB6A2" stroke-width="2"/>
+    <path d="M290 160 l12-8 10 5 14-10" fill="none" stroke="#1D7F7B" stroke-width="2.2"/>
+  </g>
+  <!-- bench: top board y=186, front panel to 225 -->
+  <rect x="0" y="186" width="400" height="9" fill="#17212C"/>
+  <rect x="0" y="195" width="400" height="30" fill="#131A22"/>
+  <path d="M0 195 H400" stroke="#3A4A5C" stroke-width="1.4"/>
+  <path d="M30 210 H150 M250 210 H370" stroke="#2D3A48" stroke-width="2"/>
+</svg>

@@ -1,34 +1,105 @@
-name: GitHub Pages に公開（手動）
-# 公開は手動のみ（Actions タブ →「GitHub Pages に公開（手動）」→ Run workflow）
+name: GitHub Pages に公開（main のみ）
+# 2026-11-15 オーナー承認：検証済みの main への push で自動公開する。feature ブランチ・PR からは公開しない。
+# ・公開するのは、この実行で 1 回だけ作ったビルド（dist）。e2e はその同じ dist を取り出して確かめる（作り直さない）。
+# ・どこかの検証が失敗したら公開しない（deploy は build と verify の両方の成功が条件）。
+# ・手動実行（workflow_dispatch）も main だけ：すべてのジョブに github.ref == 'refs/heads/main' の条件がある（push 側の branches だけでは手動実行を制限できないため）。
+# ・同時実行：同じグループで 1 つずつ（実行中の公開は止めない。待っている古い実行は新しい実行に置き換わる）。
+#   さらに公開の直前に「この SHA がまだ main の先端か」を確かめ、古い実行のやり直しなどで新しい版を古い版で上書きしない。
+# ・dist/version.json にビルドした SHA を書く（公開後に https://<pages>/version.json で配信中の SHA を確かめられる）。
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
-  pages: write
-  id-token: write
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pages-main
+  cancel-in-progress: false
 jobs:
   build:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pages: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npm test
+      - run: npm ci
+      - run: npm run typecheck
       - run: npm run build
+        env:
+          BUILD_SHA: ${{ github.sha }}
+      # npm test は dist の大きさ（16MiB 以下）も確かめるので、ビルドの後に実行する
+      - run: npm test
+      - name: version.json が今の SHA か
+        run: node -e "const v=require('./dist/version.json');if(v.sha!==process.env.GITHUB_SHA){console.error(v);process.exit(1)}console.log(v)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+          retention-days: 7
+      - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
-  deploy:
+  verify:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: true
+      matrix:
+        suite: [play, construction, recovery, space, hero, camera-book]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # build ジョブで作った dist（公開するのと同じ物）をそのまま使う
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+      - run: node -e "const v=require('./dist/version.json');if(v.sha!==process.env.GITHUB_SHA)process.exit(1)"
+      - if: matrix.suite == 'play'
+        run: node tests/e2e/play.mjs
+      - if: matrix.suite == 'construction'
+        run: node tests/e2e/construction.mjs && node tests/e2e/construction-visual.mjs && node tests/e2e/looks.mjs
+      - if: matrix.suite == 'recovery'
+        run: node tests/e2e/playthrough.mjs && node tests/e2e/recovery.mjs
+      - if: matrix.suite == 'space'
+        run: node tests/e2e/space.mjs
+      - if: matrix.suite == 'hero'
+        run: node tests/e2e/hero-8dir.mjs && node tests/e2e/hero-8dir.mjs --suit
+      - if: matrix.suite == 'camera-book'
+        run: node tests/e2e/camera-focus-fade.mjs && node tests/e2e/book.mjs
+  deploy:
+    needs: [build, verify]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+      contents: read
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: この SHA がまだ main の先端か（古い版で上書きしない）
+        id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tip=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
+          echo "main=$tip this=${{ github.sha }}"
+          if [ "$tip" = "${{ github.sha }}" ]; then echo "latest=true" >> "$GITHUB_OUTPUT"; else echo "latest=false" >> "$GITHUB_OUTPUT"; echo "::notice::main の先端が新しくなったので、この版（${{ github.sha }}）は公開しない"; fi
       - id: deployment
+        if: steps.head.outputs.latest == 'true'
         uses: actions/deploy-pages@v4

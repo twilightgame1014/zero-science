@@ -1,0 +1,18 @@
+import fs from 'node:fs';import vm from 'node:vm';
+const c={console};vm.createContext(c);for(const f of ['data','space-data','space-science'])vm.runInContext(fs.readFileSync(new URL('../src/game/'+f+'.js',import.meta.url),'utf8'),c);
+const D=c.DATA,ids=[...D.space.ids,'rawrubber','rubber'];
+const assets=ids.map(id=>({assetId:'icon_'+id,itemId:id,purpose:D.items[id].name,target:'工作・図鑑・宇宙プロジェクト',reuse:'既存Atlasの不足を照合して新規制作',newRequired:true,width:256,height:256,displayPx:[32,48],kind:'切り抜き',alpha:true,scale:'UI用・実寸なし',muse:'形状・配色の参照',claude:'assets/build/rocket/icons.json・icons.webp → SPACE_ICO → ic(id)',produced:true,integrated:true,verified:'画像検品・縮小・透過処理済み。実ゲームのUI検証は検証報告参照',status:'導入済み'}));
+const art=JSON.parse(fs.readFileSync(new URL('../docs/space/art-processing.json',import.meta.url)));
+for(const t of art.textures)assets.push({assetId:t.id,purpose:t.id,target:t.id.startsWith('fx-')?'anchor_smoke_l/r の Sprite':'src/space-materials.ts の該当材質',reuse:t.id==='tex-metal-dull'?'既存 iron.png を再利用、暗色は材質色で共用':'不足を照合して新規生成',newRequired:t.id!=='tex-metal-dull',width:t.size[0],height:t.size[1],kind:t.id.includes('-skin')?'UV専用':t.alpha?'切り抜き':t.tile?'タイル':'専用平面',alpha:t.alpha,scale:t.id==='tex-rocket-skin'?'ゲーム内 y=4.8〜15.8m':t.id==='tex-capsule-skin'?'ゲーム内 y=15.8〜19.2m':'ゲーム内1mを基本。煙は動的拡縮',muse:'原GLB・材質の金属度と粗さを維持。UV未格納面はゲーム側複製に投影。法線マップ追加なし',claude:'assets/build/rocket/*.webp → ASSETS.spaceTextures / spaceSmoke',produced:true,integrated:true,verified:'寸法・縁処理済み。実画面は検証報告参照',status:'導入済み'});
+const source=JSON.parse(fs.readFileSync(new URL('../docs/space-model-source.json',import.meta.url)));
+for(const f of source.files)assets.push({assetId:f.path.split('/').at(-1).replace('.glb',''),purpose:'Muse正式モデル',target:'src/space-models.ts',reuse:'Muse原本SHA一致（v6契約）',newRequired:false,width:null,height:null,kind:'GLB',alpha:'材質による',scale:'rocket-contract.json v6',muse:'寸法・ノード・接続点・アニメーション不変',claude:'圧縮同梱してGLTFLoader。近景LOD0、遠景/スマホLOD1',produced:true,integrated:true,verified:'26モデルSHA・GLB構造、両LODハッチ実ポーズを検査',status:'導入済み'});
+for(const sex of ['boy','girl'])assets.push({assetId:`player-spritesheet-${sex}-suit-8dir`,purpose:'主人公の宇宙服',target:'主人公移動・装備表示',reuse:'既存男女シートとMuse前後参照を使用',newRequired:true,width:1024,height:2048,kind:'8行4列スプライト',alpha:true,scale:'セル256・可視高200・足元29px',muse:'方向行とセル配置を維持。展示GLBとは別',claude:'S.space.suit → heroAssetKey → setPlayerSpriteSheet。hero IDとセーブは保持',produced:true,integrated:true,verified:'64セルの寸法・透過・基準線を検査。実ゲーム検証は別報告',status:'導入済み'});
+fs.writeFileSync(new URL('../docs/space-assets.json',import.meta.url),JSON.stringify({version:2,note:'制作・ゲームコードへの導入済み。実機iPhone 17の表示とFPSは未測定。70画像生成＋既存金属再利用。',assets},null,2)+'\n');
+fs.writeFileSync(new URL('../docs/space-dependencies.json',import.meta.url),JSON.stringify({version:2,items:ids.map(id=>D.items[id]),recipes:D.space.recipes,lessons:D.space.lessons,slots:D.space.slots,tests:D.space.tests,existingRecipes:{crafts:D.crafts.filter(c=>!c.space),processes:D.procs},natural:D.regions.map(r=>({id:r.id,name:r.name,resources:r.res}))},null,2)+'\n');
+console.log('Updated dependency graph and production ledger',assets.length);
+
+const csvCell=x=>'"'+String(x??'').replaceAll('"','""')+'"';
+fs.mkdirSync(new URL('../docs/science/',import.meta.url),{recursive:true});
+const columns=['id','name','yomi','kid','more','simp','sources','checked_on','notes'];
+const csv=[columns,...ids.map(id=>{const i=D.items[id];return [id,i.name,i.yomi,i.kid,i.more,i.simplification,i.scienceSources.join(' | '),i.scienceCheckedOn,i.scienceNotes];})].map(row=>row.map(csvCell).join(',')).join('\n')+'\n';
+fs.writeFileSync(new URL('../docs/science/space-items.csv',import.meta.url),csv);

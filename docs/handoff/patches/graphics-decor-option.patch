@@ -1,0 +1,250 @@
+diff --git a/src/graphics/EnvironmentRenderer.ts b/src/graphics/EnvironmentRenderer.ts
+index a60e151..552e2c1 100644
+--- a/src/graphics/EnvironmentRenderer.ts
++++ b/src/graphics/EnvironmentRenderer.ts
+@@ -1,6 +1,6 @@
+ import * as THREE from 'three';
+ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+-import type { GraphicsConfig, QualityTier } from './types';
++import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
+ import { AssetManager } from './AssetManager';
+ import {
+   distanceToPath,
+@@ -126,6 +126,7 @@ export class EnvironmentRenderer {
+     quality: QualityTier,
+     particleTexture: THREE.Texture,
+     gpt: Record<string, THREE.Texture> = {},
++    decor: DecorOptions = {},
+   ) {
+     this.cfg = cfg;
+     this.gpt = gpt;
+@@ -143,12 +144,13 @@ export class EnvironmentRenderer {
+     this.patchTex = am.createGroundPatchTexture();
+     this.patchAlpha = am.createPatchAlphaTexture();
+ 
+-    this.buildTrees(scale);
++    // Families the game owns as natural objects can be switched off (decor).
++    if (decor.trees !== false) this.buildTrees(scale);
+     this.buildGrass(scale);
+-    this.buildGroundCover(scale);
+-    this.buildRocks(scale);
+-    this.buildRiverbank(scale);
+-    this.buildFallenLogs();
++    this.buildGroundCover(scale, decor.shrubs !== false);
++    if (decor.rocks !== false) this.buildRocks(scale);
++    if (decor.pebbles !== false) this.buildRiverbank(scale);
++    if (decor.logs !== false) this.buildFallenLogs();
+     this.buildPollen(particleTexture, scale);
+     this.buildBackdropMountains();
+     this.buildWaterfall(particleTexture);
+@@ -685,14 +687,14 @@ export class EnvironmentRenderer {
+   }
+ 
+   /* ---------------- shrubs, ferns, leaf litter ---------------- */
+-  private buildGroundCover(scale: number): void {
++  private buildGroundCover(scale: number, shrubsOn = true): void {
+     // Shrubs (2026-11-06 overhaul): a jittered 3-blob cluster per
+     // shrub (dark satellite = inner shade) plus alpha-cutout leaf
+     // cards on the surface, instead of one smooth single-colour ball.
+     const shrubGeo = new THREE.IcosahedronGeometry(0.55, 1);
+     this.jitter(shrubGeo, 0.34);
+     const shrubMat = new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.95 });
+-    const sCount = Math.round(150 * scale);
++    const sCount = shrubsOn ? Math.round(150 * scale) : 0;
+     const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, sCount * 3);
+     const cards = new THREE.InstancedMesh(
+       new THREE.PlaneGeometry(0.8, 0.66),
+diff --git a/src/graphics/GraphicsEngine.ts b/src/graphics/GraphicsEngine.ts
+index 1958aee..1fb8c01 100644
+--- a/src/graphics/GraphicsEngine.ts
++++ b/src/graphics/GraphicsEngine.ts
+@@ -229,7 +229,7 @@ export class GraphicsEngine {
+       detailBrightness: gpt.ground_grass_base ? 1.5 : 1,
+       particle: particleTexture,
+       gpt,
+-    });
++    }, options.decor);
+     const groundAt = (x: number, z: number) => world.getGroundHeight(x, z);
+     const character = new CharacterRenderer(
+       spriteTexture,
+diff --git a/src/graphics/WorldRenderer.ts b/src/graphics/WorldRenderer.ts
+index f018eca..32e2963 100644
+--- a/src/graphics/WorldRenderer.ts
++++ b/src/graphics/WorldRenderer.ts
+@@ -1,5 +1,5 @@
+ import * as THREE from 'three';
+-import type { GraphicsConfig, QualityTier } from './types';
++import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
+ import { AssetManager } from './AssetManager';
+ import { TerrainRenderer } from './TerrainRenderer';
+ import { EnvironmentRenderer } from './EnvironmentRenderer';
+@@ -23,10 +23,11 @@ export class WorldRenderer {
+       gpt?: Record<string, THREE.Texture>;
+       detailBrightness?: number;
+     },
++    decor?: DecorOptions,
+   ) {
+     void assets;
+     this.terrain = new TerrainRenderer(cfg, textures.terrainDetail, textures.detailBrightness ?? 1);
+-    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {});
++    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, decor);
+     this.group.add(this.terrain.group);
+     this.group.add(this.environment.group);
+   }
+diff --git a/src/graphics/types.ts b/src/graphics/types.ts
+index 4038539..77a0100 100644
+--- a/src/graphics/types.ts
++++ b/src/graphics/types.ts
+@@ -102,6 +102,18 @@ export interface GroundPick {
+   surface: 'terrain' | 'water';
+ }
+ 
++/** Which built-in decoration families the renderer scatters on its own.
++ *  Families the game manages as gatherable natural objects (handed over
++ *  with updateResourceVisual) should be turned off here so the same tree
++ *  or rock is never drawn twice. All default to true. */
++export interface DecorOptions {
++  trees?: boolean;
++  rocks?: boolean;
++  logs?: boolean;
++  pebbles?: boolean;
++  shrubs?: boolean;
++}
++
+ export interface GraphicsOptions {
+   /** Rendering quality. 'auto' picks from device hints. Default 'auto'. */
+   quality?: QualityTier | 'auto';
+@@ -122,6 +134,8 @@ export interface GraphicsOptions {
+   /** HUD safe-area insets (CSS px) known at startup. Can be updated
+    *  at runtime with setViewportInsets(). */
+   viewportInsets?: ViewportInsets;
++  /** Built-in decoration families to draw (see DecorOptions). */
++  decor?: DecorOptions;
+   /** Called when the WebGL context is lost / restored. */
+   onContextLost?: () => void;
+   onContextRestored?: () => void;
+diff --git a/threejs-hd2d-graphics/src/graphics/EnvironmentRenderer.ts b/threejs-hd2d-graphics/src/graphics/EnvironmentRenderer.ts
+index a60e151..552e2c1 100644
+--- a/threejs-hd2d-graphics/src/graphics/EnvironmentRenderer.ts
++++ b/threejs-hd2d-graphics/src/graphics/EnvironmentRenderer.ts
+@@ -1,6 +1,6 @@
+ import * as THREE from 'three';
+ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+-import type { GraphicsConfig, QualityTier } from './types';
++import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
+ import { AssetManager } from './AssetManager';
+ import {
+   distanceToPath,
+@@ -126,6 +126,7 @@ export class EnvironmentRenderer {
+     quality: QualityTier,
+     particleTexture: THREE.Texture,
+     gpt: Record<string, THREE.Texture> = {},
++    decor: DecorOptions = {},
+   ) {
+     this.cfg = cfg;
+     this.gpt = gpt;
+@@ -143,12 +144,13 @@ export class EnvironmentRenderer {
+     this.patchTex = am.createGroundPatchTexture();
+     this.patchAlpha = am.createPatchAlphaTexture();
+ 
+-    this.buildTrees(scale);
++    // Families the game owns as natural objects can be switched off (decor).
++    if (decor.trees !== false) this.buildTrees(scale);
+     this.buildGrass(scale);
+-    this.buildGroundCover(scale);
+-    this.buildRocks(scale);
+-    this.buildRiverbank(scale);
+-    this.buildFallenLogs();
++    this.buildGroundCover(scale, decor.shrubs !== false);
++    if (decor.rocks !== false) this.buildRocks(scale);
++    if (decor.pebbles !== false) this.buildRiverbank(scale);
++    if (decor.logs !== false) this.buildFallenLogs();
+     this.buildPollen(particleTexture, scale);
+     this.buildBackdropMountains();
+     this.buildWaterfall(particleTexture);
+@@ -685,14 +687,14 @@ export class EnvironmentRenderer {
+   }
+ 
+   /* ---------------- shrubs, ferns, leaf litter ---------------- */
+-  private buildGroundCover(scale: number): void {
++  private buildGroundCover(scale: number, shrubsOn = true): void {
+     // Shrubs (2026-11-06 overhaul): a jittered 3-blob cluster per
+     // shrub (dark satellite = inner shade) plus alpha-cutout leaf
+     // cards on the surface, instead of one smooth single-colour ball.
+     const shrubGeo = new THREE.IcosahedronGeometry(0.55, 1);
+     this.jitter(shrubGeo, 0.34);
+     const shrubMat = new THREE.MeshStandardMaterial({ map: this.foliageTex, roughness: 0.95 });
+-    const sCount = Math.round(150 * scale);
++    const sCount = shrubsOn ? Math.round(150 * scale) : 0;
+     const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, sCount * 3);
+     const cards = new THREE.InstancedMesh(
+       new THREE.PlaneGeometry(0.8, 0.66),
+diff --git a/threejs-hd2d-graphics/src/graphics/GraphicsEngine.ts b/threejs-hd2d-graphics/src/graphics/GraphicsEngine.ts
+index 1958aee..1fb8c01 100644
+--- a/threejs-hd2d-graphics/src/graphics/GraphicsEngine.ts
++++ b/threejs-hd2d-graphics/src/graphics/GraphicsEngine.ts
+@@ -229,7 +229,7 @@ export class GraphicsEngine {
+       detailBrightness: gpt.ground_grass_base ? 1.5 : 1,
+       particle: particleTexture,
+       gpt,
+-    });
++    }, options.decor);
+     const groundAt = (x: number, z: number) => world.getGroundHeight(x, z);
+     const character = new CharacterRenderer(
+       spriteTexture,
+diff --git a/threejs-hd2d-graphics/src/graphics/WorldRenderer.ts b/threejs-hd2d-graphics/src/graphics/WorldRenderer.ts
+index f018eca..32e2963 100644
+--- a/threejs-hd2d-graphics/src/graphics/WorldRenderer.ts
++++ b/threejs-hd2d-graphics/src/graphics/WorldRenderer.ts
+@@ -1,5 +1,5 @@
+ import * as THREE from 'three';
+-import type { GraphicsConfig, QualityTier } from './types';
++import type { DecorOptions, GraphicsConfig, QualityTier } from './types';
+ import { AssetManager } from './AssetManager';
+ import { TerrainRenderer } from './TerrainRenderer';
+ import { EnvironmentRenderer } from './EnvironmentRenderer';
+@@ -23,10 +23,11 @@ export class WorldRenderer {
+       gpt?: Record<string, THREE.Texture>;
+       detailBrightness?: number;
+     },
++    decor?: DecorOptions,
+   ) {
+     void assets;
+     this.terrain = new TerrainRenderer(cfg, textures.terrainDetail, textures.detailBrightness ?? 1);
+-    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {});
++    this.environment = new EnvironmentRenderer(cfg, quality, textures.particle, textures.gpt ?? {}, decor);
+     this.group.add(this.terrain.group);
+     this.group.add(this.environment.group);
+   }
+diff --git a/threejs-hd2d-graphics/src/graphics/types.ts b/threejs-hd2d-graphics/src/graphics/types.ts
+index 4038539..77a0100 100644
+--- a/threejs-hd2d-graphics/src/graphics/types.ts
++++ b/threejs-hd2d-graphics/src/graphics/types.ts
+@@ -102,6 +102,18 @@ export interface GroundPick {
+   surface: 'terrain' | 'water';
+ }
+ 
++/** Which built-in decoration families the renderer scatters on its own.
++ *  Families the game manages as gatherable natural objects (handed over
++ *  with updateResourceVisual) should be turned off here so the same tree
++ *  or rock is never drawn twice. All default to true. */
++export interface DecorOptions {
++  trees?: boolean;
++  rocks?: boolean;
++  logs?: boolean;
++  pebbles?: boolean;
++  shrubs?: boolean;
++}
++
+ export interface GraphicsOptions {
+   /** Rendering quality. 'auto' picks from device hints. Default 'auto'. */
+   quality?: QualityTier | 'auto';
+@@ -122,6 +134,8 @@ export interface GraphicsOptions {
+   /** HUD safe-area insets (CSS px) known at startup. Can be updated
+    *  at runtime with setViewportInsets(). */
+   viewportInsets?: ViewportInsets;
++  /** Built-in decoration families to draw (see DecorOptions). */
++  decor?: DecorOptions;
+   /** Called when the WebGL context is lost / restored. */
+   onContextLost?: () => void;
+   onContextRestored?: () => void;

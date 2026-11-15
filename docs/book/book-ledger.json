@@ -1,0 +1,10621 @@
+{
+ "generatedBy": "scripts/export-book-ledger.mjs",
+ "items": 229,
+ "raws": [
+  {
+   "id": "twig",
+   "name": "木の枝",
+   "regions": [
+    {
+     "region": "forest",
+     "name": "森林",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "burn_twig"
+   ],
+   "uses": 15,
+   "elements": [
+    "C",
+    "H",
+    "O",
+    "N",
+    "K",
+    "Ca",
+    "Mg",
+    "Na",
+    "P"
+   ]
+  },
+  {
+   "id": "leaves",
+   "name": "落ち葉",
+   "regions": [
+    {
+     "region": "forest",
+     "name": "森林",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "burn_leaves"
+   ],
+   "uses": 3,
+   "elements": [
+    "C",
+    "H",
+    "O",
+    "N",
+    "K",
+    "Ca",
+    "Mg",
+    "Na",
+    "P"
+   ]
+  },
+  {
+   "id": "vine",
+   "name": "つる",
+   "regions": [
+    {
+     "region": "forest",
+     "name": "森林",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "pulp_vine"
+   ],
+   "uses": 4,
+   "elements": [
+    "C",
+    "H",
+    "O",
+    "N"
+   ]
+  },
+  {
+   "id": "resin",
+   "name": "松やに",
+   "regions": [
+    {
+     "region": "forest",
+     "name": "森林",
+     "need": [
+      "knife"
+     ],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "distill_resin"
+   ],
+   "uses": 3,
+   "elements": [
+    "C",
+    "H",
+    "O"
+   ]
+  },
+  {
+   "id": "seed",
+   "name": "ツバキの実",
+   "regions": [
+    {
+     "region": "forest",
+     "name": "森林",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "crush_seed"
+   ],
+   "uses": 1,
+   "elements": [
+    "C",
+    "H",
+    "O",
+    "N",
+    "P"
+   ]
+  },
+  {
+   "id": "log",
+   "name": "丸太",
+   "regions": [
+    {
+     "region": "forest",
+     "name": "森林",
+     "need": [
+      "axe",
+      "ironaxe"
+     ],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "char_log"
+   ],
+   "uses": 14,
+   "elements": [
+    "C",
+    "H",
+    "O",
+    "K",
+    "Ca",
+    "N"
+   ]
+  },
+  {
+   "id": "wax",
+   "name": "蜜蝋",
+   "regions": [
+    {
+     "region": "forest",
+     "name": "森林",
+     "need": [
+      "torch"
+     ],
+     "rare": false
+    }
+   ],
+   "processing": [],
+   "uses": 1,
+   "elements": [
+    "C",
+    "H",
+    "O"
+   ]
+  },
+  {
+   "id": "grass",
+   "name": "草",
+   "regions": [
+    {
+     "region": "grassland",
+     "name": "草原",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "burn_grass",
+    "shape_brick",
+    "pulp_grass"
+   ],
+   "uses": 4,
+   "elements": [
+    "C",
+    "H",
+    "O",
+    "N",
+    "K",
+    "Si",
+    "Ca",
+    "Mg",
+    "Na",
+    "P"
+   ]
+  },
+  {
+   "id": "grape",
+   "name": "野ブドウ",
+   "regions": [
+    {
+     "region": "grassland",
+     "name": "草原",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "crush_grape"
+   ],
+   "uses": 1,
+   "elements": [
+    "C",
+    "H",
+    "O",
+    "K",
+    "N"
+   ]
+  },
+  {
+   "id": "ochre",
+   "name": "赤土",
+   "regions": [
+    {
+     "region": "grassland",
+     "name": "草原",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "grind_ochre"
+   ],
+   "uses": 1,
+   "elements": [
+    "Fe",
+    "O",
+    "Si",
+    "Al",
+    "H"
+   ]
+  },
+  {
+   "id": "rain",
+   "name": "雨水",
+   "regions": [
+    {
+     "region": "grassland",
+     "name": "草原",
+     "need": [
+      "pot"
+     ],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "filter_rain"
+   ],
+   "uses": 1,
+   "elements": [
+    "H",
+    "O"
+   ]
+  },
+  {
+   "id": "river",
+   "name": "川の水",
+   "regions": [
+    {
+     "region": "river",
+     "name": "河原",
+     "need": [
+      "pot"
+     ],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "settle_river"
+   ],
+   "uses": 1,
+   "elements": [
+    "H",
+    "O",
+    "Si",
+    "Al",
+    "Fe",
+    "Ca",
+    "Na",
+    "Mg",
+    "C",
+    "K"
+   ]
+  },
+  {
+   "id": "clay",
+   "name": "粘土",
+   "regions": [
+    {
+     "region": "river",
+     "name": "河原",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "shape_pot",
+    "shape_brick",
+    "shape_crucible",
+    "make_cement"
+   ],
+   "uses": 16,
+   "elements": [
+    "Al",
+    "Si",
+    "O",
+    "H",
+    "Fe",
+    "K"
+   ]
+  },
+  {
+   "id": "sand",
+   "name": "砂",
+   "regions": [
+    {
+     "region": "river",
+     "name": "河原",
+     "need": [],
+     "rare": false
+    },
+    {
+     "region": "coast",
+     "name": "海岸",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "plaster",
+    "wash_sand",
+    "make_concrete"
+   ],
+   "uses": 3,
+   "elements": [
+    "Si",
+    "O",
+    "Fe",
+    "Al"
+   ]
+  },
+  {
+   "id": "cobble",
+   "name": "丸い石",
+   "regions": [
+    {
+     "region": "river",
+     "name": "河原",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "make_concrete"
+   ],
+   "uses": 12,
+   "elements": [
+    "Si",
+    "O",
+    "Al",
+    "Ca",
+    "Fe"
+   ]
+  },
+  {
+   "id": "flint",
+   "name": "火打ち石",
+   "regions": [
+    {
+     "region": "river",
+     "name": "河原",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [],
+   "uses": 2,
+   "elements": [
+    "Si",
+    "O"
+   ]
+  },
+  {
+   "id": "bark",
+   "name": "ヤナギの樹皮",
+   "regions": [
+    {
+     "region": "river",
+     "name": "河原",
+     "need": [
+      "knife"
+     ],
+     "rare": false
+    }
+   ],
+   "processing": [],
+   "uses": 1,
+   "elements": [
+    "C",
+    "H",
+    "O"
+   ]
+  },
+  {
+   "id": "seawater",
+   "name": "海水",
+   "regions": [
+    {
+     "region": "coast",
+     "name": "海岸",
+     "need": [
+      "pot"
+     ],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "evap_sea",
+    "distill_sea"
+   ],
+   "uses": 2,
+   "elements": [
+    "H",
+    "O",
+    "Na",
+    "Cl",
+    "Mg",
+    "S",
+    "Ca",
+    "K"
+   ]
+  },
+  {
+   "id": "shell",
+   "name": "貝殻",
+   "regions": [
+    {
+     "region": "coast",
+     "name": "海岸",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "calcine_shell"
+   ],
+   "uses": 1,
+   "elements": [
+    "Ca",
+    "C",
+    "O",
+    "H",
+    "N"
+   ]
+  },
+  {
+   "id": "seaweed",
+   "name": "海藻",
+   "regions": [
+    {
+     "region": "coast",
+     "name": "海岸",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "burn_seaweed"
+   ],
+   "uses": 1,
+   "elements": [
+    "C",
+    "H",
+    "O",
+    "Na",
+    "K",
+    "I",
+    "Mg",
+    "Ca",
+    "Cl",
+    "S"
+   ]
+  },
+  {
+   "id": "limestone",
+   "name": "石灰石",
+   "regions": [
+    {
+     "region": "mountain",
+     "name": "山岳",
+     "need": [
+      "hammer"
+     ],
+     "rare": false
+    },
+    {
+     "region": "mountain",
+     "name": "山岳",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "calcine_lime",
+    "pig_iron",
+    "make_cement"
+   ],
+   "uses": 3,
+   "elements": [
+    "Ca",
+    "C",
+    "O"
+   ]
+  },
+  {
+   "id": "granite",
+   "name": "花崗岩",
+   "regions": [
+    {
+     "region": "mountain",
+     "name": "山岳",
+     "need": [
+      "hammer"
+     ],
+     "rare": false
+    },
+    {
+     "region": "mountain",
+     "name": "山岳",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [],
+   "uses": 3,
+   "elements": [
+    "Si",
+    "O",
+    "Al",
+    "K",
+    "Na",
+    "Fe"
+   ]
+  },
+  {
+   "id": "basalt",
+   "name": "玄武岩",
+   "regions": [
+    {
+     "region": "mountain",
+     "name": "山岳",
+     "need": [],
+     "rare": false
+    },
+    {
+     "region": "volcano",
+     "name": "火山地帯",
+     "need": [],
+     "rare": false
+    },
+    {
+     "region": "volcano",
+     "name": "火山地帯",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [],
+   "uses": 2,
+   "elements": [
+    "Si",
+    "O",
+    "Fe",
+    "Mg",
+    "Ca",
+    "Al"
+   ]
+  },
+  {
+   "id": "quartz",
+   "name": "石英",
+   "regions": [
+    {
+     "region": "mountain",
+     "name": "山岳",
+     "need": [
+      "hammer"
+     ],
+     "rare": false
+    },
+    {
+     "region": "mountain",
+     "name": "山岳",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "grind_quartz"
+   ],
+   "uses": 1,
+   "elements": [
+    "Si",
+    "O"
+   ]
+  },
+  {
+   "id": "spring",
+   "name": "湧き水",
+   "regions": [
+    {
+     "region": "mountain",
+     "name": "山岳",
+     "need": [
+      "pot"
+     ],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "filter_spring"
+   ],
+   "uses": 1,
+   "elements": [
+    "H",
+    "O",
+    "Ca",
+    "Mg",
+    "Si",
+    "C"
+   ]
+  },
+  {
+   "id": "coal",
+   "name": "石炭",
+   "regions": [
+    {
+     "region": "cave",
+     "name": "洞窟",
+     "need": [
+      "hammer"
+     ],
+     "rare": false
+    },
+    {
+     "region": "cave",
+     "name": "洞窟",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "char_coal"
+   ],
+   "uses": 1,
+   "elements": [
+    "C",
+    "H",
+    "O",
+    "S",
+    "N"
+   ]
+  },
+  {
+   "id": "rocksalt",
+   "name": "岩塩",
+   "regions": [
+    {
+     "region": "cave",
+     "name": "洞窟",
+     "need": [
+      "hammer"
+     ],
+     "rare": false
+    },
+    {
+     "region": "cave",
+     "name": "洞窟",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "grind_rocksalt"
+   ],
+   "uses": 1,
+   "elements": [
+    "Na",
+    "Cl",
+    "Ca",
+    "S",
+    "O",
+    "K",
+    "Mg"
+   ]
+  },
+  {
+   "id": "hematite",
+   "name": "赤鉄鉱",
+   "regions": [
+    {
+     "region": "mine",
+     "name": "鉱山地帯",
+     "need": [],
+     "rare": false
+    },
+    {
+     "region": "volcano",
+     "name": "火山地帯",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "crush_hem"
+   ],
+   "uses": 1,
+   "elements": [
+    "Fe",
+    "O",
+    "Si"
+   ]
+  },
+  {
+   "id": "malachite",
+   "name": "孔雀石",
+   "regions": [
+    {
+     "region": "mine",
+     "name": "鉱山地帯",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "crush_mal"
+   ],
+   "uses": 1,
+   "elements": [
+    "Cu",
+    "C",
+    "O",
+    "H"
+   ]
+  },
+  {
+   "id": "cassiterite",
+   "name": "錫石",
+   "regions": [
+    {
+     "region": "mine",
+     "name": "鉱山地帯",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "crush_cass"
+   ],
+   "uses": 1,
+   "elements": [
+    "Sn",
+    "O"
+   ]
+  },
+  {
+   "id": "sphalerite",
+   "name": "閃亜鉛鉱",
+   "regions": [
+    {
+     "region": "mine",
+     "name": "鉱山地帯",
+     "need": [
+      "ironpick"
+     ],
+     "rare": false
+    },
+    {
+     "region": "mine",
+     "name": "鉱山地帯",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "crush_zn"
+   ],
+   "uses": 1,
+   "elements": [
+    "Zn",
+    "S",
+    "Fe"
+   ]
+  },
+  {
+   "id": "bauxite",
+   "name": "ボーキサイト",
+   "regions": [
+    {
+     "region": "mine",
+     "name": "鉱山地帯",
+     "need": [
+      "ironpick"
+     ],
+     "rare": false
+    },
+    {
+     "region": "mine",
+     "name": "鉱山地帯",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "grind_bauxite"
+   ],
+   "uses": 1,
+   "elements": [
+    "Al",
+    "O",
+    "H",
+    "Fe",
+    "Si"
+   ]
+  },
+  {
+   "id": "sulfur",
+   "name": "硫黄",
+   "regions": [
+    {
+     "region": "volcano",
+     "name": "火山地帯",
+     "need": [],
+     "rare": false
+    },
+    {
+     "region": "volcano",
+     "name": "火山地帯",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "burn_sulfur",
+    "vulcanize"
+   ],
+   "uses": 2,
+   "elements": [
+    "S"
+   ]
+  },
+  {
+   "id": "obsidian",
+   "name": "黒曜石",
+   "regions": [
+    {
+     "region": "volcano",
+     "name": "火山地帯",
+     "need": [],
+     "rare": false
+    },
+    {
+     "region": "volcano",
+     "name": "火山地帯",
+     "need": [],
+     "rare": false
+    },
+    {
+     "region": "volcano",
+     "name": "火山地帯",
+     "need": [],
+     "rare": false
+    },
+    {
+     "region": "volcano",
+     "name": "火山地帯",
+     "need": [],
+     "rare": false
+    }
+   ],
+   "processing": [],
+   "uses": 1,
+   "elements": [
+    "Si",
+    "O",
+    "Al",
+    "K",
+    "Na",
+    "Fe"
+   ]
+  },
+  {
+   "id": "crude",
+   "name": "原油",
+   "regions": [
+    {
+     "region": "oilfield",
+     "name": "油田",
+     "need": [
+      "pot"
+     ],
+     "rare": false
+    }
+   ],
+   "processing": [
+    "fractionate"
+   ],
+   "uses": 1,
+   "elements": [
+    "C",
+    "H",
+    "S",
+    "N",
+    "O"
+   ]
+  },
+  {
+   "id": "amber",
+   "name": "琥珀",
+   "regions": [
+    {
+     "region": "forest",
+     "name": "森林",
+     "need": [],
+     "rare": true
+    }
+   ],
+   "processing": [],
+   "uses": 0,
+   "elements": [
+    "C",
+    "H",
+    "O"
+   ]
+  },
+  {
+   "id": "meteorite",
+   "name": "鉄隕石",
+   "regions": [
+    {
+     "region": "grassland",
+     "name": "草原",
+     "need": [],
+     "rare": true
+    }
+   ],
+   "processing": [
+    "forge_meteor"
+   ],
+   "uses": 1,
+   "elements": [
+    "Fe",
+    "Ni"
+   ]
+  },
+  {
+   "id": "gold",
+   "name": "砂金",
+   "regions": [
+    {
+     "region": "river",
+     "name": "河原",
+     "need": [],
+     "rare": true
+    },
+    {
+     "region": "mine",
+     "name": "鉱山地帯",
+     "need": [],
+     "rare": true
+    }
+   ],
+   "processing": [],
+   "uses": 0,
+   "elements": [
+    "Au"
+   ]
+  },
+  {
+   "id": "fossil",
+   "name": "アンモナイトの化石",
+   "regions": [
+    {
+     "region": "coast",
+     "name": "海岸",
+     "need": [],
+     "rare": true
+    },
+    {
+     "region": "mountain",
+     "name": "山岳",
+     "need": [],
+     "rare": true
+    }
+   ],
+   "processing": [],
+   "uses": 0,
+   "elements": [
+    "Ca",
+    "C",
+    "O",
+    "Si"
+   ]
+  },
+  {
+   "id": "crystal",
+   "name": "水晶",
+   "regions": [
+    {
+     "region": "cave",
+     "name": "洞窟",
+     "need": [],
+     "rare": true
+    },
+    {
+     "region": "mine",
+     "name": "鉱山地帯",
+     "need": [],
+     "rare": true
+    }
+   ],
+   "processing": [
+    "grind_crystal"
+   ],
+   "uses": 1,
+   "elements": [
+    "Si",
+    "O"
+   ]
+  }
+ ],
+ "unreachable": [],
+ "noSource": [],
+ "usesTextOnly": [
+  "amber",
+  "gold",
+  "fossil",
+  "mud",
+  "salt",
+  "soap"
+ ],
+ "rawNoNature": [],
+ "gaps": [
+  {
+   "id": "twig",
+   "name": "木の枝",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "leaves",
+   "name": "落ち葉",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "vine",
+   "name": "つる",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "resin",
+   "name": "松やに",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "seed",
+   "name": "ツバキの実",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "log",
+   "name": "丸太",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "wax",
+   "name": "蜜蝋",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "grass",
+   "name": "草",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "grape",
+   "name": "野ブドウ",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "ochre",
+   "name": "赤土",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "rain",
+   "name": "雨水",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "river",
+   "name": "川の水",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "clay",
+   "name": "粘土",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "sand",
+   "name": "砂",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "cobble",
+   "name": "丸い石",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "flint",
+   "name": "火打ち石",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "bark",
+   "name": "ヤナギの樹皮",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "seawater",
+   "name": "海水",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "shell",
+   "name": "貝殻",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "seaweed",
+   "name": "海藻",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "limestone",
+   "name": "石灰石",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "granite",
+   "name": "花崗岩",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "basalt",
+   "name": "玄武岩",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "quartz",
+   "name": "石英",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "spring",
+   "name": "湧き水",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "coal",
+   "name": "石炭",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "rocksalt",
+   "name": "岩塩",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "hematite",
+   "name": "赤鉄鉱",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "malachite",
+   "name": "孔雀石",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "cassiterite",
+   "name": "錫石",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "sphalerite",
+   "name": "閃亜鉛鉱",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "bauxite",
+   "name": "ボーキサイト",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "sulfur",
+   "name": "硫黄",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "obsidian",
+   "name": "黒曜石",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "crude",
+   "name": "原油",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "amber",
+   "name": "琥珀",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "meteorite",
+   "name": "鉄隕石",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "gold",
+   "name": "砂金",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "fossil",
+   "name": "アンモナイトの化石",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "crystal",
+   "name": "水晶",
+   "cat": "鉱石・岩石",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "supernatant",
+   "name": "上澄みの水",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "mud",
+   "name": "泥",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "water",
+   "name": "きれいな水",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "steam",
+   "name": "水蒸気",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "co2",
+   "name": "二酸化炭素",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "so2",
+   "name": "二酸化硫黄",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "hydrogen",
+   "name": "水素",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "oxygen",
+   "name": "酸素",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "chlorine",
+   "name": "塩素",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "crudesalt",
+   "name": "粗塩",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "saltpowder",
+   "name": "岩塩の粉",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "brine",
+   "name": "食塩水（にごり）",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "cleanbrine",
+   "name": "きれいな食塩水",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "salt",
+   "name": "精製塩",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "nigari",
+   "name": "にがり",
+   "cat": "天然の素材",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "ash",
+   "name": "木灰",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "lye",
+   "name": "灰汁",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "potash",
+   "name": "炭酸カリウム",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "seaash",
+   "name": "海藻灰",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "seajuice",
+   "name": "海藻灰の汁",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "soda",
+   "name": "ソーダ灰",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "naoh",
+   "name": "水酸化ナトリウム",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "quicklime",
+   "name": "生石灰",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "slaked",
+   "name": "消石灰",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "plaster",
+   "name": "しっくい",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "stronglye",
+   "name": "強い灰汁",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "caco3",
+   "name": "炭酸カルシウム",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "cement",
+   "name": "セメント",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "concrete",
+   "name": "コンクリート",
+   "cat": "製品",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "crushedseed",
+   "name": "つぶしたツバキの実",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "oil",
+   "name": "ツバキ油",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "soap",
+   "name": "石けん",
+   "cat": "製品",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "glycerinwater",
+   "name": "グリセリン水",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "charcoal",
+   "name": "木炭",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "woodvinegar",
+   "name": "木酢液",
+   "cat": "天然の素材",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "coke",
+   "name": "コークス",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "coaltar",
+   "name": "コールタール",
+   "cat": "天然の素材",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "greenware",
+   "name": "土器のもと",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "driedware",
+   "name": "乾いた土器のもと",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "pot",
+   "name": "土器",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "greenbrick",
+   "name": "レンガのもと",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "sunbrick",
+   "name": "日干しレンガ",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "brick",
+   "name": "焼きレンガ",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "greencrucible",
+   "name": "るつぼのもと",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "crucible",
+   "name": "るつぼ",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "quartzpowder",
+   "name": "石英の粉",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "cleansand",
+   "name": "きれいな砂",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "moltenglass",
+   "name": "溶けたガラス",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "glass",
+   "name": "ガラス",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "oremalachite",
+   "name": "孔雀石の粉",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "orehematite",
+   "name": "赤鉄鉱の粉",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "orecass",
+   "name": "錫石の粉",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "orezinc",
+   "name": "閃亜鉛鉱の粉",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "zno",
+   "name": "酸化亜鉛",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "copper",
+   "name": "銅",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "iron",
+   "name": "鉄",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "tin",
+   "name": "スズ",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "zinc",
+   "name": "亜鉛",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "bronze",
+   "name": "青銅",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "slag",
+   "name": "鉱さい",
+   "cat": "天然の素材",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "copperplate",
+   "name": "銅板",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "wire",
+   "name": "銅線",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "ironrod",
+   "name": "鉄の棒",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "rust",
+   "name": "鉄さび",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "pigiron",
+   "name": "銑鉄",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "steel",
+   "name": "鋼",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "electromagnet",
+   "name": "電磁石",
+   "cat": "製品",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "crushedgrape",
+   "name": "つぶしたブドウ",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "wine",
+   "name": "ブドウの発酵液",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "ethanol",
+   "name": "エタノール",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "vinegar",
+   "name": "酢",
+   "cat": "天然の素材",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "turpentine",
+   "name": "テレピン油",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "rosin",
+   "name": "ロジン",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "redpigment",
+   "name": "赤い顔料",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "blackpigment",
+   "name": "黒い顔料",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "redpaint",
+   "name": "赤い絵の具",
+   "cat": "材料・物質",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "pulp",
+   "name": "繊維の泥",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "paper",
+   "name": "紙",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "gasoline",
+   "name": "ガソリン",
+   "cat": "天然の素材",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "kerosene",
+   "name": "灯油",
+   "cat": "天然の素材",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "naphtha",
+   "name": "ナフサ",
+   "cat": "天然の素材",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "heavyoil",
+   "name": "重油",
+   "cat": "天然の素材",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "ethylene",
+   "name": "エチレン",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "pe",
+   "name": "ポリエチレン",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "plasticbox",
+   "name": "プラスチック容器",
+   "cat": "製品",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "orebauxite",
+   "name": "ボーキサイトの粉",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "aluminate",
+   "name": "アルミン酸ナトリウム液",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "redmud",
+   "name": "赤泥",
+   "cat": "天然の素材",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "aloh",
+   "name": "水酸化アルミニウム",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "alumina",
+   "name": "アルミナ",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "aluminum",
+   "name": "アルミニウム",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "silicon",
+   "name": "ケイ素",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "pure_si",
+   "name": "高純度ケイ素",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "bulb",
+   "name": "白熱電球",
+   "cat": "製品",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "solarcell",
+   "name": "太陽電池",
+   "cat": "製品",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "thread",
+   "name": "植物の糸",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "cloth",
+   "name": "植物の布",
+   "cat": "材料・物質",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "knife",
+   "name": "石のナイフ",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "axe",
+   "name": "石のおの",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "hammer",
+   "name": "石のハンマー",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "pickaxe",
+   "name": "石のつるはし",
+   "cat": "道具",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "firedrill",
+   "name": "火おこし棒",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "torch",
+   "name": "たいまつ",
+   "cat": "道具",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "candle",
+   "name": "ろうそく",
+   "cat": "道具",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "basket",
+   "name": "採集かご",
+   "cat": "道具",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "notebook",
+   "name": "研究ノート",
+   "cat": "道具",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "ironpick",
+   "name": "鉄のつるはし",
+   "cat": "道具",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "ironaxe",
+   "name": "鉄のおの",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "balance",
+   "name": "てんびん",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "thermometer",
+   "name": "温度計",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "bottle",
+   "name": "ガラスのびん",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "bellows",
+   "name": "ふいご",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "battery",
+   "name": "ボルタ電池",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "cylinder",
+   "name": "鋼のボンベ",
+   "cat": "道具",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "rig",
+   "name": "掘削やぐら",
+   "cat": "道具",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "bench",
+   "name": "作業台",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "campfire",
+   "name": "たき火",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "rack",
+   "name": "乾燥台",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "filter",
+   "name": "ろ過器",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "mill",
+   "name": "石臼",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "kiln",
+   "name": "かまど",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "charkiln",
+   "name": "炭焼き窯",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "fermenter",
+   "name": "発酵つぼ",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "furnace",
+   "name": "簡易炉",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "still",
+   "name": "蒸留器",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "storehouse",
+   "name": "倉庫",
+   "cat": "設備",
+   "miss": [
+    "用途",
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "electrolyzer",
+   "name": "電気分解装置",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "waterwheel",
+   "name": "水車",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "generator",
+   "name": "水力発電機",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "blastfurnace",
+   "name": "高炉",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "steamengine",
+   "name": "蒸気機関",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "refinery",
+   "name": "精留塔",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "reactor",
+   "name": "化学反応装置",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "eaf",
+   "name": "電気炉",
+   "cat": "設備",
+   "miss": [
+    "ゲーム上の簡略化",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "rawrubber",
+   "name": "合成ゴムのもと",
+   "cat": "材料・物質",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "rubber",
+   "name": "ゴム",
+   "cat": "材料・物質",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_machine",
+   "name": "精密加工台",
+   "cat": "設備",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_materials",
+   "name": "材料評価台",
+   "cat": "設備",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_plate",
+   "name": "軽量外装板",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_frame",
+   "name": "構造フレーム",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_fastener",
+   "name": "締結部品",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_insulator",
+   "name": "絶縁部品",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_cable",
+   "name": "被覆配線",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_fiber",
+   "name": "機能繊維",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_seal",
+   "name": "柔軟シール材",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_membrane",
+   "name": "気密膜",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_thermal",
+   "name": "積層断熱材",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_ceramic",
+   "name": "耐熱セラミック",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_window",
+   "name": "透明保護材",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_powerbench",
+   "name": "電源組立台",
+   "cat": "設備",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_storage",
+   "name": "蓄電モジュール",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_power",
+   "name": "電源配電ユニット",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_fab",
+   "name": "電子部品製造設備",
+   "cat": "設備",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_switch",
+   "name": "スイッチ回路",
+   "cat": "製品",
+   "miss": [
+    "用途",
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_transistor",
+   "name": "切替素子",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_pcb",
+   "name": "配線基板",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_passive",
+   "name": "受動部品セット",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_gate",
+   "name": "論理ゲートセット",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_adder",
+   "name": "加算回路",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_memory",
+   "name": "記憶回路",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_cpu",
+   "name": "演算制御モジュール",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_io",
+   "name": "表示入力モジュール",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_computerbench",
+   "name": "計算機組立台",
+   "cat": "設備",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_computer",
+   "name": "学習用コンピューター",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_sensor",
+   "name": "模擬環境センサー",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_flightcomputer",
+   "name": "船内コンピューター",
+   "cat": "製品",
+   "miss": [
+    "用途",
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_radio",
+   "name": "通信ユニット",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_suitbench",
+   "name": "宇宙服組立台",
+   "cat": "設備",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_liner",
+   "name": "内側の衣服",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_pressurelayer",
+   "name": "宇宙服の気密層",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_protectlayer",
+   "name": "宇宙服の保護層",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_helmet",
+   "name": "ヘルメットとバイザー",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_gloves",
+   "name": "手袋とブーツ",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_air",
+   "name": "呼吸環境供給部",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_scrubber",
+   "name": "空気再生部",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_waterunit",
+   "name": "水衛生部",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_cooling",
+   "name": "温度管理部",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_lifesupport",
+   "name": "生命維持ユニット",
+   "cat": "製品",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_suit",
+   "name": "組立済み宇宙服",
+   "cat": "製品",
+   "miss": [
+    "用途",
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_assembly",
+   "name": "機体組立設備",
+   "cat": "設備",
+   "miss": [
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_hull",
+   "name": "機体構造",
+   "cat": "製品",
+   "miss": [
+    "用途",
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_skin",
+   "name": "機体外装",
+   "cat": "製品",
+   "miss": [
+    "用途",
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_propulsion",
+   "name": "架空推進モジュール",
+   "cat": "製品",
+   "miss": [
+    "用途",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_charge",
+   "name": "架空推進用カートリッジ",
+   "cat": "製品",
+   "miss": [
+    "用途",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_capsule",
+   "name": "搭乗カプセル",
+   "cat": "製品",
+   "miss": [
+    "用途",
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_pad",
+   "name": "発射台",
+   "cat": "設備",
+   "miss": [
+    "用途",
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_tower",
+   "name": "支持塔と搭乗通路",
+   "cat": "設備",
+   "miss": [
+    "用途",
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_control",
+   "name": "地上管制端末",
+   "cat": "設備",
+   "miss": [
+    "用途",
+    "出典",
+    "監修"
+   ]
+  },
+  {
+   "id": "sp_testbench",
+   "name": "総合試験端末",
+   "cat": "設備",
+   "miss": [
+    "用途",
+    "出典",
+    "監修"
+   ]
+  }
+ ],
+ "entries": [
+  {
+   "id": "twig",
+   "name": "木の枝",
+   "yomi": "きのえだ",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:forest:twig",
+     "inputs": {},
+     "outputs": {
+      "twig": 2
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "leaves",
+   "name": "落ち葉",
+   "yomi": "おちば",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:forest:leaves",
+     "inputs": {},
+     "outputs": {
+      "leaves": 2
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "vine",
+   "name": "つる",
+   "yomi": "つる",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:forest:vine",
+     "inputs": {},
+     "outputs": {
+      "vine": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "resin",
+   "name": "松やに",
+   "yomi": "まつやに",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:forest:resin",
+     "inputs": {},
+     "outputs": {
+      "resin": 1
+     },
+     "at": [],
+     "tools": [
+      "knife"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "seed",
+   "name": "ツバキの実",
+   "yomi": "つばきのみ",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:forest:seed",
+     "inputs": {},
+     "outputs": {
+      "seed": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "log",
+   "name": "丸太",
+   "yomi": "まるた",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:forest:log",
+     "inputs": {},
+     "outputs": {
+      "log": 1
+     },
+     "at": [],
+     "tools": [
+      "axe",
+      "ironaxe"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "wax",
+   "name": "蜜蝋",
+   "yomi": "みつろう",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:forest:wax",
+     "inputs": {},
+     "outputs": {
+      "wax": 1
+     },
+     "at": [],
+     "tools": [
+      "torch"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "grass",
+   "name": "草",
+   "yomi": "くさ",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:grassland:grass",
+     "inputs": {},
+     "outputs": {
+      "grass": 2
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "grape",
+   "name": "野ブドウ",
+   "yomi": "のぶどう",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:grassland:grape",
+     "inputs": {},
+     "outputs": {
+      "grape": 2
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "ochre",
+   "name": "赤土",
+   "yomi": "あかつち",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:grassland:ochre",
+     "inputs": {},
+     "outputs": {
+      "ochre": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "rain",
+   "name": "雨水",
+   "yomi": "あまみず",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:grassland:rain",
+     "inputs": {},
+     "outputs": {
+      "rain": 1
+     },
+     "at": [],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "river",
+   "name": "川の水",
+   "yomi": "かわのみず",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:river:river",
+     "inputs": {},
+     "outputs": {
+      "river": 1
+     },
+     "at": [],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "clay",
+   "name": "粘土",
+   "yomi": "ねんど",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:river:clay",
+     "inputs": {},
+     "outputs": {
+      "clay": 2
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "sand",
+   "name": "砂",
+   "yomi": "すな",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:river:sand",
+     "inputs": {},
+     "outputs": {
+      "sand": 2
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:coast:sand",
+     "inputs": {},
+     "outputs": {
+      "sand": 2
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "cobble",
+   "name": "丸い石",
+   "yomi": "まるいいし",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:river:cobble",
+     "inputs": {},
+     "outputs": {
+      "cobble": 2
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "flint",
+   "name": "火打ち石",
+   "yomi": "ひうちいし",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:river:flint",
+     "inputs": {},
+     "outputs": {
+      "flint": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "bark",
+   "name": "ヤナギの樹皮",
+   "yomi": "やなぎのじゅひ",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:river:bark",
+     "inputs": {},
+     "outputs": {
+      "bark": 1
+     },
+     "at": [],
+     "tools": [
+      "knife"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "seawater",
+   "name": "海水",
+   "yomi": "かいすい",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:coast:seawater",
+     "inputs": {},
+     "outputs": {
+      "seawater": 1
+     },
+     "at": [],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "shell",
+   "name": "貝殻",
+   "yomi": "かいがら",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:coast:shell",
+     "inputs": {},
+     "outputs": {
+      "shell": 2
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "seaweed",
+   "name": "海藻",
+   "yomi": "かいそう",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:coast:seaweed",
+     "inputs": {},
+     "outputs": {
+      "seaweed": 2
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "limestone",
+   "name": "石灰石",
+   "yomi": "せっかいせき",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:mountain:limestone",
+     "inputs": {},
+     "outputs": {
+      "limestone": 1
+     },
+     "at": [],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:mountain:limestone-loose",
+     "inputs": {},
+     "outputs": {
+      "limestone": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "granite",
+   "name": "花崗岩",
+   "yomi": "かこうがん",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:mountain:granite",
+     "inputs": {},
+     "outputs": {
+      "granite": 1
+     },
+     "at": [],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:mountain:granite-loose",
+     "inputs": {},
+     "outputs": {
+      "granite": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "basalt",
+   "name": "玄武岩",
+   "yomi": "げんぶがん",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:mountain:basalt",
+     "inputs": {},
+     "outputs": {
+      "basalt": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:volcano:basalt-foot",
+     "inputs": {},
+     "outputs": {
+      "basalt": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:volcano:basalt-ledge",
+     "inputs": {},
+     "outputs": {
+      "basalt": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "quartz",
+   "name": "石英",
+   "yomi": "せきえい",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:mountain:quartz",
+     "inputs": {},
+     "outputs": {
+      "quartz": 1
+     },
+     "at": [],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:mountain:quartz-loose",
+     "inputs": {},
+     "outputs": {
+      "quartz": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "spring",
+   "name": "湧き水",
+   "yomi": "わきみず",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:mountain:spring",
+     "inputs": {},
+     "outputs": {
+      "spring": 1
+     },
+     "at": [],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "coal",
+   "name": "石炭",
+   "yomi": "せきたん",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:cave:coal",
+     "inputs": {},
+     "outputs": {
+      "coal": 1
+     },
+     "at": [],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:cave:coal-loose",
+     "inputs": {},
+     "outputs": {
+      "coal": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "rocksalt",
+   "name": "岩塩",
+   "yomi": "がんえん",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:cave:rocksalt",
+     "inputs": {},
+     "outputs": {
+      "rocksalt": 1
+     },
+     "at": [],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:cave:rocksalt-loose",
+     "inputs": {},
+     "outputs": {
+      "rocksalt": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "hematite",
+   "name": "赤鉄鉱",
+   "yomi": "せきてっこう",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:mine:hematite",
+     "inputs": {},
+     "outputs": {
+      "hematite": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:volcano:hematite-volcano",
+     "inputs": {},
+     "outputs": {
+      "hematite": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "malachite",
+   "name": "孔雀石",
+   "yomi": "くじゃくいし",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:mine:malachite",
+     "inputs": {},
+     "outputs": {
+      "malachite": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "cassiterite",
+   "name": "錫石",
+   "yomi": "すずいし",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:mine:cassiterite",
+     "inputs": {},
+     "outputs": {
+      "cassiterite": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "sphalerite",
+   "name": "閃亜鉛鉱",
+   "yomi": "せんあえんこう",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:mine:sphalerite",
+     "inputs": {},
+     "outputs": {
+      "sphalerite": 1
+     },
+     "at": [],
+     "tools": [
+      "ironpick"
+     ],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:mine:sphalerite-loose",
+     "inputs": {},
+     "outputs": {
+      "sphalerite": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "bauxite",
+   "name": "ボーキサイト",
+   "yomi": "ぼーきさいと",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:mine:bauxite",
+     "inputs": {},
+     "outputs": {
+      "bauxite": 1
+     },
+     "at": [],
+     "tools": [
+      "ironpick"
+     ],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:mine:bauxite-loose",
+     "inputs": {},
+     "outputs": {
+      "bauxite": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "sulfur",
+   "name": "硫黄",
+   "yomi": "いおう",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:volcano:sulfur",
+     "inputs": {},
+     "outputs": {
+      "sulfur": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:volcano:sulfur-rim",
+     "inputs": {},
+     "outputs": {
+      "sulfur": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "obsidian",
+   "name": "黒曜石",
+   "yomi": "こくようせき",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:volcano:obsidian",
+     "inputs": {},
+     "outputs": {
+      "obsidian": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:volcano:obsidian-flow",
+     "inputs": {},
+     "outputs": {
+      "obsidian": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:volcano:obsidian-trail",
+     "inputs": {},
+     "outputs": {
+      "obsidian": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "gather",
+     "key": "gather:volcano:obsidian-ledge",
+     "inputs": {},
+     "outputs": {
+      "obsidian": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "crude",
+   "name": "原油",
+   "yomi": "げんゆ",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "gather",
+     "key": "gather:oilfield:crude",
+     "inputs": {},
+     "outputs": {
+      "crude": 1
+     },
+     "at": [],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "amber",
+   "name": "琥珀",
+   "yomi": "こはく",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "rare",
+     "key": "rare:forest",
+     "inputs": {},
+     "outputs": {
+      "amber": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "meteorite",
+   "name": "鉄隕石",
+   "yomi": "てついんせき",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "rare",
+     "key": "rare:grassland",
+     "inputs": {},
+     "outputs": {
+      "meteorite": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "gold",
+   "name": "砂金",
+   "yomi": "さきん",
+   "cat": "raw",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "rare",
+     "key": "rare:river",
+     "inputs": {},
+     "outputs": {
+      "gold": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "rare",
+     "key": "rare:mine",
+     "inputs": {},
+     "outputs": {
+      "gold": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "fossil",
+   "name": "アンモナイトの化石",
+   "yomi": "あんもないとのかせき",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "rare",
+     "key": "rare:coast",
+     "inputs": {},
+     "outputs": {
+      "fossil": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "rare",
+     "key": "rare:mountain",
+     "inputs": {},
+     "outputs": {
+      "fossil": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "crystal",
+   "name": "水晶",
+   "yomi": "すいしょう",
+   "cat": "ore",
+   "natural": true,
+   "obtain": [
+    {
+     "kind": "rare",
+     "key": "rare:cave",
+     "inputs": {},
+     "outputs": {
+      "crystal": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "rare",
+     "key": "rare:mine",
+     "inputs": {},
+     "outputs": {
+      "crystal": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "supernatant",
+   "name": "上澄みの水",
+   "yomi": "うわずみのみず",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "settle_river",
+     "inputs": {
+      "river": 1
+     },
+     "outputs": {
+      "supernatant": 1,
+      "mud": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "mud",
+   "name": "泥",
+   "yomi": "どろ",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "settle_river",
+     "inputs": {
+      "river": 1
+     },
+     "outputs": {
+      "supernatant": 1,
+      "mud": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "wash_sand",
+     "inputs": {
+      "sand": 2,
+      "water": 1
+     },
+     "outputs": {
+      "cleansand": 1,
+      "mud": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "water",
+   "name": "きれいな水",
+   "yomi": "きれいなみず",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "filter_super",
+     "inputs": {
+      "supernatant": 1
+     },
+     "outputs": {
+      "water": 1
+     },
+     "at": [
+      "filter"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "filter_spring",
+     "inputs": {
+      "spring": 1
+     },
+     "outputs": {
+      "water": 1
+     },
+     "at": [
+      "filter"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "filter_rain",
+     "inputs": {
+      "rain": 1
+     },
+     "outputs": {
+      "water": 1
+     },
+     "at": [
+      "filter"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "distill_sea",
+     "inputs": {
+      "seawater": 2
+     },
+     "outputs": {
+      "water": 1,
+      "crudesalt": 1
+     },
+     "at": [
+      "still"
+     ],
+     "tools": [
+      "bottle"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "steam",
+   "name": "水蒸気",
+   "yomi": "すいじょうき",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "evap_sea",
+     "inputs": {
+      "seawater": 2
+     },
+     "outputs": {
+      "crudesalt": 1,
+      "steam": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "crystal_salt",
+     "inputs": {
+      "cleanbrine": 1
+     },
+     "outputs": {
+      "salt": 1,
+      "nigari": 1,
+      "steam": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "evap_lye",
+     "inputs": {
+      "lye": 1
+     },
+     "outputs": {
+      "potash": 1,
+      "steam": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "evap_seajuice",
+     "inputs": {
+      "seajuice": 1
+     },
+     "outputs": {
+      "soda": 1,
+      "steam": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "slake",
+     "inputs": {
+      "quicklime": 1,
+      "water": 1
+     },
+     "outputs": {
+      "slaked": 1,
+      "steam": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "calcine_alumina",
+     "inputs": {
+      "aloh": 2
+     },
+     "outputs": {
+      "alumina": 1,
+      "steam": 1
+     },
+     "at": [
+      "blastfurnace",
+      "eaf"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "co2",
+   "name": "二酸化炭素",
+   "yomi": "にさんかたんそ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "burn_twig",
+     "inputs": {
+      "twig": 2
+     },
+     "outputs": {
+      "ash": 1,
+      "co2": 1
+     },
+     "at": [
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "burn_leaves",
+     "inputs": {
+      "leaves": 3
+     },
+     "outputs": {
+      "ash": 1,
+      "co2": 1
+     },
+     "at": [
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "burn_grass",
+     "inputs": {
+      "grass": 3
+     },
+     "outputs": {
+      "ash": 1,
+      "co2": 1
+     },
+     "at": [
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "burn_seaweed",
+     "inputs": {
+      "seaweed": 2
+     },
+     "outputs": {
+      "seaash": 1,
+      "co2": 1
+     },
+     "at": [
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "calcine_lime",
+     "inputs": {
+      "limestone": 1
+     },
+     "outputs": {
+      "quicklime": 1,
+      "co2": 1
+     },
+     "at": [
+      "kiln",
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "calcine_shell",
+     "inputs": {
+      "shell": 2
+     },
+     "outputs": {
+      "quicklime": 1,
+      "co2": 1
+     },
+     "at": [
+      "kiln",
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "smelt_cu",
+     "inputs": {
+      "oremalachite": 1,
+      "charcoal": 1
+     },
+     "outputs": {
+      "copper": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace",
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "smelt_fe",
+     "inputs": {
+      "orehematite": 2,
+      "charcoal": 2
+     },
+     "outputs": {
+      "iron": 1,
+      "slag": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "smelt_fe_coke",
+     "inputs": {
+      "orehematite": 2,
+      "coke": 1
+     },
+     "outputs": {
+      "iron": 1,
+      "slag": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "smelt_sn",
+     "inputs": {
+      "orecass": 1,
+      "charcoal": 1
+     },
+     "outputs": {
+      "tin": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace",
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "smelt_zn",
+     "inputs": {
+      "zno": 1,
+      "charcoal": 1
+     },
+     "outputs": {
+      "zinc": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace",
+      "blastfurnace"
+     ],
+     "tools": [
+      "crucible"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "glass_soda",
+     "inputs": {
+      "quartzpowder": 2,
+      "soda": 1,
+      "quicklime": 1
+     },
+     "outputs": {
+      "moltenglass": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace",
+      "blastfurnace"
+     ],
+     "tools": [
+      "crucible"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "glass_potash",
+     "inputs": {
+      "cleansand": 2,
+      "potash": 1,
+      "quicklime": 1
+     },
+     "outputs": {
+      "moltenglass": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace"
+     ],
+     "tools": [
+      "crucible"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "ferment_wine",
+     "inputs": {
+      "crushedgrape": 1
+     },
+     "outputs": {
+      "wine": 1,
+      "co2": 1
+     },
+     "at": [
+      "fermenter"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "pig_iron",
+     "inputs": {
+      "orehematite": 2,
+      "coke": 1,
+      "limestone": 1
+     },
+     "outputs": {
+      "pigiron": 2,
+      "slag": 1,
+      "co2": 1
+     },
+     "at": [
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "make_steel",
+     "inputs": {
+      "pigiron": 2
+     },
+     "outputs": {
+      "steel": 1,
+      "co2": 1
+     },
+     "at": [
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "make_cement",
+     "inputs": {
+      "limestone": 2,
+      "clay": 1
+     },
+     "outputs": {
+      "cement": 1,
+      "co2": 1
+     },
+     "at": [
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "hall_heroult",
+     "inputs": {
+      "alumina": 1,
+      "coke": 1
+     },
+     "outputs": {
+      "aluminum": 1,
+      "co2": 1
+     },
+     "at": [
+      "eaf"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "smelt_si",
+     "inputs": {
+      "quartzpowder": 2,
+      "coke": 2
+     },
+     "outputs": {
+      "silicon": 1,
+      "co2": 1
+     },
+     "at": [
+      "eaf"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "so2",
+   "name": "二酸化硫黄",
+   "yomi": "にさんかいおう",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "burn_sulfur",
+     "inputs": {
+      "sulfur": 1
+     },
+     "outputs": {
+      "so2": 1
+     },
+     "at": [
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "roast_zn",
+     "inputs": {
+      "orezinc": 1
+     },
+     "outputs": {
+      "zno": 1,
+      "so2": 1
+     },
+     "at": [
+      "kiln"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "hydrogen",
+   "name": "水素",
+   "yomi": "すいそ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "elec_brine",
+     "inputs": {
+      "cleanbrine": 2
+     },
+     "outputs": {
+      "naoh": 1,
+      "chlorine": 1,
+      "hydrogen": 1
+     },
+     "at": [
+      "electrolyzer",
+      "eaf"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "elec_water",
+     "inputs": {
+      "water": 2,
+      "soda": 1
+     },
+     "outputs": {
+      "hydrogen": 1,
+      "oxygen": 1,
+      "soda": 1
+     },
+     "at": [
+      "electrolyzer"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "crack_naphtha",
+     "inputs": {
+      "naphtha": 1
+     },
+     "outputs": {
+      "ethylene": 1,
+      "hydrogen": 1
+     },
+     "at": [
+      "reactor"
+     ],
+     "tools": [
+      "cylinder"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "oxygen",
+   "name": "酸素",
+   "yomi": "さんそ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "elec_water",
+     "inputs": {
+      "water": 2,
+      "soda": 1
+     },
+     "outputs": {
+      "hydrogen": 1,
+      "oxygen": 1,
+      "soda": 1
+     },
+     "at": [
+      "electrolyzer"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "chlorine",
+   "name": "塩素",
+   "yomi": "えんそ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "elec_brine",
+     "inputs": {
+      "cleanbrine": 2
+     },
+     "outputs": {
+      "naoh": 1,
+      "chlorine": 1,
+      "hydrogen": 1
+     },
+     "at": [
+      "electrolyzer",
+      "eaf"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "crudesalt",
+   "name": "粗塩",
+   "yomi": "あらじお",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "evap_sea",
+     "inputs": {
+      "seawater": 2
+     },
+     "outputs": {
+      "crudesalt": 1,
+      "steam": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "distill_sea",
+     "inputs": {
+      "seawater": 2
+     },
+     "outputs": {
+      "water": 1,
+      "crudesalt": 1
+     },
+     "at": [
+      "still"
+     ],
+     "tools": [
+      "bottle"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "saltpowder",
+   "name": "岩塩の粉",
+   "yomi": "がんえんのこな",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "grind_rocksalt",
+     "inputs": {
+      "rocksalt": 1
+     },
+     "outputs": {
+      "saltpowder": 1
+     },
+     "at": [
+      "mill"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "brine",
+   "name": "食塩水（にごり）",
+   "yomi": "しょくえんすい",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "dissolve_crude",
+     "inputs": {
+      "crudesalt": 1,
+      "water": 1
+     },
+     "outputs": {
+      "brine": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "dissolve_rock",
+     "inputs": {
+      "saltpowder": 1,
+      "water": 1
+     },
+     "outputs": {
+      "brine": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "cleanbrine",
+   "name": "きれいな食塩水",
+   "yomi": "きれいなしょくえんすい",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "filter_brine",
+     "inputs": {
+      "brine": 1
+     },
+     "outputs": {
+      "cleanbrine": 1
+     },
+     "at": [
+      "filter"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "salt",
+   "name": "精製塩",
+   "yomi": "せいせいえん",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "crystal_salt",
+     "inputs": {
+      "cleanbrine": 1
+     },
+     "outputs": {
+      "salt": 1,
+      "nigari": 1,
+      "steam": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "nigari",
+   "name": "にがり",
+   "yomi": "にがり",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "crystal_salt",
+     "inputs": {
+      "cleanbrine": 1
+     },
+     "outputs": {
+      "salt": 1,
+      "nigari": 1,
+      "steam": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "ash",
+   "name": "木灰",
+   "yomi": "もくばい",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "burn_twig",
+     "inputs": {
+      "twig": 2
+     },
+     "outputs": {
+      "ash": 1,
+      "co2": 1
+     },
+     "at": [
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "burn_leaves",
+     "inputs": {
+      "leaves": 3
+     },
+     "outputs": {
+      "ash": 1,
+      "co2": 1
+     },
+     "at": [
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "burn_grass",
+     "inputs": {
+      "grass": 3
+     },
+     "outputs": {
+      "ash": 1,
+      "co2": 1
+     },
+     "at": [
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "lye",
+   "name": "灰汁",
+   "yomi": "あく",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "leach_ash",
+     "inputs": {
+      "ash": 1,
+      "water": 1
+     },
+     "outputs": {
+      "lye": 1
+     },
+     "at": [
+      "filter"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "potash",
+   "name": "炭酸カリウム",
+   "yomi": "たんさんかりうむ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "evap_lye",
+     "inputs": {
+      "lye": 1
+     },
+     "outputs": {
+      "potash": 1,
+      "steam": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "seaash",
+   "name": "海藻灰",
+   "yomi": "かいそうばい",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "burn_seaweed",
+     "inputs": {
+      "seaweed": 2
+     },
+     "outputs": {
+      "seaash": 1,
+      "co2": 1
+     },
+     "at": [
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "seajuice",
+   "name": "海藻灰の汁",
+   "yomi": "かいそうばいのしる",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "leach_seaash",
+     "inputs": {
+      "seaash": 1,
+      "water": 1
+     },
+     "outputs": {
+      "seajuice": 1
+     },
+     "at": [
+      "filter"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "soda",
+   "name": "ソーダ灰",
+   "yomi": "そーだばい",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "evap_seajuice",
+     "inputs": {
+      "seajuice": 1
+     },
+     "outputs": {
+      "soda": 1,
+      "steam": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "elec_water",
+     "inputs": {
+      "water": 2,
+      "soda": 1
+     },
+     "outputs": {
+      "hydrogen": 1,
+      "oxygen": 1,
+      "soda": 1
+     },
+     "at": [
+      "electrolyzer"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "naoh",
+   "name": "水酸化ナトリウム",
+   "yomi": "すいさんかなとりうむ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "elec_brine",
+     "inputs": {
+      "cleanbrine": 2
+     },
+     "outputs": {
+      "naoh": 1,
+      "chlorine": 1,
+      "hydrogen": 1
+     },
+     "at": [
+      "electrolyzer",
+      "eaf"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "precip_aloh",
+     "inputs": {
+      "aluminate": 1
+     },
+     "outputs": {
+      "aloh": 1,
+      "naoh": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "quicklime",
+   "name": "生石灰",
+   "yomi": "せいせっかい",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "calcine_lime",
+     "inputs": {
+      "limestone": 1
+     },
+     "outputs": {
+      "quicklime": 1,
+      "co2": 1
+     },
+     "at": [
+      "kiln",
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "calcine_shell",
+     "inputs": {
+      "shell": 2
+     },
+     "outputs": {
+      "quicklime": 1,
+      "co2": 1
+     },
+     "at": [
+      "kiln",
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "slaked",
+   "name": "消石灰",
+   "yomi": "しょうせっかい",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "slake",
+     "inputs": {
+      "quicklime": 1,
+      "water": 1
+     },
+     "outputs": {
+      "slaked": 1,
+      "steam": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "plaster",
+   "name": "しっくい",
+   "yomi": "しっくい",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "plaster",
+     "inputs": {
+      "slaked": 1,
+      "sand": 1,
+      "water": 1
+     },
+     "outputs": {
+      "plaster": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "stronglye",
+   "name": "強い灰汁",
+   "yomi": "つよいあく",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "causticize",
+     "inputs": {
+      "slaked": 1,
+      "lye": 1
+     },
+     "outputs": {
+      "stronglye": 1,
+      "caco3": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "caco3",
+   "name": "炭酸カルシウム",
+   "yomi": "たんさんかるしうむ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "causticize",
+     "inputs": {
+      "slaked": 1,
+      "lye": 1
+     },
+     "outputs": {
+      "stronglye": 1,
+      "caco3": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "cement",
+   "name": "セメント",
+   "yomi": "せめんと",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "make_cement",
+     "inputs": {
+      "limestone": 2,
+      "clay": 1
+     },
+     "outputs": {
+      "cement": 1,
+      "co2": 1
+     },
+     "at": [
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "concrete",
+   "name": "コンクリート",
+   "yomi": "こんくりーと",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "make_concrete",
+     "inputs": {
+      "cement": 1,
+      "sand": 2,
+      "cobble": 2,
+      "water": 1
+     },
+     "outputs": {
+      "concrete": 2
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "crushedseed",
+   "name": "つぶしたツバキの実",
+   "yomi": "つぶしたつばきのみ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "crush_seed",
+     "inputs": {
+      "seed": 2
+     },
+     "outputs": {
+      "crushedseed": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "oil",
+   "name": "ツバキ油",
+   "yomi": "つばきあぶら",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "press_oil",
+     "inputs": {
+      "crushedseed": 1,
+      "water": 1
+     },
+     "outputs": {
+      "oil": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "soap",
+   "name": "石けん",
+   "yomi": "せっけん",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "soap_strong",
+     "inputs": {
+      "oil": 1,
+      "stronglye": 1
+     },
+     "outputs": {
+      "soap": 1,
+      "glycerinwater": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "soap_lye",
+     "inputs": {
+      "oil": 1,
+      "lye": 2
+     },
+     "outputs": {
+      "soap": 1,
+      "glycerinwater": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "soap_naoh",
+     "inputs": {
+      "oil": 1,
+      "naoh": 1
+     },
+     "outputs": {
+      "soap": 1,
+      "glycerinwater": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "glycerinwater",
+   "name": "グリセリン水",
+   "yomi": "ぐりせりんすい",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "soap_strong",
+     "inputs": {
+      "oil": 1,
+      "stronglye": 1
+     },
+     "outputs": {
+      "soap": 1,
+      "glycerinwater": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "soap_lye",
+     "inputs": {
+      "oil": 1,
+      "lye": 2
+     },
+     "outputs": {
+      "soap": 1,
+      "glycerinwater": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "soap_naoh",
+     "inputs": {
+      "oil": 1,
+      "naoh": 1
+     },
+     "outputs": {
+      "soap": 1,
+      "glycerinwater": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "charcoal",
+   "name": "木炭",
+   "yomi": "もくたん",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "char_log",
+     "inputs": {
+      "log": 2
+     },
+     "outputs": {
+      "charcoal": 1,
+      "woodvinegar": 1
+     },
+     "at": [
+      "charkiln"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "woodvinegar",
+   "name": "木酢液",
+   "yomi": "もくさくえき",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "char_log",
+     "inputs": {
+      "log": 2
+     },
+     "outputs": {
+      "charcoal": 1,
+      "woodvinegar": 1
+     },
+     "at": [
+      "charkiln"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "coke",
+   "name": "コークス",
+   "yomi": "こーくす",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "char_coal",
+     "inputs": {
+      "coal": 2
+     },
+     "outputs": {
+      "coke": 1,
+      "coaltar": 1
+     },
+     "at": [
+      "charkiln"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "coaltar",
+   "name": "コールタール",
+   "yomi": "こーるたーる",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "char_coal",
+     "inputs": {
+      "coal": 2
+     },
+     "outputs": {
+      "coke": 1,
+      "coaltar": 1
+     },
+     "at": [
+      "charkiln"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "greenware",
+   "name": "土器のもと",
+   "yomi": "どきのもと",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "shape_pot",
+     "inputs": {
+      "clay": 2
+     },
+     "outputs": {
+      "greenware": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "driedware",
+   "name": "乾いた土器のもと",
+   "yomi": "かわいたどきのもと",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "dry_pot",
+     "inputs": {
+      "greenware": 1
+     },
+     "outputs": {
+      "driedware": 1
+     },
+     "at": [
+      "rack",
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "pot",
+   "name": "土器",
+   "yomi": "どき",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "fire_pot",
+     "inputs": {
+      "driedware": 1
+     },
+     "outputs": {
+      "pot": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "greenbrick",
+   "name": "レンガのもと",
+   "yomi": "れんがのもと",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "shape_brick",
+     "inputs": {
+      "clay": 2,
+      "grass": 1
+     },
+     "outputs": {
+      "greenbrick": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "sunbrick",
+   "name": "日干しレンガ",
+   "yomi": "ひぼしれんが",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "dry_brick",
+     "inputs": {
+      "greenbrick": 1
+     },
+     "outputs": {
+      "sunbrick": 1
+     },
+     "at": [
+      "rack"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "brick",
+   "name": "焼きレンガ",
+   "yomi": "やきれんが",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "fire_brick",
+     "inputs": {
+      "sunbrick": 1
+     },
+     "outputs": {
+      "brick": 1
+     },
+     "at": [
+      "kiln"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "greencrucible",
+   "name": "るつぼのもと",
+   "yomi": "るつぼのもと",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "shape_crucible",
+     "inputs": {
+      "clay": 1,
+      "quartzpowder": 1
+     },
+     "outputs": {
+      "greencrucible": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "crucible",
+   "name": "るつぼ",
+   "yomi": "るつぼ",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "fire_crucible",
+     "inputs": {
+      "greencrucible": 1
+     },
+     "outputs": {
+      "crucible": 1
+     },
+     "at": [
+      "kiln"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "quartzpowder",
+   "name": "石英の粉",
+   "yomi": "せきえいのこな",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "grind_quartz",
+     "inputs": {
+      "quartz": 1
+     },
+     "outputs": {
+      "quartzpowder": 1
+     },
+     "at": [
+      "mill"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "grind_crystal",
+     "inputs": {
+      "crystal": 1
+     },
+     "outputs": {
+      "quartzpowder": 2
+     },
+     "at": [
+      "mill"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "cleansand",
+   "name": "きれいな砂",
+   "yomi": "きれいなすな",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "wash_sand",
+     "inputs": {
+      "sand": 2,
+      "water": 1
+     },
+     "outputs": {
+      "cleansand": 1,
+      "mud": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "moltenglass",
+   "name": "溶けたガラス",
+   "yomi": "とけたがらす",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "glass_soda",
+     "inputs": {
+      "quartzpowder": 2,
+      "soda": 1,
+      "quicklime": 1
+     },
+     "outputs": {
+      "moltenglass": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace",
+      "blastfurnace"
+     ],
+     "tools": [
+      "crucible"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "glass_potash",
+     "inputs": {
+      "cleansand": 2,
+      "potash": 1,
+      "quicklime": 1
+     },
+     "outputs": {
+      "moltenglass": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace"
+     ],
+     "tools": [
+      "crucible"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "glass",
+   "name": "ガラス",
+   "yomi": "がらす",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "cool_glass",
+     "inputs": {
+      "moltenglass": 1
+     },
+     "outputs": {
+      "glass": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "oremalachite",
+   "name": "孔雀石の粉",
+   "yomi": "くじゃくいしのこな",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "crush_mal",
+     "inputs": {
+      "malachite": 1
+     },
+     "outputs": {
+      "oremalachite": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "orehematite",
+   "name": "赤鉄鉱の粉",
+   "yomi": "せきてっこうのこな",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "crush_hem",
+     "inputs": {
+      "hematite": 1
+     },
+     "outputs": {
+      "orehematite": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "orecass",
+   "name": "錫石の粉",
+   "yomi": "すずいしのこな",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "crush_cass",
+     "inputs": {
+      "cassiterite": 1
+     },
+     "outputs": {
+      "orecass": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "orezinc",
+   "name": "閃亜鉛鉱の粉",
+   "yomi": "せんあえんこうのこな",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "crush_zn",
+     "inputs": {
+      "sphalerite": 1
+     },
+     "outputs": {
+      "orezinc": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "zno",
+   "name": "酸化亜鉛",
+   "yomi": "さんかあえん",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "roast_zn",
+     "inputs": {
+      "orezinc": 1
+     },
+     "outputs": {
+      "zno": 1,
+      "so2": 1
+     },
+     "at": [
+      "kiln"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "copper",
+   "name": "銅",
+   "yomi": "どう",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "smelt_cu",
+     "inputs": {
+      "oremalachite": 1,
+      "charcoal": 1
+     },
+     "outputs": {
+      "copper": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace",
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "iron",
+   "name": "鉄",
+   "yomi": "てつ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "smelt_fe",
+     "inputs": {
+      "orehematite": 2,
+      "charcoal": 2
+     },
+     "outputs": {
+      "iron": 1,
+      "slag": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "smelt_fe_coke",
+     "inputs": {
+      "orehematite": 2,
+      "coke": 1
+     },
+     "outputs": {
+      "iron": 1,
+      "slag": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "tin",
+   "name": "スズ",
+   "yomi": "すず",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "smelt_sn",
+     "inputs": {
+      "orecass": 1,
+      "charcoal": 1
+     },
+     "outputs": {
+      "tin": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace",
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "zinc",
+   "name": "亜鉛",
+   "yomi": "あえん",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "smelt_zn",
+     "inputs": {
+      "zno": 1,
+      "charcoal": 1
+     },
+     "outputs": {
+      "zinc": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace",
+      "blastfurnace"
+     ],
+     "tools": [
+      "crucible"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "bronze",
+   "name": "青銅",
+   "yomi": "せいどう",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "alloy_bronze",
+     "inputs": {
+      "copper": 2,
+      "tin": 1
+     },
+     "outputs": {
+      "bronze": 3
+     },
+     "at": [
+      "furnace"
+     ],
+     "tools": [
+      "crucible"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "slag",
+   "name": "鉱さい",
+   "yomi": "こうさい",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "smelt_fe",
+     "inputs": {
+      "orehematite": 2,
+      "charcoal": 2
+     },
+     "outputs": {
+      "iron": 1,
+      "slag": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "smelt_fe_coke",
+     "inputs": {
+      "orehematite": 2,
+      "coke": 1
+     },
+     "outputs": {
+      "iron": 1,
+      "slag": 1,
+      "co2": 1
+     },
+     "at": [
+      "furnace"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "pig_iron",
+     "inputs": {
+      "orehematite": 2,
+      "coke": 1,
+      "limestone": 1
+     },
+     "outputs": {
+      "pigiron": 2,
+      "slag": 1,
+      "co2": 1
+     },
+     "at": [
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "copperplate",
+   "name": "銅板",
+   "yomi": "どうばん",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "shape_copper",
+     "inputs": {
+      "copper": 1
+     },
+     "outputs": {
+      "copperplate": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "wire",
+   "name": "銅線",
+   "yomi": "どうせん",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "draw_wire",
+     "inputs": {
+      "copperplate": 1
+     },
+     "outputs": {
+      "wire": 2
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "hammer",
+      "ironrod"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "ironrod",
+   "name": "鉄の棒",
+   "yomi": "てつのぼう",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "forge_iron",
+     "inputs": {
+      "iron": 1
+     },
+     "outputs": {
+      "ironrod": 1
+     },
+     "at": [
+      "kiln"
+     ],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "forge_meteor",
+     "inputs": {
+      "meteorite": 1
+     },
+     "outputs": {
+      "ironrod": 1
+     },
+     "at": [
+      "kiln"
+     ],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "rust",
+   "name": "鉄さび",
+   "yomi": "てつさび",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "rust_iron",
+     "inputs": {
+      "iron": 1,
+      "water": 1
+     },
+     "outputs": {
+      "rust": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "pigiron",
+   "name": "銑鉄",
+   "yomi": "せんてつ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "pig_iron",
+     "inputs": {
+      "orehematite": 2,
+      "coke": 1,
+      "limestone": 1
+     },
+     "outputs": {
+      "pigiron": 2,
+      "slag": 1,
+      "co2": 1
+     },
+     "at": [
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "steel",
+   "name": "鋼",
+   "yomi": "はがね",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "make_steel",
+     "inputs": {
+      "pigiron": 2
+     },
+     "outputs": {
+      "steel": 1,
+      "co2": 1
+     },
+     "at": [
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "electromagnet",
+   "name": "電磁石",
+   "yomi": "でんじしゃく",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_electromagnet",
+     "inputs": {
+      "ironrod": 1,
+      "wire": 3
+     },
+     "outputs": {
+      "electromagnet": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "battery"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "crushedgrape",
+   "name": "つぶしたブドウ",
+   "yomi": "つぶしたぶどう",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "crush_grape",
+     "inputs": {
+      "grape": 3
+     },
+     "outputs": {
+      "crushedgrape": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "wine",
+   "name": "ブドウの発酵液",
+   "yomi": "ぶどうのはっこうえき",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "ferment_wine",
+     "inputs": {
+      "crushedgrape": 1
+     },
+     "outputs": {
+      "wine": 1,
+      "co2": 1
+     },
+     "at": [
+      "fermenter"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "ethanol",
+   "name": "エタノール",
+   "yomi": "えたのーる",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "distill_wine",
+     "inputs": {
+      "wine": 2
+     },
+     "outputs": {
+      "ethanol": 1
+     },
+     "at": [
+      "still"
+     ],
+     "tools": [
+      "bottle"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "vinegar",
+   "name": "酢",
+   "yomi": "す",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "ferment_vinegar",
+     "inputs": {
+      "wine": 1
+     },
+     "outputs": {
+      "vinegar": 1
+     },
+     "at": [
+      "fermenter"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "turpentine",
+   "name": "テレピン油",
+   "yomi": "てれぴんゆ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "distill_resin",
+     "inputs": {
+      "resin": 2
+     },
+     "outputs": {
+      "turpentine": 1,
+      "rosin": 1
+     },
+     "at": [
+      "still"
+     ],
+     "tools": [
+      "bottle"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "rosin",
+   "name": "ロジン",
+   "yomi": "ろじん",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "distill_resin",
+     "inputs": {
+      "resin": 2
+     },
+     "outputs": {
+      "turpentine": 1,
+      "rosin": 1
+     },
+     "at": [
+      "still"
+     ],
+     "tools": [
+      "bottle"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "redpigment",
+   "name": "赤い顔料",
+   "yomi": "あかいがんりょう",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "grind_ochre",
+     "inputs": {
+      "ochre": 1
+     },
+     "outputs": {
+      "redpigment": 1
+     },
+     "at": [
+      "mill"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "blackpigment",
+   "name": "黒い顔料",
+   "yomi": "くろいがんりょう",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "grind_charcoal",
+     "inputs": {
+      "charcoal": 1
+     },
+     "outputs": {
+      "blackpigment": 1
+     },
+     "at": [
+      "mill"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "redpaint",
+   "name": "赤い絵の具",
+   "yomi": "あかいえのぐ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "paint",
+     "inputs": {
+      "redpigment": 1,
+      "oil": 1
+     },
+     "outputs": {
+      "redpaint": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "pulp",
+   "name": "繊維の泥",
+   "yomi": "せんいのどろ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "pulp_grass",
+     "inputs": {
+      "grass": 3,
+      "lye": 1
+     },
+     "outputs": {
+      "pulp": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    },
+    {
+     "kind": "lab",
+     "key": "pulp_vine",
+     "inputs": {
+      "vine": 2,
+      "lye": 1
+     },
+     "outputs": {
+      "pulp": 1
+     },
+     "at": [
+      "campfire",
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "paper",
+   "name": "紙",
+   "yomi": "かみ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "make_paper",
+     "inputs": {
+      "pulp": 1
+     },
+     "outputs": {
+      "paper": 1
+     },
+     "at": [
+      "rack"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "gasoline",
+   "name": "ガソリン",
+   "yomi": "がそりん",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "fractionate",
+     "inputs": {
+      "crude": 2
+     },
+     "outputs": {
+      "gasoline": 1,
+      "kerosene": 1,
+      "naphtha": 1,
+      "heavyoil": 1
+     },
+     "at": [
+      "refinery"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "kerosene",
+   "name": "灯油",
+   "yomi": "とうゆ",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "fractionate",
+     "inputs": {
+      "crude": 2
+     },
+     "outputs": {
+      "gasoline": 1,
+      "kerosene": 1,
+      "naphtha": 1,
+      "heavyoil": 1
+     },
+     "at": [
+      "refinery"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "naphtha",
+   "name": "ナフサ",
+   "yomi": "なふさ",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "fractionate",
+     "inputs": {
+      "crude": 2
+     },
+     "outputs": {
+      "gasoline": 1,
+      "kerosene": 1,
+      "naphtha": 1,
+      "heavyoil": 1
+     },
+     "at": [
+      "refinery"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "heavyoil",
+   "name": "重油",
+   "yomi": "じゅうゆ",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "fractionate",
+     "inputs": {
+      "crude": 2
+     },
+     "outputs": {
+      "gasoline": 1,
+      "kerosene": 1,
+      "naphtha": 1,
+      "heavyoil": 1
+     },
+     "at": [
+      "refinery"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "ethylene",
+   "name": "エチレン",
+   "yomi": "えちれん",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "crack_naphtha",
+     "inputs": {
+      "naphtha": 1
+     },
+     "outputs": {
+      "ethylene": 1,
+      "hydrogen": 1
+     },
+     "at": [
+      "reactor"
+     ],
+     "tools": [
+      "cylinder"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "pe",
+   "name": "ポリエチレン",
+   "yomi": "ぽりえちれん",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "polymerize_pe",
+     "inputs": {
+      "ethylene": 3
+     },
+     "outputs": {
+      "pe": 1
+     },
+     "at": [
+      "reactor"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "plasticbox",
+   "name": "プラスチック容器",
+   "yomi": "ぷらすちっくようき",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "mold_pe",
+     "inputs": {
+      "pe": 1
+     },
+     "outputs": {
+      "plasticbox": 1
+     },
+     "at": [
+      "reactor"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "orebauxite",
+   "name": "ボーキサイトの粉",
+   "yomi": "ぼーきさいとのこな",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "grind_bauxite",
+     "inputs": {
+      "bauxite": 1
+     },
+     "outputs": {
+      "orebauxite": 1
+     },
+     "at": [
+      "mill"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "aluminate",
+   "name": "アルミン酸ナトリウム液",
+   "yomi": "あるみんさんなとりうむえき",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "bayer",
+     "inputs": {
+      "orebauxite": 2,
+      "naoh": 1
+     },
+     "outputs": {
+      "aluminate": 1,
+      "redmud": 1
+     },
+     "at": [
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "redmud",
+   "name": "赤泥",
+   "yomi": "せきでい",
+   "cat": "raw",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "bayer",
+     "inputs": {
+      "orebauxite": 2,
+      "naoh": 1
+     },
+     "outputs": {
+      "aluminate": 1,
+      "redmud": 1
+     },
+     "at": [
+      "kiln"
+     ],
+     "tools": [
+      "pot"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "aloh",
+   "name": "水酸化アルミニウム",
+   "yomi": "すいさんかあるみにうむ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "precip_aloh",
+     "inputs": {
+      "aluminate": 1
+     },
+     "outputs": {
+      "aloh": 1,
+      "naoh": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "alumina",
+   "name": "アルミナ",
+   "yomi": "あるみな",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "calcine_alumina",
+     "inputs": {
+      "aloh": 2
+     },
+     "outputs": {
+      "alumina": 1,
+      "steam": 1
+     },
+     "at": [
+      "blastfurnace",
+      "eaf"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "aluminum",
+   "name": "アルミニウム",
+   "yomi": "あるみにうむ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "hall_heroult",
+     "inputs": {
+      "alumina": 1,
+      "coke": 1
+     },
+     "outputs": {
+      "aluminum": 1,
+      "co2": 1
+     },
+     "at": [
+      "eaf"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "silicon",
+   "name": "ケイ素",
+   "yomi": "けいそ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "smelt_si",
+     "inputs": {
+      "quartzpowder": 2,
+      "coke": 2
+     },
+     "outputs": {
+      "silicon": 1,
+      "co2": 1
+     },
+     "at": [
+      "eaf"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "pure_si",
+   "name": "高純度ケイ素",
+   "yomi": "こうじゅんどけいそ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "refine_si",
+     "inputs": {
+      "silicon": 2
+     },
+     "outputs": {
+      "pure_si": 1
+     },
+     "at": [
+      "eaf"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "bulb",
+   "name": "白熱電球",
+   "yomi": "はくねつでんきゅう",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_bulb",
+     "inputs": {
+      "glass": 1,
+      "wire": 1,
+      "charcoal": 1
+     },
+     "outputs": {
+      "bulb": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "generator"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "solarcell",
+   "name": "太陽電池",
+   "yomi": "たいようでんち",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_solar",
+     "inputs": {
+      "pure_si": 1,
+      "glass": 1,
+      "aluminum": 1,
+      "wire": 2
+     },
+     "outputs": {
+      "solarcell": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "generator"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "thread",
+   "name": "植物の糸",
+   "yomi": "しょくぶつのいと",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_thread",
+     "inputs": {
+      "vine": 2
+     },
+     "outputs": {
+      "thread": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "cloth",
+   "name": "植物の布",
+   "yomi": "しょくぶつのぬの",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_cloth",
+     "inputs": {
+      "thread": 3
+     },
+     "outputs": {
+      "cloth": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "knife",
+   "name": "石のナイフ",
+   "yomi": "いしのないふ",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_knife",
+     "inputs": {
+      "flint": 1,
+      "cobble": 1
+     },
+     "outputs": {
+      "knife": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "craft",
+     "key": "c_knife2",
+     "inputs": {
+      "obsidian": 1,
+      "cobble": 1
+     },
+     "outputs": {
+      "knife": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "axe",
+   "name": "石のおの",
+   "yomi": "いしのおの",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_axe",
+     "inputs": {
+      "flint": 1,
+      "twig": 1,
+      "thread": 1
+     },
+     "outputs": {
+      "axe": 1
+     },
+     "at": [],
+     "tools": [
+      "knife"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "hammer",
+   "name": "石のハンマー",
+   "yomi": "いしのはんまー",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_hammer",
+     "inputs": {
+      "basalt": 1,
+      "twig": 1,
+      "thread": 1
+     },
+     "outputs": {
+      "hammer": 1
+     },
+     "at": [],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "pickaxe",
+   "name": "石のつるはし",
+   "yomi": "いしのつるはし",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_pickaxe",
+     "inputs": {
+      "basalt": 1,
+      "log": 1,
+      "thread": 1
+     },
+     "outputs": {
+      "pickaxe": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "firedrill",
+   "name": "火おこし棒",
+   "yomi": "ひおこしぼう",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_firedrill",
+     "inputs": {
+      "twig": 2,
+      "grass": 1
+     },
+     "outputs": {
+      "firedrill": 1
+     },
+     "at": [],
+     "tools": [
+      "knife"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "torch",
+   "name": "たいまつ",
+   "yomi": "たいまつ",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_torch",
+     "inputs": {
+      "twig": 1,
+      "resin": 1
+     },
+     "outputs": {
+      "torch": 1
+     },
+     "at": [
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "candle",
+   "name": "ろうそく",
+   "yomi": "ろうそく",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_candle",
+     "inputs": {
+      "wax": 1,
+      "thread": 1
+     },
+     "outputs": {
+      "candle": 1
+     },
+     "at": [
+      "campfire"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "basket",
+   "name": "採集かご",
+   "yomi": "さいしゅうかご",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_basket",
+     "inputs": {
+      "vine": 4
+     },
+     "outputs": {
+      "basket": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "craft",
+     "key": "c_basket2",
+     "inputs": {
+      "bark": 2,
+      "vine": 1
+     },
+     "outputs": {
+      "basket": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "notebook",
+   "name": "研究ノート",
+   "yomi": "けんきゅうのーと",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_notebook",
+     "inputs": {
+      "paper": 2,
+      "blackpigment": 1,
+      "thread": 1
+     },
+     "outputs": {
+      "notebook": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "ironpick",
+   "name": "鉄のつるはし",
+   "yomi": "てつのつるはし",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_ironpick",
+     "inputs": {
+      "ironrod": 1,
+      "log": 1
+     },
+     "outputs": {
+      "ironpick": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "ironaxe",
+   "name": "鉄のおの",
+   "yomi": "てつのおの",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_ironaxe",
+     "inputs": {
+      "ironrod": 1,
+      "twig": 1,
+      "thread": 1
+     },
+     "outputs": {
+      "ironaxe": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "balance",
+   "name": "てんびん",
+   "yomi": "てんびん",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_balance",
+     "inputs": {
+      "copperplate": 2,
+      "twig": 2,
+      "thread": 1
+     },
+     "outputs": {
+      "balance": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    },
+    {
+     "kind": "craft",
+     "key": "c_balance2",
+     "inputs": {
+      "bronze": 1,
+      "twig": 2,
+      "thread": 1
+     },
+     "outputs": {
+      "balance": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "thermometer",
+   "name": "温度計",
+   "yomi": "おんどけい",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_thermometer",
+     "inputs": {
+      "glass": 1,
+      "ethanol": 1,
+      "redpigment": 1
+     },
+     "outputs": {
+      "thermometer": 1
+     },
+     "at": [
+      "furnace"
+     ],
+     "tools": [
+      "ironrod"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "bottle",
+   "name": "ガラスのびん",
+   "yomi": "がらすのびん",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_bottle",
+     "inputs": {
+      "glass": 2
+     },
+     "outputs": {
+      "bottle": 1
+     },
+     "at": [
+      "furnace"
+     ],
+     "tools": [
+      "ironrod"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "bellows",
+   "name": "ふいご",
+   "yomi": "ふいご",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_bellows",
+     "inputs": {
+      "log": 1,
+      "cloth": 1,
+      "resin": 1
+     },
+     "outputs": {
+      "bellows": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "knife"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "battery",
+   "name": "ボルタ電池",
+   "yomi": "ぼるたでんち",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_battery",
+     "inputs": {
+      "copperplate": 2,
+      "zinc": 2,
+      "cloth": 1,
+      "cleanbrine": 1
+     },
+     "outputs": {
+      "battery": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "cylinder",
+   "name": "鋼のボンベ",
+   "yomi": "はがねのぼんべ",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_cylinder",
+     "inputs": {
+      "steel": 2
+     },
+     "outputs": {
+      "cylinder": 1
+     },
+     "at": [
+      "blastfurnace"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "rig",
+   "name": "掘削やぐら",
+   "yomi": "くっさくやぐら",
+   "cat": "tool",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:rig",
+     "inputs": {
+      "steel": 4,
+      "wire": 2
+     },
+     "outputs": {
+      "rig": 1
+     },
+     "at": [],
+     "tools": [
+      "steamengine"
+     ],
+     "time": 9
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "bench",
+   "name": "作業台",
+   "yomi": "さぎょうだい",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:workbench",
+     "inputs": {
+      "twig": 4,
+      "thread": 2,
+      "cobble": 2
+     },
+     "outputs": {
+      "bench": 1
+     },
+     "at": [],
+     "tools": [
+      "knife"
+     ],
+     "time": 3
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "campfire",
+   "name": "たき火",
+   "yomi": "たきび",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:campfire",
+     "inputs": {
+      "cobble": 3,
+      "twig": 3,
+      "leaves": 1
+     },
+     "outputs": {
+      "campfire": 1
+     },
+     "at": [],
+     "tools": [
+      "firedrill"
+     ],
+     "time": 4
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "rack",
+   "name": "乾燥台",
+   "yomi": "かんそうだい",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_rack",
+     "inputs": {
+      "twig": 3,
+      "thread": 1
+     },
+     "outputs": {
+      "rack": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "filter",
+   "name": "ろ過器",
+   "yomi": "ろかき",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_filter",
+     "inputs": {
+      "cloth": 1,
+      "pot": 1
+     },
+     "outputs": {
+      "filter": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "mill",
+   "name": "石臼",
+   "yomi": "いしうす",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_mill",
+     "inputs": {
+      "granite": 2,
+      "twig": 1
+     },
+     "outputs": {
+      "mill": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "hammer"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "kiln",
+   "name": "かまど",
+   "yomi": "かまど",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:kiln",
+     "inputs": {
+      "cobble": 4,
+      "clay": 3
+     },
+     "outputs": {
+      "kiln": 1
+     },
+     "at": [],
+     "tools": [
+      "campfire"
+     ],
+     "time": 7
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "charkiln",
+   "name": "炭焼き窯",
+   "yomi": "すみやきがま",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_charkiln",
+     "inputs": {
+      "clay": 4,
+      "cobble": 4,
+      "twig": 2
+     },
+     "outputs": {
+      "charkiln": 1
+     },
+     "at": [],
+     "tools": [
+      "kiln"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "fermenter",
+   "name": "発酵つぼ",
+   "yomi": "はっこうつぼ",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_fermenter",
+     "inputs": {
+      "pot": 1,
+      "cloth": 1,
+      "clay": 1
+     },
+     "outputs": {
+      "fermenter": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "furnace",
+   "name": "簡易炉",
+   "yomi": "かんいろ",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:smelter",
+     "inputs": {
+      "clay": 2,
+      "brick": 4,
+      "bellows": 1
+     },
+     "outputs": {
+      "furnace": 1
+     },
+     "at": [],
+     "tools": [
+      "kiln"
+     ],
+     "time": 10
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "still",
+   "name": "蒸留器",
+   "yomi": "じょうりゅうき",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:laboratory",
+     "inputs": {
+      "clay": 1,
+      "copperplate": 2,
+      "pot": 1
+     },
+     "outputs": {
+      "still": 1
+     },
+     "at": [],
+     "tools": [
+      "hammer",
+      "bench"
+     ],
+     "time": 7
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "storehouse",
+   "name": "倉庫",
+   "yomi": "そうこ",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:storehouse",
+     "inputs": {
+      "log": 4,
+      "thread": 2,
+      "plaster": 2
+     },
+     "outputs": {
+      "storehouse": 1
+     },
+     "at": [],
+     "tools": [
+      "axe",
+      "bench"
+     ],
+     "time": 11
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "electrolyzer",
+   "name": "電気分解装置",
+   "yomi": "でんきぶんかいそうち",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "craft",
+     "key": "c_electrolyzer",
+     "inputs": {
+      "wire": 2,
+      "bottle": 1,
+      "pot": 1
+     },
+     "outputs": {
+      "electrolyzer": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "battery"
+     ],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "waterwheel",
+   "name": "水車",
+   "yomi": "すいしゃ",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:waterwheel",
+     "inputs": {
+      "ironrod": 2,
+      "log": 4
+     },
+     "outputs": {
+      "waterwheel": 1
+     },
+     "at": [],
+     "tools": [
+      "ironaxe",
+      "bench"
+     ],
+     "time": 9
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "generator",
+   "name": "水力発電機",
+   "yomi": "すいりょくはつでんき",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:powerplant",
+     "inputs": {
+      "wire": 4,
+      "electromagnet": 2
+     },
+     "outputs": {
+      "generator": 1
+     },
+     "at": [],
+     "tools": [
+      "waterwheel"
+     ],
+     "time": 10
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "blastfurnace",
+   "name": "高炉",
+   "yomi": "こうろ",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:blastfurnace",
+     "inputs": {
+      "clay": 3,
+      "brick": 8,
+      "ironrod": 2
+     },
+     "outputs": {
+      "blastfurnace": 1
+     },
+     "at": [],
+     "tools": [
+      "waterwheel"
+     ],
+     "time": 16
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "steamengine",
+   "name": "蒸気機関",
+   "yomi": "じょうききかん",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:steamengine",
+     "inputs": {
+      "brick": 2,
+      "steel": 2,
+      "copperplate": 2
+     },
+     "outputs": {
+      "steamengine": 1
+     },
+     "at": [],
+     "tools": [
+      "blastfurnace"
+     ],
+     "time": 10
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "refinery",
+   "name": "精留塔",
+   "yomi": "せいりゅうとう",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:refinery",
+     "inputs": {
+      "steel": 3,
+      "glass": 2,
+      "copperplate": 2
+     },
+     "outputs": {
+      "refinery": 1
+     },
+     "at": [],
+     "tools": [
+      "generator"
+     ],
+     "time": 14
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "reactor",
+   "name": "化学反応装置",
+   "yomi": "かがくはんのうそうち",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:institute",
+     "inputs": {
+      "steel": 2,
+      "glass": 2,
+      "wire": 2
+     },
+     "outputs": {
+      "reactor": 1
+     },
+     "at": [],
+     "tools": [
+      "generator",
+      "thermometer"
+     ],
+     "time": 15
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "eaf",
+   "name": "電気炉",
+   "yomi": "でんきろ",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "build",
+     "key": "build:factory",
+     "inputs": {
+      "brick": 6,
+      "wire": 4,
+      "coke": 2
+     },
+     "outputs": {
+      "eaf": 1
+     },
+     "at": [],
+     "tools": [
+      "generator"
+     ],
+     "time": 20
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "rawrubber",
+   "name": "合成ゴムのもと",
+   "yomi": "ごうせいごむのもと",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "make_rawrubber",
+     "inputs": {
+      "ethylene": 2,
+      "naphtha": 1
+     },
+     "outputs": {
+      "rawrubber": 4
+     },
+     "at": [
+      "reactor"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "rubber",
+   "name": "ゴム",
+   "yomi": "ごむ",
+   "cat": "material",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "lab",
+     "key": "vulcanize",
+     "inputs": {
+      "rawrubber": 2,
+      "sulfur": 1
+     },
+     "outputs": {
+      "rubber": 3
+     },
+     "at": [
+      "reactor"
+     ],
+     "tools": [],
+     "time": null
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_machine",
+   "name": "精密加工台",
+   "yomi": "せいみつかこうだい",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_machine",
+     "inputs": {
+      "steel": 2,
+      "wire": 2,
+      "glass": 1
+     },
+     "outputs": {
+      "sp_machine": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "generator"
+     ],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_materials",
+   "name": "材料評価台",
+   "yomi": "ざいりょうひょうかだい",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_materials",
+     "inputs": {
+      "steel": 1,
+      "glass": 1,
+      "wire": 1
+     },
+     "outputs": {
+      "sp_materials": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [
+      "balance",
+      "thermometer"
+     ],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_plate",
+   "name": "軽量外装板",
+   "yomi": "けいりょうがいそうばん",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_plate",
+     "inputs": {
+      "aluminum": 2,
+      "steel": 1
+     },
+     "outputs": {
+      "sp_plate": 6
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_frame",
+   "name": "構造フレーム",
+   "yomi": "こうぞうふれーむ",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_frame",
+     "inputs": {
+      "steel": 2,
+      "ironrod": 1
+     },
+     "outputs": {
+      "sp_frame": 4
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_fastener",
+   "name": "締結部品",
+   "yomi": "ていけつぶひん",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_fastener",
+     "inputs": {
+      "steel": 1
+     },
+     "outputs": {
+      "sp_fastener": 12
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_insulator",
+   "name": "絶縁部品",
+   "yomi": "ぜつえんぶひん",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_insulator",
+     "inputs": {
+      "pe": 2,
+      "glass": 1
+     },
+     "outputs": {
+      "sp_insulator": 8
+     },
+     "at": [
+      "reactor"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_cable",
+   "name": "被覆配線",
+   "yomi": "ひふくはいせん",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_cable",
+     "inputs": {
+      "wire": 2,
+      "sp_insulator": 1
+     },
+     "outputs": {
+      "sp_cable": 6
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_fiber",
+   "name": "機能繊維",
+   "yomi": "きのうせんい",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_fiber",
+     "inputs": {
+      "naphtha": 1,
+      "cloth": 1
+     },
+     "outputs": {
+      "sp_fiber": 6
+     },
+     "at": [
+      "reactor"
+     ],
+     "tools": [
+      "sp_materials"
+     ],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_seal",
+   "name": "柔軟シール材",
+   "yomi": "じゅうなんしーるざい",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_seal",
+     "inputs": {
+      "rubber": 2
+     },
+     "outputs": {
+      "sp_seal": 8
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [
+      "sp_materials"
+     ],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_membrane",
+   "name": "気密膜",
+   "yomi": "きみつまく",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_membrane",
+     "inputs": {
+      "sp_fiber": 1,
+      "sp_seal": 1
+     },
+     "outputs": {
+      "sp_membrane": 4
+     },
+     "at": [
+      "reactor"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_thermal",
+   "name": "積層断熱材",
+   "yomi": "せきそうだんねつざい",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_thermal",
+     "inputs": {
+      "sp_fiber": 1,
+      "sp_insulator": 1,
+      "aluminum": 1
+     },
+     "outputs": {
+      "sp_thermal": 4
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_ceramic",
+   "name": "耐熱セラミック",
+   "yomi": "たいねつせらみっく",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_ceramic",
+     "inputs": {
+      "alumina": 1,
+      "quartzpowder": 1
+     },
+     "outputs": {
+      "sp_ceramic": 4
+     },
+     "at": [
+      "eaf"
+     ],
+     "tools": [
+      "sp_materials"
+     ],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_window",
+   "name": "透明保護材",
+   "yomi": "とうめいほござい",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_window",
+     "inputs": {
+      "glass": 1,
+      "pe": 1
+     },
+     "outputs": {
+      "sp_window": 3
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [
+      "sp_materials"
+     ],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_powerbench",
+   "name": "電源組立台",
+   "yomi": "でんげんくみたてだい",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_powerbench",
+     "inputs": {
+      "steel": 1,
+      "sp_cable": 2,
+      "sp_insulator": 2
+     },
+     "outputs": {
+      "sp_powerbench": 1
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [
+      "generator"
+     ],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_storage",
+   "name": "蓄電モジュール",
+   "yomi": "ちくでんもじゅーる",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_storage",
+     "inputs": {
+      "copper": 1,
+      "zinc": 1,
+      "charcoal": 1,
+      "sp_insulator": 2
+     },
+     "outputs": {
+      "sp_storage": 2
+     },
+     "at": [
+      "sp_powerbench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_power",
+   "name": "電源配電ユニット",
+   "yomi": "でんげんはいでんゆにっと",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_power",
+     "inputs": {
+      "sp_storage": 1,
+      "sp_cable": 3,
+      "sp_insulator": 1
+     },
+     "outputs": {
+      "sp_power": 1
+     },
+     "at": [
+      "sp_powerbench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_fab",
+   "name": "電子部品製造設備",
+   "yomi": "でんしぶひんせいぞうせつび",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_fab",
+     "inputs": {
+      "steel": 2,
+      "glass": 2,
+      "sp_cable": 2,
+      "sp_insulator": 2
+     },
+     "outputs": {
+      "sp_fab": 1
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [
+      "generator"
+     ],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_switch",
+   "name": "スイッチ回路",
+   "yomi": "すいっちかいろ",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_switch",
+     "inputs": {
+      "wire": 1,
+      "sp_insulator": 1,
+      "copperplate": 1
+     },
+     "outputs": {
+      "sp_switch": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_transistor",
+   "name": "切替素子",
+   "yomi": "きりかえそし",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_transistor",
+     "inputs": {
+      "pure_si": 1,
+      "copper": 1,
+      "sp_insulator": 1
+     },
+     "outputs": {
+      "sp_transistor": 12
+     },
+     "at": [
+      "sp_fab"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_pcb",
+   "name": "配線基板",
+   "yomi": "はいせんきばん",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_pcb",
+     "inputs": {
+      "copperplate": 1,
+      "sp_insulator": 1
+     },
+     "outputs": {
+      "sp_pcb": 8
+     },
+     "at": [
+      "sp_fab"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_passive",
+   "name": "受動部品セット",
+   "yomi": "じゅどうぶひんせっと",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_passive",
+     "inputs": {
+      "charcoal": 1,
+      "sp_ceramic": 1,
+      "copper": 1
+     },
+     "outputs": {
+      "sp_passive": 8
+     },
+     "at": [
+      "sp_fab"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_gate",
+   "name": "論理ゲートセット",
+   "yomi": "ろんりげーとせっと",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_gate",
+     "inputs": {
+      "sp_transistor": 2,
+      "sp_pcb": 1,
+      "sp_passive": 1
+     },
+     "outputs": {
+      "sp_gate": 4
+     },
+     "at": [
+      "sp_fab"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_adder",
+   "name": "加算回路",
+   "yomi": "かさんかいろ",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_adder",
+     "inputs": {
+      "sp_gate": 2,
+      "sp_pcb": 1
+     },
+     "outputs": {
+      "sp_adder": 2
+     },
+     "at": [
+      "sp_fab"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_memory",
+   "name": "記憶回路",
+   "yomi": "きおくかいろ",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_memory",
+     "inputs": {
+      "sp_gate": 2,
+      "sp_pcb": 1,
+      "sp_transistor": 2
+     },
+     "outputs": {
+      "sp_memory": 2
+     },
+     "at": [
+      "sp_fab"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_cpu",
+   "name": "演算制御モジュール",
+   "yomi": "えんざんせいぎょもじゅーる",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_cpu",
+     "inputs": {
+      "sp_adder": 1,
+      "sp_gate": 2,
+      "sp_pcb": 1
+     },
+     "outputs": {
+      "sp_cpu": 1
+     },
+     "at": [
+      "sp_fab"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_io",
+   "name": "表示入力モジュール",
+   "yomi": "ひょうじにゅうりょくもじゅーる",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_io",
+     "inputs": {
+      "glass": 1,
+      "sp_pcb": 1,
+      "sp_transistor": 1,
+      "sp_cable": 1
+     },
+     "outputs": {
+      "sp_io": 1
+     },
+     "at": [
+      "sp_fab"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_computerbench",
+   "name": "計算機組立台",
+   "yomi": "けいさんきくみたてだい",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_computerbench",
+     "inputs": {
+      "steel": 1,
+      "sp_cable": 1,
+      "glass": 1
+     },
+     "outputs": {
+      "sp_computerbench": 1
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [
+      "generator"
+     ],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_computer",
+   "name": "学習用コンピューター",
+   "yomi": "がくしゅうようこんぴゅーたー",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_computer",
+     "inputs": {
+      "sp_cpu": 1,
+      "sp_memory": 1,
+      "sp_io": 1,
+      "sp_power": 1
+     },
+     "outputs": {
+      "sp_computer": 1
+     },
+     "at": [
+      "sp_computerbench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_sensor",
+   "name": "模擬環境センサー",
+   "yomi": "もぎかんきょうせんさー",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_sensor",
+     "inputs": {
+      "sp_transistor": 1,
+      "sp_pcb": 1,
+      "glass": 1,
+      "sp_cable": 1
+     },
+     "outputs": {
+      "sp_sensor": 3
+     },
+     "at": [
+      "sp_fab"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_flightcomputer",
+   "name": "船内コンピューター",
+   "yomi": "せんないこんぴゅーたー",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_flightcomputer",
+     "inputs": {
+      "sp_computer": 1,
+      "sp_sensor": 1,
+      "sp_plate": 1
+     },
+     "outputs": {
+      "sp_flightcomputer": 1
+     },
+     "at": [
+      "sp_computerbench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_radio",
+   "name": "通信ユニット",
+   "yomi": "つうしんゆにっと",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_radio",
+     "inputs": {
+      "sp_pcb": 1,
+      "sp_transistor": 1,
+      "sp_cable": 2,
+      "copper": 1
+     },
+     "outputs": {
+      "sp_radio": 2
+     },
+     "at": [
+      "sp_fab"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 2
+  },
+  {
+   "id": "sp_suitbench",
+   "name": "宇宙服組立台",
+   "yomi": "うちゅうふくくみたてだい",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_suitbench",
+     "inputs": {
+      "steel": 1,
+      "cloth": 1,
+      "sp_fastener": 2
+     },
+     "outputs": {
+      "sp_suitbench": 1
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_liner",
+   "name": "内側の衣服",
+   "yomi": "うちがわのいふく",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_liner",
+     "inputs": {
+      "cloth": 2,
+      "thread": 1
+     },
+     "outputs": {
+      "sp_liner": 1
+     },
+     "at": [
+      "bench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_pressurelayer",
+   "name": "宇宙服の気密層",
+   "yomi": "うちゅうふくのきみつそう",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_pressurelayer",
+     "inputs": {
+      "sp_membrane": 2,
+      "sp_seal": 2
+     },
+     "outputs": {
+      "sp_pressurelayer": 1
+     },
+     "at": [
+      "sp_suitbench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_protectlayer",
+   "name": "宇宙服の保護層",
+   "yomi": "うちゅうふくのほごそう",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_protectlayer",
+     "inputs": {
+      "sp_fiber": 2,
+      "sp_thermal": 1
+     },
+     "outputs": {
+      "sp_protectlayer": 1
+     },
+     "at": [
+      "sp_suitbench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_helmet",
+   "name": "ヘルメットとバイザー",
+   "yomi": "へるめっととばいざー",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_helmet",
+     "inputs": {
+      "sp_window": 1,
+      "sp_plate": 1,
+      "sp_seal": 1
+     },
+     "outputs": {
+      "sp_helmet": 1
+     },
+     "at": [
+      "sp_suitbench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_gloves",
+   "name": "手袋とブーツ",
+   "yomi": "てぶくろとぶーつ",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_gloves",
+     "inputs": {
+      "sp_fiber": 1,
+      "sp_membrane": 1,
+      "sp_seal": 1
+     },
+     "outputs": {
+      "sp_gloves": 1
+     },
+     "at": [
+      "sp_suitbench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_air",
+   "name": "呼吸環境供給部",
+   "yomi": "こきゅうかんきょうきょうきゅうぶ",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_air",
+     "inputs": {
+      "cylinder": 1,
+      "water": 1,
+      "sp_seal": 1
+     },
+     "outputs": {
+      "sp_air": 1
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [
+      "electrolyzer"
+     ],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_scrubber",
+   "name": "空気再生部",
+   "yomi": "くうきさいせいぶ",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_scrubber",
+     "inputs": {
+      "slaked": 2,
+      "naoh": 1,
+      "sp_plate": 1
+     },
+     "outputs": {
+      "sp_scrubber": 1
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_waterunit",
+   "name": "水衛生部",
+   "yomi": "みずえいせいぶ",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_waterunit",
+     "inputs": {
+      "water": 2,
+      "plasticbox": 1,
+      "sp_cable": 1
+     },
+     "outputs": {
+      "sp_waterunit": 1
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [
+      "filter",
+      "sp_materials"
+     ],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_cooling",
+   "name": "温度管理部",
+   "yomi": "おんどかんりぶ",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_cooling",
+     "inputs": {
+      "copper": 1,
+      "aluminum": 1,
+      "water": 1,
+      "sp_thermal": 1
+     },
+     "outputs": {
+      "sp_cooling": 1
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_lifesupport",
+   "name": "生命維持ユニット",
+   "yomi": "せいめいいじゆにっと",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_lifesupport",
+     "inputs": {
+      "sp_air": 1,
+      "sp_scrubber": 1,
+      "sp_waterunit": 1,
+      "sp_cooling": 1,
+      "sp_power": 1,
+      "sp_sensor": 1
+     },
+     "outputs": {
+      "sp_lifesupport": 1
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_suit",
+   "name": "組立済み宇宙服",
+   "yomi": "くみたてずみうちゅうふく",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_suit",
+     "inputs": {
+      "sp_liner": 1,
+      "sp_pressurelayer": 1,
+      "sp_protectlayer": 1,
+      "sp_helmet": 1,
+      "sp_gloves": 1,
+      "sp_radio": 1,
+      "sp_lifesupport": 1
+     },
+     "outputs": {
+      "sp_suit": 1
+     },
+     "at": [
+      "sp_suitbench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_assembly",
+   "name": "機体組立設備",
+   "yomi": "きたいくみたてせつび",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_assembly",
+     "inputs": {
+      "sp_frame": 2,
+      "sp_fastener": 4,
+      "sp_cable": 2
+     },
+     "outputs": {
+      "sp_assembly": 1
+     },
+     "at": [
+      "sp_machine"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_hull",
+   "name": "機体構造",
+   "yomi": "きたいこうぞう",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_hull",
+     "inputs": {
+      "sp_frame": 3,
+      "sp_fastener": 4
+     },
+     "outputs": {
+      "sp_hull": 1
+     },
+     "at": [
+      "sp_assembly"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_skin",
+   "name": "機体外装",
+   "yomi": "きたいがいそう",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_skin",
+     "inputs": {
+      "sp_plate": 4,
+      "sp_thermal": 2,
+      "sp_ceramic": 2
+     },
+     "outputs": {
+      "sp_skin": 1
+     },
+     "at": [
+      "sp_assembly"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_propulsion",
+   "name": "架空推進モジュール",
+   "yomi": "かくうすいしんもじゅーる",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_propulsion",
+     "inputs": {
+      "sp_frame": 1,
+      "sp_ceramic": 1,
+      "sp_insulator": 2,
+      "sp_fastener": 2
+     },
+     "outputs": {
+      "sp_propulsion": 1
+     },
+     "at": [
+      "sp_assembly"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "sp_charge",
+   "name": "架空推進用カートリッジ",
+   "yomi": "かくうすいしんようかーとりっじ",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_charge",
+     "inputs": {
+      "sp_plate": 1,
+      "sp_insulator": 1,
+      "sp_seal": 1
+     },
+     "outputs": {
+      "sp_charge": 2
+     },
+     "at": [
+      "sp_assembly"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "sp_capsule",
+   "name": "搭乗カプセル",
+   "yomi": "とうじょうかぷせる",
+   "cat": "product",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_capsule",
+     "inputs": {
+      "sp_plate": 2,
+      "sp_window": 1,
+      "sp_seal": 2,
+      "sp_fastener": 2
+     },
+     "outputs": {
+      "sp_capsule": 1
+     },
+     "at": [
+      "sp_assembly"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_pad",
+   "name": "発射台",
+   "yomi": "はっしゃだい",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_pad",
+     "inputs": {
+      "concrete": 3,
+      "sp_frame": 2,
+      "sp_fastener": 4
+     },
+     "outputs": {
+      "sp_pad": 1
+     },
+     "at": [
+      "sp_assembly"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_tower",
+   "name": "支持塔と搭乗通路",
+   "yomi": "しじとうととうじょうつうろ",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_tower",
+     "inputs": {
+      "sp_frame": 2,
+      "sp_plate": 1,
+      "sp_fastener": 4
+     },
+     "outputs": {
+      "sp_tower": 1
+     },
+     "at": [
+      "sp_assembly"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 1
+  },
+  {
+   "id": "sp_control",
+   "name": "地上管制端末",
+   "yomi": "ちじょうかんせいたんまつ",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_control",
+     "inputs": {
+      "sp_computer": 1,
+      "sp_radio": 1,
+      "sp_cable": 2
+     },
+     "outputs": {
+      "sp_control": 1
+     },
+     "at": [
+      "sp_computerbench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  },
+  {
+   "id": "sp_testbench",
+   "name": "総合試験端末",
+   "yomi": "そうごうしけんたんまつ",
+   "cat": "facility",
+   "natural": false,
+   "obtain": [
+    {
+     "kind": "space",
+     "key": "c_sp_testbench",
+     "inputs": {
+      "sp_computer": 1,
+      "sp_sensor": 1,
+      "sp_cable": 1
+     },
+     "outputs": {
+      "sp_testbench": 1
+     },
+     "at": [
+      "sp_computerbench"
+     ],
+     "tools": [],
+     "time": 2
+    }
+   ],
+   "review": "unchecked",
+   "sources": 0
+  }
+ ]
+}

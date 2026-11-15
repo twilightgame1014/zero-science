@@ -1,0 +1,28 @@
+{
+  "testedCommit": "a36f036918abf0875b53bc0ac162f34b86aa6d1d",
+  "runtimeCommit": "18d416dc140c3a822d30ed46f0e2343edfa22b86",
+  "run": "https://github.com/twilightgame1014/science-civilization-game/actions/runs/43607844555",
+  "jobs": [
+    {
+      "id": 132486236282,
+      "name": "validate (space)",
+      "conclusion": "success"
+    },
+    {
+      "id": 132486236529,
+      "name": "validate (construction)",
+      "conclusion": "success"
+    },
+    {
+      "id": 132486236576,
+      "name": "validate (core)",
+      "conclusion": "success"
+    },
+    {
+      "id": 132486236670,
+      "name": "validate (hero)",
+      "conclusion": "success"
+    }
+  ],
+  "manual": "Actual game fixture, PC 1280x800 and mobile viewport 390x844. Not iPhone hardware. Screenshot controls excluded from deliverable."
+}

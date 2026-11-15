@@ -1,0 +1,167 @@
+{
+ "cliff": {
+  "source": [
+   1206,
+   1206
+  ],
+  "bg": "full-bleed",
+  "seamBefore": {
+   "x": 2.2,
+   "y": 1.71
+  },
+  "seamAfter": {
+   "x": 0.0,
+   "y": 0.0
+  },
+  "scale": "1024px = 2 m; strata 20-40 cm"
+ },
+ "scree": {
+  "source": [
+   1206,
+   1206
+  ],
+  "seamBefore": {
+   "x": 1.48,
+   "y": 1.67
+  },
+  "seamAfter": {
+   "x": 0.0,
+   "y": 0.0
+  },
+  "scale": "tile 6 m; 3x3 mosaic -> pattern cell 2 m; drawn rocks ~5-33 cm"
+ },
+ "moss": {
+  "source": [
+   1206,
+   1206
+  ],
+  "bgCorner": 254,
+  "patches": [
+   {
+    "id": "moss-1",
+    "size": [
+     574,
+     285
+    ],
+    "px": 67458
+   },
+   {
+    "id": "moss-2",
+    "size": [
+     528,
+     382
+    ],
+    "px": 82220
+   },
+   {
+    "id": "moss-3",
+    "size": [
+     551,
+     309
+    ],
+    "px": 68569
+   },
+   {
+    "id": "moss-4",
+    "size": [
+     528,
+     309
+    ],
+    "px": 71712
+   },
+   {
+    "id": "moss-5",
+    "size": [
+     578,
+     279
+    ],
+    "px": 77316
+   },
+   {
+    "id": "moss-6",
+    "size": [
+     600,
+     352
+    ],
+    "px": 74679
+   }
+  ]
+ },
+ "streaks": {
+  "source": [
+   1206,
+   1206
+  ],
+  "bgCorner": 0,
+  "leftEdgeAlphaMean": 0.0,
+  "rightEdgeAlphaMean": 0.0,
+  "coverage": 0.493
+ },
+ "foam": {
+  "source": [
+   1206,
+   1206
+  ],
+  "bgCorner": 0,
+  "items": [
+   {
+    "id": "foam-cluster-1",
+    "size": [
+     545,
+     274
+    ]
+   },
+   {
+    "id": "foam-cluster-2",
+    "size": [
+     519,
+     295
+    ]
+   },
+   {
+    "id": "foam-cluster-3",
+    "size": [
+     543,
+     271
+    ]
+   },
+   {
+    "id": "foam-cluster-4",
+    "size": [
+     574,
+     260
+    ]
+   },
+   {
+    "id": "foam-ring-1",
+    "size": [
+     434,
+     429
+    ]
+   },
+   {
+    "id": "foam-ring-2",
+    "size": [
+     475,
+     438
+    ]
+   }
+  ]
+ },
+ "shore": {
+  "source": [
+   1206,
+   402
+  ],
+  "crop": "bottom 302 rows (4:1, uniform scale only)",
+  "topCoverage": 0.0,
+  "seamBefore": {
+   "x": 1.04,
+   "y": 0.0
+  },
+  "seamAfter": {
+   "x": 0.0,
+   "y": 0.0
+  }
+ }
+}

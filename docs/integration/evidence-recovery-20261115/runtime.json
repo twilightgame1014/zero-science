@@ -1,0 +1,84 @@
+[
+  {
+    "mobile": false,
+    "status": {
+      "moduleChunks": 14,
+      "hidden": [],
+      "openWaterMasked": 329,
+      "river": 4,
+      "quality": "high",
+      "volcanoKit": {
+        "placed": 37,
+        "failed": [],
+        "spots": 37,
+        "lodPairs": 11,
+        "lod1Used": 11
+      },
+      "waterfallArt": {
+        "streaks": true,
+        "foamPlanes": 2
+      },
+      "shoreFoam": 34
+    },
+    "visual": {
+      "falls": 1,
+      "streakLoaded": true,
+      "ringLoaded": true,
+      "ringVisible": true
+    },
+    "factory": [
+      "dock",
+      "footing",
+      "steps",
+      "wallsLower",
+      "chimney",
+      "chimneyCap",
+      "roofTooth",
+      "roofTooth001",
+      "roofTooth002",
+      "wallsUpper"
+    ],
+    "errors": []
+  },
+  {
+    "mobile": true,
+    "status": {
+      "moduleChunks": 14,
+      "hidden": [],
+      "openWaterMasked": 329,
+      "river": 4,
+      "quality": "low",
+      "volcanoKit": {
+        "placed": 37,
+        "failed": [],
+        "spots": 37,
+        "lodPairs": 11,
+        "lod1Used": 11
+      },
+      "waterfallArt": {
+        "streaks": true,
+        "foamPlanes": 2
+      },
+      "shoreFoam": 34
+    },
+    "visual": {
+      "falls": 1,
+      "streakLoaded": true,
+      "ringLoaded": true,
+      "ringVisible": true
+    },
+    "factory": [
+      "dock",
+      "footing",
+      "steps",
+      "wallsLower",
+      "chimney",
+      "chimneyCap",
+      "roofTooth",
+      "roofTooth001",
+      "roofTooth002",
+      "wallsUpper"
+    ],
+    "errors": []
+  }
+]

@@ -1,0 +1,197 @@
+{
+  "icons": 55,
+  "textures": [
+    {
+      "id": "tex-rocket-skin",
+      "size": [
+        2048,
+        1024
+      ],
+      "tile": "x",
+      "alpha": false,
+      "edgeProcessed": true,
+      "runtimeSize": [
+        512,
+        256
+      ]
+    },
+    {
+      "id": "tex-capsule-skin",
+      "size": [
+        1024,
+        512
+      ],
+      "tile": "x",
+      "alpha": false,
+      "edgeProcessed": true,
+      "runtimeSize": [
+        512,
+        256
+      ]
+    },
+    {
+      "id": "tex-metal-dull",
+      "size": [
+        1024,
+        1024
+      ],
+      "tile": "xy",
+      "alpha": false,
+      "edgeProcessed": true,
+      "runtimeSize": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "tex-insulation",
+      "size": [
+        1024,
+        512
+      ],
+      "tile": "x",
+      "alpha": false,
+      "edgeProcessed": true,
+      "runtimeSize": [
+        512,
+        256
+      ]
+    },
+    {
+      "id": "tex-heat-resistant",
+      "size": [
+        1024,
+        1024
+      ],
+      "tile": "xy",
+      "alpha": false,
+      "edgeProcessed": true,
+      "runtimeSize": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "tex-suit-cloth",
+      "size": [
+        1024,
+        1024
+      ],
+      "tile": "xy",
+      "alpha": false,
+      "edgeProcessed": true,
+      "runtimeSize": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "tex-suit-reinforce",
+      "size": [
+        1024,
+        1024
+      ],
+      "tile": "xy",
+      "alpha": false,
+      "edgeProcessed": true,
+      "runtimeSize": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "tex-rubber-seal",
+      "size": [
+        512,
+        512
+      ],
+      "tile": "xy",
+      "alpha": false,
+      "edgeProcessed": true,
+      "runtimeSize": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "tex-circuit-board",
+      "size": [
+        1024,
+        1024
+      ],
+      "tile": "",
+      "alpha": false,
+      "edgeProcessed": false,
+      "runtimeSize": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "tex-terminal-screen",
+      "size": [
+        1024,
+        640
+      ],
+      "tile": "",
+      "alpha": false,
+      "edgeProcessed": false,
+      "runtimeSize": [
+        512,
+        320
+      ]
+    },
+    {
+      "id": "fx-exhaust-1",
+      "size": [
+        512,
+        512
+      ],
+      "mobileSize": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "animation": false
+    },
+    {
+      "id": "fx-exhaust-2",
+      "size": [
+        512,
+        512
+      ],
+      "mobileSize": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "animation": false
+    },
+    {
+      "id": "fx-exhaust-3",
+      "size": [
+        512,
+        512
+      ],
+      "mobileSize": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "animation": false
+    },
+    {
+      "id": "fx-exhaust-4",
+      "size": [
+        512,
+        512
+      ],
+      "mobileSize": [
+        256,
+        256
+      ],
+      "alpha": true,
+      "animation": false
+    }
+  ]
+}

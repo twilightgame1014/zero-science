@@ -1,0 +1,10 @@
+{
+  "run": "https://github.com/twilightgame1014/science-civilization-game/actions/runs/43588805915",
+  "commit": "f80e7e5a3514a0a0903f973296c9fe03d0836d99",
+  "jobs": {
+    "core": "success",
+    "space": "success",
+    "hero": "success"
+  },
+  "iphone17PhysicalTest": "not measured"
+}

@@ -1,0 +1,124 @@
+[
+  {
+    "file": "assets/plants/gpt-art/tex-bamboo-culm.png",
+    "size": [
+      256,
+      512
+    ],
+    "mode": "RGB",
+    "edgeMeanAbsDifferenceX": 1.67,
+    "edgeMeanAbsDifferenceY": 2.49
+  },
+  {
+    "file": "assets/plants/gpt-art/tex-bark-broadleaf.png",
+    "size": [
+      512,
+      512
+    ],
+    "mode": "RGB",
+    "edgeMeanAbsDifferenceX": 2.67,
+    "edgeMeanAbsDifferenceY": 1.92
+  },
+  {
+    "file": "assets/plants/gpt-art/tex-bark-kouzo.png",
+    "size": [
+      512,
+      512
+    ],
+    "mode": "RGB",
+    "edgeMeanAbsDifferenceX": 4.81,
+    "edgeMeanAbsDifferenceY": 4.22
+  },
+  {
+    "file": "assets/plants/gpt-art/tex-bark-pine.png",
+    "size": [
+      512,
+      512
+    ],
+    "mode": "RGB",
+    "edgeMeanAbsDifferenceX": 7.7,
+    "edgeMeanAbsDifferenceY": 4.75
+  },
+  {
+    "file": "assets/plants/gpt-art/tex-leaf-broadleaf.png",
+    "size": [
+      512,
+      512
+    ],
+    "mode": "RGBA",
+    "alphaRange": [
+      0,
+      255
+    ],
+    "transparentPixels": 174329
+  },
+  {
+    "file": "assets/plants/gpt-art/tex-leaf-kouzo.png",
+    "size": [
+      512,
+      512
+    ],
+    "mode": "RGBA",
+    "alphaRange": [
+      0,
+      255
+    ],
+    "transparentPixels": 153905
+  },
+  {
+    "file": "assets/plants/gpt-art/tex-needle-pine.png",
+    "size": [
+      512,
+      512
+    ],
+    "mode": "RGBA",
+    "alphaRange": [
+      0,
+      255
+    ],
+    "transparentPixels": 141438
+  },
+  {
+    "file": "assets/plants/gpt-art/tex-reed-leaf.png",
+    "size": [
+      512,
+      512
+    ],
+    "mode": "RGBA",
+    "alphaRange": [
+      0,
+      255
+    ],
+    "transparentPixels": 241989
+  },
+  {
+    "file": "assets/construction/gpt-art/road-dirt.png",
+    "size": [
+      512,
+      512
+    ],
+    "mode": "RGB",
+    "edgeMeanAbsDifferenceX": 2.27,
+    "edgeMeanAbsDifferenceY": 2.6
+  },
+  {
+    "file": "assets/construction/gpt-art/road-gravel.png",
+    "size": [
+      512,
+      512
+    ],
+    "mode": "RGB",
+    "edgeMeanAbsDifferenceX": 10.07,
+    "edgeMeanAbsDifferenceY": 10.44
+  },
+  {
+    "file": "assets/construction/gpt-art/road-stone.png",
+    "size": [
+      512,
+      512
+    ],
+    "mode": "RGB",
+    "edgeMeanAbsDifferenceX": 4.32,
+    "edgeMeanAbsDifferenceY": 4.45
+  }
+]

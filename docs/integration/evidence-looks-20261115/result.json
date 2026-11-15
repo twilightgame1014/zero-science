@@ -1,0 +1,28 @@
+{
+ "pc": {
+  "loadMs": {
+   "look-workshop": 44,
+   "look-warehouse": 60
+  },
+  "completedTypes": {
+   "cs:cs-shot1": "look-workshop",
+   "cs:cs-shot2": "workbench",
+   "cs:cs-shot3": "look-warehouse",
+   "cs:cs-shot4": "hut"
+  },
+  "note": "SwiftShader（CPU の WebGL）での時間。実機・実GPUの値ではない。描画回数は撮影の視点が違うので比べていない"
+ },
+ "phone": {
+  "loadMs": {
+   "look-workshop": 31,
+   "look-warehouse": 45
+  },
+  "completedTypes": {
+   "cs:cs-shot1": "look-workshop",
+   "cs:cs-shot2": "workbench",
+   "cs:cs-shot3": "look-warehouse",
+   "cs:cs-shot4": "hut"
+  },
+  "note": "SwiftShader（CPU の WebGL）での時間。実機・実GPUの値ではない。描画回数は撮影の視点が違うので比べていない"
+ }
+}

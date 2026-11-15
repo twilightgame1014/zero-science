@@ -1,0 +1,2859 @@
+{
+ "version": 1,
+ "generatedFrom": "src/game/construction-data.js（scripts/export-construction-contract.mjs で生成。手で直さない。museFields だけは書き出し直しても残す）",
+ "coordinate": "原点＝地面の上の中心（底面の中心、Y=0 が地面）、+Z が正面（入口・作業点の側）、Y 上、1 単位＝1 マス。rotationY は three.js の rotation.y",
+ "buildings": [
+  {
+   "id": "workbench",
+   "name": "作業台",
+   "category": "workshop",
+   "facility": "bench",
+   "modelId": "workbench",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 1.05,
+    "h": 1.23,
+    "w": 2.2
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 2.2,
+    "d": 1.05
+   },
+   "entrance": null,
+   "operate": [
+    0,
+    1.05
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "assemble",
+     "name": "枝と石を組む",
+     "materials": {
+      "twig": 4,
+      "thread": 2,
+      "cobble": 2
+     },
+     "workSeconds": 3,
+     "tools": [
+      "knife"
+     ]
+    }
+   ],
+   "salvage": {
+    "assemble": {
+     "twig": 2,
+     "cobble": 2
+    }
+   },
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "workbench",
+      "basket",
+      "basketStone.001",
+      "basketStone.002",
+      "blade",
+      "blade.001",
+      "hammerHandle",
+      "hammerHead",
+      "hide",
+      "basketStone",
+      "lash.001",
+      "lash.002",
+      "lash.003",
+      "leg",
+      "leg.001",
+      "leg.002",
+      "leg.003",
+      "logStore",
+      "logStore.001",
+      "logStore.002",
+      "shelf",
+      "top",
+      "lash",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.33
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "rope.001",
+     "darkStone.001",
+     "darkStone.001",
+     "shadowM.001",
+     "bark.001",
+     "rock1.001",
+     "canvas.001",
+     "logEnd.001",
+     "planksH.001"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "campfire",
+   "name": "たき火",
+   "category": "workshop",
+   "facility": "campfire",
+   "modelId": "campfire",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 1.47,
+    "h": 0.83,
+    "w": 1.52
+   },
+   "footprint": {
+    "shape": "circle",
+    "r": 0.82
+   },
+   "entrance": null,
+   "operate": [
+    0,
+    1.25
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "ring",
+     "name": "石で囲む",
+     "materials": {
+      "cobble": 3
+     },
+     "workSeconds": 2,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "light",
+     "name": "火を起こす",
+     "materials": {
+      "twig": 3,
+      "leaves": 1
+     },
+     "workSeconds": 2,
+     "tools": [
+      "firedrill"
+     ]
+    }
+   ],
+   "salvage": {
+    "ring": {
+     "cobble": 3
+    }
+   },
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "campfire",
+      "ringStone",
+      "ringStone.001",
+      "ringStone.002",
+      "ringStone.003",
+      "ringStone.004",
+      "ringStone.005",
+      "ringStone.006",
+      "ringStone.007",
+      "ringStone.008"
+     ],
+     "1": [
+      "campfire",
+      "ash",
+      "ember.001",
+      "ember.002",
+      "ember.003",
+      "ember.004",
+      "ember.005",
+      "emberBed",
+      "ember",
+      "flameCard.001",
+      "flameCard.002",
+      "flameCore",
+      "flameCard",
+      "Flame",
+      "log",
+      "log.001",
+      "log.002",
+      "ringStone",
+      "ringStone.001",
+      "ringStone.002",
+      "ringStone.003",
+      "ringStone.004",
+      "ringStone.005",
+      "ringStone.006",
+      "ringStone.007",
+      "ringStone.008",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.62
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "ash.002",
+     "shadowM.002",
+     "ember.002",
+     "dark.002",
+     "flameCard.002",
+     "flameCore.002",
+     "bark.002",
+     "logEnd.002",
+     "rock1.002",
+     "rock2.002",
+     "rock3.002"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "kiln",
+   "name": "かまど",
+   "category": "workshop",
+   "facility": "kiln",
+   "modelId": "kiln",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 2.28,
+    "h": 1.6,
+    "w": 2.46
+   },
+   "footprint": {
+    "shape": "circle",
+    "r": 1.15
+   },
+   "entrance": null,
+   "operate": [
+    0,
+    1.55
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "base",
+     "name": "石の土台",
+     "materials": {
+      "cobble": 4
+     },
+     "workSeconds": 3,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "wall",
+     "name": "粘土の炉壁",
+     "materials": {
+      "clay": 3
+     },
+     "workSeconds": 4,
+     "tools": [
+      "campfire"
+     ]
+    }
+   ],
+   "salvage": {
+    "base": {
+     "cobble": 4
+    }
+   },
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "kiln",
+      "base"
+     ],
+     "1": [
+      "kiln",
+      "base",
+      "brace.001",
+      "braceB.001",
+      "brace",
+      "braceB",
+      "braceLash.001",
+      "dome",
+      "mouthCavity",
+      "mouthGlow",
+      "mouthLintel",
+      "mouthLog",
+      "mouthLog.001",
+      "mouthPost",
+      "mouthPost.001",
+      "mouthSill",
+      "braceLash",
+      "sootCore",
+      "sootStain",
+      "vent",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.95
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "stoneTrim.003",
+     "bark.003",
+     "rope.003",
+     "shadowM.003",
+     "clayBig.003",
+     "dark.003",
+     "glow.003",
+     "darkStone.003",
+     "logEnd.003",
+     "sootDecal.003",
+     "clay.003"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "smelter",
+   "name": "簡易炉",
+   "category": "workshop",
+   "facility": "furnace",
+   "modelId": "smelter",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 2.75,
+    "h": 2.29,
+    "w": 3.65
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 3.3,
+    "d": 2.2
+   },
+   "entrance": null,
+   "operate": [
+    0,
+    1.7
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "base",
+     "name": "粘土の基礎",
+     "materials": {
+      "clay": 2
+     },
+     "workSeconds": 3,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "body",
+     "name": "レンガの炉体",
+     "materials": {
+      "brick": 4
+     },
+     "workSeconds": 5,
+     "tools": [
+      "kiln"
+     ]
+    },
+    {
+     "index": 2,
+     "id": "bellows",
+     "name": "ふいごの据付",
+     "materials": {
+      "bellows": 1
+     },
+     "workSeconds": 2,
+     "tools": []
+    }
+   ],
+   "salvage": {
+    "base": {
+     "clay": 1
+    }
+   },
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "smelter",
+      "base"
+     ],
+     "1": [
+      "smelter",
+      "base",
+      "coal.001",
+      "coal.002",
+      "coal.003",
+      "coal.004",
+      "coal",
+      "coal.005",
+      "mouthCavity",
+      "mouthGlow",
+      "mouthRing",
+      "shaft",
+      "shaftTop",
+      "tap",
+      "tapGlow"
+     ],
+     "2": [
+      "smelter",
+      "base",
+      "basket",
+      "belBeam",
+      "belBot",
+      "belMid",
+      "belTop",
+      "nozzle",
+      "Bellows",
+      "belPost.001",
+      "belPost",
+      "coal.001",
+      "coal.002",
+      "coal.003",
+      "coal.004",
+      "coal",
+      "coal.005",
+      "mouthCavity",
+      "mouthGlow",
+      "mouthRing",
+      "shaft",
+      "shaftTop",
+      "tap",
+      "tapGlow",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.9
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "stoneTrim.005",
+     "rope.005",
+     "bark.005",
+     "planksV.005",
+     "canvas.005",
+     "ironT.005",
+     "sootM.005",
+     "shadowM.005",
+     "dark.005",
+     "glow.005",
+     "darkStone.005",
+     "clay.005",
+     "darkStone.005",
+     "liquid.005"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "laboratory",
+   "name": "蒸留小屋",
+   "category": "workshop",
+   "facility": "still",
+   "modelId": "laboratory",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 3.22,
+    "h": 3.8,
+    "w": 4.6
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 4.3,
+    "d": 3.1
+   },
+   "entrance": [
+    0,
+    2.1
+   ],
+   "operate": [
+    -0.5,
+    1.6
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "base",
+     "name": "粘土の基礎",
+     "materials": {
+      "clay": 1
+     },
+     "workSeconds": 3,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "still",
+     "name": "蒸留器の据付",
+     "materials": {
+      "copperplate": 2,
+      "pot": 1
+     },
+     "workSeconds": 4,
+     "tools": [
+      "hammer",
+      "bench"
+     ]
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "laboratory",
+      "backWall",
+      "beamTop",
+      "chimney",
+      "cornerPost",
+      "cornerPost.001",
+      "cornerPostB",
+      "cornerPostB.001",
+      "floor",
+      "hearth",
+      "hearthGlow",
+      "roof",
+      "roof.001",
+      "sideWall",
+      "sideWall.001"
+     ],
+     "1": [
+      "laboratory",
+      "backWall",
+      "barrel",
+      "beamTop",
+      "chimney",
+      "cornerPost",
+      "cornerPost.001",
+      "cornerPostB",
+      "cornerPostB.001",
+      "flask",
+      "flask.001",
+      "flaskLiquid",
+      "flaskNeck",
+      "flaskNeck.001",
+      "floor",
+      "hearth",
+      "hearthGlow",
+      "jar",
+      "jar.001",
+      "jar.002",
+      "jar.003",
+      "jar.004",
+      "jar.005",
+      "jar.006",
+      "jar.007",
+      "roof",
+      "roof.001",
+      "shelf",
+      "shelf.001",
+      "sideWall",
+      "sideWall.001",
+      "stillNeck",
+      "stillPot",
+      "table",
+      "tableLeg",
+      "tableLeg.001",
+      "tableLeg.002",
+      "tableLeg.003",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      2.35
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "plaster.006",
+     "planksV.006",
+     "bark.006",
+     "stone.006",
+     "shadowM.006",
+     "bark.006",
+     "glass.006",
+     "liquid.006",
+     "stone.006",
+     "glow.006",
+     "plaster.006",
+     "tile.006",
+     "copper.006",
+     "planksH.006"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "storehouse",
+   "name": "倉庫",
+   "category": "storage",
+   "facility": "storehouse",
+   "modelId": "hut",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 3.4,
+    "h": 3.16,
+    "w": 3.8
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 3.3,
+    "d": 2.7
+   },
+   "entrance": [
+    0.45,
+    1.35
+   ],
+   "operate": [
+    0.45,
+    1.95
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "base",
+     "name": "丸太の土台",
+     "materials": {
+      "log": 2
+     },
+     "workSeconds": 3,
+     "tools": [
+      "axe"
+     ]
+    },
+    {
+     "index": 1,
+     "id": "frame",
+     "name": "骨組み",
+     "materials": {
+      "log": 2,
+      "thread": 2
+     },
+     "workSeconds": 4,
+     "tools": [
+      "bench"
+     ]
+    },
+    {
+     "index": 2,
+     "id": "wall",
+     "name": "しっくいの壁",
+     "materials": {
+      "plaster": 2
+     },
+     "workSeconds": 4,
+     "tools": []
+    }
+   ],
+   "salvage": {
+    "base": {
+     "log": 1
+    },
+    "frame": {
+     "log": 1
+    }
+   },
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "hut",
+      "footing",
+      "step"
+     ],
+     "1": [
+      "hut",
+      "beamB",
+      "beamF",
+      "footing",
+      "post",
+      "post.001",
+      "post.002",
+      "post.003",
+      "step"
+     ],
+     "2": [
+      "hut",
+      "beamB",
+      "beamF",
+      "door",
+      "eave",
+      "eave.001",
+      "eave.002",
+      "eave.003",
+      "eave.004",
+      "eave.005",
+      "eave.006",
+      "eave.007",
+      "eave.008",
+      "eave.009",
+      "eave.010",
+      "eave.011",
+      "eave.012",
+      "eave.013",
+      "eave.014",
+      "eave.015",
+      "eave.016",
+      "eave.017",
+      "eave.018",
+      "eave.019",
+      "eave.020",
+      "eave.021",
+      "eave.022",
+      "eave.023",
+      "eave.024",
+      "eave.025",
+      "eave.026",
+      "eave.027",
+      "eave.028",
+      "eave.029",
+      "footing",
+      "lintel",
+      "post",
+      "post.001",
+      "post.002",
+      "post.003",
+      "ridge",
+      "ridgeTie",
+      "ridgeTie.001",
+      "ridgeTie.002",
+      "roof",
+      "roof.001",
+      "step",
+      "walls",
+      "winBar",
+      "winBar.001",
+      "winDark",
+      "winFrame",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0.7,
+      2.11
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "bark.004",
+     "shadowM.004",
+     "dark.004",
+     "thatch.004",
+     "stoneTrim.004",
+     "bark.004",
+     "thatch.004",
+     "stone.004",
+     "earth.004",
+     "darkGlass.004",
+     "planksV.004"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "house",
+   "name": "住宅",
+   "category": "housing",
+   "facility": null,
+   "modelId": "town-hut-town",
+   "modelSource": "assets/build/town/specs.json",
+   "size": {
+    "w": 4.2,
+    "h": 3.52,
+    "d": 4.15
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 3.44,
+    "d": 3.4
+   },
+   "entrance": [
+    0,
+    2
+   ],
+   "operate": null,
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "base",
+     "name": "石の基礎",
+     "materials": {
+      "cobble": 6
+     },
+     "workSeconds": 4,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "frame",
+     "name": "丸太の骨組み",
+     "materials": {
+      "log": 6
+     },
+     "workSeconds": 5,
+     "tools": [
+      "axe"
+     ]
+    },
+    {
+     "index": 2,
+     "id": "wall",
+     "name": "壁と屋根",
+     "materials": {
+      "plaster": 4,
+      "brick": 6
+     },
+     "workSeconds": 6,
+     "tools": []
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "hut-town",
+      "found",
+      "step"
+     ],
+     "1": [
+      "hut-town",
+      "found",
+      "post",
+      "post.001",
+      "post.002",
+      "post.003",
+      "rail",
+      "rail.001",
+      "step",
+      "stud",
+      "stud.001"
+     ],
+     "2": [
+      "hut-town",
+      "door",
+      "eavetile",
+      "eavetile.001",
+      "eavetile.002",
+      "eavetile.003",
+      "eavetile.004",
+      "eavetile.005",
+      "eavetile.006",
+      "eavetile.007",
+      "eavetile.008",
+      "eavetile.009",
+      "eavetile.010",
+      "eavetile.011",
+      "eavetile.012",
+      "eavetile.013",
+      "eavetile.014",
+      "eavetile.015",
+      "eavetile.016",
+      "eavetile.017",
+      "eavetile.018",
+      "eavetile.019",
+      "eavetile.020",
+      "eavetile.021",
+      "eavetile.022",
+      "eavetile.023",
+      "eavetile.024",
+      "eavetile.025",
+      "found",
+      "gable",
+      "gable.001",
+      "gable.002",
+      "gable.003",
+      "knob",
+      "lintel",
+      "mullH",
+      "mullV",
+      "plate",
+      "plate.001",
+      "plateS",
+      "plateS.001",
+      "post",
+      "post.001",
+      "post.002",
+      "post.003",
+      "rail",
+      "rail.001",
+      "ridge",
+      "roof",
+      "roof.001",
+      "step",
+      "stud",
+      "stud.001",
+      "walls",
+      "winframe",
+      "winglass",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      2.5
+     ]
+    ],
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "shadowM",
+     "dqPlank",
+     "dqRoof",
+     "dqStone",
+     "dqPlank",
+     "dqIron",
+     "dqTimber",
+     "dqRoof",
+     "dqPlaster",
+     "dqGlass"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "plaza",
+   "name": "石畳の広場",
+   "category": "public",
+   "facility": null,
+   "modelId": "town-plaza",
+   "modelSource": "assets/build/town/specs.json",
+   "size": {
+    "w": 12.6,
+    "h": 0.03,
+    "d": 12.6
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 12.6,
+    "d": 12.6
+   },
+   "entrance": null,
+   "operate": null,
+   "walkable": true,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "grade",
+     "name": "整地",
+     "materials": {},
+     "workSeconds": 6,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "pave",
+     "name": "石を敷く",
+     "materials": {
+      "granite": 8,
+      "cobble": 8
+     },
+     "workSeconds": 8,
+     "tools": [
+      "hammer"
+     ]
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "plaza"
+     ],
+     "1": [
+      "plaza",
+      "plaza-centre",
+      "rim",
+      "ring1",
+      "ring2",
+      "ring3"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      7.1
+     ],
+     [
+      7.1,
+      0
+     ],
+     [
+      0,
+      -7.1
+     ],
+     [
+      -7.1,
+      0
+     ]
+    ],
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqCobble",
+     "dqStone",
+     "dqPlaza"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "lantern",
+   "name": "石どうろう",
+   "category": "public",
+   "facility": null,
+   "modelId": "town-stone-lantern",
+   "modelSource": "assets/build/town/specs.json",
+   "size": {
+    "w": 0.93,
+    "h": 1.68,
+    "d": 0.93
+   },
+   "footprint": {
+    "shape": "circle",
+    "r": 0.39
+   },
+   "entrance": null,
+   "operate": null,
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "set",
+     "name": "石を組む",
+     "materials": {
+      "granite": 2
+     },
+     "workSeconds": 3,
+     "tools": [
+      "hammer"
+     ]
+    }
+   ],
+   "salvage": {
+    "set": {
+     "granite": 2
+    }
+   },
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "stone-lantern",
+      "base",
+      "firecore",
+      "jewel",
+      "pillar",
+      "post",
+      "post.001",
+      "post.002",
+      "post.003",
+      "roof",
+      "roofslab",
+      "shelf",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": null,
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqStone",
+     "shadowM.010",
+     "dqGlass",
+     "dqStone"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "blastfurnace",
+   "name": "高炉",
+   "category": "factory",
+   "facility": "blastfurnace",
+   "modelId": "smelter",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 2.75,
+    "h": 2.29,
+    "w": 3.65
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 3.3,
+    "d": 2.2
+   },
+   "entrance": null,
+   "operate": [
+    0,
+    1.7
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "base",
+     "name": "粘土の基礎",
+     "materials": {
+      "clay": 3
+     },
+     "workSeconds": 4,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "body",
+     "name": "レンガの炉体",
+     "materials": {
+      "brick": 8
+     },
+     "workSeconds": 8,
+     "tools": []
+    },
+    {
+     "index": 2,
+     "id": "blast",
+     "name": "送風管の据付",
+     "materials": {
+      "ironrod": 2
+     },
+     "workSeconds": 4,
+     "tools": [
+      "waterwheel"
+     ]
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "smelter",
+      "base"
+     ],
+     "1": [
+      "smelter",
+      "base",
+      "coal.001",
+      "coal.002",
+      "coal.003",
+      "coal.004",
+      "coal",
+      "coal.005",
+      "mouthCavity",
+      "mouthGlow",
+      "mouthRing",
+      "shaft",
+      "shaftTop",
+      "tap",
+      "tapGlow"
+     ],
+     "2": [
+      "smelter",
+      "base",
+      "basket",
+      "belBeam",
+      "belBot",
+      "belMid",
+      "belTop",
+      "nozzle",
+      "Bellows",
+      "belPost.001",
+      "belPost",
+      "coal.001",
+      "coal.002",
+      "coal.003",
+      "coal.004",
+      "coal",
+      "coal.005",
+      "mouthCavity",
+      "mouthGlow",
+      "mouthRing",
+      "shaft",
+      "shaftTop",
+      "tap",
+      "tapGlow",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.9
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "stoneTrim.005",
+     "rope.005",
+     "bark.005",
+     "planksV.005",
+     "canvas.005",
+     "ironT.005",
+     "sootM.005",
+     "shadowM.005",
+     "dark.005",
+     "glow.005",
+     "darkStone.005",
+     "clay.005",
+     "darkStone.005",
+     "liquid.005"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "steamengine",
+   "name": "蒸気機関",
+   "category": "factory",
+   "facility": "steamengine",
+   "modelId": "steam-engine",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 1.38,
+    "h": 2.28,
+    "w": 2.93
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 2.7,
+    "d": 1.35
+   },
+   "entrance": null,
+   "operate": [
+    0.4,
+    1.2
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "base",
+     "name": "レンガの台",
+     "materials": {
+      "brick": 2
+     },
+     "workSeconds": 4,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "engine",
+     "name": "機関の据付",
+     "materials": {
+      "steel": 2,
+      "copperplate": 2
+     },
+     "workSeconds": 6,
+     "tools": [
+      "blastfurnace"
+     ]
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "steam-engine",
+      "base"
+     ],
+     "1": [
+      "steam-engine",
+      "base",
+      "boiler",
+      "boilerBand.001",
+      "boilerBand.002",
+      "conRod",
+      "cylBlock",
+      "dome",
+      "firebox",
+      "fireGlow",
+      "flyPost",
+      "gauge",
+      "pipeTop",
+      "crosshead",
+      "rod",
+      "Piston",
+      "smokestack",
+      "boilerBand",
+      "hub",
+      "rim",
+      "rimIn",
+      "spoke",
+      "spoke.001",
+      "spoke.002",
+      "spoke.003",
+      "spoke.004",
+      "spoke.005",
+      "Wheel",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0.48,
+      1.43
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "stoneBig.007",
+     "ironT.007",
+     "brass.007",
+     "steel.007",
+     "shadowM.007",
+     "ironT.007",
+     "glow.007",
+     "copper.007",
+     "brass.007"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "waterwheel",
+   "name": "水車",
+   "category": "factory",
+   "facility": "waterwheel",
+   "modelId": "waterwheel",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 1.73,
+    "h": 2.56,
+    "w": 2.3
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 2.3,
+    "d": 0.85
+   },
+   "entrance": null,
+   "operate": [
+    1.6,
+    0.8
+   ],
+   "walkable": false,
+   "rule": "waterside",
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "axle",
+     "name": "軸受け",
+     "materials": {
+      "ironrod": 2
+     },
+     "workSeconds": 4,
+     "tools": [
+      "ironaxe",
+      "bench"
+     ]
+    },
+    {
+     "index": 1,
+     "id": "wheel",
+     "name": "車輪",
+     "materials": {
+      "log": 4
+     },
+     "workSeconds": 5,
+     "tools": []
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "waterwheel",
+      "axle",
+      "framePost",
+      "framePost.001",
+      "framePostB",
+      "framePostB.001",
+      "pier",
+      "pier.001",
+      "pierWet",
+      "pierWet.001"
+     ],
+     "1": [
+      "waterwheel",
+      "axle",
+      "framePost",
+      "framePost.001",
+      "framePostB",
+      "framePostB.001",
+      "pier",
+      "pier.001",
+      "pierWet",
+      "pierWet.001",
+      "sluice",
+      "hub",
+      "paddle",
+      "paddle.001",
+      "paddle.002",
+      "paddle.003",
+      "paddle.004",
+      "paddle.005",
+      "paddle.006",
+      "paddle.007",
+      "rim",
+      "rimIn",
+      "spoke",
+      "spoke.001",
+      "spoke.002",
+      "spoke.003",
+      "Wheel",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      1.57,
+      0.78
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "bark.002",
+     "logEnd.002",
+     "shadowM.002",
+     "stone.002",
+     "wetStone.002",
+     "planksV.002",
+     "planksH.002",
+     "planksH.002",
+     "bark.002"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "powerplant",
+   "name": "発電所",
+   "category": "factory",
+   "facility": "generator",
+   "modelId": "power-plant",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 3.46,
+    "h": 5.32,
+    "w": 5.53
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 5.6,
+    "d": 3.4
+   },
+   "entrance": [
+    -2.2,
+    2
+   ],
+   "operate": [
+    1.7,
+    2.2
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "base",
+     "name": "据付台と配線",
+     "materials": {
+      "wire": 2
+     },
+     "workSeconds": 4,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "gen",
+     "name": "発電機の据付",
+     "materials": {
+      "electromagnet": 2,
+      "wire": 2
+     },
+     "workSeconds": 6,
+     "tools": [
+      "waterwheel"
+     ]
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "power-plant",
+      "bigWin",
+      "bigWinBarH",
+      "bigWinBarV",
+      "boilerHouse",
+      "chimneyLow",
+      "door",
+      "gableWin",
+      "hall",
+      "hallRoof"
+     ],
+     "1": [
+      "power-plant",
+      "bigWin",
+      "bigWinBarH",
+      "bigWinBarV",
+      "boilerHouse",
+      "bushing.001",
+      "bushing.002",
+      "bushingTop.001",
+      "bushingTop.002",
+      "chimneyBand",
+      "chimneyLow",
+      "chimneyTop",
+      "bushing",
+      "door",
+      "feedPipe",
+      "feedPipe2",
+      "fin",
+      "fin.001",
+      "fin.002",
+      "fin.003",
+      "gableWin",
+      "hall",
+      "hallRoof",
+      "bushingTop",
+      "turbine",
+      "xfmr",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      -2.46,
+      2.24
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "darkGlass.002",
+     "ironT.002",
+     "brick.002",
+     "copper.002",
+     "ceramic.002",
+     "brick.002",
+     "shadowM.002",
+     "steel.002",
+     "winLit.002",
+     "plaster.002",
+     "metalRoofH.002",
+     "steel.002"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "refinery",
+   "name": "精留塔",
+   "category": "factory",
+   "facility": "refinery",
+   "modelId": "distillation-tower",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 1.44,
+    "h": 3.97,
+    "w": 1.71
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 1.5,
+    "d": 1.3
+   },
+   "entrance": null,
+   "operate": [
+    0,
+    1.15
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "base",
+     "name": "鋼の基礎",
+     "materials": {
+      "steel": 1
+     },
+     "workSeconds": 4,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "tower",
+     "name": "塔",
+     "materials": {
+      "steel": 2,
+      "glass": 2
+     },
+     "workSeconds": 6,
+     "tools": []
+    },
+    {
+     "index": 2,
+     "id": "pipe",
+     "name": "配管",
+     "materials": {
+      "copperplate": 2
+     },
+     "workSeconds": 4,
+     "tools": [
+      "generator"
+     ]
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "distillation-tower",
+      "base",
+      "ladderRail",
+      "ladderRail.001",
+      "platform",
+      "platform.001",
+      "railPost",
+      "railPost.001",
+      "railPost.002",
+      "railPost.003",
+      "railTop",
+      "railTop.001",
+      "rung",
+      "rung.001",
+      "rung.002",
+      "rung.003",
+      "rung.004"
+     ],
+     "1": [
+      "distillation-tower",
+      "base",
+      "cap",
+      "column",
+      "condenser",
+      "condLeg",
+      "condLeg2",
+      "ladderRail",
+      "ladderRail.001",
+      "platform",
+      "platform.001",
+      "railPost",
+      "railPost.001",
+      "railPost.002",
+      "railPost.003",
+      "railTop",
+      "railTop.001",
+      "rung",
+      "rung.001",
+      "rung.002",
+      "rung.003",
+      "rung.004",
+      "tank",
+      "trayRing",
+      "trayRing.001",
+      "trayRing.002",
+      "trayRing.003"
+     ],
+     "2": [
+      "distillation-tower",
+      "base",
+      "cap",
+      "column",
+      "condenser",
+      "condLeg",
+      "condLeg2",
+      "ladderRail",
+      "ladderRail.001",
+      "outPipe",
+      "platform",
+      "platform.001",
+      "railPost",
+      "railPost.001",
+      "railPost.002",
+      "railPost.003",
+      "railTop",
+      "railTop.001",
+      "rung",
+      "rung.001",
+      "rung.002",
+      "rung.003",
+      "rung.004",
+      "tank",
+      "trayRing",
+      "trayRing.001",
+      "trayRing.002",
+      "trayRing.003",
+      "vapPipe",
+      "ventPipe",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0,
+      1.45
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "stoneBig.008",
+     "steel.008",
+     "copper.008",
+     "ironT.008",
+     "shadowM.008",
+     "ironT.008",
+     "brass.008",
+     "brass.008"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "factory",
+   "name": "大型工場（電気炉）",
+   "category": "factory",
+   "facility": "eaf",
+   "modelId": "factory",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 4.25,
+    "h": 5.04,
+    "w": 5.2
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 5.2,
+    "d": 4.2
+   },
+   "entrance": [
+    0.35,
+    2.5
+   ],
+   "operate": [
+    0.35,
+    2.9
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": 0.6,
+   "stages": [
+    {
+     "index": 0,
+     "id": "base",
+     "name": "基礎",
+     "materials": {
+      "brick": 3
+     },
+     "workSeconds": 6,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "shell",
+     "name": "建屋",
+     "materials": {
+      "brick": 3
+     },
+     "workSeconds": 8,
+     "tools": []
+    },
+    {
+     "index": 2,
+     "id": "arc",
+     "name": "電極と配線の据付",
+     "materials": {
+      "wire": 4,
+      "coke": 2
+     },
+     "workSeconds": 6,
+     "tools": [
+      "generator"
+     ]
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "factory",
+      "dock",
+      "footing",
+      "steps"
+     ],
+     "1": [
+      "factory",
+      "chimney",
+      "chimneyCap",
+      "dock",
+      "footing",
+      "roofTooth",
+      "roofTooth.001",
+      "roofTooth.002",
+      "steps",
+      "wallsLower",
+      "wallsUpper"
+     ],
+     "2": [
+      "factory",
+      "canopy",
+      "chimney",
+      "chimneyCap",
+      "dock",
+      "doorL",
+      "doorR",
+      "footing",
+      "pipeRun",
+      "pipeRunElbow",
+      "roofGlass",
+      "roofGlass.001",
+      "roofGlass.002",
+      "roofTooth",
+      "roofTooth.001",
+      "roofTooth.002",
+      "steps",
+      "ventCap",
+      "ventCap.001",
+      "ventStack",
+      "ventStack.001",
+      "wallsLower",
+      "wallsUpper",
+      "win",
+      "win.001",
+      "win.002",
+      "winBar",
+      "winBar.001",
+      "winBar.002",
+      "winFrame",
+      "winFrame.001",
+      "winFrame.002"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0.4,
+      2.89
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "§39で factory-staged（assets/town-construction）へ差し替え。lite版は staged 版の軽量派生（WebP化のみ、ノード・寸法同一）。stageNodesはそのまま使える。staged 版に ContactShadow は無い。"
+    },
+    "materialSlots": [
+     "stone",
+     "stoneBig",
+     "brick",
+     "darkStone",
+     "metalRoofH",
+     "planksV",
+     "copper",
+     "darkGlass",
+     "metalRoof",
+     "ironT",
+     "winLit"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "institute",
+   "name": "化学研究所",
+   "category": "factory",
+   "facility": "reactor",
+   "modelId": "research-institute",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 4.2,
+    "h": 4.68,
+    "w": 5.65
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 5.4,
+    "d": 3.6
+   },
+   "entrance": [
+    1.85,
+    2
+   ],
+   "operate": [
+    1.85,
+    2.5
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": 0.6,
+   "stages": [
+    {
+     "index": 0,
+     "id": "base",
+     "name": "基礎",
+     "materials": {
+      "steel": 1
+     },
+     "workSeconds": 4,
+     "tools": []
+    },
+    {
+     "index": 1,
+     "id": "hall",
+     "name": "建屋",
+     "materials": {
+      "steel": 1,
+      "glass": 2
+     },
+     "workSeconds": 6,
+     "tools": []
+    },
+    {
+     "index": 2,
+     "id": "reactor",
+     "name": "装置の据付",
+     "materials": {
+      "wire": 2
+     },
+     "workSeconds": 5,
+     "tools": [
+      "generator",
+      "thermometer"
+     ]
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "research-institute",
+      "base",
+      "steps"
+     ],
+     "1": [
+      "research-institute",
+      "base",
+      "canopy",
+      "door",
+      "doorGlass",
+      "floor1",
+      "floor2",
+      "glassBand",
+      "glassBand.001",
+      "roofSlab",
+      "steps"
+     ],
+     "2": [
+      "research-institute",
+      "acUnit",
+      "base",
+      "benchIn",
+      "benchIn.001",
+      "canopy",
+      "door",
+      "doorGlass",
+      "duct",
+      "flaskIn",
+      "flaskIn.001",
+      "flaskIn.002",
+      "flaskIn.003",
+      "flaskIn.004",
+      "flaskIn.005",
+      "flaskIn.006",
+      "flaskIn.007",
+      "floor1",
+      "floor2",
+      "glassBand",
+      "glassBand.001",
+      "planter",
+      "planter.001",
+      "roofSlab",
+      "shrub",
+      "shrub.001",
+      "steps",
+      "ventStack",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      2.21,
+      2.39
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "steel.003",
+     "stoneBig.003",
+     "planksV.003",
+     "metalRoof.003",
+     "shadowM.003",
+     "ironT.003",
+     "darkGlass.003",
+     "steel.003",
+     "glass.003",
+     "winLit.003",
+     "plaster.003",
+     "leaf.003",
+     "stone.003"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "rig",
+   "name": "掘削やぐら",
+   "category": "factory",
+   "facility": "rig",
+   "modelId": "drilling-rig",
+   "modelSource": "assets/buildings-3d/structures.json",
+   "size": {
+    "d": 2.55,
+    "h": 3.56,
+    "w": 2.9
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 2.6,
+    "d": 2.2
+   },
+   "entrance": [
+    0.35,
+    1.5
+   ],
+   "operate": [
+    -0.6,
+    1.3
+   ],
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "tower",
+     "name": "鋼のやぐら",
+     "materials": {
+      "steel": 4
+     },
+     "workSeconds": 6,
+     "tools": [
+      "steamengine"
+     ]
+    },
+    {
+     "index": 1,
+     "id": "wire",
+     "name": "配線",
+     "materials": {
+      "wire": 2
+     },
+     "workSeconds": 3,
+     "tools": []
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "drilling-rig",
+      "bandF.001",
+      "bandF.002",
+      "brace.001",
+      "brace.002",
+      "brace.003",
+      "brace.004",
+      "brace",
+      "brace.005",
+      "bandF",
+      "crown",
+      "deck",
+      "hole",
+      "leg",
+      "leg.001",
+      "leg.002",
+      "leg.003",
+      "shed",
+      "shedRoof",
+      "shedStack",
+      "steps"
+     ],
+     "1": [
+      "drilling-rig",
+      "bandF.001",
+      "bandF.002",
+      "brace.001",
+      "brace.002",
+      "brace.003",
+      "brace.004",
+      "brace",
+      "brace.005",
+      "bandF",
+      "cable",
+      "crown",
+      "deck",
+      "bit",
+      "pipeJoint",
+      "pipeMain",
+      "DrillPipe",
+      "hole",
+      "leg",
+      "leg.001",
+      "leg.002",
+      "leg.003",
+      "sheave",
+      "shed",
+      "shedRoof",
+      "shedStack",
+      "steps",
+      "drum",
+      "Winch",
+      "winchPost",
+      "winchPost.001",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": [
+     [
+      0.44,
+      1.88
+     ]
+    ],
+    "lod": {
+     "lod1": true,
+     "file": "assets/build/buildings-lite/<modelId>.glb",
+     "sameNodes": true,
+     "sameDimensions": true,
+     "note": "lite版はノード名・寸法・ポリゴン数が同一で、テクスチャを共有化したもの。stageNodesはそのまま使える。"
+    },
+    "materialSlots": [
+     "ironT.005",
+     "planksV.005",
+     "dark.005",
+     "shadowM.005",
+     "planksH.005",
+     "steel.005",
+     "ironT.005",
+     "bark.005",
+     "metalRoof.005",
+     "bark.005"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "banner_red",
+   "name": "旗（赤）",
+   "category": "deco",
+   "facility": null,
+   "modelId": "town-banner-red",
+   "modelSource": "assets/build/town/specs.json",
+   "size": {
+    "w": 1.25,
+    "h": 2.6,
+    "d": 0.3
+   },
+   "footprint": {
+    "shape": "circle",
+    "r": 0.12
+   },
+   "entrance": null,
+   "operate": null,
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "set",
+     "name": "竿と布",
+     "materials": {
+      "log": 1,
+      "cloth": 2,
+      "redpigment": 1
+     },
+     "workSeconds": 2,
+     "tools": []
+    }
+   ],
+   "salvage": {
+    "set": {
+     "log": 1
+    }
+   },
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "banner-red",
+      "bar",
+      "base",
+      "cloth",
+      "pole",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": null,
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqTimber",
+     "dqStone",
+     "dqClothRed",
+     "shadowM.011"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "banner_green",
+   "name": "旗（緑）",
+   "category": "deco",
+   "facility": null,
+   "modelId": "town-banner-green",
+   "modelSource": "assets/build/town/specs.json",
+   "size": {
+    "w": 1.25,
+    "h": 2.6,
+    "d": 0.3
+   },
+   "footprint": {
+    "shape": "circle",
+    "r": 0.12
+   },
+   "entrance": null,
+   "operate": null,
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "set",
+     "name": "竿と布",
+     "materials": {
+      "log": 1,
+      "cloth": 2
+     },
+     "workSeconds": 2,
+     "tools": []
+    }
+   ],
+   "salvage": {
+    "set": {
+     "log": 1
+    }
+   },
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "banner-green",
+      "bar",
+      "base",
+      "cloth",
+      "pole",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": null,
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqTimber",
+     "dqStone",
+     "dqClothGreen",
+     "shadowM.012"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "crates",
+   "name": "木箱の山",
+   "category": "deco",
+   "facility": null,
+   "modelId": "town-crates",
+   "modelSource": "assets/build/town/specs.json",
+   "size": {
+    "w": 1.33,
+    "h": 1.25,
+    "d": 0.78
+   },
+   "footprint": {
+    "shape": "rect",
+    "w": 1.23,
+    "d": 0.72
+   },
+   "entrance": null,
+   "operate": null,
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "set",
+     "name": "箱を組む",
+     "materials": {
+      "log": 2
+     },
+     "workSeconds": 2,
+     "tools": [
+      "axe"
+     ]
+    }
+   ],
+   "salvage": {
+    "set": {
+     "log": 1
+    }
+   },
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "crates",
+      "batten.001",
+      "batten.002",
+      "batten.003",
+      "batten.004",
+      "body.001",
+      "lid",
+      "crate",
+      "batten.005",
+      "batten.006",
+      "batten.007",
+      "batten.008",
+      "body.002",
+      "lid.001",
+      "crate.001",
+      "batten.009",
+      "batten.010",
+      "batten.011",
+      "body",
+      "batten",
+      "lid.002",
+      "crate.002",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": null,
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "shadowM.007",
+     "dqTimber",
+     "dqPlank"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "barrel",
+   "name": "たる",
+   "category": "deco",
+   "facility": null,
+   "modelId": "town-barrel",
+   "modelSource": "assets/build/town/specs.json",
+   "size": {
+    "w": 0.73,
+    "h": 0.95,
+    "d": 0.73
+   },
+   "footprint": {
+    "shape": "circle",
+    "r": 0.37
+   },
+   "entrance": null,
+   "operate": null,
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "set",
+     "name": "板と鉄の輪",
+     "materials": {
+      "log": 2,
+      "ironrod": 1
+     },
+     "workSeconds": 2,
+     "tools": []
+    }
+   ],
+   "salvage": {
+    "set": {
+     "log": 1
+    }
+   },
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "barrel",
+      "band.001",
+      "body",
+      "band",
+      "top",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": null,
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqIron",
+     "dqPlank",
+     "shadowM.008",
+     "dqRings"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "bucket",
+   "name": "おけと縄",
+   "category": "deco",
+   "facility": null,
+   "modelId": "town-bucket-rope",
+   "modelSource": "assets/build/town/specs.json",
+   "size": {
+    "w": 1.21,
+    "h": 0.81,
+    "d": 0.69
+   },
+   "footprint": {
+    "shape": "circle",
+    "r": 0.36
+   },
+   "entrance": null,
+   "operate": null,
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "set",
+     "name": "おけを組む",
+     "materials": {
+      "log": 1,
+      "thread": 2
+     },
+     "workSeconds": 2,
+     "tools": []
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "bucket-rope",
+      "band.001",
+      "bucket",
+      "band",
+      "coil.001",
+      "coil.002",
+      "handle",
+      "coil",
+      "ropefall",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": null,
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "dqIron",
+     "dqPlank",
+     "rope.009",
+     "shadowM.009",
+     "dqTimber"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "planter_large",
+   "name": "植木鉢（大）",
+   "category": "deco",
+   "facility": null,
+   "modelId": "town-planter-large",
+   "modelSource": "assets/build/town/specs.json",
+   "size": {
+    "w": 0.78,
+    "h": 0.98,
+    "d": 0.81
+   },
+   "footprint": {
+    "shape": "circle",
+    "r": 0.37
+   },
+   "entrance": null,
+   "operate": null,
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "set",
+     "name": "鉢を置く",
+     "materials": {
+      "clay": 2
+     },
+     "workSeconds": 2,
+     "tools": []
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "planter-large",
+      "leafcard.001",
+      "leafcard.002",
+      "card",
+      "leafcard.003",
+      "leafcard.004",
+      "card.001",
+      "leafcard.005",
+      "leafcard.006",
+      "card.002",
+      "leafcard.007",
+      "leafcard.008",
+      "card.003",
+      "leafcard",
+      "leafcard.009",
+      "card.004",
+      "pot",
+      "soil",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": null,
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "cardRound",
+     "cardFlower",
+     "cardWhite",
+     "shadowM.005",
+     "dqClay",
+     "dqSoil"
+    ],
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "planter_small",
+   "name": "植木鉢（小）",
+   "category": "deco",
+   "facility": null,
+   "modelId": "town-planter-small",
+   "modelSource": "assets/build/town/specs.json",
+   "size": {
+    "w": 0.48,
+    "h": 0.6,
+    "d": 0.48
+   },
+   "footprint": {
+    "shape": "circle",
+    "r": 0.22
+   },
+   "entrance": null,
+   "operate": null,
+   "walkable": false,
+   "rule": null,
+   "maxRise": null,
+   "stages": [
+    {
+     "index": 0,
+     "id": "set",
+     "name": "鉢を置く",
+     "materials": {
+      "clay": 1
+     },
+     "workSeconds": 1,
+     "tools": []
+    }
+   ],
+   "salvage": null,
+   "museFields": {
+    "stageNodes": {
+     "0": [
+      "planter-small",
+      "leafcard.001",
+      "leafcard.002",
+      "card",
+      "leafcard.003",
+      "leafcard.004",
+      "card.001",
+      "leafcard",
+      "leafcard.005",
+      "card.002",
+      "pot",
+      "soil",
+      "ContactShadow"
+     ]
+    },
+    "roadConnectors": null,
+    "lod": {
+     "lod1": false,
+     "note": "LOD1なし。ゲームは全距離でLOD0を使う（ポリゴン数は最大でも約3.3k）。"
+    },
+    "materialSlots": [
+     "cardRound",
+     "cardPink",
+     "cardWhite",
+     "shadowM.006",
+     "dqClay",
+     "dqSoil"
+    ],
+    "status": "納品済み"
+   }
+  }
+ ],
+ "roads": [
+  {
+   "id": "dirt",
+   "name": "土の道",
+   "rank": 1,
+   "color": "#8a6a45",
+   "stages": [
+    {
+     "id": "grade",
+     "name": "整地（踏み固め）",
+     "materialsPerCell": {},
+     "workSecondsPerCell": 0.8,
+     "tools": []
+    }
+   ],
+   "museFields": {
+    "tileTexture": "assets/construction/textures/road-dirt.png",
+    "normalTexture": "assets/construction/textures/road-dirt_n.png",
+    "tileMeters": 2,
+    "edgeTreatment": "テクスチャに縁取りは持たせない。縁はセル境界のフェードで処理する（外周0.18mを地面色へ寄せて暗くする頂点色フェード＋板の+0.05浮きとpolygonOffset。仕様はCONSTRUCTION-CONTRACT.mdの道路節）",
+    "joinPieces": "不要。2×2mセル板＋タイルテクスチャで直線・曲がり・T字・十字・端部を構成する（端部も境界フェードで処理）",
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "gravel",
+   "name": "砂利道",
+   "rank": 2,
+   "color": "#9b968a",
+   "stages": [
+    {
+     "id": "grade",
+     "name": "整地（踏み固め）",
+     "materialsPerCell": {},
+     "workSecondsPerCell": 0.8,
+     "tools": []
+    },
+    {
+     "id": "gravel",
+     "name": "砂利を敷く",
+     "materialsPerCell": {
+      "cobble": 1,
+      "sand": 1
+     },
+     "workSecondsPerCell": 0.8,
+     "tools": []
+    }
+   ],
+   "museFields": {
+    "tileTexture": "assets/construction/textures/road-gravel.png",
+    "normalTexture": "assets/construction/textures/road-gravel_n.png",
+    "tileMeters": 2,
+    "edgeTreatment": "テクスチャに縁取りは持たせない。縁はセル境界のフェードで処理する（外周0.18mを地面色へ寄せて暗くする頂点色フェード＋板の+0.05浮きとpolygonOffset。仕様はCONSTRUCTION-CONTRACT.mdの道路節）",
+    "joinPieces": "不要。2×2mセル板＋タイルテクスチャで直線・曲がり・T字・十字・端部を構成する（端部も境界フェードで処理）",
+    "status": "納品済み"
+   }
+  },
+  {
+   "id": "stone",
+   "name": "石敷きの道",
+   "rank": 3,
+   "color": "#7d7f86",
+   "stages": [
+    {
+     "id": "grade",
+     "name": "整地（踏み固め）",
+     "materialsPerCell": {},
+     "workSecondsPerCell": 0.8,
+     "tools": []
+    },
+    {
+     "id": "base",
+     "name": "路盤（石の層）",
+     "materialsPerCell": {
+      "cobble": 1
+     },
+     "workSecondsPerCell": 0.8,
+     "tools": []
+    },
+    {
+     "id": "stone",
+     "name": "石を敷く",
+     "materialsPerCell": {
+      "granite": 1
+     },
+     "workSecondsPerCell": 1,
+     "tools": [
+      "hammer"
+     ]
+    }
+   ],
+   "museFields": {
+    "tileTexture": "assets/construction/textures/road-stone.png",
+    "normalTexture": "assets/construction/textures/road-stone_n.png",
+    "tileMeters": 2,
+    "edgeTreatment": "テクスチャに縁取りは持たせない。縁はセル境界のフェードで処理する（外周0.18mを地面色へ寄せて暗くする頂点色フェード＋板の+0.05浮きとpolygonOffset。仕様はCONSTRUCTION-CONTRACT.mdの道路節）",
+    "joinPieces": "不要。2×2mセル板＋タイルテクスチャで直線・曲がり・T字・十字・端部を構成する（端部も境界フェードで処理）",
+    "status": "納品済み"
+   }
+  }
+ ],
+ "grid": {
+  "cell": 2,
+  "sectionMax": 10,
+  "roadMaxSlope": 0.45
+ },
+ "notBuildable": {
+  "town-stall": "売り買いの仕組みがまだない",
+  "town-fruit-basket": "食べ物や取引の仕組みがまだない"
+ }
+}

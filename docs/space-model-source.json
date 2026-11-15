@@ -1,0 +1,110 @@
+{
+  "branch": "feature/graphics-rocket-assets",
+  "commit": "80d522e7c21dec98bdc59ae4f7b630a0dab90bc1",
+  "files": [
+    {
+      "path": "assets/rocket/models/boarding-corridor-lod1.glb",
+      "sha": "27a3f3f98a4582af13fce2e2094f802086083582"
+    },
+    {
+      "path": "assets/rocket/models/boarding-corridor.glb",
+      "sha": "0b9254d1de75eb4742e7728f3d9b71dc0dfeb136"
+    },
+    {
+      "path": "assets/rocket/models/computer-bench-lod1.glb",
+      "sha": "14d988f01f1d7497e5f484a29d7191dcc6d7096a"
+    },
+    {
+      "path": "assets/rocket/models/computer-bench.glb",
+      "sha": "b62853879b8f54a62211acd9026b40e03622c7ee"
+    },
+    {
+      "path": "assets/rocket/models/control-terminal-lod1.glb",
+      "sha": "8bfac4a864bfff5e4b4a9efc68bde82d0bc77a22"
+    },
+    {
+      "path": "assets/rocket/models/control-terminal.glb",
+      "sha": "62546c2b4a32d11861425001a274bafa028bcf10"
+    },
+    {
+      "path": "assets/rocket/models/electronics-fab-lod1.glb",
+      "sha": "768cc26ecd64fbe8f629b4cf03ba87d3f82958c3"
+    },
+    {
+      "path": "assets/rocket/models/electronics-fab.glb",
+      "sha": "22908b68c92dbfe270942648a905ae96649a4be0"
+    },
+    {
+      "path": "assets/rocket/models/launch-pad-lod1.glb",
+      "sha": "4f36980dde71db7349b8bd8282f8a22d3c38ba20"
+    },
+    {
+      "path": "assets/rocket/models/launch-pad.glb",
+      "sha": "4fad4cc781e47d0cfc56d7e32515bba9cb798a74"
+    },
+    {
+      "path": "assets/rocket/models/life-support-lod1.glb",
+      "sha": "d3748f7cbc6bd9a07b3be7491a204a7d9f140093"
+    },
+    {
+      "path": "assets/rocket/models/life-support.glb",
+      "sha": "6a71149250b535aeb4fd6da09917c91b6bee3d3a"
+    },
+    {
+      "path": "assets/rocket/models/parts-rack-lod1.glb",
+      "sha": "665490b7fe5205bf3be3f03112a25e58185ae576"
+    },
+    {
+      "path": "assets/rocket/models/parts-rack.glb",
+      "sha": "a39763dff725b47867b738ab5a865c11b219c279"
+    },
+    {
+      "path": "assets/rocket/models/power-distribution-lod1.glb",
+      "sha": "6f3a838868a247be6c1116c529a61e689a1e24a1"
+    },
+    {
+      "path": "assets/rocket/models/power-distribution.glb",
+      "sha": "6de31a4aef6abc3d605da8cca17d9b6e985577e3"
+    },
+    {
+      "path": "assets/rocket/models/rocket-lod1.glb",
+      "sha": "2cfeb32e3bda26b6e8fbc6db676c1e07eec48c81"
+    },
+    {
+      "path": "assets/rocket/models/rocket.glb",
+      "sha": "dfd7658e457154d389477a64772b1f066d9acfd1"
+    },
+    {
+      "path": "assets/rocket/models/spacesuit-display-lod1.glb",
+      "sha": "22532d6aed193f44ab47f3ee5ec427cefc516fb0"
+    },
+    {
+      "path": "assets/rocket/models/spacesuit-display.glb",
+      "sha": "640d0a961e87931bbbb97118ba186ac2b1997f70"
+    },
+    {
+      "path": "assets/rocket/models/suit-stand-lod1.glb",
+      "sha": "53724e91d5a834302ac2ccdaad75a8dda485a6a4"
+    },
+    {
+      "path": "assets/rocket/models/suit-stand.glb",
+      "sha": "7a088f8805427201d593cb5ca3f1535d887ac5d3"
+    },
+    {
+      "path": "assets/rocket/models/support-tower-lod1.glb",
+      "sha": "161f85f45d5fde340ffca8e3a52c837954619029"
+    },
+    {
+      "path": "assets/rocket/models/support-tower.glb",
+      "sha": "63ba96d60367e0b4b37025841ec05a55f50c219f"
+    },
+    {
+      "path": "assets/rocket/models/test-terminal-lod1.glb",
+      "sha": "907e79e2fe91db981f7ea47970239bd865b579ef"
+    },
+    {
+      "path": "assets/rocket/models/test-terminal.glb",
+      "sha": "ffeaed160cf683408b4d350277b303f7f8e0ff0e"
+    }
+  ]
+}

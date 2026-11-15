@@ -7,17 +7,23 @@
 ## コマンド
 - `npm install` … 依存を入れる
 - `npm run build` … `dist/index.html` を作る（描画モジュールのバンドル＋画像の埋め込み）
-- `npm test` … エンジンの自動テスト（`runTests`）とボットの全物質到達テスト。**変更後は必ず通すこと**
+- `npm test` … エンジンの自動テスト（`runTests`）・自然物・検証モード・アセットのつなぎ込み・街づくり（`tests/construction.test.mjs`）のテストとボットの全物質到達テスト。**変更後は必ず通すこと**
+- `npm run build` は `dist/index.html`（通常）と `dist/verify.html`（検証モードが最初から有効）を作る
 - `npm run e2e` … 偽の描画モジュールを使ったブラウザ結合テスト（`npx playwright install chromium` が必要）
 - `npm run typecheck` … `src/graphics` の型チェック
 
 ## 設計のルール（厳守）
-1. **データとロジックと画面を分ける。** 科学データは `src/game/data.js`、判定は `src/game/engine.js`、表示と入力は `src/game/ui.js`。実験の判定を UI の中に書かない。
+1. **データとロジックと画面を分ける。** 科学データは `src/game/data.js`、判定は `src/game/engine.js`、フィールドの自然物（生成・当たり判定・経路・採取）は `src/game/nature.js`、表示と入力は `src/game/ui.js`。実験や採取の判定を UI の中に書かない。
 2. **描画モジュール `src/graphics/` は改変しない。** 担当は Muse（グラフィック側）。必要な機能はメモにまとめてユーザー経由で Muse に依頼する。
+   - **役割分担（2026-11-07 オーナー決定）**：Claude＝総合編集（コード全体の最終編集と統合、ゲームロジック・地形と地域の生成・区画・移動・採取・建築・NPC・当たり判定と経路・保存と移行）。Muse＝グラフィック主担当（モデル・UV・材質・LOD・植物・水・滝・溶岩の見た目・配置の情報・表示の確認）。GPT＝ゲームディレクター・素材原画。
+   - Muse は自分のグラフィックを導入するのに必要な範囲で、ゲーム側のコードを直接編集してよい（Claude のレビューと最終統合を通す）。進行・セーブ形式・システム仕様の変更は仕様として分ける。
+   - 破綻防止：1作業1ブランチ（土台は相手の最新の「完了済み」ブランチ先端。作業中のブランチには乗らない。main へ直接 push しない）。Muse がゲーム側のファイルに触れるときは `threejs-hd2d-graphics/HANDOFF-TO-CLAUDE.md` の冒頭に対象ファイルを宣言し、その作業が終わるまで Claude はそのファイルを書き換えない（逆も同じ）。
+     共有の契約ファイル（`terrainHeight`・`src/world/shape.ts`・`DEFAULT_AREAS`・`src/graphics/types.ts`・`src/terrain-entry.ts`・セーブ形式の `engine.js`）は一度に一人だけが編集し、地形を変えるときは既存範囲の高さの差 0 の数値検証を付ける。
+     統合は小さく分け、npm test・typecheck・build・e2e の結果を正直に書く（やっていない確認は「未確認」）。衝突したら黙って書き換えず、ハンドオフ文書で指摘する（最終判断は Claude とオーナー）。
    - モジュールは描画専用。座標・採取状態・建物・進行の正本はゲーム側。結果だけを `setPlayerVisualState` / `updateResourceVisual` / `addStructureVisual` / `playVisualEffect` で渡す。
    - API の正本は `src/graphics/types.ts`、連携仕様は `docs/handoff/INTEGRATION.md`。
    - `threejs-hd2d-graphics/`・`references/`・`assets/lab-stages*/` は Muse から受け取った素材（原本）。ゲームのビルドでは使わず、参照用として改変しない。
-3. **座標系**：ゲーム座標＝シーン座標（右手系・Y上・1単位＝1マス）。地形の高さは描画モジュールの `terrainHeight` を正とする。
+3. **座標系**：ゲーム座標＝シーン座標（右手系・Y上・1単位＝1マス）。地形の高さの正本は `src/world/shape.ts` の `worldHeight`（旧世界 |x|,|z|≤60 の中は描画モジュールの `terrainHeight` とまったく同じ値。テストで検査）。ビルドで描画モジュール内の `./utils` だけを `src/world/terrain-shim.ts` へ向け、モジュールの描画・足もとも同じ地形にしている（`src/graphics` のファイルは変えない）。
 4. **科学的な正しさ**：根拠のない反応を作らない。登録されていない組み合わせは「何も起きない（材料も減らない）」。危険な物質や医薬品の具体的な製造手順は扱わない。
 5. **説明の徹底**：すべての物質・道具・設備に `kid`（やさしい説明）と `more`（くわしく）、すべての反応に `why`（何が起きたの？）、すべての工作に `how` を書く。欠けると `npm test` が失敗する。
 6. **文章**：漢字を使った普通の日本語（小学生にわかる言葉づかい）。ひらがなだけの分かち書きにはしない。
@@ -25,19 +31,191 @@
 8. **到達可能性**：新しい物質は、自然資源から実際に作れる経路を必ず用意する（ボットのテストで検査される）。
 9. **セーブ互換**：アイテムIDは変えない。名前を変えるときは `engine.js` の `ALIASES` を使い、形式を変えるときはスキーマの版を上げて `MIGRATIONS` を追加する。
 
+## 画面構成（全画面マップ＋HUD。2026-11-06〜）
+- `#app` は表示領域いっぱい（100dvh）に固定。背面に描画ステージ `#view`、前面に HUD（`#hud`）・パネル（`#dock`）・ナビ（`#nav`）を重ねる。body はスクロールしない（パネルの中だけスクロール）。
+- デザイン（2026-11-11〜、`template.html` の「デザイン（2026-11-11）」）：「フィールドノートと実験器具」。濃紺・チャコール（`--navy`）／生成り（`--paper`）／青緑＝選択中（`--teal`）／控えめな琥珀＝実行する操作（`--amber`：実験スタート・作る・ここに置く・採る）。
+  線は 1px、角丸 6／10／14px、影なし。状態は色だけに頼らない（選択中＝✓、未発見＝点線＋？、加工できない＝🧰＋文字、材料不足＝「✕ 不足」）。スマホの押せる所は 44px 以上。パネルの見出しは文字＋アイコン（絵文字を見出しに混ぜない）。
+  PC の研究室は右側の広いパネル（`side-l`）で、左に探索のマップを見せたまま（暗くしない）。図鑑・技術は大きなオーバーレイ。
+- 配置は `#app` と `<html>` の `data-ui`（`pc` / `touch`）で切り替える。画面幅と入力方法（`pointer:coarse`）から `detectUi()` で決める。
+  - PC：左上に現在地と目標、右上に地図・拠点・設定、下部中央に研究室／工作／図鑑／技術／記録。研究室などは右側パネル、図鑑・技術は大きなオーバーレイ。スティックは出さない（指で触れたら出す）。
+  - スマホ：左下スティック、右下に大きな行動ボタン（調べる／〜を採る／使えない理由）、最下部に研究室／工作／メニュー。図鑑・技術・記録・設定は「メニュー」の中。
+  - 案内の枠（モーダル）を開いている間は `html.modal-on`：枠の上に 64px の帯をあけ、通知はその帯に 1 行・最新の 1 件だけ（見出しに重ねない）。
+- 画面（`U.tab`）は `explore`（パネルなし）・`lab`・`craft`・`book`・`map`（技術）・`log`・`world`（地図・地域）・`menu`・`settings`。パネルは同時に1つだけ。
+- 3Dフィールドの DOM と WebGL は一度だけ作り、パネル開閉で作り直さない。描画領域の寸法は `resizeGraphics` へ渡す。一時停止は `pauseGraphics` / `resumeGraphics` があれば使う。
+- パネル・案内（モーダル）の表示中は `fieldInputActive()` が偽になり、マップへの入力をすべて無視する。開くとき・タッチのキャンセル・フォーカス喪失・画面回転では `haltField()` で移動を止める。スティックと行動ボタンは pointerId で区別する。
+- 文字選択・画像ドラッグ・長押しメニューは出さない：`body,body *` に `user-select:none`・`-webkit-touch-callout:none`、`img` に `-webkit-user-drag:none`。編集できる入力欄（`input`・`textarea`・`select`・contenteditable）だけ例外。`selectstart`・`dragstart`・`contextmenu` は入力欄の外だけ止め、残った選択は操作の開始（pointerdown）でだけ消す。
+- `touch-action` は領域ごと：マップ（`.stage`）とスティックは `none`、ボタン類は `manipulation`、パネル・案内は `pan-y`。ゲーム全体に `none` を付けない。touchstart/touchmove を一律に preventDefault しない。
+- 指の後片付け：スティックは pointerId を保持して setPointerCapture。pointerup/pointercancel/lostpointercapture（＋画面のどこで離れても同じ id なら止める保険）・blur・visibilitychange・pagehide・画面切り替えで `haltField()`。行動ボタンは指が外で離れたら押していないことにする。指・ペンの直後の click は時刻で見分けて二重に採取しない。
+- カメラの標準値は描画モジュールの既定値（「視点を戻す」で戻る先）。ゲーム側から初期値を上書きしない。確認用に限り URL の `?camera=俯角,viewSize` で `config.camera` を渡せる。
+
+## フィールドの自然物（2026-11-06〜）
+- 木・岩・小石・落ち枝・草むら・やぶは `nature.js` が正本。描画モジュールと同じ地形関数と固定の種から生成し、ID は「種類:x,z」。契約は `docs/handoff/NATURAL-OBJECTS-CONTRACT.md`。
+- 当たり判定は地面上の円（木は幹、岩は占有範囲）。移動はすべて `WORLD.move`（細かく分けてすり抜けない・外周に沿って滑る）、クリック移動は `WORLD.findPath`（A*）。
+- 採取は「選ぶ → 近づく（外周へ）→ 条件確認 → 短い作業 → 一度だけ確定」。距離と二重実行（`S.seq` のトークン）はロジック側で確認する。
+- 変化した自然物・地域の採取地点の状態は `S.nature` に保存（スキーマ v2）。自動採取も同じ残量を使う。
+- 研究室は画像を使わず、SVG の実験台（`drawScene`）。研究室の画像はビルドに埋め込まない。
+- 物質アイコンは Muse の `assets/item-icons`（原本・137件）から `scripts/make-item-atlas.py` で 64px のアトラス `assets/build/item-icons-64.*` を作って埋め込む（アイコンを差し替えたら再実行）。`ic(id)` は HTML（アイコンがなければ絵文字）、文字だけの場所（バナー・`<option>`）は `icT(id)`、SVG の中は `svgIc`。道具・設備・操作は下の「建物の3Dモデルと…アイコン」。
+- アイコンは Muse の `assets/ui-icons`（タブ・メニューは 48px 版、右上のボタンは 32px 版、`image-rendering: pixelated`）。ない名前は絵文字。必ず文字ラベルと組み合わせる。
+- 実験台の器具は Muse の `assets/lab-apparatus/sprites`（装置と液体・炎は別レイヤー。炎は加熱の演出中だけ、液体は材料が入っているときだけ）。解放済みの器具だけ置く。
+- 歩く速さは `ui.js` の `WALK_SPEED`（2026-11-11〜 毎秒4.55マス＝以前の7の約65%。キー・スティック・タップ移動で同じ、斜めは入力を長さ1にそろえる。フレーム間隔は `MAX_DT` 0.2秒まで）。
+  歩く絵の足の動きはモジュールが「実際に進んだ距離」で進める（Muse §31：0.35マスで1コマ・1.4マスで一周）ので、ゲームは速さだけを渡し、足の動きに別の倍率を掛けない。集落の人・採取の作業時間は別。
+- 歩行状態（描画へ渡す moving）は、衝突処理のあとに実際に進んだ量と経過時間で決める（`updateWalk`：毎秒0.9マスで歩き始め、毎秒0.35マス未満が0.12秒続くと止まる。入力も移動予約もなければすぐ止まる）。入力や移動予約の有無だけで歩かせない。ワープ・ロード時の補正は歩行にしない。
+
+## 進み方：地域の鍵なし・加工の能力で進む（2026-11-11〜）
+- 地域の鍵（`r.unlock`）は廃止。すべての地域へ最初から入れる（`E.regionOpen` は準備中 `r.future` だけを閉じる）。止めるのは崖・深い水・溶岩などの物理的な通行止めだけ（`terrainBlocked`）。
+- 進み方は「探索 → 採取 → 持ち帰る（未加工のまま在庫）→ 道具・設備をそろえる → 加工」。採れても加工できないときは `E.processBlock(S,id)`（足りない設備・道具を文で）・`E.processNeeds(S,id)` を、
+  採取した直後の案内・研究室の材料（🧰）・図鑑の「加工の条件」に出す。文明の段階（`stageOf`）は表示だけで、レシピの判定には使わない（段階が低くても、材料と設備・道具がそろえばできる。テストで検査）。
+- 硬い鉱床・岩（`need` あり）には、同じ素材の「落ちているかけら」（`loose:true`。道具なしで拾える・2回・3分で戻る・小石の姿で当たり判定なし）を置く。拾っただけで精錬済みの素材・設備は増えない。
+- 1つの地域に同じ素材の採取地点を複数置くときは `key` で区別する（残量の鍵 `d:地域:key`。key がなければ素材ID＝以前のセーブと同じ）。広い地域では `at:{x,z}`（ワールド座標）で散らして置ける。
+  エンジンの採取関数（`depositInfo`・`harvestDeposit`・`depositRule`）は素材IDではなくこの鍵を受け取る（`E.resKey(res)`）。採取地点へ向かう経路は `WORLD.pathToDeposit`（まわりの立てる場所から歩いて行ける所）。
+- 自然物の第1層・第2層の生成の入力（地域の中心・採取地点・当時の鍵）は `nature.js` の `GEN_REGIONS`（2026-11-10 の写し）に固定している。地域を動かしたり採取地点を足したりしても、旧世界の自然物の位置と ID は変わらない。
+
+## マップ全体の自然物（2026-11-07〜）
+- `nature.js` の第1層（地域の近く。以前からの配置）に加えて、第2層（別の乱数 `SEED+101`）でマップ全体に木・草むら・やぶ・小石・岩・落ち枝を置く。第1層の位置・ID は変えない（既存セーブの採取状態を守る）。
+- 第2層は揺らぎのある格子＋場所ごとの密度（森・草原・川岸・高地・火山・海辺・湿った低地）＋まとまりのノイズ。川の帯（中心から5.6）・急な斜面・拠点の台地（壁になる物）・拠点から各地域への通り道（壁になる物）・採取地点のそば・建物の場所には置かない。川の外の低い土地（水位より低くても乾いた地面）にも置く。鍵のかかった地域の中にも置く（開放後のため）。
+- `WORLD.around` は8マスの格子で引く。描画へ渡すのは「近くの格子＋画面に入る物（`onScreenish`、出し入れに余白の差）」だけ。地域の採取地点の名札は近い・手が届く・選んだ・目標の素材のときだけ。名札が主人公に重なるときは頭の上へずらす。
+
+## 検証モード（全解放。2026-11-07〜）
+- 通常のセーブ（`zero-kagaku-save`）とは別のキー（`zero-kagaku-verify`）に保存する。最後に選んだモードは `zero-kagaku-mode`。始め方：URL の `?verify=1`／`?verify=0` → 最後のモード → ビルドの既定（`dist/verify.html` は検証）。設定画面・HUD の「検証モード：全解放」から出入りできる（切り替えは再読み込みなしで状態を入れ替える）。
+- 状態は `E.makeVerifyState(base)`（エンジン）で作る：全物質を図鑑へ、保管できる物を在庫へ（`store:false` は入れない）。`S.verify` に `free`（材料を減らさない）・`tools`（道具・設備の条件）・`locks`（地域の鍵。2026-11-11 に鍵を廃止したので今は効果なし・画面にも出さない）・`instant`（待ち時間）・`stage`（時代の表示）・`placed`／`extra`（置いた建物）。エンジンの `hasTool`・`vflag` がバイパスを読む。通常のセーブには `S.verify` がないので一切効かない。
+- 検証モードでは STRUCT_PLAN・CIV は「所持」ではなく `placed` で決める（全解放でも原野に建物を自動で置かない）。一覧・件数は data.js・`HD2D.RESOURCE_VISUAL_SPECS`・ビルド時に描画モジュールのソースから読んだ演出と建物タイプ（`ASSETS.gfxCatalog`）・埋め込んだアセットから毎回作る。アセット一覧は案内の枠（別画面）で開いたときだけ作る。
+- 描画の状態：枝葉カードのテクスチャが読めないと描画モジュールは旧来の球体の樹冠に戻るので、`gfxStatus()` で検出して検証メニューとコンソールに出す。
+
+## 自然物・街の3Dモデルと共有テクスチャ（Muse の環境セット・GPT-DQ3。2026-11-12〜）
+- `scripts/make-nature-glb.py`：環境セット（`assets/environment-set/models`）と DQ3（`assets/gpt-dq3/models`）の GLB（原本・変えない）から、画像を抜いた軽量版（`assets/build/nature`・`assets/build/town`）を作り、
+  画像は中身ごとに1枚へまとめて `assets/build/nature-tex/<hash>.webp`（色は長辺512、法線・粗さは256）。GLB の中の画像は 1×1 にし、名前を `tex:<hash>` にする。
+  拠点の建物・集落の小物（`make-building-glb.py` の出力）も同じ処理で `buildings-lite`・`props-lite`（接地影は残す）。ビルドは `ASSETS.sharedTex` に共有テクスチャを1回だけ入れる（全体で 36.7MB の原本 → 形 4.4MB＋テクスチャ 1.2MB。`dist/index.html` は 16MB 以下をテストで検査）。
+  読み込みは `src/world/natureModels.ts`（`HD2D.setSharedTextures` を建物より先に呼ぶ。`prepareShared` が `tex:` の画像を共有のテクスチャに差し替える）。原本を変えたら `make-building-glb.py` → `make-nature-glb.py` の順に再実行。
+- 自然物：`HD2D.installNatureModels(gfx, ASSETS.nature, TERRAIN)` が描画モジュールの `ResourceRenderer.buildNode` を実行時に包み、木（広葉樹6・針葉樹2）・岩（6、海岸・湖畔は海岸の岩2、苔むした岩、火山・玄武岩の岩は玄武岩3）・やぶ（2）・切り株・砕けた岩・倒木・流木・貝殻（2）の**見た目だけ**を GLB にする。
+  ID・位置・向き・大きさ・残量・採取済み・当たり判定はゲームのまま（描画へ渡す状態も同じ）。同じ群れの中身を入れ替えるので旧い見た目と重ならない。読めない種類は旧い見た目のまま（`HD2D.natureModelStatus()`）。
+  大きさは描画の決まり（`RESOURCE_VISUAL_SPECS`）に合わせる（木は高さ、岩・やぶ・切り株は地面の上の半径、倒木・流木は長さ）。遮蔽フェード・採取中のゆれと光・足もとの輪はモジュールの仕組みがそのまま動く（材質はノードごとに複製、ジオメトリとテクスチャは共有）。
+  LOD：大きな岩だけ（苔の板が外れて描画回数 3→1。主人公から30マスより遠い）。木の LOD1 は形と寸法が違う（幅が最大40%違う）ので使わない。ヤシ・乾いたやぶ・刈ったやぶ・鉱石の姿は旧い見た目（対応するモデルがない）。
+- 街（DQ3 の12種：町の家・広場・旗2・植木鉢2・木箱・たる・おけと縄・屋台・果物かご・石どうろう）：`ASSETS.town`／`ASSETS.townSpecs`（種類 `town-<id>`、占有形状は実寸から：広場は歩ける＝なし、旗は竿だけ、屋台は台だけ）。
+  **検証モードの「街の建物・小物」から置ける。通常のゲームには置かない**（置く条件は未決。提案は `docs/handoff/REPORT-2026-11-12-assets.md`）。
+- 崖のモジュール5種・滝の岩枠・小石の山・低木（実）・DQ3 の木3種は使っていない（理由は同じ報告）。
+
+## 宇宙計画（最終目標：自作ロケットで宇宙へ。2026-11-14 統合）
+- 正本：データ `src/game/space-data.js`（追加 53 品目 `sp_*`＋ゴム 2 品目・実習 8・組込枠 9・試験 7・目標 7・段階 6）、判定 `src/game/space.js`（`SPACE`）、画面 `src/game/space-ui.js`（ビルドで `ui.js` の `/*SPACE_UI*/` へ差しこむ。ui.js のクロージャの中）、正式モデル `src/space-models.ts`・仮表示 `src/space-visual.ts`。
+- 読み込み順：data → space-data（同じ script）→ engine → space（同じ script）。`scripts/build.mjs` の `/*DATA*/`・`/*ENGINE*/`。
+- 宇宙計画の製作は**加工時間つき**（`SPACE.startCraft`→`finishCraft`、まとめ 1〜20 回）。既存の即時工作（`E.runCraft`）は `c.space` を拒否する（時間の抜け道を作らない）。
+- 発射サイトは 18×18 の 1 区画（`D.space.siteSpec`、入口はローカル (0,+10)、傾斜 0.18 まで）。設置は `nature.js` の `checkPlacement`/`commitPlacement` を通す（木や岩を消して成功させない）。搭乗は入口から 4 マス以内。
+- 組込で部品を消費、取外しで同じ部品を返す。試験は設置位置・部品の変更番号・前提試験の署名で失効する。宇宙服用と機体用の生命維持ユニットはそれぞれ必要。
+- 発射前の保存に失敗したら発射しない。演出は保存した発射時刻からの実時間（14 秒）で進み、再読み込みで続きから。スキップも同じ到達処理。初回クリア（`space.firstClear`）と再演出を区別し、資材は増やさない。演出中（カウントダウン〜上昇）のパネルは上の細い帯（`data-size="flight"`）で 3D を見せる。
+- 正式モデルの契約は `assets/rocket/rocket-contract.json` v6（Muse ラウンド30）。ビルドが `ASSETS.spaceContract`（`slotNodes`・`equipmentPlacement`）に入れ、`src/space-models.ts` がその一覧どおりに表示する：機体のメッシュ 90 個は組込枠（骨組み・推進・搭乗区画・外装）のどれか1つ（テストで検査）。骨組みは外装がないときだけ。設備の置き場所も契約の表（宇宙服ディスプレイは (−6,0,−3)）。
+  段階（`SPACE.stage`）は契約どおり S1＝骨組み、S2＝＋推進、S3＝＋搭乗区画＋外装、S4＝全部。部分外装の S2 は使わない。搭乗から地上へ戻るまで主人公は `gfx.setPlayerVisible(false)`（公開 API。NPC は変えない）。
+  噴射は `playVisualEffect('exhaust')` を Anchor_exhaust の位置へ点火中は 0.25 秒・上昇中は 0.1 秒ごと（一回分はその場に残るので、動く機体に追いつかせる）、煙は `'padSmoke'` を Anchor_smoke_l／_r へ点火から 0.8 秒ごとに 3 回。打ち上げの時刻（退避 +3・解除 +5・上昇 +7 秒）は Muse の検品で現行どおり。LOD0 は同梱しない。
+- 推進・誘導・生命維持は架空の部品と模擬の試験（現実の配合・条件・制御は扱わない）。説明には「ゲーム内で簡略化」。
+- セーブ v5（`space`）。v4 からの移行あり。Claude 試作の形式（`space.know` など）は `SPACE.state` が読み込み時に移す。
+- 未完成の素材（男女の宇宙服 8 方向シート・追加品目のアイコン・テクスチャ原画）は `docs/space/MISSING-ASSETS.md`。今は仮表示。統合の記録は `docs/space/SPACE-INTEGRATION-2026-11-14.md`。
+
+## 街づくり・現地建設（2026-11-14〜。ロードマップ M4）
+- 正本：データ `src/game/construction-data.js`（`D.construction`：建物 24 種・道 3 種・工程・返却表・旧設備の対応）、判定 `src/game/construction.js`（`CONS`）、画面 `src/game/construction-ui.js`（ビルドで `ui.js` の `/*CONS_UI*/` へ）、仮表示 `src/construction-visual.ts`。契約は `docs/construction/CONSTRUCTION-CONTRACT.md`・`construction-assets.json`（`node scripts/export-construction-contract.mjs`）。引き継ぎは `docs/construction/HANDOFF-2026-11-14.md`。
+- 流れ：設計図を選ぶ → 場所と向き（15度・グリッド吸着）→ 予定地 → 資材を現地へ（2.6 マス以内・必要数まで・後の工程の分も先に可）→ 工程ごとに施工（操作＋ゲーム内の時間）→ 完成。決まった場所・持ち物からの完成品の設置はない。
+- 状態は `S.cons.inst`（`cs-N`。planned／supplying／constructing／completed、delivered・consumed・stage・work）。操作はすべて `S.seq` のトークンで一度だけ。画面の連打は 600ms の保険。
+- 設備が使えるのは**完成した建物**があるときだけ（`E.setFacilityHook(CONS.built)`・`E.hasFacility`）。複数建てても生産量は増えない。建設の決まり（`S.cons.rule==="build"`）は画面から始めた新しいゲームと v5 から移行したセーブ。エンジンだけの `newState` は従来の工作（既存のボット・宇宙のテストのため）。
+- セーブ v6（`cons`）。v5 の配置済み設備は以前の場所に資材なしの完成済み建物へ移し、持ち物から 1 つ減らす（二重に持たない）。撤去中・重なりは持ち物に残し、建築の画面から置ける。検証モードは従来の自由配置（`S.verify.placed`）のまま。
+- 道：2×2 の格子（`"i,j"`）、10 マスの区間、重なりは請求しない、種類の変更は差の工程だけ。歩ける・壁にならない。水・川・急な斜面・木や岩の上は不可。橋・トンネル・地形の変更はしない。
+- 取消・解体：使っていない資材は全部、施工済みの工程は返却表の分だけ戻す（表がなければ戻らない。勝手な割合を作らない）。木や岩を自動で消して置けるようにしない。
+- 外観違い（2026-11-15 オーナー方針）：既存の設計図の `looks`（倉庫→大きな倉庫 `look-warehouse`、作業台→工房の建物 `look-workshop`。Muse の `assets/town-construction` が原本）。
+  働き・工程・資材・返却・設備の条件は元の設計図のまま（上位設備・必須設備にしない。複数建てても生産量は増えない）。新しく建てるときだけ選べ、`inst.look` に保存（セーブ v6 のまま。以前の建物は look なし＝従来のモデル・形）。
+  判定・当たり・道の接続は Muse の正式の占有範囲（`CONS.view`／`defOf`）。工程の見た目は town-construction.json の工程グループを `stageGroups` で設計図の工程番号へ写す。配信は LOD0 の軽量版だけ（`make-construction-glb.py` の looks/。LOD1 は圧縮後に大きいので入れない）。既存の建物の外観の変更はない。`tests/construction-looks.test.mjs`・`tests/e2e/looks.mjs`。
+- 発射サイトは宇宙計画のまま（この仕組みへ移さない）。サイト全体（18×18、向きつき）は `syncStructColliders` が「歩けるが建てられない」予約範囲（`space-site:area`、`walk:true`）として渡す。建物・道は置けず、歩行・経路・搭乗口への道筋は設備ごとの形のまま。発射サイトの置き直しは自分の予約と設備の形（`struct:space-site:*`）を数えない（`nature.js` の ignore は前方一致）。`tests/space-reserve.test.mjs`。
+- 正式の工程表示・予定地キット・足場・資材の山・道（Muse f62e075）は `src/construction-visual.ts` の 1 本（Codex の統合 34dd168）。一覧 k＝工程 k の完了直後、施工中は k−1。GLTFLoader と同じ正規化。現場の部品は材質ごとに 1 つのメッシュへまとめる（`mergeKitParts`。元の部品は名前を残して描かない）。資材の山の形は `construction-ui.js` の `PILE_OF`（ID の表）。
+  配信用の軽量版は `scripts/make-construction-glb.py` の 1 本（画像を共有テクスチャ `assets/build/nature-tex` へ。道は WebP の色・法線 512）。原本 `assets/construction` を変えたら再実行。
+- 案内（2026-11-14）：宇宙計画の製作の足りない物はボタン（建物の設備は状態と「現場を開く／建設する」、実習は「実習へ」、材料は作り方へ）。完成した設備の画面に「次に使う所」。画面の操作だけの通し確認は `tests/e2e/playthrough.mjs`（`npm run e2e:playthrough`、かまどまで）。記録は `docs/construction/PLAYTHROUGH-2026-11-14.md`。
+
+## 公開（GitHub Pages。2026-11-15 オーナー承認）
+- `.github/workflows/pages.yml`：main への push（と main での手動実行）だけで公開。feature・PR からは公開しない（全ジョブに `github.ref == 'refs/heads/main'`）。
+- 1 回のビルドの dist を、npm test・typecheck のあと e2e（偽の描画と実WebGL）で確かめ、全部が通ったときだけ同じ dist を公開。公開の直前に main の先端の SHA と同じか確かめる。`dist/version.json` に SHA。
+- main へは PR で入れる（直接 push しない）。`tests/pages-workflow.test.mjs` がワークフローの条件を検査。
+
+## レシピ図鑑（2026-11-14〜。ロードマップ M2-01・M2-03）
+- 正本はデータのまま（`data.js` の items・procs・crafts・regions、`space-data.js`、`construction-data.js`）。図鑑は `src/game/book.js`（`BOOK`、エンジンの隣）がその場で組み立てる。図鑑だけの情報（監修の台帳 `review`・用語の説明・分類）は `src/game/book-data.js`。画面は `src/game/book-ui.js`（ビルドで `ui.js` の `/*BOOK_UI*/` へ）。スキーマは `docs/book/BOOK-SCHEMA.md`。
+- 発見のきまり（`E.status`）を守る：未発見は ？？？、名前で探せない。学習用の「全部を見る」（`S.flags.bookAll`）は閲覧の設定だけ。
+- 監修は台帳に書いた物だけ「確認済み／要修正」。書いていなければ「未確認」。出典は品目の `scienceSources` だけ。作らない。
+- 逆引き（`BOOK.expand`）：製法の選択・回数は出来上がりの数で切り上げ・副産物・道具と設備は数えない・在庫を引く・循環で止める。
+- 設備：建設の決まりでは、建物の設備は完成した建物があるときだけ使える（`engine.js` の `hasFacility`。持ち物にあるだけでは使えない）。
+- 点検の台帳：`node scripts/export-book-ledger.mjs` → `docs/book/RESOURCE-LEDGER.md`・`MANUSCRIPT-GAPS.md`・`book-ledger.json`。テスト `tests/book.test.mjs`・`tests/e2e/book.mjs`（`npm run e2e:book`）。
+
+## 建物の3Dモデルと道具・設備・操作のアイコン（Muse・2026-11-07〜）
+- 建物：Muse の `assets/buildings-3d`（原本の GLB 13種・`structures.json`）。`scripts/make-building-glb.py` でテクスチャだけを再圧縮した軽量版 `assets/build/buildings/*.glb` を作り（原本を変えたら再実行。既定は長辺512px＝第14ラウンドの色テクスチャの解像度のまま、不透明な画像は JPEG）、base64 で埋め込む。モデル内の接地影 `ContactShadow` はそのまま使う（地形と干渉したらこのノードだけ外す）。
+- 読み込みは `src/graphics-entry.ts` の `HD2D.ensureBuildingModel`：GLB を解析して雛形を持ち、`StructureRenderer.registerFactory` に「雛形の複製（ジオメトリ・材質も建物ごと）」を返すファクトリを登録する。読み終えるまでは従来の手続きモデル。読み終えたら UI がその種類の建物を置き直す。使う種類だけをその時に読む。可動部は Flame・Wheel が描画モジュールの既存アニメ、Piston・DrillPipe・Winch・Bellows は `HD2D.tickBuildingParts`（ゲームの描画ループから呼ぶ）。
+- 当たり判定は `structures.json` の footprint（円か回転した矩形。屋根・煙突・炎は含まない）。UI の `syncStructColliders` が `WORLD.setStructures` に渡し、`nature.js` は形までの距離（`sdist`）で移動・押し出し・立てる場所・経路を判定する。建物の下になった自然物は、建物がある間だけ隠れて採れない。建てたときに主人公が中にいたら外へ出す。検証のプレビュー（`vps:`）は判定なし。
+- 設備との対応は `structures.json` の `facilityId` が正（テストで検査）。かまど（kiln）を発酵つぼなどと統合しない。発電所（power-plant）は火力型モデル。暫定で「蒸気機関と水力発電機の両方」で建てる（登場段階・位置づけは GPT・オーナーと確認中）。
+- アイコン：Muse の `assets/buildings-icons`（原本・62点。キーは「tools/ID」「facilities/ID」「ops/ID」。設備 filter と操作 filter は別物）。`scripts/make-tool-atlas.py` で 64px のアトラス `assets/build/tool-icons-64.*` を作って埋め込む。`ic(id)` は道具・設備なら新しいアイコンを優先、物質は物質アイコン。操作は `opIc(op)`。
+
+## 建築モード・カメラ・セーブ v3（2026-11-07〜）
+- 建築モード（`ui.js` の建築セクション。2026-11-14 からは検証モードだけ。通常は上の「街づくり・現地建設」）：建築一覧 → 選ぶ → 候補（地面の枠 SVG：緑／赤と理由）→ 移動（マウス・タップ）・回転（15度・90度、R / Shift+R）・グリッド吸着（0.5マス）→「ここに置く」（Enter）／「やめる」（Esc）。
+  判定と確定は `nature.js` の `checkPlacement`・`commitPlacement`（S.seq のトークンで一度だけ）・`removePlacement`。置く・動かす・撤去で素材は使わない・戻らない（設備は工作で作ったときに素材を使っている。撤去しても持ち物に残る）。
+  建物の位置は `S.build[建物ID]`（`{x,z,rot}` か `{removed:true}`）を優先し、なければ `STRUCT_PLAN` の決まった場所。水車は `rule:"waterside"`（川の水ぎわだけ）。候補の 3D は `ghost:place`（当たり判定なし）。
+- カメラ（2026-11-08〜 ドラッグ操作。`ui.js` の「探索カメラ」セクション）：マップの何もない所の1本指／左ボタンのドラッグで回転（左右＝360°連続、上下＝見下ろし角）、2本指のピンチ・ホイールで距離。短いタップ／クリックは今までどおり移動・採取（`tapAt`）。HUD は小さな「視点を戻す」だけ。感度は設定画面。
+  担当は pointerId ごと（`W3.ptrs`）：#w3 の地面で始まった指だけがカメラ・タップの担当（setPointerCapture で離すまで）。スティック・ボタン・名札・パネルで始まった指は担当外。ピンチはマップの2本指だけ。`CAM.tapSlop`（8px）を超えたらドラッグ、ドラッグ・ピンチをした操作からはタップを出さない。2本→1本は残った指の基準を取り直す。
+  角度：見下ろし角＝水平から下（0°水平〜70°）。モジュールの pitchDegrees も同じ定義（極角ではない）。第24ラウンドから 0°〜72°（`W3.camPitchMin` は起動時に確認）。
+  **高さの固定（2026-11-10 改訂）**：カメラの高さ・向き・俯角・ズームは、ユーザーが操作しない間は変えない。追従は水平だけ。
+  **例外：火山の上の山のカメラ（2026-11-12 オーナー決定）**：主人公が火山の帯（`TERRAIN.volcanoZone`。出るときは +3 マスの余白）にいる間は、回転の中心の高さが主人公の足もとをなめらかに追い（`CAM.mtnFollow`）、
+  主人公からカメラへの線が斜面・建物に当たる手前まで、カメラ本体を主人公へ近づける（マインクラフトのように。`camFrameMountain`・`camHitDist`。近づくのはすぐ、離れるのはゆっくり、いちばん近くて 0.6）。
+  正投影なので大きさは変わらず、手前の斜面は近い面で切られる。モジュールの距離の下限 10 より近いときは、距離 10 のまま注視点を同じ視線の上で奥へずらす。角度・ズームは操作のまま制限しない。山の上では「主人公に合わせる」は出さない。下りたら平地の「高さの固定」に戻る。
+  正本は `W3.cam`（希望：yaw・pitch・zoom、実際：`a`・距離 `d`、基準の高さ `base`）。更新は毎フレーム1か所（`camFrame`）：注視点を `setCameraTarget({x, z, y})`（Muse 第26ラウンド §32.1。y を渡すとモジュールは地形を見ない）で渡し、
+  y は `camLook` が `base` と俯角から決める（地形の高さは使わない。低い角度ほど画面の中心を 基準＋0.3＝`CAM.lowFocus` へ下げる）。向き・角度・ズーム・距離は変わったときだけ `setCameraOrbit`。
+  以前の「setViewportInsets と distance で毎フレーム打ち消す」方式と、Codex 統合の「y に足もとの地形の高さを渡す（追随）」は使わない。
+  `base` を変えるのは：初回（保存値がなければ足もと）・読み込みで安全な場所へ移したとき・瞬間移動・地域移動・「視点を戻す」・「主人公に合わせる」（主人公が中央から大きく外れたときだけ出るボタン）。`S.camera.base` に保存し、読み込みで戻す。
+  衝突：近い面の四角が地形・建物＋余裕より上にある距離を選ぶ（操作中は余裕 1.2、歩行中は 0.3。短くする方を先に、最大 140）。操作中に置けなければ回転・ズーム・角度をそこで止め（終わったら止まった値を新しい希望に）、
+  歩いている間に置けなければ距離、それでも駄目なら水平の追従を止める。自動の上昇はしない（旧 `camNeed` は廃止）。木・建物・草やぶはモジュールの遮蔽フェード。
+  検証用の表示：検証モードか `?camdebug=1` で左下に「カメラY・注視点Y・俯角（実際／希望）・距離・制限」。`window.__GAME__.cam.debug()` でも読める。保存は `S.camera`（yaw・pitch・zoom・sx・sy。読み込み時に範囲へ補正）。
+  主人公の向きは `W3.face`（ワールドの角度。進もうとしている向き＝入力・次の通過点で変わり、滑っても止まっても変わらない。`S.pos.face`）。絵の行はカメラから見た相対角で選ぶ（ヒステリシス：4方向±10°・8方向±6°）。移動はカメラの水平の向きが基準（camBasis）。
+  主人公のシートは Muse 第23ラウンドの8方向（4列×8行、`scripts/make-hero-sprites.py` → `assets/build/hero/*-8dir.webp`、`ASSETS.heroRows=8`）。8方向で出すのは描画モジュールの行選びの自己点検 `HD2D.diag8Check()`（`src/graphics-entry.ts`）に通ったときだけ。
+  **現在（2026-11-12 確認）：自己点検に通り、男女とも8方向**（`tests/e2e/hero-8dir.mjs` が全カメラ角で8行すべてを確認）。連続の向き `facing`（`W3.face`）を渡す。2D の主人公は CSS 変数 `--hero-rows`。
+  歩く速さ `speed`（実際に進んだ速さ）も渡し、モジュールが歩く絵の位相に使う（Muse §31・`config.character.walkStride` 既定 0.35＝1.4マスで一周）。
+  （過去の不具合の記録：第23ラウンドの版はカメラ角の約27%で行が固まり、自己点検に通らず上4行の4方向で出していた（CLAUDE-TO-MUSE §22）。第25ラウンドで修正済み。speed も当時は未使用だった）
+- セーブ v3：`build`・`camera` を追加（v2 からの移行あり）。形式の古いセーブは移行前に `<キー>-backup-v<版>` へ元のまま控える。主人公の向きは `S.pos.dir`。
+- カメラの API は Muse の `setCameraOrbit({yawDegrees,pitchDegrees,viewSize})`・`getCameraYawDegrees()`（第17ラウンド）。モジュールは絵の行をカメラ基準で選ぶので、ゲームは画面基準の向きを `worldFacing()` で世界の向きに変換して `setPlayerVisualState` に渡す。
+- 自然物の見た目の違い（`variant`：針葉樹・ヤシ・葦・乾いたやぶ・苔むした岩・倒木。採れる物は元の種類のまま）と飾り（`WORLD.decos`：睡蓮・溶岩）は `nature.js` が生成後に割り当てる。溶岩は通れない円（`kind:"lava"`）で、上とすぐそばに建物を置けない。
+- 集落と人（`data.js` の `village`、`ui.js` の集落セクション）：小屋は hut の GLB、小物は Muse の `assets/gpt-expansion/props.json`（軽量版 `assets/build/props`）。人は `WORLD.setNpcs` の円で当たり判定、絵は `graphics-entry.ts` の `HD2D.npcSet`（`CharacterRenderer` を人数分。シートは `scripts/make-npc-sprites.py` で `assets/build/npc/*.webp`）。会話は案内の枠。売り買いの仕組みがないので取引のボタンは出さない。集落の中は建物を置けない。
+- **広い世界（2026-11-07〜、`docs/world/WIDE-WORLD.md`）**：オーナー決定で **Muse の7エリア（ラウンド18、`DEFAULT_AREAS`）が正**。地形は Muse の `terrainHeight` に、ゲームの山（雪山に足す）・滝・川・道を足したもの（`src/world/shape.ts`）。
+  歩ける範囲は `TERRAIN.WALK`（-172〜172）＋外の野（2026-11-10、試験範囲：中心から半径 `TERRAIN.WALK_R`＝250 の円。±180 の外の地形は `render.ts` がモジュールの `buildChunk` で作る。長方形の中の自然物の位置・ID は変えない。`docs/world/WIDE-WORLD.md` §7）。探索できる陸地は改修前（±56）の約9.4倍（`tests/world.test.mjs` が毎回計測）。
+  火山（2026-11-11〜、地形の版4。`docs/world/WIDE-WORLD.md` §8）：南西 (-128,-118) に `volcanoShape`（麓・山腹・上部斜面＝崖・火口縁・火口）。登山道 `TRAILS.volcano`（つづら折り、上り坂 0.27 以下、岩棚 `VOLC_LEDGES`）。
+  地域「火山地帯」は登山道の入口へ移し、採取地点 9 か所を麓・道のわき・岩棚・火口縁に散らした。中心から 70 より外の高さは版3と差 0（`tests/fixtures/heights-world-v3.json`）。Muse への共有は `docs/handoff/volcano-contract.json`（`scripts/export-volcano-contract.mjs`）。
+  版3以前のセーブで火山の変わった所にいたら、登山道の近い点へ移す（`volcanoSafeSpot`）。旧世界の中の飾りの溶岩の池はなくした。
+  山：頂 (100,-132)・登山道 `TRAILS.main`（凍った池を回る）・見晴らし台。滝（南向き、落ち口 (120.5,-97)）：山の池→上流→落ち口→崖→滝つぼ→下流→湖畔の湖。`TRAILS.falls`・`TRAILS.gorge`。
+  崖（`WALK_SLOPE` 0.85 超）・深い水（`WADE_DEPTH` 0.55 超。本流は歩いて渡れる）・火口の溶岩湖は `nature.js` の `terrainBlocked` で止める。凍った池（氷）は歩ける。旧世界（±60）の水位より低い乾いた低地は水にしない（以前どおり）。
+  新しい陸地の自然物は第3層（32マスの区画ごとに近づいたら作る。順番に依らず同じ位置・ID）。密度は Muse のエリアの重み（`TERRAIN.areasAt`）。火口のまわり±10 には置かない。
+  描画：外側の地形はモジュールの区画。ゲームは `src/world/render.ts` で本流の続き・山の池・滝・滝つぼ・山の川を描き、モジュールの旧い `Waterfall` を隠し、全面の水面 `OpenWater` の深さを旧世界の中だけ0にする。シェーダーは色・不透明度を 0〜1 に収める（範囲外の値が後処理で画面に広がるため）。
+  Muse の API：NPC は `setNpcVisualState`（絵は最初の1回だけ渡す）、建築の候補は `setStructurePreview`、エリアの環境は `setEnvironment({weights})`（0.5秒ごと）。瞬間移動のあとは `W3.world.afterWarp`（中でモジュールの `prepareTerrainAt`）。
+  ラウンド22（2026-11-08）：`config.world.heightAt` に `worldHeight` を渡す（terrain-shim も残す。モジュールの EnvironmentRenderer が直接 terrainHeight を呼ぶため）。旧い滝は `decor.waterfall:false`。
+  **`decor.openWater` は渡さない**：統合後の世界では湖・海・オアシスの水面はモジュールの開水面プレーンだけが描く（切ると消える。実WebGL で確認）。旧世界の低地は `render.ts` が深さ0にする。
+  セーブ v4（`worldVer`。今の地形の版は4。古い版なら位置を確かめて安全な所へ）。地図（世界タブ）・地名・「拠点へ瞬間移動」。（斜面でカメラの角度を一時的に上げる処理は 2026-11-08 に廃止。上の「高さの固定」）
+- Muse への依頼の続き：`docs/handoff/CLAUDE-TO-MUSE-2026-11-06.md` §19〜§23（§20・§21 は第24ラウンドで対応済み。§22＝8方向の行が固まる不具合・歩く絵の速さ。§23＝注視点の高さをゲームが渡す口・透視投影の相談）。ラウンド19（DQ3 の GLB）は発展した街の素材なので原始の開始には置かない（未組み込み）。オーナー決定（2026-11-07）：描画は Muse、ゲーム側は Claude で分担。
+
+## 開始時の景観と文明の痕跡（2026-11-06〜）
+- 開始時のフィールドは手つかずの自然。人工物（石の階段・石積みの壁・舗装・柵・橋・建物など）を初期配置しない。「遺跡」などの理由を付けて残さない。
+- 描画モジュールが独自に置く石の階段・石積みの壁（`Stonework`）は `decor.stonework:false`（Muse §19）で描かせない。シーン走査で取り除く処理は廃止。当たり判定はもともとない。
+- 拠点の建物（`STRUCT_PLAN`）は、プレイヤーが工作で作った設備（`owned`）に1対1で対応させる。段階（`stage()`）や研究の完了だけで建物を出さない（テストで検査）。建物はセーブに保存せず毎回ここから決めるので、旧版で段階により自動で出ていた建物は既存セーブでも出なくなる。
+- 拠点の外の建物の場所は `nature.js` の `SITES`（自然物を置かない）と `STRUCT_PLAN` の座標を一致させる。旧 Stonework の跡は `FORMER_STONEWORK`（別の乱数で茂み・草・小石・岩を置く。ほかの自然物の ID は変えない）。
+- 地図・2D表示の道路・線路・電線・工場・町並み・拠点の絵も、`ui.js` の `CIV()`（作った設備）で決める。段階や研究（例：太陽電池を作っただけ）でフィールドに人工物を出さない（テストで検査）。
+- 研究室の場面も、作業台を作るまでは地面と平たい石だけ（木の台・棚は作業台を作ってから）。機能を表すUIアイコン（フラスコなど）と、世界に実在する設備は別物として扱う。
+
 ## 主なデータの場所
 - 地域と3D上の位置：`data.js` の `regions`（`w` がワールド座標、`res[].p` が地域内の配置）
-- 拠点の建物（段階で増える）：`ui.js` の `STRUCT_PLAN`
-- 資源の見た目タイプ：`ui.js` の `RES_VIS`（`water` / `oil` は Muse に追加依頼中の独自タイプ）
-- 研究室の背景：段階0〜2→`lab1`、3→`lab2`、4→`lab3`、5→`lab4`
+- 拠点の建物（作った設備で増える）：`ui.js` の `STRUCT_PLAN`（3D）と `CIV()`（地図・2D）。見た目と占有形状は `assets/buildings-3d/structures.json`
+- 地域の採取地点の見た目と当たり判定：`nature.js` の `DEPOSIT_SHAPE`（描画の資源タイプと半径。岩・鉱石・木の姿は固定の障害物）。自然物の見た目は `ui.js` の `NAT_VIS`
+- 研究室の背景：`ui.js` の `labBackground`（SVG）。`assets/lab/` の画像は原本として残すだけで、ビルドには使わない
 
 ## Muse への依頼事項（未解決）
-1. 一時停止API（`pauseGraphics` / `resumeGraphics`）。今は内部の `stopLoop` / `startLoop` を直接呼んでいる
-2. 資源タイプ `water`（水源）・`oil`（原油）・`ore`（鉱石）の見た目
+1. （対応済み：一時停止API `pauseGraphics` / `resumeGraphics` は `feature/graphics-pause-resume-api` を統合。ゲームはこれを使う）
+2. （対応済み：資源タイプ `water`・`oil`・`ore`・`grass`・`bush` を統合し、ゲームで使用）
 3. 洞窟・鉱山・火山・海岸・油田のバイオーム
 4. 川を渡る橋（今は水の中を歩いて渡れる）
 5. 水位（0.32）より低い土地が水中色で塗られているのが意図どおりか
-6. 建物タイプ：水車・蒸気機関・精留塔・掘削やぐら
+6. 建物タイプ（水車・蒸気機関・精留塔・掘削やぐら・橋）は描画側に追加済み。水車・蒸気機関・精留塔・掘削やぐらは `STRUCT_PLAN` に組み込み済み（作った設備に対応）。橋は対応する工作がまだないので使っていない（通行の決まりもゲーム側の作業として残っている）
+7. （対応済み：川の水面・`pickGround`・`setViewportInsets` は `feature/graphics-world-polish` で追加され、このブランチに統合）
+8. `GraphicsOptions.decor` は統合済み（景観の木・岩・茂み・倒木・小石は描かない）。残り：景観の草むら（十字面の群落）がゲームの採取できる草むらと見分けにくい・まとめて描くAPIの中身をインスタンス描画にする（性能）。採取できるやぶは 2026-11-12 から環境セットの低木モデル（景観の十字の板とは形が違う）
+9. （対応済み：第9ラウンドでフェード範囲の拡大・足元の輪の最前面化・アイコンの一本化）
+10. （対応済み：道具・設備・操作のアイコン62点を統合）川の水（3層）は既定値で使用中（`config.water` は渡さない）。`assets/env-textures` は未使用
+11. （対応済み：`decor.stonework` は統合済み）地形の「踏み分け道」（`distanceToPath` の土の帯）は残しているので、開始時に要るかを相談したい
+12. 木（§12）：1〜4 は第12ラウンド（c896bc6）で対応済み。残り：木のインスタンス化（描画回数）・ノードの木の距離 LOD。伐ろうとしている木は見えるようになったが、その樹冠の向こうの主人公が薄く隠れる（§13）
+13. 建物（§13）：発電所の発光部の白い円の見え方。facilityId のない建物は暫定の対応表で表示する（2026-11-10 オーナー承認：小屋＝倉庫、研究所＝蒸留器、工場＝電気炉、発電所＝蒸気機関＋発電機、研究施設＝反応器）。これは表示の代用であり、発電所の建築条件そのものは未決
+14. 低角度の実用下限は固定しない（§24.4 の遮蔽フェード後にオーナーが判断）。歩く速さは 2026-11-11 のオーナーの依頼で毎秒4.55マス（約65%）に変更（§25.3）
+15. 火山の見た目（§25.2）：登山道の踏み分けの色・遠くからのシルエット（霧）・斜面の手前の主人公・帯の色分け・硫黄の皮とかけらの見た目。メニューの素材（§25.4）
 
 ## 今後の拡張候補
 - 第5段階（集積回路・医薬品・ナノ材料）

@@ -94,19 +94,19 @@ var DATA = (function(){
   I("limestone",[NAT,MIN],"🤍","石灰石","せっかいせき","Limestone",["Ca","C","O"],
     "白っぽい石。大昔のサンゴや貝が積もってできた。",
     "主成分は炭酸カルシウム（CaCO₃）。日本で自給できる数少ない鉱物資源です。",
-    {color:"#dcd8cc",nature:"山岳（ハンマーが必要）",uses:"生石灰、製鉄、セメント"});
+    {color:"#dcd8cc",nature:"山岳（ハンマーが必要。落ちているかけらは手で拾える）",uses:"生石灰、製鉄、セメント"});
   I("granite",[NAT,MIN],"🔘","花崗岩","かこうがん","Granite",["Si","O","Al","K","Na","Fe"],
     "つぶつぶ模様の硬い石。重くて削れにくいので、石臼にぴったり。",
     "マグマが地下でゆっくり冷えてできた岩。石英・長石・雲母の結晶が目で見えます。",
-    {color:"#b3aca4",nature:"山岳（ハンマーが必要）",uses:"石臼"});
+    {color:"#b3aca4",nature:"山岳（ハンマーが必要。落ちているかけらは手で拾える）",uses:"石臼"});
   I("basalt",[NAT,MIN],"⚫","玄武岩","げんぶがん","Basalt",["Si","O","Fe","Mg","Ca","Al"],
     "黒くて重い石。手に持ってたたく道具に向いている。",
     "マグマが地表近くで急に冷えてできた岩。鉄やマグネシウムが多く、黒っぽく重いのが特徴です。",
-    {color:"#3e4146",nature:"山岳",uses:"石のハンマー、つるはし"});
+    {color:"#3e4146",nature:"山岳・火山の麓と岩棚",uses:"石のハンマー、つるはし"});
   I("quartz",[NAT,MIN],"💎","石英","せきえい","Quartz",["Si","O"],
     "透き通った白い石。砕いて粉にするとガラスの原料になる。",
     "二酸化ケイ素（SiO₂）の結晶。きれいな六角柱の結晶は水晶と呼ばれます。",
-    {color:"#e8eef0",f:"SiO₂",mp:"約1700℃",nature:"山岳（ハンマーが必要）",uses:"石英の粉→ガラス、るつぼ、ケイ素"});
+    {color:"#e8eef0",f:"SiO₂",mp:"約1700℃",nature:"山岳（ハンマーが必要。落ちているかけらは手で拾える）",uses:"石英の粉→ガラス、るつぼ、ケイ素"});
   I("spring",[NAT,WAT],"⛲","湧き水","わきみず","Spring water",["H","O","Ca","Mg","Si","C"],
     "山の地面からわき出る水。土でこされて澄んでいる。",
     "地下を流れるあいだに砂や岩で自然に濾過され、ミネラルが少し溶けこんでいます。",
@@ -114,15 +114,15 @@ var DATA = (function(){
   I("coal",[NAT,MIN],"🖤","石炭","せきたん","Coal",["C","H","O","S","N"],
     "大昔の植物が地下で長い時間をかけて変わった黒い石。よく燃える。",
     "数千万〜数億年前の植物が、地下の熱と圧力で炭素の多い岩に変化したものです。",
-    {color:"#2a2a2c",nature:"洞窟の地層（ハンマーが必要）",uses:"コークス、コールタール"});
+    {color:"#2a2a2c",nature:"洞窟の地層（ハンマーが必要。入口のかけらは手で拾える）",uses:"コークス、コールタール"});
   I("rocksalt",[NAT,MIN],"🧂","岩塩","がんえん","Rock salt",["Na","Cl","Ca","S","O","K","Mg"],
     "地下で見つかる塩のかたまり。大昔の海が干上がってできた。",
     "主成分は塩化ナトリウム。地層の中で長い時間をかけて結晶になったものです。",
-    {color:"#f0d9d4",nature:"洞窟（ハンマーが必要）",uses:"岩塩の粉→塩"});
+    {color:"#f0d9d4",nature:"洞窟（ハンマーが必要。入口のかけらは手で拾える）",uses:"岩塩の粉→塩"});
   I("hematite",[NAT,MIN],"🟤","赤鉄鉱","せきてっこう","Hematite",["Fe","O","Si"],
     "赤黒い石。中に鉄がたくさん入っている。木炭と一緒に熱すると鉄が取り出せる。",
     "主成分は酸化鉄（Fe₂O₃）。粉にすると赤くなるので「赤」鉄鉱と呼ばれます。",
-    {color:"#7d3b2e",f:"Fe₂O₃",nature:"鉱山",uses:"鉄、銑鉄"});
+    {color:"#7d3b2e",f:"Fe₂O₃",nature:"鉱山・火山の上の岩棚（火山の熱い水や蒸気で鉄がさびて赤くなった岩）",uses:"鉄、銑鉄"});
   I("malachite",[NAT,MIN],"🟢","孔雀石","くじゃくいし","Malachite",["Cu","C","O","H"],
     "クジャクの羽のような緑色の石。実は銅の石だ。",
     "塩基性炭酸銅（Cu₂CO₃(OH)₂）。古代エジプトではアイシャドウにも使われました。",
@@ -134,19 +134,19 @@ var DATA = (function(){
   I("sphalerite",[NAT,MIN],"🟡","閃亜鉛鉱","せんあえんこう","Sphalerite",["Zn","S","Fe"],
     "ギラッと光る茶色い石。亜鉛という金属が硫黄と結びついている。",
     "硫化亜鉛（ZnS）の鉱物。焼いて硫黄を追い出してから金属を取り出します。",
-    {color:"#a07a3a",f:"ZnS",nature:"鉱山の奥（鉄のつるはしが必要）",uses:"亜鉛"});
+    {color:"#a07a3a",f:"ZnS",nature:"鉱山（鉱脈は鉄のつるはしが必要。地面のかけらは手で拾える）",uses:"亜鉛"});
   I("bauxite",[NAT,MIN],"🟠","ボーキサイト","ぼーきさいと","Bauxite",["Al","O","H","Fe","Si"],
     "赤茶色の土のような石。アルミニウムのもとがたっぷり入っている。",
     "水酸化アルミニウムを多く含む岩石。熱帯で岩が長い年月をかけて風化してできます。",
-    {color:"#b8683d",nature:"鉱山の奥（鉄のつるはしが必要）",uses:"アルミニウム"});
+    {color:"#b8683d",nature:"鉱山（鉱脈は鉄のつるはしが必要。地面のかけらは手で拾える）",uses:"アルミニウム"});
   I("sulfur",[NAT,MIN,ELE],"🟨","硫黄","いおう","Sulfur",["S"],
     "火山の噴気孔のまわりにできる黄色い結晶。燃やすと鼻をつくにおいの気体が出る。",
     "元素記号S。火山ガスに含まれる硫黄が冷えて固まったもの。温泉のにおいの元（硫化水素）の仲間です。",
-    {color:"#f0d43a",f:"S",mp:"115℃",nature:"火山地帯",uses:"（今後：硫酸やゴムの研究）"});
+    {color:"#f0d43a",f:"S",mp:"115℃",nature:"火山の火口縁（噴気のまわり）",uses:"（今後：硫酸やゴムの研究）"});
   I("obsidian",[NAT,MIN],"🖤","黒曜石","こくようせき","Obsidian",["Si","O","Al","K","Na","Fe"],
     "真っ黒でガラスのように光る石。割ると、とても鋭い刃になる。",
     "溶岩が急に冷えてできた天然のガラス。縄文時代には各地で交換される貴重品でした。",
-    {color:"#1d1b22",nature:"火山地帯",uses:"黒曜石のナイフ"});
+    {color:"#1d1b22",nature:"火山の麓の古い溶岩の流れ・登山道のわき・岩棚",uses:"黒曜石のナイフ"});
   I("crude",[NAT,MIX],"🛢️","原油","げんゆ","Crude oil",["C","H","S","N","O"],
     "地下深くから掘り出す黒くてどろどろの油。現代文明のエネルギーと材料の源。",
     "大昔のプランクトンが地下で変化した炭化水素の混合物。沸点の違いで多くの成分に分けられます。",
@@ -751,6 +751,9 @@ var DATA = (function(){
 
   /* ---------- 探索地域 ----------
      x,y：フィールド地図上の位置（%） / 資源の p：地域画面内の位置（%） */
+  /* 落ちている鉱石・岩のかけら（loose。2026-11-11）：硬い鉱床・岩を本格的に割るには道具がいるが、地面に落ちているかけらは
+     最初から手で拾える（少しの量・ゆっくり戻る）。地域画面での配置（自然物と重ならない所。tests/nature.test.mjs で検査） */
+  const LOOSE_P = {limestone:[26,51], granite:[46,86], quartz:[88,66], coal:[44,84], rocksalt:[84,78], sphalerite:[64,40], bauxite:[96,60]};
   const regions = [
     {id:"forest",w:{x:-44,z:40},name:"森林",icon:"🌲",x:20,y:38,scene:"forest",kid:"木がたくさんある森。燃料や植物の材料が見つかる。",
       rare:[{id:"amber",chance:0.03}],
@@ -766,19 +769,33 @@ var DATA = (function(){
       res:[{id:"shell",n:2,p:[22,78]},{id:"seaweed",n:2,p:[56,62]},{id:"sand",n:2,p:[40,86]},{id:"seawater",n:1,need:["pot"],p:[76,50]}]},
     {id:"mountain",w:{x:36,z:-8},name:"山岳",icon:"⛰️",x:64,y:24,scene:"mountain",kid:"険しい山。いろいろな岩石がある。硬い石を割るにはハンマーがいる。",
       rare:[{id:"fossil",chance:0.03}],
-      res:[{id:"basalt",n:1,p:[16,78]},{id:"limestone",n:1,need:["hammer"],bonus:"ironpick",p:[36,64]},{id:"granite",n:1,need:["hammer"],bonus:"ironpick",p:[58,74]},{id:"quartz",n:1,need:["hammer"],bonus:"ironpick",p:[76,52]},{id:"spring",n:1,need:["pot"],p:[44,40]}]},
-    {id:"cave",w:{x:42,z:-34},name:"洞窟",icon:"🕳️",x:84,y:34,scene:"cave",kid:"真っ暗な洞窟。明かりがないと入れない。",unlock:["torch","candle"],
+      res:[{id:"basalt",n:1,p:[16,78]},{id:"limestone",n:1,need:["hammer"],bonus:"ironpick",p:[36,64]},{id:"granite",n:1,need:["hammer"],bonus:"ironpick",p:[58,74]},{id:"quartz",n:1,need:["hammer"],bonus:"ironpick",p:[76,52]},{id:"spring",n:1,need:["pot"],p:[44,40]},
+        {id:"limestone",key:"limestone-loose",loose:true,n:1,p:LOOSE_P.limestone},{id:"granite",key:"granite-loose",loose:true,n:1,p:LOOSE_P.granite},{id:"quartz",key:"quartz-loose",loose:true,n:1,p:LOOSE_P.quartz}]},
+    {id:"cave",w:{x:42,z:-34},name:"洞窟",icon:"🕳️",x:84,y:34,scene:"cave",kid:"暗い洞窟。石炭や岩塩の層がある。硬い層を割るにはハンマーがいる。入口に落ちているかけらなら手で拾える。",
       rare:[{id:"crystal",chance:0.04}],
-      res:[{id:"coal",n:1,need:["hammer"],bonus:"ironpick",p:[28,70]},{id:"rocksalt",n:1,need:["hammer"],bonus:"ironpick",p:[66,64]}]},
-    {id:"mine",w:{x:20,z:-46},name:"鉱山地帯",icon:"⛏️",x:40,y:16,scene:"mine",kid:"金属を含む鉱石が眠る場所。つるはしがないと掘れない。",unlock:["pickaxe","ironpick"],
+      res:[{id:"coal",n:1,need:["hammer"],bonus:"ironpick",p:[28,70]},{id:"rocksalt",n:1,need:["hammer"],bonus:"ironpick",p:[66,64]},
+        {id:"coal",key:"coal-loose",loose:true,n:1,p:LOOSE_P.coal},{id:"rocksalt",key:"rocksalt-loose",loose:true,n:1,p:LOOSE_P.rocksalt}]},
+    {id:"mine",w:{x:20,z:-46},name:"鉱山地帯",icon:"⛏️",x:40,y:16,scene:"mine",kid:"金属を含む鉱石が眠る場所。地面に出ている鉱石は手で拾える。硬い鉱脈を本格的に掘るには鉄のつるはしがいる。",
       rare:[{id:"gold",chance:0.02},{id:"crystal",chance:0.02}],
-      res:[{id:"hematite",n:1,bonus:"ironpick",p:[16,72]},{id:"malachite",n:1,bonus:"ironpick",p:[36,58]},{id:"cassiterite",n:1,bonus:"ironpick",p:[56,74]},{id:"sphalerite",n:1,need:["ironpick"],p:[74,56]},{id:"bauxite",n:1,need:["ironpick"],p:[88,76]}]},
-    {id:"volcano",w:{x:-38,z:-38},name:"火山地帯",icon:"🌋",x:12,y:14,scene:"volcano",kid:"熱い蒸気が噴き出す火山。足場が悪く、鉄のつるはしで道を作らないと進めない。",unlock:["ironpick"],
+      res:[{id:"hematite",n:1,bonus:"ironpick",p:[16,72]},{id:"malachite",n:1,bonus:"ironpick",p:[36,58]},{id:"cassiterite",n:1,bonus:"ironpick",p:[56,74]},{id:"sphalerite",n:1,need:["ironpick"],p:[74,56]},{id:"bauxite",n:1,need:["ironpick"],p:[88,76]},
+        {id:"sphalerite",key:"sphalerite-loose",loose:true,n:1,p:LOOSE_P.sphalerite},{id:"bauxite",key:"bauxite-loose",loose:true,n:1,p:LOOSE_P.bauxite}]},
+    /* 火山地帯（2026-11-11）：南西の本物の火山（src/world/shape.ts の VOLCANO）。中心 w は登山道の入口（麓）。
+       採取地点は麓・登山道のわき・山腹の岩棚・火口縁に散らす（at はワールド座標。歩いて近づける所。崖の中・溶岩の上には置かない。tests/world.test.mjs で検査）。
+       key のない「sulfur」「obsidian」は以前の火山地帯の採取地点と同じ鍵（既存セーブの残量を引き継ぐ）。solid:false は踏める平たい地点（火口縁の硫黄の皮） */
+    {id:"volcano",w:{x:-91.6,z:-62.9},name:"火山地帯",icon:"🌋",x:12,y:14,scene:"volcano",kid:"南西にそびえる火山。麓から火口の縁まで、つづら折りの登山道で登れる。上の急な斜面は崖なので、道を外れると登れない。",
       rare:[],
-      res:[{id:"sulfur",n:1,p:[34,66]},{id:"obsidian",n:1,p:[66,76]}]},
-    {id:"oilfield",w:{x:0,z:50},name:"油田",icon:"🛢️",x:90,y:60,scene:"oil",kid:"地下深くに原油が眠る場所。掘削やぐらがないと掘れない。",unlock:["rig"],
+      res:[{id:"basalt",key:"basalt-foot",n:1,at:{x:-83.9,z:-89.3},p:[78,80],zone:"麓"},
+        {id:"obsidian",n:1,at:{x:-167.5,z:-99.6},p:[14,78],zone:"麓（古い溶岩の流れ）"},
+        {id:"obsidian",key:"obsidian-flow",n:1,at:{x:-116.9,z:-165.9},p:[30,86],zone:"麓（古い溶岩の流れ）"},
+        {id:"obsidian",key:"obsidian-trail",n:1,at:{x:-106.6,z:-84.3},p:[62,68],zone:"登山道のわき"},
+        {id:"basalt",key:"basalt-ledge",n:1,at:{x:-125.11,z:-81.45},p:[46,58],zone:"山腹の岩棚"},
+        {id:"obsidian",key:"obsidian-ledge",n:1,at:{x:-102.67,z:-111.29},p:[70,46],zone:"上の岩棚"},
+        {id:"hematite",key:"hematite-volcano",n:1,at:{x:-131.35,z:-97.79},p:[36,40],zone:"上の岩棚（熱水で赤く変わった岩）"},
+        {id:"sulfur",n:1,solid:false,at:{x:-115.3,z:-121.7},p:[56,26],zone:"火口縁"},
+        {id:"sulfur",key:"sulfur-rim",n:1,solid:false,at:{x:-119.5,z:-107.9},p:[24,24],zone:"火口縁"}]},
+    {id:"oilfield",w:{x:0,z:50},name:"油田",icon:"🛢️",x:90,y:60,scene:"oil",kid:"地面から原油がしみ出す場所。土器があればすくえる。掘削やぐらがあると深い所からたくさん取れる。",
       rare:[],
-      res:[{id:"crude",n:1,p:[50,66]}]},
+      res:[{id:"crude",n:1,need:["pot"],bonus:"rig",p:[50,66]}]},
   ];
 
   /* 3Dフィールドの拠点（建築物を置く平らな台地。描画モジュールの plateauCenter と一致） */
@@ -803,11 +820,11 @@ var DATA = (function(){
 
   /* ---------- チュートリアル／目標 ---------- */
   const missions = [
-    {t:"森林で「木の枝」を拾おう",how:"「探検」→ 地図の「森林」→ 光っている木の枝をタップ。",tab:"explore",done:s=>s.disc.twig},
-    {t:"河原で「火打ち石」と「丸い石」を拾おう",how:"「探検」の地図から「河原」へ移動しよう。",tab:"explore",done:s=>s.disc.flint&&s.disc.cobble},
+    {t:"「落ち枝」を拾って「木の枝」を集めよう",how:"拠点のまわりに落ちている枝を選んで近づき、採取ボタン（PCは E キー）で拾う。森の木の根もとにもたくさんある。",tab:"explore",done:s=>s.disc.twig},
+    {t:"「小石」と「火打ち石」を拾おう",how:"小石は拠点のまわりにある（拾うと「丸い石」になる）。火打ち石は川岸に落ちている。右上の「地図」から「河原」へ行こう。",tab:"explore",done:s=>s.disc.flint&&s.disc.cobble},
     {t:"「石のナイフ」を作ろう",how:"「工作」で石のナイフの「作る」をタップ。",tab:"craft",done:s=>s.disc.knife},
-    {t:"つるで糸を作り、「作業台」を組み立てよう",how:"森林でつるを集めて「植物の糸」を作り、「作業台」へ。",tab:"craft",done:s=>s.disc.bench},
-    {t:"「火おこし棒」で「たき火」を作ろう",how:"草原の草と、森林の落ち葉もいる。",tab:"craft",done:s=>s.disc.campfire},
+    {t:"つるで糸を作り、「作業台」を建てよう",how:"「やぶ」からつるを集めて「植物の糸」を作る。「建築」で作業台の予定地を決め、枝・糸・丸い石を運んで施工する（以前のセーブでは工作で作れる）。",tab:"build",done:s=>s.disc.bench},
+    {t:"「火おこし棒」で「たき火」を作ろう",how:"火おこし棒は工作で作る（草原の草もいる）。たき火は「建築」で場所を決め、丸い石・枝・落ち葉を運んで施工する。",tab:"build",done:s=>s.disc.campfire},
     {t:"初めての実験！ 木の枝を「燃焼」させよう",how:"「研究室」で木の枝を2本入れ、装置「たき火」→ 操作「燃焼」→ 実験スタート。",tab:"lab",done:s=>s.disc.ash},
     {t:"粘土から「土器」を焼こう",how:"作業台で粘土を「成形」→ たき火で「乾燥」→ たき火で「焼成」。",tab:"lab",done:s=>s.disc.pot},
     {t:"海水から「粗塩」を取り出そう",how:"土器で海水をくみ、たき火で「蒸発」させよう。",tab:"lab",done:s=>s.disc.crudesalt},
@@ -827,6 +844,47 @@ var DATA = (function(){
     {t:"図鑑のコンプリートを目指そう！",how:"「図鑑」の？？？にはヒントがある。珍しい発見も探検で探そう。",tab:"book",done:()=>false},
   ];
 
-  return {items, ops, procs, crafts, regions, base, stages, eras, missions, TAGS};
+  /* 小さな集落（2026-11-07）。原始時代に合わせ、草ぶきの小屋2つと生活の小物だけ（近代の街並みは置かない）。
+     座標は集落の中心 c からの相対（x,z）。rot は three.js の rotation.y（建物の正面は +Z）。小物の見た目と占有は Muse の props.json。
+     NPC の会話はセリフだけ（売り買いの仕組みはまだないので、取引のボタンや言葉は出さない）。 */
+  const village = {
+    c:{x:2, z:31}, r:9.5, name:"小さな集落",
+    huts:[{id:"vh:1", type:"hut", x:-4.2, z:-3.6, rot:0.86}, {id:"vh:2", type:"hut", x:4.6, z:-3.4, rot:-0.93}],
+    props:[
+      {id:"vp:well", type:"well", x:0.2, z:0.6, rot:0},
+      {id:"vp:bucket", type:"bucket", x:1.5, z:1.2, rot:0.4},
+      {id:"vp:pot1", type:"pot-large", x:-1.6, z:-1.9, rot:0},
+      {id:"vp:pot2", type:"pot-small", x:-2.4, z:-1.2, rot:0.7},
+      {id:"vp:rack", type:"drying-rack", x:4.2, z:3.2, rot:-0.5},
+      {id:"vp:fish", type:"dried-fish", x:-4.4, z:3.6, rot:0.35},
+      {id:"vp:wood", type:"firewood", x:-6.4, z:-0.8, rot:1.2},
+      {id:"vp:rope", type:"rope-basket", x:-1.5, z:3.0, rot:0.2},
+      {id:"vp:tools", type:"tool-stand", x:6.6, z:0.6, rot:-1.4},
+      {id:"vp:sign", type:"signboard", x:-6.6, z:4.2, rot:-0.9},
+      {id:"vp:fence1", type:"fence", x:6.8, z:4.4, rot:-0.7},
+      {id:"vp:fence2", type:"fence", x:7.6, z:-1.6, rot:1.45},
+    ],
+    npcs:[
+      {id:"guide", name:"ミナ", role:"案内役", sheet:"guide", home:{x:-4.8, z:2.2}, wander:[{x:-4.8,z:2.2},{x:-3.0,z:4.6},{x:-6.0,z:5.8}],
+        talk:[
+          "ようこそ、小さな集落へ。わたしはミナ。旅の人を案内しているの。",
+          "この島には道具も工場もないけれど、石と水と木があれば、少しずつ何でも作れるようになる。",
+          "まずは落ち枝や小石を拾って、「工作」で石のナイフを作ってみて。むずかしくなったら、右上の目標を見てね。"
+        ], hint:true},
+      {id:"resident", name:"ソラ", role:"住民", sheet:"resident", home:{x:1.8, z:2.6}, wander:[{x:1.8,z:2.6},{x:-0.6,z:-1.0},{x:2.4,z:-0.8},{x:0.4,z:3.6}],
+        talk:[
+          "こんにちは。井戸の水は、毎日のくらしに欠かせないんだ。",
+          "川へ行くと、火打ち石が見つかるよ。カチカチとたたくと火花が出る石さ。",
+          "森の奥の木は大きくて、石のおのがないと切れない。道具は大事にね。"
+        ]},
+      {id:"craftsman", name:"ゲン", role:"職人", sheet:"craftsman", home:{x:5.4, z:1.8}, wander:[{x:5.4,z:1.8},{x:4.6,z:0.4},{x:5.8,z:3.0}],
+        talk:[
+          "おれは道具作りの職人ゲン。石を割って刃を作るのが得意だ。",
+          "火打ち石は割ると鋭い刃になる。丸い石でたたいて、少しずつ形を整えるんだ。",
+          "作業台があれば、もっと手の込んだ道具が作れる。つるで糸をよって、木と石を結びつけてみな。"
+        ]},
+    ],
+  };
+  return {items, ops, procs, crafts, regions, base, stages, eras, missions, TAGS, village};
 })();
 if (typeof module!=="undefined") module.exports = DATA;

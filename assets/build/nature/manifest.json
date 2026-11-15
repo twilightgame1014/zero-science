@@ -1,0 +1,2547 @@
+{
+ "note": "scripts/make-nature-glb.py が作る。bytesIn＝原本の GLB、bytesOut＝画像を抜いた軽量版（画像は nature-tex に共有）",
+ "nature": {
+  "tree-broadleaf-a1": {
+   "bytesIn": 1338560,
+   "bytesOut": 36104,
+   "textures": [
+    "4beb56ed46",
+    "61b0abe0e4",
+    "76ce0cb231",
+    "940d47a770",
+    "a63212c75b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -2.759,
+    -0.171,
+    -2.892
+   ],
+   "max": [
+    2.332,
+    4.439,
+    1.03
+   ],
+   "tris": 467,
+   "meshes": 5
+  },
+  "tree-broadleaf-a2": {
+   "bytesIn": 1338552,
+   "bytesOut": 36096,
+   "textures": [
+    "4beb56ed46",
+    "61b0abe0e4",
+    "76ce0cb231",
+    "940d47a770",
+    "a63212c75b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -2.667,
+    -0.171,
+    -3.367
+   ],
+   "max": [
+    2.455,
+    4.702,
+    2.539
+   ],
+   "tris": 467,
+   "meshes": 5
+  },
+  "tree-broadleaf-b1": {
+   "bytesIn": 1338552,
+   "bytesOut": 36096,
+   "textures": [
+    "4beb56ed46",
+    "61b0abe0e4",
+    "76ce0cb231",
+    "940d47a770",
+    "a63212c75b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -2.57,
+    -0.171,
+    -2.148
+   ],
+   "max": [
+    0.929,
+    5.188,
+    2.474
+   ],
+   "tris": 467,
+   "meshes": 5
+  },
+  "tree-broadleaf-b2": {
+   "bytesIn": 1338564,
+   "bytesOut": 36104,
+   "textures": [
+    "4beb56ed46",
+    "61b0abe0e4",
+    "76ce0cb231",
+    "940d47a770",
+    "a63212c75b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -2.373,
+    -0.171,
+    -2.499
+   ],
+   "max": [
+    1.538,
+    4.635,
+    2.079
+   ],
+   "tris": 467,
+   "meshes": 5
+  },
+  "tree-broadleaf-c1": {
+   "bytesIn": 1338564,
+   "bytesOut": 36104,
+   "textures": [
+    "4beb56ed46",
+    "61b0abe0e4",
+    "76ce0cb231",
+    "940d47a770",
+    "a63212c75b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.468,
+    -0.171,
+    -1.747
+   ],
+   "max": [
+    2.026,
+    3.761,
+    1.821
+   ],
+   "tris": 467,
+   "meshes": 5
+  },
+  "tree-broadleaf-c2": {
+   "bytesIn": 1338216,
+   "bytesOut": 35760,
+   "textures": [
+    "4beb56ed46",
+    "61b0abe0e4",
+    "76ce0cb231",
+    "940d47a770",
+    "a63212c75b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.67,
+    -0.171,
+    -1.892
+   ],
+   "max": [
+    1.537,
+    3.714,
+    0.434
+   ],
+   "tris": 467,
+   "meshes": 5
+  },
+  "tree-conifer-cedar": {
+   "bytesIn": 658004,
+   "bytesOut": 11740,
+   "textures": [
+    "2f53d00ecd",
+    "76ce0cb231"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.529,
+    -0.151,
+    -1.338
+   ],
+   "max": [
+    1.471,
+    3.795,
+    1.423
+   ],
+   "tris": 125,
+   "meshes": 3
+  },
+  "tree-conifer-pine": {
+   "bytesIn": 624260,
+   "bytesOut": 12852,
+   "textures": [
+    "76ce0cb231",
+    "fdaecc7bbf"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.126,
+    -0.151,
+    -1.158
+   ],
+   "max": [
+    1.097,
+    4.377,
+    1.166
+   ],
+   "tris": 141,
+   "meshes": 3
+  },
+  "shrub-round": {
+   "bytesIn": 950556,
+   "bytesOut": 9748,
+   "textures": [
+    "61b0abe0e4",
+    "76ce0cb231",
+    "a63212c75b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.545,
+    -0.071,
+    -0.576
+   ],
+   "max": [
+    0.388,
+    1.041,
+    0.41
+   ],
+   "tris": 91,
+   "meshes": 3
+  },
+  "shrub-flower": {
+   "bytesIn": 996560,
+   "bytesOut": 9760,
+   "textures": [
+    "2d6d54304f",
+    "76ce0cb231",
+    "a63212c75b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.511,
+    -0.071,
+    -0.545
+   ],
+   "max": [
+    0.522,
+    1.155,
+    0.567
+   ],
+   "tris": 91,
+   "meshes": 3
+  },
+  "rock-m-blocky": {
+   "bytesIn": 422276,
+   "bytesOut": 8676,
+   "textures": [
+    "5dc817c28b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.003,
+    -0.171,
+    -1.011
+   ],
+   "max": [
+    1.085,
+    1.543,
+    1.134
+   ],
+   "tris": 108,
+   "meshes": 1
+  },
+  "rock-l-blocky": {
+   "bytesIn": 642128,
+   "bytesOut": 15252,
+   "textures": [
+    "5dc817c28b",
+    "8565dc1d0f"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.846,
+    -0.306,
+    -1.784
+   ],
+   "max": [
+    1.874,
+    2.897,
+    1.887
+   ],
+   "tris": 172,
+   "meshes": 3
+  },
+  "rock-m-round": {
+   "bytesIn": 423008,
+   "bytesOut": 9404,
+   "textures": [
+    "5dc817c28b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.936,
+    -0.171,
+    -1.013
+   ],
+   "max": [
+    0.812,
+    1.23,
+    0.873
+   ],
+   "tris": 80,
+   "meshes": 1
+  },
+  "rock-l-round": {
+   "bytesIn": 887328,
+   "bytesOut": 16064,
+   "textures": [
+    "045678c730",
+    "5dc817c28b",
+    "d161995160"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.457,
+    -0.306,
+    -1.658
+   ],
+   "max": [
+    1.547,
+    2.359,
+    1.692
+   ],
+   "tris": 144,
+   "meshes": 3
+  },
+  "rock-m-sharp": {
+   "bytesIn": 422464,
+   "bytesOut": 8864,
+   "textures": [
+    "5dc817c28b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.169,
+    -0.171,
+    -0.825
+   ],
+   "max": [
+    1.185,
+    1.371,
+    0.874
+   ],
+   "tris": 80,
+   "meshes": 1
+  },
+  "rock-l-sharp": {
+   "bytesIn": 671712,
+   "bytesOut": 15148,
+   "textures": [
+    "5dc817c28b",
+    "a39d089386"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -2.216,
+    -0.306,
+    -1.68
+   ],
+   "max": [
+    2.047,
+    2.18,
+    1.693
+   ],
+   "tris": 144,
+   "meshes": 3
+  },
+  "rock-m-depleted": {
+   "bytesIn": 422500,
+   "bytesOut": 8896,
+   "textures": [
+    "5dc817c28b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.737,
+    -0.171,
+    -0.893
+   ],
+   "max": [
+    0.985,
+    0.578,
+    0.909
+   ],
+   "tris": 80,
+   "meshes": 1
+  },
+  "rock-shore-1": {
+   "bytesIn": 643108,
+   "bytesOut": 16240,
+   "textures": [
+    "5dc817c28b",
+    "8565dc1d0f"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.947,
+    -0.189,
+    -0.636
+   ],
+   "max": [
+    1.036,
+    1.364,
+    1.159
+   ],
+   "tris": 112,
+   "meshes": 2
+  },
+  "rock-shore-2": {
+   "bytesIn": 671200,
+   "bytesOut": 16000,
+   "textures": [
+    "045678c730",
+    "5dc817c28b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.075,
+    -0.189,
+    -1.104
+   ],
+   "max": [
+    1.436,
+    1.408,
+    1.064
+   ],
+   "tris": 112,
+   "meshes": 2
+  },
+  "driftwood": {
+   "bytesIn": 3880,
+   "bytesOut": 3880,
+   "textures": [],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.126,
+    0.014,
+    -0.237
+   ],
+   "max": [
+    1.064,
+    0.327,
+    0.17
+   ],
+   "tris": 49,
+   "meshes": 1
+  },
+  "shell-scallop": {
+   "bytesIn": 4236,
+   "bytesOut": 4236,
+   "textures": [],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.166,
+    0.012,
+    -0.17
+   ],
+   "max": [
+    0.166,
+    0.082,
+    0.17
+   ],
+   "tris": 52,
+   "meshes": 1
+  },
+  "shell-conch": {
+   "bytesIn": 11472,
+   "bytesOut": 11472,
+   "textures": [],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.184,
+    -0.033,
+    -0.215
+   ],
+   "max": [
+    0.235,
+    0.194,
+    0.152
+   ],
+   "tris": 189,
+   "meshes": 1
+  },
+  "stump": {
+   "bytesIn": 561324,
+   "bytesOut": 18164,
+   "textures": [
+    "5256f0ec84",
+    "6154ef6b6c",
+    "76ce0cb231",
+    "8a50077fcf"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.588,
+    -0.131,
+    -0.575
+   ],
+   "max": [
+    0.58,
+    0.54,
+    0.517
+   ],
+   "tris": 148,
+   "meshes": 7
+  },
+  "log-fallen": {
+   "bytesIn": 850700,
+   "bytesOut": 16564,
+   "textures": [
+    "5256f0ec84",
+    "5f3b277fad",
+    "6154ef6b6c",
+    "76ce0cb231",
+    "8a50077fcf"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.875,
+    -0.0,
+    -0.313
+   ],
+   "max": [
+    0.875,
+    0.872,
+    0.313
+   ],
+   "tris": 140,
+   "meshes": 7
+  },
+  "moss-rock": {
+   "bytesIn": 312996,
+   "bytesOut": 14864,
+   "textures": [
+    "5f3b277fad"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.822,
+    -0.1,
+    -0.608
+   ],
+   "max": [
+    0.811,
+    1.056,
+    0.653
+   ],
+   "tris": 88,
+   "meshes": 5
+  },
+  "basalt-1": {
+   "bytesIn": 48612,
+   "bytesOut": 41508,
+   "textures": [],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.841,
+    -0.255,
+    -0.549
+   ],
+   "max": [
+    0.853,
+    0.681,
+    0.557
+   ],
+   "tris": 556,
+   "meshes": 1
+  },
+  "basalt-2": {
+   "bytesIn": 60796,
+   "bytesOut": 53696,
+   "textures": [],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.777,
+    -0.2,
+    -0.589
+   ],
+   "max": [
+    0.771,
+    0.506,
+    0.589
+   ],
+   "tris": 730,
+   "meshes": 1
+  },
+  "basalt-3": {
+   "bytesIn": 126716,
+   "bytesOut": 119612,
+   "textures": [],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.579,
+    -0.28,
+    -0.548
+   ],
+   "max": [
+    0.694,
+    0.726,
+    0.532
+   ],
+   "tris": 1660,
+   "meshes": 2
+  }
+ },
+ "town": {
+  "hut-town": {
+   "bytesIn": 2544036,
+   "bytesOut": 266868,
+   "textures": [
+    "0aa5740f83",
+    "23ca6bf0c2",
+    "41969d9512",
+    "5f23a3dd2d",
+    "af13d3eb06",
+    "e229031184"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -2.1,
+    0.0,
+    -2.047
+   ],
+   "max": [
+    2.1,
+    3.515,
+    2.1
+   ],
+   "tris": 3332,
+   "meshes": 55
+  },
+  "plaza": {
+   "bytesIn": 2539212,
+   "bytesOut": 22640,
+   "textures": [
+    "41969d9512",
+    "4ce4523143",
+    "6227cebb54",
+    "9ead18928e",
+    "af13d3eb06"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -6.3,
+    0.03,
+    -6.3
+   ],
+   "max": [
+    6.3,
+    0.055,
+    6.3
+   ],
+   "tris": 496,
+   "meshes": 5
+  },
+  "banner-red": {
+   "bytesIn": 973468,
+   "bytesOut": 28552,
+   "textures": [
+    "41969d9512",
+    "af13d3eb06"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.67,
+    0.0,
+    -0.15
+   ],
+   "max": [
+    0.575,
+    2.6,
+    0.15
+   ],
+   "tris": 332,
+   "meshes": 4
+  },
+  "banner-green": {
+   "bytesIn": 973476,
+   "bytesOut": 28560,
+   "textures": [
+    "41969d9512",
+    "af13d3eb06"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.67,
+    0.0,
+    -0.15
+   ],
+   "max": [
+    0.575,
+    2.6,
+    0.15
+   ],
+   "tris": 332,
+   "meshes": 4
+  },
+  "planter-large": {
+   "bytesIn": 1157780,
+   "bytesOut": 22420,
+   "textures": [
+    "0aa5740f83",
+    "2d6d54304f",
+    "5f3b277fad",
+    "b19e70f11d"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.39,
+    0.0,
+    -0.39
+   ],
+   "max": [
+    0.39,
+    0.976,
+    0.416
+   ],
+   "tris": 296,
+   "meshes": 12
+  },
+  "planter-small": {
+   "bytesIn": 1030332,
+   "bytesOut": 18808,
+   "textures": [
+    "0aa5740f83",
+    "5f3b277fad",
+    "b19e70f11d",
+    "d45490e685"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.242,
+    0.0,
+    -0.242
+   ],
+   "max": [
+    0.242,
+    0.605,
+    0.242
+   ],
+   "tris": 288,
+   "meshes": 8
+  },
+  "crates": {
+   "bytesIn": 468072,
+   "bytesOut": 139952,
+   "textures": [
+    "0aa5740f83"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.668,
+    0.0,
+    -0.39
+   ],
+   "max": [
+    0.665,
+    1.255,
+    0.392
+   ],
+   "tris": 1944,
+   "meshes": 18
+  },
+  "barrel": {
+   "bytesIn": 413188,
+   "bytesOut": 56820,
+   "textures": [
+    "0aa5740f83",
+    "8a50077fcf"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.367,
+    0.0,
+    -0.367
+   ],
+   "max": [
+    0.367,
+    0.955,
+    0.367
+   ],
+   "tris": 892,
+   "meshes": 4
+  },
+  "bucket-rope": {
+   "bytesIn": 471748,
+   "bytesOut": 143644,
+   "textures": [
+    "0aa5740f83"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.343,
+    0.008,
+    -0.343
+   ],
+   "max": [
+    0.862,
+    0.814,
+    0.343
+   ],
+   "tris": 2204,
+   "meshes": 8
+  },
+  "stall": {
+   "bytesIn": 357376,
+   "bytesOut": 29272,
+   "textures": [
+    "0aa5740f83"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -1.175,
+    0.0,
+    -0.675
+   ],
+   "max": [
+    1.175,
+    2.14,
+    0.675
+   ],
+   "tris": 340,
+   "meshes": 6
+  },
+  "fruit-basket": {
+   "bytesIn": 671112,
+   "bytesOut": 52004,
+   "textures": [
+    "0aa5740f83",
+    "5f3b277fad"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.44,
+    0.0,
+    -0.44
+   ],
+   "max": [
+    0.44,
+    0.673,
+    0.44
+   ],
+   "tris": 564,
+   "meshes": 8
+  },
+  "stone-lantern": {
+   "bytesIn": 1023324,
+   "bytesOut": 78416,
+   "textures": [
+    "41969d9512",
+    "af13d3eb06"
+   ],
+   "droppedShadowMeshes": 1,
+   "min": [
+    -0.467,
+    0.0,
+    -0.467
+   ],
+   "max": [
+    0.467,
+    1.675,
+    0.467
+   ],
+   "tris": 986,
+   "meshes": 11
+  }
+ },
+ "textures": {
+  "76ce0cb231": {
+   "bytesIn": 436892,
+   "bytesOut": 37852,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "61b0abe0e4": {
+   "bytesIn": 262560,
+   "bytesOut": 32716,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "4beb56ed46": {
+   "bytesIn": 226803,
+   "bytesOut": 43140,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "a63212c75b": {
+   "bytesIn": 241614,
+   "bytesOut": 33206,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "940d47a770": {
+   "bytesIn": 135022,
+   "bytesOut": 36604,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "2f53d00ecd": {
+   "bytesIn": 209548,
+   "bytesOut": 31504,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "fdaecc7bbf": {
+   "bytesIn": 174692,
+   "bytesOut": 34704,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "2d6d54304f": {
+   "bytesIn": 308555,
+   "bytesOut": 60530,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "5dc817c28b": {
+   "bytesIn": 413697,
+   "bytesOut": 31618,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "8565dc1d0f": {
+   "bytesIn": 213364,
+   "bytesOut": 54476,
+   "size": [
+    512,
+    287
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "d161995160": {
+   "bytesIn": 216151,
+   "bytesOut": 56436,
+   "size": [
+    512,
+    300
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "045678c730": {
+   "bytesIn": 241694,
+   "bytesOut": 55750,
+   "size": [
+    512,
+    300
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "a39d089386": {
+   "bytesIn": 243048,
+   "bytesOut": 58548,
+   "size": [
+    512,
+    370
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "6154ef6b6c": {
+   "bytesIn": 69657,
+   "bytesOut": 1316,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "5256f0ec84": {
+   "bytesIn": 1492,
+   "bytesOut": 200,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "8a50077fcf": {
+   "bytesIn": 28363,
+   "bytesOut": 7440,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "5f3b277fad": {
+   "bytesIn": 291067,
+   "bytesOut": 41704,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "0aa5740f83": {
+   "bytesIn": 321086,
+   "bytesOut": 17410,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "23ca6bf0c2": {
+   "bytesIn": 456872,
+   "bytesOut": 15110,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "e229031184": {
+   "bytesIn": 375008,
+   "bytesOut": 24764,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "af13d3eb06": {
+   "bytesIn": 488814,
+   "bytesOut": 15984,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "41969d9512": {
+   "bytesIn": 449170,
+   "bytesOut": 35444,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "5f23a3dd2d": {
+   "bytesIn": 179440,
+   "bytesOut": 5894,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "4ce4523143": {
+   "bytesIn": 622450,
+   "bytesOut": 28214,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "6227cebb54": {
+   "bytesIn": 540653,
+   "bytesOut": 58210,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "9ead18928e": {
+   "bytesIn": 415899,
+   "bytesOut": 12042,
+   "size": [
+    512,
+    128
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "b19e70f11d": {
+   "bytesIn": 207813,
+   "bytesOut": 43096,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "d45490e685": {
+   "bytesIn": 184745,
+   "bytesOut": 30806,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "35e97548f9": {
+   "bytesIn": 5869,
+   "bytesOut": 2442,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "5d43fd7288": {
+   "bytesIn": 12333,
+   "bytesOut": 4336,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "59f6eb088d": {
+   "bytesIn": 4755,
+   "bytesOut": 1330,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "31e2046fa5": {
+   "bytesIn": 55856,
+   "bytesOut": 37968,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "653c85abb0": {
+   "bytesIn": 672,
+   "bytesOut": 200,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "c507ca578d": {
+   "bytesIn": 7466,
+   "bytesOut": 3618,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "1f12062a51": {
+   "bytesIn": 4687,
+   "bytesOut": 2224,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "a40e7138ad": {
+   "bytesIn": 48951,
+   "bytesOut": 31350,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "5aeed54fd1": {
+   "bytesIn": 4730,
+   "bytesOut": 1926,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "10af5a09b4": {
+   "bytesIn": 671,
+   "bytesOut": 200,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "66d6351fd8": {
+   "bytesIn": 33624,
+   "bytesOut": 15992,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "8633dd240a": {
+   "bytesIn": 1178,
+   "bytesOut": 388,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "c824793293": {
+   "bytesIn": 928,
+   "bytesOut": 204,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "2ee4c9dcc9": {
+   "bytesIn": 32619,
+   "bytesOut": 16592,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "307ea223c3": {
+   "bytesIn": 1299,
+   "bytesOut": 560,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "3e8af78fa3": {
+   "bytesIn": 5455,
+   "bytesOut": 1980,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "69a9726083": {
+   "bytesIn": 47900,
+   "bytesOut": 27628,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "5a882401db": {
+   "bytesIn": 1002,
+   "bytesOut": 350,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "10eeeb471f": {
+   "bytesIn": 1650,
+   "bytesOut": 462,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "7b16e0e1dc": {
+   "bytesIn": 34615,
+   "bytesOut": 16218,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "cac2ec31b0": {
+   "bytesIn": 1124,
+   "bytesOut": 316,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "7459ae778f": {
+   "bytesIn": 3292,
+   "bytesOut": 1370,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "b2d822ddd7": {
+   "bytesIn": 50297,
+   "bytesOut": 31512,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "990a280fde": {
+   "bytesIn": 2169,
+   "bytesOut": 716,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "ee5f286ec8": {
+   "bytesIn": 3395,
+   "bytesOut": 1106,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "4ff067f8a0": {
+   "bytesIn": 58413,
+   "bytesOut": 37740,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "f897db206d": {
+   "bytesIn": 672,
+   "bytesOut": 204,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "6dfc6d3cc9": {
+   "bytesIn": 693,
+   "bytesOut": 200,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "e631d825fd": {
+   "bytesIn": 37589,
+   "bytesOut": 21458,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "0fe959c540": {
+   "bytesIn": 672,
+   "bytesOut": 204,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "47b2b2c955": {
+   "bytesIn": 688,
+   "bytesOut": 200,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "55e8979342": {
+   "bytesIn": 24758,
+   "bytesOut": 9990,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "0326f72de5": {
+   "bytesIn": 672,
+   "bytesOut": 210,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "d1a5336ddf": {
+   "bytesIn": 10596,
+   "bytesOut": 3314,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": true,
+   "aux": false
+  },
+  "d160df3ca1": {
+   "bytesIn": 684,
+   "bytesOut": 204,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "ec0b08602c": {
+   "bytesIn": 29024,
+   "bytesOut": 13354,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "db11101e4f": {
+   "bytesIn": 672,
+   "bytesOut": 200,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "ced3714c62": {
+   "bytesIn": 3254,
+   "bytesOut": 1230,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  },
+  "ca376a8f25": {
+   "bytesIn": 35980,
+   "bytesOut": 18246,
+   "size": [
+    512,
+    512
+   ],
+   "alpha": false,
+   "aux": false
+  },
+  "5f3a74a861": {
+   "bytesIn": 1250,
+   "bytesOut": 538,
+   "size": [
+    256,
+    256
+   ],
+   "alpha": false,
+   "aux": true
+  }
+ },
+ "lodReport": {
+  "rock-l-blocky": {
+   "tris0": 172,
+   "tris1": 108,
+   "meshes0": 3,
+   "meshes1": 1,
+   "size0": [
+    3.72,
+    3.2,
+    3.67
+   ],
+   "size1": [
+    3.72,
+    3.2,
+    3.67
+   ]
+  },
+  "rock-l-round": {
+   "tris0": 144,
+   "tris1": 80,
+   "meshes0": 3,
+   "meshes1": 1,
+   "size0": [
+    3.0,
+    2.67,
+    3.35
+   ],
+   "size1": [
+    3.0,
+    2.67,
+    3.35
+   ]
+  },
+  "rock-l-sharp": {
+   "tris0": 144,
+   "tris1": 80,
+   "meshes0": 3,
+   "meshes1": 1,
+   "size0": [
+    4.26,
+    2.49,
+    3.37
+   ],
+   "size1": [
+    4.26,
+    2.49,
+    3.37
+   ]
+  },
+  "rock-m-blocky": {
+   "tris0": 108,
+   "tris1": 108,
+   "meshes0": 1,
+   "meshes1": 1,
+   "size0": [
+    2.09,
+    1.71,
+    2.14
+   ],
+   "size1": [
+    2.09,
+    1.71,
+    2.14
+   ]
+  },
+  "rock-m-round": {
+   "tris0": 80,
+   "tris1": 80,
+   "meshes0": 1,
+   "meshes1": 1,
+   "size0": [
+    1.75,
+    1.4,
+    1.89
+   ],
+   "size1": [
+    1.75,
+    1.4,
+    1.89
+   ]
+  },
+  "rock-m-sharp": {
+   "tris0": 80,
+   "tris1": 80,
+   "meshes0": 1,
+   "meshes1": 1,
+   "size0": [
+    2.35,
+    1.54,
+    1.7
+   ],
+   "size1": [
+    2.35,
+    1.54,
+    1.7
+   ]
+  },
+  "shrub-berry": {
+   "tris0": 91,
+   "tris1": 79,
+   "meshes0": 3,
+   "meshes1": 3,
+   "size0": [
+    1.01,
+    1.23,
+    0.97
+   ],
+   "size1": [
+    0.96,
+    1.22,
+    0.78
+   ]
+  },
+  "shrub-flower": {
+   "tris0": 91,
+   "tris1": 79,
+   "meshes0": 3,
+   "meshes1": 3,
+   "size0": [
+    1.03,
+    1.23,
+    1.11
+   ],
+   "size1": [
+    0.98,
+    1.1,
+    1.04
+   ]
+  },
+  "shrub-round": {
+   "tris0": 91,
+   "tris1": 79,
+   "meshes0": 3,
+   "meshes1": 3,
+   "size0": [
+    0.93,
+    1.11,
+    0.99
+   ],
+   "size1": [
+    0.84,
+    1.11,
+    0.95
+   ]
+  },
+  "tree-broadleaf-a1": {
+   "tris0": 467,
+   "tris1": 322,
+   "meshes0": 5,
+   "meshes1": 5,
+   "size0": [
+    5.09,
+    4.61,
+    3.92
+   ],
+   "size1": [
+    3.67,
+    5.04,
+    4.87
+   ]
+  },
+  "tree-broadleaf-a2": {
+   "tris0": 467,
+   "tris1": 322,
+   "meshes0": 5,
+   "meshes1": 5,
+   "size0": [
+    5.12,
+    4.87,
+    5.91
+   ],
+   "size1": [
+    4.5,
+    4.77,
+    3.85
+   ]
+  },
+  "tree-broadleaf-b1": {
+   "tris0": 467,
+   "tris1": 322,
+   "meshes0": 5,
+   "meshes1": 5,
+   "size0": [
+    3.5,
+    5.36,
+    4.62
+   ],
+   "size1": [
+    4.24,
+    5.46,
+    3.06
+   ]
+  },
+  "tree-broadleaf-b2": {
+   "tris0": 467,
+   "tris1": 322,
+   "meshes0": 5,
+   "meshes1": 5,
+   "size0": [
+    3.91,
+    4.81,
+    4.58
+   ],
+   "size1": [
+    2.57,
+    5.29,
+    3.0
+   ]
+  },
+  "tree-broadleaf-c1": {
+   "tris0": 467,
+   "tris1": 322,
+   "meshes0": 5,
+   "meshes1": 5,
+   "size0": [
+    2.49,
+    3.93,
+    3.57
+   ],
+   "size1": [
+    2.63,
+    4.11,
+    2.87
+   ]
+  },
+  "tree-broadleaf-c2": {
+   "tris0": 467,
+   "tris1": 322,
+   "meshes0": 5,
+   "meshes1": 5,
+   "size0": [
+    3.21,
+    3.88,
+    2.33
+   ],
+   "size1": [
+    1.94,
+    3.78,
+    2.75
+   ]
+  },
+  "tree-conifer-cedar": {
+   "tris0": 125,
+   "tris1": 77,
+   "meshes0": 3,
+   "meshes1": 3,
+   "size0": [
+    3.0,
+    3.95,
+    2.76
+   ],
+   "size1": [
+    2.68,
+    3.95,
+    2.47
+   ]
+  },
+  "tree-conifer-pine": {
+   "tris0": 141,
+   "tris1": 77,
+   "meshes0": 3,
+   "meshes1": 3,
+   "size0": [
+    2.22,
+    4.53,
+    2.32
+   ],
+   "size1": [
+    1.93,
+    4.53,
+    2.31
+   ]
+  }
+ },
+ "buildings": {
+  "campfire": {
+   "bytesIn": 153184,
+   "bytesOut": 66804,
+   "textures": [
+    "31e2046fa5",
+    "35e97548f9",
+    "59f6eb088d",
+    "5d43fd7288",
+    "653c85abb0",
+    "c507ca578d"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.9,
+    -0.042,
+    -0.9
+   ],
+   "max": [
+    0.9,
+    0.79,
+    0.9
+   ],
+   "tris": 518,
+   "meshes": 25
+  },
+  "distillation-tower": {
+   "bytesIn": 377304,
+   "bytesOut": 243752,
+   "textures": [
+    "10af5a09b4",
+    "1f12062a51",
+    "2ee4c9dcc9",
+    "307ea223c3",
+    "35e97548f9",
+    "5aeed54fd1",
+    "66d6351fd8",
+    "8633dd240a",
+    "a40e7138ad",
+    "c824793293"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.15,
+    0.0,
+    -1.05
+   ],
+   "max": [
+    1.15,
+    3.975,
+    1.05
+   ],
+   "tris": 3356,
+   "meshes": 30
+  },
+  "drilling-rig": {
+   "bytesIn": 358892,
+   "bytesOut": 166576,
+   "textures": [
+    "10eeeb471f",
+    "2ee4c9dcc9",
+    "307ea223c3",
+    "31e2046fa5",
+    "35e97548f9",
+    "3e8af78fa3",
+    "59f6eb088d",
+    "5a882401db",
+    "653c85abb0",
+    "69a9726083",
+    "7b16e0e1dc",
+    "c824793293",
+    "cac2ec31b0"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.75,
+    0.0,
+    -1.55
+   ],
+   "max": [
+    1.75,
+    3.56,
+    1.55
+   ],
+   "tris": 2138,
+   "meshes": 29
+  },
+  "factory": {
+   "bytesIn": 449856,
+   "bytesOut": 204928,
+   "textures": [
+    "10eeeb471f",
+    "1f12062a51",
+    "2ee4c9dcc9",
+    "307ea223c3",
+    "35e97548f9",
+    "3e8af78fa3",
+    "5a882401db",
+    "5aeed54fd1",
+    "69a9726083",
+    "7459ae778f",
+    "7b16e0e1dc",
+    "990a280fde",
+    "a40e7138ad",
+    "b2d822ddd7",
+    "c824793293",
+    "cac2ec31b0"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -3.15,
+    0.0,
+    -2.45
+   ],
+   "max": [
+    3.15,
+    5.04,
+    2.85
+   ],
+   "tris": 2698,
+   "meshes": 27
+  },
+  "hut": {
+   "bytesIn": 453524,
+   "bytesOut": 173876,
+   "textures": [
+    "0fe959c540",
+    "1f12062a51",
+    "31e2046fa5",
+    "35e97548f9",
+    "3e8af78fa3",
+    "4ff067f8a0",
+    "59f6eb088d",
+    "5a882401db",
+    "5aeed54fd1",
+    "653c85abb0",
+    "69a9726083",
+    "6dfc6d3cc9",
+    "a40e7138ad",
+    "e631d825fd",
+    "ee5f286ec8",
+    "f897db206d"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -2.15,
+    0.0,
+    -1.8
+   ],
+   "max": [
+    2.15,
+    3.165,
+    1.8
+   ],
+   "tris": 1998,
+   "meshes": 52
+  },
+  "kiln": {
+   "bytesIn": 321580,
+   "bytesOut": 153084,
+   "textures": [
+    "0326f72de5",
+    "1f12062a51",
+    "31e2046fa5",
+    "35e97548f9",
+    "47b2b2c955",
+    "55e8979342",
+    "59f6eb088d",
+    "5aeed54fd1",
+    "653c85abb0",
+    "a40e7138ad",
+    "c507ca578d",
+    "d1a5336ddf"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.5,
+    -0.005,
+    -1.5
+   ],
+   "max": [
+    1.5,
+    1.59,
+    1.5
+   ],
+   "tris": 1974,
+   "meshes": 20
+  },
+  "laboratory": {
+   "bytesIn": 488608,
+   "bytesOut": 204468,
+   "textures": [
+    "10af5a09b4",
+    "1f12062a51",
+    "31e2046fa5",
+    "35e97548f9",
+    "3e8af78fa3",
+    "59f6eb088d",
+    "5a882401db",
+    "5aeed54fd1",
+    "5f3a74a861",
+    "653c85abb0",
+    "66d6351fd8",
+    "69a9726083",
+    "8633dd240a",
+    "a40e7138ad",
+    "ca376a8f25",
+    "ced3714c62",
+    "d160df3ca1",
+    "db11101e4f",
+    "ec0b08602c"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -2.65,
+    0.0,
+    -2.0
+   ],
+   "max": [
+    2.65,
+    3.805,
+    2.0
+   ],
+   "tris": 2572,
+   "meshes": 38
+  },
+  "power-plant": {
+   "bytesIn": 350420,
+   "bytesOut": 152288,
+   "textures": [
+    "10af5a09b4",
+    "10eeeb471f",
+    "2ee4c9dcc9",
+    "307ea223c3",
+    "35e97548f9",
+    "66d6351fd8",
+    "7459ae778f",
+    "7b16e0e1dc",
+    "8633dd240a",
+    "990a280fde",
+    "b2d822ddd7",
+    "c824793293",
+    "cac2ec31b0",
+    "d160df3ca1",
+    "db11101e4f",
+    "ec0b08602c"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -3.35,
+    0.0,
+    -2.35
+   ],
+   "max": [
+    3.35,
+    5.325,
+    2.35
+   ],
+   "tris": 1922,
+   "meshes": 26
+  },
+  "research-institute": {
+   "bytesIn": 371952,
+   "bytesOut": 152316,
+   "textures": [
+    "10eeeb471f",
+    "1f12062a51",
+    "2ee4c9dcc9",
+    "307ea223c3",
+    "35e97548f9",
+    "3e8af78fa3",
+    "5a882401db",
+    "5aeed54fd1",
+    "69a9726083",
+    "7b16e0e1dc",
+    "a40e7138ad",
+    "c824793293",
+    "cac2ec31b0",
+    "d160df3ca1",
+    "db11101e4f",
+    "ec0b08602c"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -3.25,
+    0.0,
+    -2.35
+   ],
+   "max": [
+    3.25,
+    4.675,
+    2.35
+   ],
+   "tris": 1846,
+   "meshes": 28
+  },
+  "smelter": {
+   "bytesIn": 363784,
+   "bytesOut": 124456,
+   "textures": [
+    "0326f72de5",
+    "1f12062a51",
+    "2ee4c9dcc9",
+    "307ea223c3",
+    "31e2046fa5",
+    "35e97548f9",
+    "3e8af78fa3",
+    "47b2b2c955",
+    "55e8979342",
+    "59f6eb088d",
+    "5a882401db",
+    "5aeed54fd1",
+    "653c85abb0",
+    "69a9726083",
+    "a40e7138ad",
+    "c824793293"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -2.0,
+    0.0,
+    -1.7
+   ],
+   "max": [
+    2.2,
+    2.29,
+    1.7
+   ],
+   "tris": 1482,
+   "meshes": 23
+  },
+  "steam-engine": {
+   "bytesIn": 365424,
+   "bytesOut": 231880,
+   "textures": [
+    "10af5a09b4",
+    "1f12062a51",
+    "2ee4c9dcc9",
+    "307ea223c3",
+    "35e97548f9",
+    "5aeed54fd1",
+    "66d6351fd8",
+    "8633dd240a",
+    "a40e7138ad",
+    "c824793293"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.75,
+    0.0,
+    -1.15
+   ],
+   "max": [
+    1.75,
+    2.275,
+    1.15
+   ],
+   "tris": 3206,
+   "meshes": 26
+  },
+  "waterwheel": {
+   "bytesIn": 385616,
+   "bytesOut": 199560,
+   "textures": [
+    "1f12062a51",
+    "31e2046fa5",
+    "35e97548f9",
+    "3e8af78fa3",
+    "59f6eb088d",
+    "5a882401db",
+    "5aeed54fd1",
+    "653c85abb0",
+    "69a9726083",
+    "a40e7138ad",
+    "c507ca578d"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.25,
+    -0.01,
+    -0.95
+   ],
+   "max": [
+    1.25,
+    2.552,
+    0.95
+   ],
+   "tris": 2678,
+   "meshes": 26
+  },
+  "workbench": {
+   "bytesIn": 320584,
+   "bytesOut": 192384,
+   "textures": [
+    "31e2046fa5",
+    "35e97548f9",
+    "3e8af78fa3",
+    "59f6eb088d",
+    "5a882401db",
+    "653c85abb0",
+    "69a9726083",
+    "c507ca578d"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.35,
+    0.0,
+    -0.8
+   ],
+   "max": [
+    1.35,
+    1.235,
+    0.8
+   ],
+   "tris": 2474,
+   "meshes": 23
+  }
+ },
+ "props": {
+  "bucket": {
+   "bytesIn": 114400,
+   "bytesOut": 54560,
+   "textures": [
+    "35e97548f9",
+    "3e8af78fa3",
+    "5a882401db",
+    "69a9726083"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.425,
+    0.0,
+    -0.425
+   ],
+   "max": [
+    0.425,
+    0.52,
+    0.425
+   ],
+   "tris": 746,
+   "meshes": 5
+  },
+  "dried-fish": {
+   "bytesIn": 112052,
+   "bytesOut": 45292,
+   "textures": [
+    "31e2046fa5",
+    "35e97548f9",
+    "59f6eb088d",
+    "653c85abb0"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.75,
+    0.0,
+    -0.3
+   ],
+   "max": [
+    0.75,
+    1.0,
+    0.3
+   ],
+   "tris": 504,
+   "meshes": 13
+  },
+  "drying-rack": {
+   "bytesIn": 143300,
+   "bytesOut": 76528,
+   "textures": [
+    "31e2046fa5",
+    "35e97548f9",
+    "59f6eb088d",
+    "653c85abb0"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.9,
+    -0.018,
+    -0.45
+   ],
+   "max": [
+    0.9,
+    0.872,
+    0.45
+   ],
+   "tris": 1002,
+   "meshes": 10
+  },
+  "fence": {
+   "bytesIn": 212356,
+   "bytesOut": 145604,
+   "textures": [
+    "31e2046fa5",
+    "35e97548f9",
+    "59f6eb088d",
+    "653c85abb0"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.4,
+    -0.005,
+    -0.35
+   ],
+   "max": [
+    1.4,
+    1.045,
+    0.35
+   ],
+   "tris": 2094,
+   "meshes": 12
+  },
+  "firewood": {
+   "bytesIn": 140940,
+   "bytesOut": 66780,
+   "textures": [
+    "31e2046fa5",
+    "35e97548f9",
+    "59f6eb088d",
+    "653c85abb0",
+    "c507ca578d"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.65,
+    -0.015,
+    -0.375
+   ],
+   "max": [
+    0.65,
+    0.455,
+    0.375
+   ],
+   "tris": 834,
+   "meshes": 9
+  },
+  "pot-large": {
+   "bytesIn": 74612,
+   "bytesOut": 43020,
+   "textures": [
+    "0326f72de5",
+    "35e97548f9",
+    "47b2b2c955",
+    "55e8979342"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.475,
+    0.001,
+    -0.475
+   ],
+   "max": [
+    0.475,
+    0.658,
+    0.475
+   ],
+   "tris": 522,
+   "meshes": 5
+  },
+  "pot-small": {
+   "bytesIn": 74632,
+   "bytesOut": 43040,
+   "textures": [
+    "0326f72de5",
+    "35e97548f9",
+    "47b2b2c955",
+    "55e8979342"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.294,
+    0.0,
+    -0.294
+   ],
+   "max": [
+    0.294,
+    0.408,
+    0.294
+   ],
+   "tris": 522,
+   "meshes": 5
+  },
+  "rope-basket": {
+   "bytesIn": 82708,
+   "bytesOut": 76940,
+   "textures": [
+    "35e97548f9"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.475,
+    0.0,
+    -0.475
+   ],
+   "max": [
+    0.475,
+    0.488,
+    0.475
+   ],
+   "tris": 1066,
+   "meshes": 6
+  },
+  "signboard": {
+   "bytesIn": 135804,
+   "bytesOut": 14976,
+   "textures": [
+    "31e2046fa5",
+    "35e97548f9",
+    "3e8af78fa3",
+    "59f6eb088d",
+    "5a882401db",
+    "653c85abb0",
+    "69a9726083"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.65,
+    0.0,
+    -0.35
+   ],
+   "max": [
+    0.65,
+    1.141,
+    0.35
+   ],
+   "tris": 142,
+   "meshes": 3
+  },
+  "tool-stand": {
+   "bytesIn": 124100,
+   "bytesOut": 57324,
+   "textures": [
+    "31e2046fa5",
+    "35e97548f9",
+    "59f6eb088d",
+    "653c85abb0"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.75,
+    0.0,
+    -0.425
+   ],
+   "max": [
+    0.75,
+    1.01,
+    0.425
+   ],
+   "tris": 682,
+   "meshes": 13
+  },
+  "well": {
+   "bytesIn": 157900,
+   "bytesOut": 152128,
+   "textures": [
+    "35e97548f9"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -0.675,
+    0.02,
+    -0.675
+   ],
+   "max": [
+    0.675,
+    0.575,
+    0.675
+   ],
+   "tris": 1974,
+   "meshes": 20
+  }
+ },
+ "lod1": {
+  "rock-l-blocky": {
+   "bytesIn": 422336,
+   "bytesOut": 8736,
+   "textures": [
+    "5dc817c28b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.846,
+    -0.306,
+    -1.784
+   ],
+   "max": [
+    1.874,
+    2.897,
+    1.887
+   ],
+   "tris": 108,
+   "meshes": 1
+  },
+  "rock-l-round": {
+   "bytesIn": 422748,
+   "bytesOut": 9148,
+   "textures": [
+    "5dc817c28b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -1.457,
+    -0.306,
+    -1.658
+   ],
+   "max": [
+    1.547,
+    2.359,
+    1.692
+   ],
+   "tris": 80,
+   "meshes": 1
+  },
+  "rock-l-sharp": {
+   "bytesIn": 422236,
+   "bytesOut": 8636,
+   "textures": [
+    "5dc817c28b"
+   ],
+   "droppedShadowMeshes": 0,
+   "min": [
+    -2.216,
+    -0.306,
+    -1.68
+   ],
+   "max": [
+    2.047,
+    2.18,
+    1.693
+   ],
+   "tris": 80,
+   "meshes": 1
+  }
+ }
+}
