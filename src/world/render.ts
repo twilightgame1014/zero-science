@@ -7,8 +7,11 @@
      では深さを0にして見せない（以前どおり歩ける地面。本流の帯の所はそのまま）。Muse へ依頼中（docs/handoff/CLAUDE-TO-MUSE-2026-11-06.md §19）。
    地形の高さ・水の高さは src/world/shape.ts（ゲームと同じ関数）。 */
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { smoothstep as sm, clamp, lerp, distanceToRiver, riverCenterX } from '../graphics/utils';
 import type { GraphicsConfig } from '../graphics/types';
+import { ENV_TEXTURES } from '../graphics/envTextures';
+import { createShoreFoam, sampleWaterline, type ShoreFoam } from '../graphics/ShoreFoam';
 import * as WS from './shape';
 
 type Quality = 'high' | 'low';
@@ -27,7 +30,7 @@ export interface WorldView {
   readonly group: THREE.Group;
 }
 
-export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Quality; images: { particle?: string } }): WorldView {
+export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Quality; images: { particle?: string }; volcanoKit?: Record<string, string> }): WorldView {
   const scene: THREE.Scene = gfx.getScene();
   const cfg = opts.cfg, wl = cfg.world.waterLevel;
   let quality: Quality = opts.quality;
@@ -60,6 +63,14 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
   }
   const loader = new THREE.TextureLoader();
   const loadTex = (url: string | undefined, rep = true) => { if (!url) return undefined; const t = loader.load(url); t.colorSpace = THREE.SRGBColorSpace; if (rep) t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; };
+  /* §39：WaterfallKit（Muse ラウンド20/21）の GPT 原画を、実ゲームの滝（Waterfall2）の描画経路へ接続する。
+     キットのパラメトリック形状は固定プロファイルで、この滝の落ち口（shape.ts の FALL）には合わないため、
+     形状は地形適合済みの Waterfall2 を唯一の描画経路とし、キットの画像とスクロール式・泡の鼓動を移植した。
+     decor.waterfall は false のまま（モジュール側の旧世界の滝とは別物で、二重表示にしない）。 */
+  const streakTex = loadTex(ENV_TEXTURES['streaks']);
+  const foamRingTex = loadTex(ENV_TEXTURES['foamRing1'], false);
+  const foamClusterTex = loadTex(ENV_TEXTURES['foamCluster1'], false);
+  const shoreFoamTex = loadTex(ENV_TEXTURES['shoreFoam']);
 
   /* ---------- 水の材質（海・湖・池・山の川） ---------- */
   const waterUniformsCommon = { uTime: { value: 0 } };
@@ -250,6 +261,7 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
     const m = new THREE.Mesh(geo, matStream); m.renderOrder = 2; m.name = name; group.add(m); return m;
   }
   let fallMat: THREE.ShaderMaterial, sprayPts: THREE.Points, sprayVel: Float32Array, sprayLife: Float32Array;
+  let foamArt: THREE.Mesh[] = [], shoreFoam: ShoreFoam | null = null;
   const IMPACT = { x: 0, y: 0, z: 0 };
   function buildStreamsAndFall() {
     const up = WS.UPSTREAM, dn = WS.DOWNSTREAM;
@@ -338,7 +350,7 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
       uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
         uTime: { value: 0 }, uPool: { value: poolLv }, uLen: { value: vAcc }, uJoin: { value: vRow[Math.max(0, path.findIndex((p) => p.fall > 0) - 1)] },
         uTop: { value: new THREE.Color(0x76bccb) }, uMid: { value: new THREE.Color(0xd8eef1) }, uFoam: { value: new THREE.Color(0xeef6f7) },
-        uShallow: { value: new THREE.Color(0x9adbd0) },
+        uShallow: { value: new THREE.Color(0x9adbd0) }, uStreaks: { value: streakTex },
       }]) as any,
       vertexShader: /* glsl */ `
         attribute float aFall; varying vec2 vUv; varying float vFall; varying vec3 vWorld; varying vec3 vN;
@@ -349,6 +361,7 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
         }`,
       fragmentShader: /* glsl */ `
         uniform float uTime; uniform float uPool; uniform float uLen; uniform float uJoin; uniform vec3 uTop; uniform vec3 uMid; uniform vec3 uFoam; uniform vec3 uShallow;
+        uniform sampler2D uStreaks;
         varying vec2 vUv; varying float vFall; varying vec3 vWorld; varying vec3 vN;
         #include <fog_pars_fragment>
         float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -364,6 +377,9 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
           // 水の色：すき通った青緑に、白い筋（泡の流れ）が混ざる。真っ白な板にしない
           vec3 body = mix(uShallow, uTop, vFall);
           vec3 col = mix(body, uMid, strand * (0.25 + 0.4 * vFall));
+          // GPT の水筋原画（WaterfallKit の FALL_FRAG と同じ式：1タイル=2.2m、流れ 1.5m/s。v は道のりの実寸 m）
+          vec4 stx = texture2D(uStreaks, vec2(u, (v * 1.35 - uTime * 1.5) / 2.2));
+          col = mix(col, stx.rgb, stx.a * 0.55 * vFall);
           float lipZone = smoothstep(uJoin - 0.4, uJoin + 0.3, v) * (1.0 - smoothstep(uJoin + 0.3, uJoin + 1.8, v));
           col = mix(col, uFoam, lipZone * 0.3);
           float bottom = smoothstep(uLen - 2.6, uLen - 0.3, v);
@@ -377,6 +393,7 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
           float edgeM = noise(vec2(sv * 1.1, 17.0)) * 0.6 + noise(vec2(sv * 3.6, 23.0)) * 0.4;
           float edge = smoothstep(0.02, 0.12 + 0.22 * edgeN, u) * (1.0 - smoothstep(0.88 - 0.22 * edgeM, 0.98, u));
           float alpha = mix(0.5, 0.42 + strand * 0.4, vFall) * edge;
+          alpha *= mix(1.0, 0.5 + stx.a * 0.8, vFall * 0.8);   // 原画の透明部分で水の柱が分かれる（キットと同じ読み）
           alpha = max(alpha, bottom * 0.75 * edge);
           alpha *= smoothstep(0.0, 0.7, v);
           alpha *= smoothstep(uPool - 0.38, uPool + 0.02, vWorld.y);
@@ -414,9 +431,116 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
     const ptex = opts.images.particle ? loadTex(opts.images.particle, false) : undefined;
     sprayPts = new THREE.Points(sg, new THREE.PointsMaterial({ map: ptex, color: 0xf3f8fa, size: 0.26, transparent: true, opacity: 0.7, depthWrite: false, sizeAttenuation: true }));
     sprayPts.renderOrder = 4; sprayPts.name = 'FallSpray'; group.add(sprayPts);
+    // 滝つぼの泡原画（キットの WF_Foam／WF_FoamCluster 相当）：落下点に重ね、鼓動は update で進める
+    const foamPlane = (tex: THREE.Texture | undefined, size: number, name: string, op: number) => {
+      if (!tex) return;
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: op, depthWrite: false }));
+      m.rotation.x = -Math.PI / 2; m.rotation.z = rnd() * 6.28;
+      m.position.set(IMPACT.x, IMPACT.y + 0.07, IMPACT.z); m.renderOrder = 4; m.name = name; group.add(m); foamArt.push(m);
+    };
+    foamPlane(foamRingTex, 4.6, 'FallFoamRing', 0.85);
+    foamPlane(foamClusterTex, 3.4, 'FallFoamCluster', 0.8);
     void rnd;
   }
   buildStreamsAndFall();
+  /* ---------- 水際の泡（ShoreFoam、Muse ラウンド21/22。§39 で実ゲームへ接続） ----------
+     滝の水が注ぐ湖（shape.ts の LAKE）の西岸に、水位 0.32 の水際線をたどる泡帯を置く。
+     テクスチャは GPT 原画（ENV_TEXTURES.shoreFoam）。呼吸アニメーションは update で進める。 */
+  try {
+    const line = sampleWaterline(H, WS.LAKE.level, WS.LAKE.x - WS.LAKE.r - 8, WS.LAKE.x - 2, WS.LAKE.z - WS.LAKE.r + 2, WS.LAKE.z + WS.LAKE.r - 2);
+    if (line.length > 3 && shoreFoamTex) { shoreFoam = createShoreFoam(H, WS.LAKE.level, line, { texture: shoreFoamTex }); group.add(shoreFoam.group); }
+  } catch (e) { console.warn('水際の泡を作れなかった', e); }
+
+  /* ---------- 火山キット（Muse ラウンド27、§39 で実ゲームへ接続） ----------
+     assets/volcano-kit の景観ドレッシングを、ゲーム側の地形（Terrain v4、地表高さは H）に合わせて配置する。
+     配置ルールはキットの metadata.json（半径帯・sink 量）が正本。古い metadata の座標では置かず、
+     中心は shape.ts の VOLCANO、地面は H(x,z) で決める。登山道（TRAIL_VOLCANO）・岩棚（VOLC_LEDGES）・
+     採集地点（volcano-contract.json の deposits）からは離し、採集物の ID・収量・位置には一切触れない。
+     ore-outcrop だけは metadata の指定どおり採集ノードの隣（2.2m）に置く景観ドレッシングで、ノード自体ではない。 */
+  const volcanoKitStatus = { placed: 0, failed: [] as string[], spots: 0, lodPairs: 0, lod1Used: 0 };
+  const volcanoLods: Array<{root: THREE.Group; high: THREE.Object3D; low: THREE.Object3D}> = [];
+  function updateVolcanoLods(x: number, z: number) {
+    volcanoKitStatus.lod1Used = 0;
+    for (const v of volcanoLods) {
+      const low = quality === 'low' || Math.hypot(v.root.position.x-x, v.root.position.z-z) > 35;
+      v.high.visible = !low; v.low.visible = low;
+      if (low) volcanoKitStatus.lod1Used++;
+    }
+  }
+  if (opts.volcanoKit) void placeVolcanoKit(opts.volcanoKit);
+  async function placeVolcanoKit(files: Record<string, string>) {
+    const g = new THREE.Group(); g.name = 'VolcanoKit'; group.add(g);
+    const C = { x: WS.VOLCANO.x, z: WS.VOLCANO.z };
+    let seed = 20261115; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const trail = WS.TRAIL_VOLCANO.pts;
+    const segDist = (x: number, z: number, a: { x: number; z: number }, b: { x: number; z: number }) => {
+      const vx = b.x - a.x, vz = b.z - a.z, L2 = vx * vx + vz * vz || 1;
+      const t = clamp(((x - a.x) * vx + (z - a.z) * vz) / L2, 0, 1);
+      return Math.hypot(x - (a.x + vx * t), z - (a.z + vz * t));
+    };
+    const trailDist = (x: number, z: number) => { let m = 1e9; for (let i = 0; i < trail.length - 1; i++) m = Math.min(m, segDist(x, z, trail[i], trail[i + 1])); return m; };
+    const deposits: Array<[number, number]> = [[-83.9, -89.3], [-167.5, -99.6], [-116.9, -165.9], [-106.6, -84.3], [-125.11, -81.45], [-102.67, -111.29], [-131.35, -97.79], [-115.3, -121.7], [-119.5, -107.9]];
+    const clearOf = (x: number, z: number) => trailDist(x, z) > 3.0
+      && WS.VOLC_LEDGES.every((L) => Math.hypot(x - L.x, z - L.z) > L.r + 2.4)
+      && deposits.every((d) => Math.hypot(x - d[0], z - d[1]) > 3.2);
+    type Spot = { id: string; x: number; z: number; ry: number; sink: number };
+    const spots: Spot[] = [];
+    const scatter = (id: string, count: number, r0: number, r1: number, sink: number, extra?: (ang: number) => boolean) => {
+      for (let k = 0; k < count; k++) for (let t = 0; t < 28; t++) {
+        const a = rnd() * Math.PI * 2, r = r0 + rnd() * (r1 - r0), x = C.x + Math.cos(a) * r, z = C.z + Math.sin(a) * r;
+        if (extra && !extra(a)) continue;
+        if (!clearOf(x, z)) continue;
+        spots.push({ id, x, z, ry: rnd() * Math.PI * 2, sink }); break;
+      }
+    };
+    const outcropSpots: Spot[] = [];
+    const scatterOut = (id: string, count: number, r0: number, r1: number, sink: number) => {
+      const before = spots.length; scatter(id, count, r0, r1, sink); outcropSpots.push(...spots.slice(before));
+    };
+    scatterOut('basalt-outcrop-l', 3, 18, 30, 0.3);
+    scatterOut('basalt-outcrop-s', 5, 14, 34, 0.22);
+    for (const o of outcropSpots.slice(0, 3)) {   // 崩落岩は露頭の下手 2–5m（metadata の規則）
+      const a = Math.atan2(o.z - C.z, o.x - C.x), r = Math.hypot(o.x - C.x, o.z - C.z) + 3.5;
+      const x = C.x + Math.cos(a) * r, z = C.z + Math.sin(a) * r;
+      if (clearOf(x, z)) spots.push({ id: 'fallen-block', x, z, ry: rnd() * Math.PI * 2, sink: 0.2 });
+    }
+    scatter('scree-cluster', 3, 20, 40, 0.06);
+    scatter('crater-rim-shelf', 3, 11.8, 13.2, 0.35, (a) => {   // アプローチ側の切れ目（VOLC_FACE ±0.7rad）は空ける
+      let d = Math.abs(Math.atan2(Math.sin(a - WS.VOLC_FACE), Math.cos(a - WS.VOLC_FACE))); return d > 0.7;
+    });
+    scatter('cooled-lava-chunk', 3, 13, 26, 0.15);
+    scatter('ash-shrub', 6, 36, 48, 0.03);
+    scatter('ash-grass-tuft', 9, 34, 50, 0.02);
+    for (const d of [[-102.67, -111.29], [-131.35, -97.79]]) {   // 鉱石露頭ドレッシング：ノードの隣にだけ置く
+      const a = rnd() * Math.PI * 2, x = d[0] + Math.cos(a) * 2.2, z = d[1] + Math.sin(a) * 2.2;
+      if (trailDist(x, z) > 2.4) spots.push({ id: 'ore-outcrop', x, z, ry: rnd() * Math.PI * 2, sink: 0.1 });
+    }
+    volcanoKitStatus.spots = spots.length;
+    const loader2 = new GLTFLoader();
+    const templates = new Map<string, THREE.Object3D | null>();
+    const template = async (id: string) => {
+      if (!templates.has(id)) {
+        const b64 = files[id];
+        if (!b64) { templates.set(id, null); volcanoKitStatus.failed.push(id + ':missing'); }
+        else try {
+          const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+          const gltf = await loader2.parseAsync(bytes.buffer as ArrayBuffer, '');
+          templates.set(id, gltf.scene);
+        } catch (e) { templates.set(id, null); volcanoKitStatus.failed.push(id + ':' + String(e).slice(0, 80)); }
+      }
+      return templates.get(id);
+    };
+    for (const s of spots) {
+      const tpl = await template(s.id); if (!tpl) continue;
+      const high = tpl.clone(true), lowTemplate = files[s.id + '_lod1'] ? await template(s.id + '_lod1') : null;
+      const m = new THREE.Group(); m.add(high);
+      if (lowTemplate) { const low = lowTemplate.clone(true); m.add(low); volcanoLods.push({root:m,high,low}); volcanoKitStatus.lodPairs++; }
+      m.position.set(s.x, H(s.x, s.z) - s.sink, s.z); m.rotation.y = s.ry; m.name = 'VolcanoKit:' + s.id;
+      m.traverse((o) => { const mm = o as THREE.Mesh; if (mm.isMesh) { mm.castShadow = true; mm.receiveShadow = true; } });
+      g.add(m); volcanoKitStatus.placed++;
+      updateVolcanoLods(focus.x, focus.z);
+    }
+  }
   let sprSeed = 11; const srnd = () => ((sprSeed = (sprSeed * 16807) % 2147483647) / 2147483647);
   function tickSpray(dt: number) {
     const a = sprayPts.geometry.attributes.position as THREE.BufferAttribute, p = a.array as Float32Array;
@@ -482,22 +606,28 @@ export function attachWorld(gfx: any, opts: { cfg: GraphicsConfig; quality: Qual
     group,
     update(dt: number, f: { x: number; z: number }, camera: THREE.Camera) {
       time += dt; focus = f;
+      updateVolcanoLods(f.x, f.z);
       waterUniformsCommon.uTime.value = time;
       if (fallMat) fallMat.uniforms.uTime.value = time;
+      // 滝つぼの泡原画の鼓動（WaterfallKit の update と同じ位相ずらし）と水際の泡の呼吸
+      foamArt.forEach((m, i) => { const s = 1 + Math.sin(time * 2.2 + i * 1.7) * 0.05; m.scale.set(s, s, 1); (m.material as THREE.MeshBasicMaterial).opacity = (i === 0 ? 0.78 : 0.68) + Math.sin(time * 3.1 + i * 1.3) * 0.13; });
+      if (shoreFoam) shoreFoam.update(time);
       if (sprayPts && Math.hypot(f.x - IMPACT.x, f.z - IMPACT.z) < 90) tickSpray(Math.min(dt, 0.05));
       outerUpdate(f.x, f.z);
       void camera;
     },
     status() {
       const t = terr(); let chunks = null; try { chunks = t && t.chunks ? t.chunks.size : null; } catch (e) { /* なし */ }
-      return { moduleChunks: chunks, hidden: hidden.map((o) => o.name), openWaterMasked: maskedOpen, river: riverParts.length, quality };
+      return { moduleChunks: chunks, hidden: hidden.map((o) => o.name), openWaterMasked: maskedOpen, river: riverParts.length, quality,
+        volcanoKit: { ...volcanoKitStatus }, waterfallArt: { streaks: !!streakTex, foamPlanes: foamArt.length }, shoreFoam: shoreFoam ? shoreFoam.line.length : 0 };
     },
     /** 確認用：足もとのまわりの地形の区画を作り終える（撮影・計測用） */
     prebuild() { forceChunks(focus.x, focus.z, 6); outerUpdate(focus.x, focus.z, true, 12); },
     afterWarp(x: number, z: number) { forceChunks(x, z); outerUpdate(x, z, true, 12); },
     outer() { return { chunks: outer.size, pending: outerPending, built: outerBuilt, maxBuildMs: +outerBuildMs.toFixed(1), keys: [...outer.keys()] }; },
-    setQuality(q: Quality) { quality = q; },
+    setQuality(q: Quality) { quality = q; updateVolcanoLods(focus.x, focus.z); },
     dispose() {
+      if (shoreFoam) { shoreFoam.dispose(); shoreFoam = null; }
       outer.forEach((e) => e.mesh.geometry.dispose()); outer.clear(); scene.remove(outerGroup);
       group.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh && m.geometry) m.geometry.dispose(); });
       scene.remove(group); hidden.forEach((o) => { o.visible = true; });

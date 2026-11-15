@@ -1,0 +1,114 @@
+{
+ "plant-broadleaf-a": {
+  "dims": [
+   6.15,
+   7.06,
+   7.12
+  ]
+ },
+ "plant-broadleaf-b": {
+  "dims": [
+   6.7,
+   7.2,
+   8.12
+  ]
+ },
+ "plant-pine-a": {
+  "dims": [
+   3.63,
+   3.39,
+   5.73
+  ]
+ },
+ "plant-pine-b": {
+  "dims": [
+   3.07,
+   3.76,
+   6.49
+  ]
+ },
+ "plant-kouzo-a": {
+  "dims": [
+   5.34,
+   5.27,
+   5.82
+  ]
+ },
+ "plant-kouzo-b": {
+  "dims": [
+   4.83,
+   5.31,
+   5.17
+  ]
+ },
+ "plant-bamboo-a": {
+  "dims": [
+   4.11,
+   4.0,
+   6.96
+  ]
+ },
+ "plant-bamboo-b": {
+  "dims": [
+   3.67,
+   4.16,
+   5.52
+  ]
+ },
+ "plant-flax-a": {
+  "dims": [
+   0.8,
+   0.91,
+   1.04
+  ]
+ },
+ "plant-flax-b": {
+  "dims": [
+   0.83,
+   0.79,
+   1.1
+  ]
+ },
+ "plant-cotton-a": {
+  "dims": [
+   0.81,
+   0.89,
+   1.15
+  ]
+ },
+ "plant-cotton-b": {
+  "dims": [
+   1.04,
+   0.93,
+   0.97
+  ]
+ },
+ "plant-rapeseed-a": {
+  "dims": [
+   0.89,
+   0.85,
+   1.44
+  ]
+ },
+ "plant-rapeseed-b": {
+  "dims": [
+   0.99,
+   0.91,
+   1.24
+  ]
+ },
+ "plant-reed-a": {
+  "dims": [
+   1.61,
+   1.81,
+   2.3
+  ]
+ },
+ "plant-reed-b": {
+  "dims": [
+   1.82,
+   1.64,
+   1.92
+  ]
+ }
+}

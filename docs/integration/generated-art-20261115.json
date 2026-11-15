@@ -1,0 +1,155 @@
+[
+  {
+    "id": "tex-bark-broadleaf",
+    "file": "assets/plants/gpt-art/tex-bark-broadleaf.png",
+    "original": "assets/plants/gpt-art/originals/tex-bark-broadleaf.png",
+    "size": [
+      512,
+      512
+    ],
+    "alpha": false,
+    "crop": null,
+    "state": "原画制作済み・正式適用未検証",
+    "tile": "要継ぎ目検品"
+  },
+  {
+    "id": "tex-bark-pine",
+    "file": "assets/plants/gpt-art/tex-bark-pine.png",
+    "original": "assets/plants/gpt-art/originals/tex-bark-pine.png",
+    "size": [
+      512,
+      512
+    ],
+    "alpha": false,
+    "crop": [
+      42,
+      42,
+      1212,
+      1212
+    ],
+    "state": "原画制作済み・正式適用未検証",
+    "tile": "要継ぎ目検品"
+  },
+  {
+    "id": "tex-bark-kouzo",
+    "file": "assets/plants/gpt-art/tex-bark-kouzo.png",
+    "original": "assets/plants/gpt-art/originals/tex-bark-kouzo.png",
+    "size": [
+      512,
+      512
+    ],
+    "alpha": false,
+    "crop": null,
+    "state": "原画制作済み・正式適用未検証",
+    "tile": "要継ぎ目検品"
+  },
+  {
+    "id": "tex-leaf-broadleaf",
+    "file": "assets/plants/gpt-art/tex-leaf-broadleaf.png",
+    "original": "assets/plants/gpt-art/originals/tex-leaf-broadleaf.png",
+    "size": [
+      512,
+      512
+    ],
+    "alpha": true,
+    "crop": null,
+    "state": "原画制作済み・正式適用未検証",
+    "tile": "切抜き"
+  },
+  {
+    "id": "tex-leaf-kouzo",
+    "file": "assets/plants/gpt-art/tex-leaf-kouzo.png",
+    "original": "assets/plants/gpt-art/originals/tex-leaf-kouzo.png",
+    "size": [
+      512,
+      512
+    ],
+    "alpha": true,
+    "crop": null,
+    "state": "原画制作済み・正式適用未検証",
+    "tile": "切抜き"
+  },
+  {
+    "id": "tex-needle-pine",
+    "file": "assets/plants/gpt-art/tex-needle-pine.png",
+    "original": "assets/plants/gpt-art/originals/tex-needle-pine.png",
+    "size": [
+      512,
+      512
+    ],
+    "alpha": true,
+    "crop": null,
+    "state": "原画制作済み・正式適用未検証",
+    "tile": "切抜き"
+  },
+  {
+    "id": "tex-bamboo-culm",
+    "file": "assets/plants/gpt-art/tex-bamboo-culm.png",
+    "original": "assets/plants/gpt-art/originals/tex-bamboo-culm.png",
+    "size": [
+      256,
+      512
+    ],
+    "alpha": false,
+    "crop": [
+      35,
+      0,
+      852,
+      1774
+    ],
+    "state": "原画制作済み・正式適用未検証",
+    "tile": "要継ぎ目検品"
+  },
+  {
+    "id": "tex-reed-leaf",
+    "file": "assets/plants/gpt-art/tex-reed-leaf.png",
+    "original": "assets/plants/gpt-art/originals/tex-reed-leaf.png",
+    "size": [
+      512,
+      512
+    ],
+    "alpha": true,
+    "crop": null,
+    "state": "原画制作済み・正式適用未検証",
+    "tile": "切抜き"
+  },
+  {
+    "id": "road-dirt",
+    "file": "assets/construction/gpt-art/road-dirt.png",
+    "original": "assets/construction/gpt-art/originals/road-dirt.png",
+    "size": [
+      512,
+      512
+    ],
+    "alpha": false,
+    "crop": null,
+    "state": "原画制作済み・正式適用未検証",
+    "tile": "要継ぎ目検品"
+  },
+  {
+    "id": "road-gravel",
+    "file": "assets/construction/gpt-art/road-gravel.png",
+    "original": "assets/construction/gpt-art/originals/road-gravel.png",
+    "size": [
+      512,
+      512
+    ],
+    "alpha": false,
+    "crop": null,
+    "state": "原画制作済み・正式適用未検証",
+    "tile": "要継ぎ目検品"
+  },
+  {
+    "id": "road-stone",
+    "file": "assets/construction/gpt-art/road-stone.png",
+    "original": "assets/construction/gpt-art/originals/road-stone.png",
+    "size": [
+      512,
+      512
+    ],
+    "alpha": false,
+    "crop": null,
+    "state": "原画制作済み・正式適用未検証",
+    "tile": "要継ぎ目検品"
+  }
+]

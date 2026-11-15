@@ -18,7 +18,9 @@
     "test:construction": "node tests/construction.test.mjs",
     "e2e:construction": "node scripts/build.mjs && node tests/e2e/construction.mjs",
     "e2e:playthrough": "node scripts/build.mjs && node tests/e2e/playthrough.mjs",
-    "e2e:space": "node scripts/build.mjs && node tests/e2e/space.mjs"
+    "e2e:space": "node scripts/build.mjs && node tests/e2e/space.mjs",
+    "e2e:recovery": "node scripts/build.mjs && node tests/e2e/recovery.mjs",
+    "e2e:construction-visual": "node scripts/build.mjs && node tests/e2e/construction-visual.mjs"
   },
   "dependencies": {
     "three": "0.180.0"

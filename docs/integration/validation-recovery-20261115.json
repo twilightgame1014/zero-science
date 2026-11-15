@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-15",
+  "unit": {
+    "command": "npm test",
+    "exitCode": 0
+  },
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exitCode": 0
+  },
+  "build": {
+    "command": "npm run build",
+    "exitCode": 0,
+    "bytes": 15324715,
+    "sha256": "8a00748e54c46adb3866bf357c53d2ee1954ee8f12d632ba6f71085778f005a9"
+  },
+  "e2e": {
+    "play": {
+      "exitCode": 0,
+      "kind": "browser with fake graphics"
+    },
+    "construction": {
+      "exitCode": 0,
+      "kind": "browser with fake graphics"
+    },
+    "playthrough": {
+      "exitCode": 0,
+      "kind": "browser with fake graphics"
+    },
+    "construction-visual": {
+      "exitCode": 0,
+      "kind": "WebGL emulation"
+    },
+    "space": {
+      "exitCode": 0,
+      "kind": "WebGL emulation"
+    },
+    "hero-8dir": {
+      "exitCode": 0,
+      "kind": "WebGL emulation"
+    },
+    "camera-focus-fade": {
+      "exitCode": 0,
+      "kind": "WebGL emulation"
+    },
+    "recovery": {
+      "exitCode": 0,
+      "kind": "real game WebGL, test fixtures, PC and mobile viewport",
+      "evidence": "evidence-recovery-20261115/runtime.json"
+    }
+  },
+  "note": "Gameplay suites ran on the merged build. After the render-only volcano LOD connection, typecheck, build, npm test and recovery WebGL were rerun. No progression/save changes in that follow-up.",
+  "hardware": "Headless Chrome + SwiftShader; not iPhone 17 or physical-GPU performance validation",
+  "browser": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+}
